@@ -1,5 +1,7 @@
-import { newArea, newProject, orderBetween, views } from '@dingen/core'
-import { type ReactElement, useState } from 'react'
+import { newArea, newProject, orderBetween, type Project, views } from '@dingen/core'
+import { useDraggable, useDroppable } from '@dnd-kit/core'
+import { type ReactElement, type ReactNode, useState } from 'react'
+import type { DragData, DropData } from '../dnd.js'
 import { useT } from '../i18n/index.js'
 import { countFor, LISTS, type ListId } from '../lists.js'
 import { areaPath, navigate, projectPath } from '../router.js'
@@ -40,21 +42,11 @@ export function Sidebar({ path, status, email }: Props) {
   const [adding, setAdding] = useState(false)
   const statusText = t(`sync.${status}`)
 
-  function link(href: string, className: string, content: ReactElement, title?: string) {
-    return (
-      <a
-        href={href}
-        className={`nav-item ${className} ${path === href ? 'active' : ''}`}
-        title={title}
-        onClick={(e) => {
-          e.preventDefault()
-          navigate(href)
-        }}
-      >
-        {content}
-      </a>
-    )
-  }
+  const link = (href: string, className: string, content: ReactElement, title?: string) => (
+    <NavLink href={href} className={className} active={path === href} title={title}>
+      {content}
+    </NavLink>
+  )
 
   function addProject(areaId: string | null) {
     const last = views.projectsOf(ws.projects, areaId).at(-1)
@@ -76,15 +68,18 @@ export function Sidebar({ path, status, email }: Props) {
     navigate(areaPath(area.id))
   }
 
-  const projectItem = (p: { id: string; title: string }) =>
-    link(
-      projectPath(p.id),
-      'project',
-      <>
-        <ProgressCircle value={views.progress(p.id, ws.tasks)} className="nav-icon" />
-        <span className="nav-title">{p.title || <em>{t('project.untitled')}</em>}</span>
-      </>,
-    )
+  const projectItem = (p: Project) => (
+    <NavLink
+      href={projectPath(p.id)}
+      className="project"
+      active={path === projectPath(p.id)}
+      drop={{ type: 'project', project: p }}
+      drag={{ type: 'project', project: p }}
+    >
+      <ProgressCircle value={views.progress(p.id, ws.tasks)} className="nav-icon" />
+      <span className="nav-title">{p.title || <em>{t('project.untitled')}</em>}</span>
+    </NavLink>
+  )
 
   return (
     <nav className="sidebar" aria-label={t('nav.lists')}>
@@ -95,15 +90,16 @@ export function Sidebar({ path, status, email }: Props) {
             const count = countFor(list.id, ws)
             return (
               <li key={list.id}>
-                {link(
-                  list.path,
-                  list.id,
-                  <>
-                    <Icon className="nav-icon" />
-                    <span className="nav-title">{t(list.titleKey)}</span>
-                    {count !== null && count > 0 && <span className="nav-count">{count}</span>}
-                  </>,
-                )}
+                <NavLink
+                  href={list.path}
+                  className={list.id}
+                  active={path === list.path}
+                  drop={{ type: 'list', listId: list.id }}
+                >
+                  <Icon className="nav-icon" />
+                  <span className="nav-title">{t(list.titleKey)}</span>
+                  {count !== null && count > 0 && <span className="nav-count">{count}</span>}
+                </NavLink>
               </li>
             )
           })}
@@ -114,14 +110,16 @@ export function Sidebar({ path, status, email }: Props) {
           ))}
           {views.openAreas(ws.areas).map((area) => (
             <li key={area.id} className="area-group">
-              {link(
-                areaPath(area.id),
-                'area',
-                <>
-                  <AreaIcon className="nav-icon" />
-                  <span className="nav-title">{area.title || <em>{t('area.untitled')}</em>}</span>
-                </>,
-              )}
+              <NavLink
+                href={areaPath(area.id)}
+                className="area"
+                active={path === areaPath(area.id)}
+                drop={{ type: 'area', area }}
+                drag={{ type: 'area', area }}
+              >
+                <AreaIcon className="nav-icon" />
+                <span className="nav-title">{area.title || <em>{t('area.untitled')}</em>}</span>
+              </NavLink>
               <ul className="nav">
                 {views.projectsOf(ws.projects, area.id).map((p) => (
                   <li key={p.id}>{projectItem(p)}</li>
@@ -165,5 +163,41 @@ export function Sidebar({ path, status, email }: Props) {
         </p>
       </div>
     </nav>
+  )
+}
+
+interface NavLinkProps {
+  href: string
+  className: string
+  active: boolean
+  title?: string | undefined
+  drop?: DropData | undefined
+  drag?: DragData | undefined
+  children: ReactNode
+}
+
+/** A sidebar link that can receive drops and, for projects and areas, be dragged itself. */
+function NavLink({ href, className, active, title, drop, drag, children }: NavLinkProps) {
+  const droppable = useDroppable({ id: `nav:${href}`, data: drop ?? {}, disabled: !drop })
+  const draggable = useDraggable({ id: `drag:${href}`, data: drag ?? {}, disabled: !drag })
+  return (
+    <a
+      ref={(el) => {
+        droppable.setNodeRef(el)
+        draggable.setNodeRef(el)
+      }}
+      href={href}
+      className={`nav-item ${className} ${active ? 'active' : ''} ${
+        droppable.isOver ? 'drop-over' : ''
+      } ${draggable.isDragging ? 'dragging' : ''}`}
+      title={title}
+      onClick={(e) => {
+        e.preventDefault()
+        navigate(href)
+      }}
+      {...draggable.listeners}
+    >
+      {children}
+    </a>
   )
 }

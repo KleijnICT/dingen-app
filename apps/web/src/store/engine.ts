@@ -45,6 +45,8 @@ export class SyncEngine {
   /** Loopt op bij elke verandering; React gebruikt dit als snapshot. */
   version = 0
   status: SyncStatus = 'idle'
+  /** True once the local replica is loaded and the first sync has been attempted. */
+  ready = false
   onUnauthorized: (() => void) | undefined
 
   private readonly db: LocalDb
@@ -93,6 +95,8 @@ export class SyncEngine {
     this.bump()
 
     await this.sync()
+    this.ready = true
+    this.bump()
     this.installTriggers()
   }
 

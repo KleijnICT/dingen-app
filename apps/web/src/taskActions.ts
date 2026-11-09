@@ -6,7 +6,7 @@ import type { SyncEngine } from './store/engine.js'
 /** Where a task can be moved to: a list (sets `when`), a project, a heading, or an area. */
 export type MoveTarget =
   | { kind: 'none' }
-  | { kind: 'when'; when: When }
+  | { kind: 'when'; when: When; evening?: boolean }
   | { kind: 'project'; projectId: string; headingId?: string | null }
   | { kind: 'area'; areaId: string }
 
@@ -31,24 +31,33 @@ export function toggleProject(engine: SyncEngine, project: Project): void {
  * its project. Leaving the Inbox for a container makes the task Anytime.
  */
 export function moveTask(engine: SyncEngine, ws: Workspace, task: Task, target: MoveTarget): void {
+  const fields = moveFields(ws, task, target)
+  if (Object.keys(fields).length > 0) engine.mutate('task', task.id, fields)
+}
+
+/** The field changes that `moveTask` would make; empty when nothing changes. */
+export function moveFields(ws: Workspace, task: Task, target: MoveTarget): Record<string, unknown> {
   const fields: Record<string, unknown> = {}
   const leavingInbox = () => {
     if (task.when.kind === 'inbox') fields.when = { kind: 'anytime' } satisfies When
   }
   switch (target.kind) {
     case 'none':
-      if (task.projectId === null && task.areaId === null) return
+      if (task.projectId === null && task.areaId === null) return fields
       fields.projectId = null
       fields.areaId = null
       fields.headingId = null
       break
-    case 'when':
+    case 'when': {
+      const evening = target.evening ?? false
+      if (sameWhen(task.when, target.when) && task.evening === evening) return fields
       fields.when = target.when
-      fields.evening = false
+      fields.evening = evening
       break
+    }
     case 'project': {
       const headingId = target.headingId ?? null
-      if (task.projectId === target.projectId && task.headingId === headingId) return
+      if (task.projectId === target.projectId && task.headingId === headingId) return fields
       fields.projectId = target.projectId
       fields.headingId = headingId
       fields.areaId = null
@@ -60,7 +69,7 @@ export function moveTask(engine: SyncEngine, ws: Workspace, task: Task, target: 
       break
     }
     case 'area': {
-      if (task.areaId === target.areaId && task.projectId === null) return
+      if (task.areaId === target.areaId && task.projectId === null) return fields
       fields.areaId = target.areaId
       fields.projectId = null
       fields.headingId = null
@@ -70,7 +79,12 @@ export function moveTask(engine: SyncEngine, ws: Workspace, task: Task, target: 
       break
     }
   }
-  engine.mutate('task', task.id, fields)
+  return fields
+}
+
+function sameWhen(a: When, b: When): boolean {
+  if (a.kind !== b.kind) return false
+  return a.kind === 'date' && b.kind === 'date' ? a.date === b.date : true
 }
 
 /** Gives `task` the order that puts it between `before` and `after` in a sorted list. */

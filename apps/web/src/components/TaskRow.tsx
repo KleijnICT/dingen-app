@@ -1,6 +1,6 @@
 import type { Tag, Task } from '@dingen/core'
 import { views } from '@dingen/core'
-import { type KeyboardEvent, useEffect, useRef, useState } from 'react'
+import { type CSSProperties, type KeyboardEvent, useEffect, useRef, useState } from 'react'
 import { formatDate, useT } from '../i18n/index.js'
 import { containerOf, describeWhen } from '../lists.js'
 import { useEngine, useWorkspace } from '../store/context.js'
@@ -9,8 +9,7 @@ import { CheckIcon, MoonIcon, NotesIcon } from './Icons.js'
 import { TagEditor } from './TagEditor.js'
 import { WhenPicker } from './WhenPicker.js'
 
-interface Props {
-  task: Task
+export interface RowProps {
   open: boolean
   showWhen: boolean
   /** Show the project or area under the title (off inside that project or area). */
@@ -20,7 +19,28 @@ interface Props {
   onToggle: () => void
 }
 
-export function TaskRow({ task, open, showWhen, showCaption, onOpen, onClose, onToggle }: Props) {
+export interface DragHandle {
+  ref: (el: HTMLElement | null) => void
+  listeners: Record<string, unknown>
+  style: CSSProperties
+  dragging: boolean
+}
+
+interface Props extends RowProps {
+  task: Task
+  drag?: DragHandle
+}
+
+export function TaskRow({
+  task,
+  open,
+  showWhen,
+  showCaption,
+  onOpen,
+  onClose,
+  onToggle,
+  drag,
+}: Props) {
   const engine = useEngine()
   const ws = useWorkspace()
   const t = useT()
@@ -35,7 +55,12 @@ export function TaskRow({ task, open, showWhen, showCaption, onOpen, onClose, on
   const tags = task.tagIds.map((id) => ws.tagById.get(id)).filter((x): x is Tag => Boolean(x))
 
   return (
-    <li className={`task ${done ? 'done' : ''}`}>
+    <li
+      ref={drag?.ref}
+      style={drag?.style}
+      className={`task ${done ? 'done' : ''} ${drag?.dragging ? 'dragging' : ''}`}
+      {...drag?.listeners}
+    >
       <button
         type="button"
         className="check"

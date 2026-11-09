@@ -8,7 +8,7 @@ import { InlineInput } from './InlineInput.js'
 import { ProjectRow } from './ProjectRow.js'
 import { QuickAdd } from './QuickAdd.js'
 import { TagFilter } from './TagFilter.js'
-import { TaskRow } from './TaskRow.js'
+import { TaskGroup } from './TaskGroup.js'
 
 interface Props {
   area: Area
@@ -78,20 +78,18 @@ export function AreaPage({ area, focusSignal }: Props) {
       <QuickAdd onAdd={add} focusSignal={focusSignal} />
       <TagFilter present={present} active={tagFilter} onChange={setTagFilter} />
       {open.length === 0 && projects.length === 0 && <p className="empty">{t('area.empty')}</p>}
-      <ul className="tasks">
-        {filtered.map((task) => (
-          <TaskRow
-            key={task.id}
-            task={task}
-            open={openId === task.id}
-            showWhen={true}
-            showCaption={false}
-            onOpen={() => setOpenId(task.id)}
-            onClose={() => setOpenId(null)}
-            onToggle={() => toggle(task)}
-          />
-        ))}
-      </ul>
+      <TaskGroup
+        group={{ key: `area:${area.id}`, target: { kind: 'area', areaId: area.id } }}
+        tasks={filtered}
+        rowProps={(task) => ({
+          open: openId === task.id,
+          showWhen: true,
+          showCaption: false,
+          onOpen: () => setOpenId(task.id),
+          onClose: () => setOpenId(null),
+          onToggle: () => toggle(task),
+        })}
+      />
       {projects.length > 0 && (
         <div className="group">
           <h2 className="group-title">{t('list.projects')}</h2>

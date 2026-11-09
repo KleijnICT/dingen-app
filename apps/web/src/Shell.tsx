@@ -1,11 +1,24 @@
 import { toCalendarDate } from '@dingen/core'
-import { useEffect, useState } from 'react'
+import {
+  type CollisionDetection,
+  DndContext,
+  type DragEndEvent,
+  DragOverlay,
+  type DragStartEvent,
+  PointerSensor,
+  pointerWithin,
+  rectIntersection,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
+import { useCallback, useEffect, useState } from 'react'
 import { Account } from './Account.js'
 import type { User } from './api.js'
 import { AreaPage } from './components/AreaPage.js'
 import { ListPage } from './components/ListPage.js'
 import { ProjectPage } from './components/ProjectPage.js'
 import { Sidebar } from './components/Sidebar.js'
+import { type DragData, handleDragEnd } from './dnd.js'
 import { LISTS } from './lists.js'
 import { navigate, parseRoute, usePath } from './router.js'
 import { useBuildWorkspace, useEngine, WorkspaceContext } from './store/context.js'
@@ -23,6 +36,18 @@ export function Shell({ user, onSignedOut }: Props) {
   const [focusSignal, setFocusSignal] = useState(0)
   const ws = useBuildWorkspace(today)
   const route = parseRoute(path)
+  const [dragging, setDragging] = useState<DragData | null>(null)
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
+  const onDragStart = useCallback((e: DragStartEvent) => {
+    setDragging((e.active.data.current as DragData | undefined) ?? null)
+  }, [])
+  const onDragEnd = useCallback(
+    (e: DragEndEvent) => {
+      setDragging(null)
+      handleDragEnd(engine, ws, e)
+    },
+    [engine, ws],
+  )
 
   // The day changes at midnight; checking once a minute is enough.
   useEffect(() => {
@@ -38,9 +63,11 @@ export function Shell({ user, onSignedOut }: Props) {
     (route.kind === 'project' && !project) ||
     (route.kind === 'area' && !area)
 
+  // Only redirect once the replica is loaded; a project link must survive a fresh page load.
+  const redirect = missing && engine.ready
   useEffect(() => {
-    if (missing) navigate('/today')
-  }, [missing])
+    if (redirect) navigate('/today')
+  }, [redirect])
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -66,10 +93,37 @@ export function Shell({ user, onSignedOut }: Props) {
 
   return (
     <WorkspaceContext.Provider value={ws}>
-      <div className="app">
-        <Sidebar path={path} status={engine.status} email={user.email} />
-        <main className="content">{page}</main>
-      </div>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={collision}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        onDragCancel={() => setDragging(null)}
+      >
+        <div className="app">
+          <Sidebar path={path} status={engine.status} email={user.email} />
+          <main className="content">{page}</main>
+        </div>
+        <DragOverlay dropAnimation={null}>
+          {dragging && <div className="drag-ghost">{ghostTitle(dragging)}</div>}
+        </DragOverlay>
+      </DndContext>
     </WorkspaceContext.Provider>
   )
+}
+
+/** The element under the pointer wins; otherwise the nearest overlapping one. */
+const collision: CollisionDetection = (args) => {
+  const within = pointerWithin(args)
+  const hits = within.length > 0 ? within : rectIntersection(args)
+  // A row inside a group beats the group itself.
+  const isGroup = (c: (typeof hits)[number]) =>
+    (c.data?.droppableContainer?.data?.current as { type?: string } | undefined)?.type === 'group'
+  return [...hits].sort((a, b) => Number(isGroup(a)) - Number(isGroup(b)))
+}
+
+function ghostTitle(d: DragData): string {
+  if (d.type === 'task') return d.task.title
+  if (d.type === 'project') return d.project.title
+  return d.area.title
 }

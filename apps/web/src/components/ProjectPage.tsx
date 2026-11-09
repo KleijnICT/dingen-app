@@ -1,5 +1,5 @@
 import { type Heading, newHeading, newTask, orderBetween, type Project, views } from '@dingen/core'
-import { useState } from 'react'
+import { type ReactNode, useState } from 'react'
 import { useT } from '../i18n/index.js'
 import { navigate } from '../router.js'
 import { useEngine, useWorkspace } from '../store/context.js'
@@ -9,7 +9,8 @@ import { InlineInput } from './InlineInput.js'
 import { QuickAdd } from './QuickAdd.js'
 import { TagEditor } from './TagEditor.js'
 import { TagFilter } from './TagFilter.js'
-import { TaskRow } from './TaskRow.js'
+import { TaskGroup } from './TaskGroup.js'
+import type { RowProps } from './TaskRow.js'
 import { WhenPicker } from './WhenPicker.js'
 
 interface Props {
@@ -72,19 +73,25 @@ export function ProjectPage({ project, focusSignal }: Props) {
     navigate(project.areaId ? `/area/${project.areaId}` : '/anytime')
   }
 
-  const rows = (tasks: typeof all) =>
-    tasks.map((task) => (
-      <TaskRow
-        key={task.id}
-        task={task}
-        open={openId === task.id}
-        showWhen={true}
-        showCaption={false}
-        onOpen={() => setOpenId(task.id)}
-        onClose={() => setOpenId(null)}
-        onToggle={() => toggle(task)}
-      />
-    ))
+  const rowProps = (task: (typeof all)[number]): RowProps => ({
+    open: openId === task.id,
+    showWhen: true,
+    showCaption: false,
+    onOpen: () => setOpenId(task.id),
+    onClose: () => setOpenId(null),
+    onToggle: () => toggle(task),
+  })
+  const group = (headingId: string | null, header?: ReactNode) => (
+    <TaskGroup
+      group={{
+        key: `project:${project.id}:${headingId ?? 'root'}`,
+        target: { kind: 'project', projectId: project.id, headingId },
+      }}
+      tasks={filtered.filter((task) => task.headingId === headingId)}
+      rowProps={rowProps}
+      header={header}
+    />
+  )
 
   return (
     <section className="list-page project">
@@ -131,13 +138,13 @@ export function ProjectPage({ project, focusSignal }: Props) {
       {!done && <QuickAdd onAdd={add} focusSignal={focusSignal} />}
       <TagFilter present={present} active={tagFilter} onChange={setTagFilter} />
       {all.length === 0 && <p className="empty">{t('project.empty')}</p>}
-      <ul className="tasks">{rows(filtered.filter((task) => task.headingId === null))}</ul>
+      {group(null)}
       {headings.map((heading) => (
         <div key={heading.id} className="group heading-group">
-          <HeadingRow heading={heading} onRemove={() => removeHeading(heading)} />
-          <ul className="tasks">
-            {rows(filtered.filter((task) => task.headingId === heading.id))}
-          </ul>
+          {group(
+            heading.id,
+            <HeadingRow heading={heading} onRemove={() => removeHeading(heading)} />,
+          )}
         </div>
       ))}
       <div className="page-actions">
@@ -158,7 +165,13 @@ export function ProjectPage({ project, focusSignal }: Props) {
         </button>
       </div>
       {showCompleted && (
-        <ul className="tasks completed">{rows(completed.sort(views.byCompletedDesc))}</ul>
+        <TaskGroup
+          className="completed"
+          group={{ key: `project:${project.id}:completed`, target: null }}
+          tasks={completed.sort(views.byCompletedDesc)}
+          rowProps={rowProps}
+          frozen
+        />
       )}
     </section>
   )

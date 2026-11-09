@@ -1,5 +1,7 @@
-import { newTask, orderBetween, type Project, type Task } from '@dingen/core'
+import { newTask, orderBetween, type Project, type Task, views } from '@dingen/core'
+import { useDndContext } from '@dnd-kit/core'
 import { useState } from 'react'
+import { listTarget, type TaskGroupInfo } from '../dnd.js'
 import { type MessageKey, useT } from '../i18n/index.js'
 import {
   containerGroups,
@@ -12,11 +14,12 @@ import {
 } from '../lists.js'
 import { areaPath, navigate, projectPath } from '../router.js'
 import { useEngine, useWorkspace } from '../store/context.js'
-import { useLinger } from '../taskActions.js'
+import { type MoveTarget, useLinger } from '../taskActions.js'
 import { ProjectRow } from './ProjectRow.js'
 import { QuickAdd } from './QuickAdd.js'
 import { TagFilter } from './TagFilter.js'
-import { TaskRow } from './TaskRow.js'
+import { TaskGroup } from './TaskGroup.js'
+import type { RowProps } from './TaskRow.js'
 
 interface Props {
   list: ListDef
@@ -29,6 +32,7 @@ export function ListPage({ list, focusSignal }: Props) {
   const ws = useWorkspace()
   const [openId, setOpenId] = useState<string | null>(null)
   const [tagFilter, setTagFilter] = useState<string | null>(null)
+  const draggingSomething = useDndContext().active !== null
 
   const visible = listTasks(list.id, ws)
   const { shown: all, toggle } = useLinger(visible, ws.tasks, engine)
@@ -51,16 +55,20 @@ export function ListPage({ list, focusSignal }: Props) {
     )
   }
 
-  const row = (task: Task) => (
-    <TaskRow
-      key={task.id}
-      task={task}
-      open={openId === task.id}
-      showWhen={false}
-      showCaption={list.id !== 'anytime' && list.id !== 'someday'}
-      onOpen={() => setOpenId(task.id)}
-      onClose={() => setOpenId(null)}
-      onToggle={() => toggle(task)}
+  const rowProps = (task: Task): RowProps => ({
+    open: openId === task.id,
+    showWhen: false,
+    showCaption: list.id !== 'anytime' && list.id !== 'someday',
+    onOpen: () => setOpenId(task.id),
+    onClose: () => setOpenId(null),
+    onToggle: () => toggle(task),
+  })
+  const group = (key: string, target: MoveTarget | null, tasks: Task[]) => (
+    <TaskGroup
+      group={{ key: `${list.id}:${key}`, target } satisfies TaskGroupInfo}
+      tasks={tasks}
+      rowProps={rowProps}
+      frozen={list.id === 'logbook'}
     />
   )
   const projectRow = (p: Project) => <ProjectRow key={p.id} project={p} />
@@ -70,18 +78,17 @@ export function ListPage({ list, focusSignal }: Props) {
     case 'today': {
       const evening = shown.filter((task) => task.evening)
       const day = shown.filter((task) => !task.evening)
+      const todayWhen = { kind: 'date', date: ws.today } as const
       body = (
         <>
-          <ul className="tasks">
-            {projects.map(projectRow)}
-            {day.map(row)}
-          </ul>
-          {evening.length > 0 && (
-            <div className="group evening">
+          {projects.length > 0 && <ul className="tasks">{projects.map(projectRow)}</ul>}
+          {group('day', { kind: 'when', when: todayWhen, evening: false }, day)}
+          <div className="group evening">
+            {(evening.length > 0 || draggingSomething) && (
               <h2 className="group-title">{t('list.thisEvening')}</h2>
-              <ul className="tasks">{evening.map(row)}</ul>
-            </div>
-          )}
+            )}
+            {group('evening', { kind: 'when', when: todayWhen, evening: true }, evening)}
+          </div>
         </>
       )
       break
@@ -92,10 +99,8 @@ export function ListPage({ list, focusSignal }: Props) {
       ).map((g) => (
         <div key={g.date} className="group">
           <h2 className="group-title">{describeDate(g.date, ws.today)}</h2>
-          <ul className="tasks">
-            {g.projects.map(projectRow)}
-            {g.tasks.map(row)}
-          </ul>
+          {g.projects.length > 0 && <ul className="tasks">{g.projects.map(projectRow)}</ul>}
+          {group(`date:${g.date}`, { kind: 'when', when: { kind: 'date', date: g.date } }, g.tasks)}
         </div>
       ))
       break
@@ -108,14 +113,8 @@ export function ListPage({ list, focusSignal }: Props) {
       ).map((g) => (
         <div key={g.date} className="group">
           <h2 className="group-title">{describeDate(g.date, ws.today)}</h2>
-          <ul className="tasks">
-            {[
-              ...g.projects.map((p) => ({ at: p.completedAt ?? '', node: projectRow(p) })),
-              ...g.tasks.map((task) => ({ at: task.completedAt ?? '', node: row(task) })),
-            ]
-              .sort((a, b) => b.at.localeCompare(a.at))
-              .map((x) => x.node)}
-          </ul>
+          {g.projects.length > 0 && <ul className="tasks">{g.projects.map(projectRow)}</ul>}
+          {group(`done:${g.date}`, null, [...g.tasks].sort(views.byCompletedDesc))}
         </div>
       ))
       break
@@ -138,14 +137,14 @@ export function ListPage({ list, focusSignal }: Props) {
                   </button>
                 </h2>
               )}
-              <ul className="tasks">{g.tasks.map(row)}</ul>
+              {group(g.key, g.target, g.tasks)}
             </div>
           ))}
         </>
       )
       break
     default:
-      body = <ul className="tasks">{shown.map(row)}</ul>
+      body = group('all', listTarget(list.id, ws.today), shown)
   }
 
   function groupByContainer(tasks: Task[]) {
@@ -154,9 +153,16 @@ export function ListPage({ list, focusSignal }: Props) {
       const key = groupKeyOf(task)
       byKey.set(key, [...(byKey.get(key) ?? []), task])
     }
-    const groups: { key: string; title: string; href: string; tasks: Task[] }[] = []
+    const groups: {
+      key: string
+      title: string
+      href: string
+      tasks: Task[]
+      target: MoveTarget
+    }[] = []
     const loose = byKey.get('none')
-    if (loose) groups.push({ key: 'none', title: '', href: '', tasks: loose })
+    if (loose)
+      groups.push({ key: 'none', title: '', href: '', tasks: loose, target: { kind: 'none' } })
     for (const g of containerGroups(ws)) {
       const items = byKey.get(g.key)
       if (!items) continue
@@ -167,12 +173,14 @@ export function ListPage({ list, focusSignal }: Props) {
               title: g.project.title || t('project.untitled'),
               href: projectPath(g.project.id),
               tasks: items,
+              target: { kind: 'project', projectId: g.project.id },
             }
           : {
               key: g.key,
               title: g.area?.title || t('area.untitled'),
               href: areaPath(g.area?.id ?? ''),
               tasks: items,
+              target: { kind: 'area', areaId: g.area?.id ?? '' },
             },
       )
     }
