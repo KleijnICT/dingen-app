@@ -36,9 +36,12 @@ WORKDIR /app
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=prod-deps /app/apps/server/node_modules ./apps/server/node_modules
 COPY --from=prod-deps /app/packages/core/node_modules ./packages/core/node_modules
+COPY --from=prod-deps /app/packages/mcp/node_modules ./packages/mcp/node_modules
 COPY package.json pnpm-workspace.yaml ./
 COPY packages/core/package.json ./packages/core/
 COPY --from=build /app/packages/core/dist ./packages/core/dist
+COPY packages/mcp/package.json ./packages/mcp/
+COPY --from=build /app/packages/mcp/dist ./packages/mcp/dist
 COPY apps/server/package.json ./apps/server/
 COPY apps/server/drizzle ./apps/server/drizzle
 COPY --from=build /app/apps/server/dist ./apps/server/dist
