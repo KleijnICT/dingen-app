@@ -60,16 +60,17 @@ export function Account({ user, onSignedOut }: Props) {
   }
 
   return (
-    <main className="shell">
+    <section className="list-page account-page">
+      <header className="list-header row">
+        <h1>Account</h1>
+        <button type="button" className="link" onClick={logout}>
+          Uitloggen
+        </button>
+      </header>
+      <p className="muted">
+        Ingelogd als {user.email} bij {APP_NAME}.
+      </p>
       <section className="card wide">
-        <header className="row">
-          <h1>{APP_NAME}</h1>
-          <button type="button" className="link" onClick={logout}>
-            Uitloggen
-          </button>
-        </header>
-        <p className="muted">Ingelogd als {user.email}. De takenlijst komt in onderdeel 4.</p>
-
         <h2>API-tokens</h2>
         <p className="muted">
           Voor Claude, de MCP-server en toekomstige apps. Een token zie je maar één keer.
@@ -118,7 +119,7 @@ export function Account({ user, onSignedOut }: Props) {
           ))}
         </ul>
       </section>
-    </main>
+    </section>
   )
 }
 
