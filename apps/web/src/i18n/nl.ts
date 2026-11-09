@@ -65,7 +65,6 @@ export const nl: Messages = {
   'account.signOut': 'Uitloggen',
   'account.signedInAs': 'Ingelogd als {email} bij {app}.',
   'account.language': 'Taal',
-  'account.language.system': 'Volg de browser',
   'account.tokens': 'API-tokens',
   'account.tokens.intro':
     'Voor Claude, de MCP-server en toekomstige apps. Een token zie je maar één keer.',

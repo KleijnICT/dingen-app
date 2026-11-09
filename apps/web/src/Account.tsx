@@ -1,15 +1,7 @@
 import { APP_NAME } from '@dingen/core'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { type ApiTokenInfo, api, errorText, type User } from './api.js'
-import {
-  formatDate,
-  getLocaleChoice,
-  LOCALES,
-  type Locale,
-  type LocaleChoice,
-  setLocaleChoice,
-  useT,
-} from './i18n/index.js'
+import { formatDate, LOCALES, type Locale, setLocale, useLocale, useT } from './i18n/index.js'
 
 interface Props {
   user: User
@@ -18,6 +10,7 @@ interface Props {
 
 export function Account({ user, onSignedOut }: Props) {
   const t = useT()
+  const locale = useLocale()
   const [tokens, setTokens] = useState<ApiTokenInfo[]>([])
   const [name, setName] = useState('')
   const [fresh, setFresh] = useState<{ name: string; token: string } | null>(null)
@@ -80,11 +73,10 @@ export function Account({ user, onSignedOut }: Props) {
       <section className="card wide">
         <h2>{t('account.language')}</h2>
         <select
-          value={getLocaleChoice()}
-          onChange={(e) => setLocaleChoice(e.target.value as LocaleChoice)}
+          value={locale}
+          onChange={(e) => setLocale(e.target.value as Locale)}
           aria-label={t('account.language')}
         >
-          <option value="system">{t('account.language.system')}</option>
           {(Object.keys(LOCALES) as Locale[]).map((code) => (
             <option key={code} value={code}>
               {LOCALES[code].name}

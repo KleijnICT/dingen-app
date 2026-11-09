@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { en } from './en.js'
-import { getLocale, LOCALES, setLocaleChoice, t } from './index.js'
+import { DEFAULT_LOCALE, getLocale, LOCALES, setLocale, t } from './index.js'
 import { nl } from './nl.js'
 
 describe('i18n', () => {
@@ -13,21 +13,16 @@ describe('i18n', () => {
     }
   })
 
-  it('uses English on request and fills parameters', () => {
-    setLocaleChoice('en')
+  it('starts in English regardless of the browser language', () => {
+    expect(DEFAULT_LOCALE).toBe('en')
     expect(getLocale()).toBe('en')
     expect(t('account.tokens.reveal', { name: 'Claude' })).toContain('Token for Claude')
-    setLocaleChoice('system')
   })
 
-  it('falls back to English for a system language it does not know', () => {
-    setLocaleChoice('system')
-    expect(['en', 'nl']).toContain(getLocale())
-  })
-
-  it('switches to Dutch on request', () => {
-    setLocaleChoice('nl')
+  it('switches to Dutch on request and back', () => {
+    setLocale('nl')
     expect(t('list.today')).toBe('Vandaag')
-    setLocaleChoice('system')
+    setLocale('en')
+    expect(t('list.today')).toBe('Today')
   })
 })

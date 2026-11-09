@@ -70,7 +70,6 @@ export const en = {
   'account.signOut': 'Sign out',
   'account.signedInAs': 'Signed in as {email} at {app}.',
   'account.language': 'Language',
-  'account.language.system': 'Follow the browser',
   'account.tokens': 'API tokens',
   'account.tokens.intro': 'For Claude, the MCP server and future apps. A token is shown only once.',
   'account.tokens.namePlaceholder': 'Name, e.g. Claude on the Mac',
