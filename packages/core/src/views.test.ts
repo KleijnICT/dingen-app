@@ -65,6 +65,49 @@ describe('views', () => {
     const bFirst = { ...b, todayOrder: orderBetween(null, a.order) }
     expect(views.today([a, bFirst], TODAY).map((t) => t.title)).toEqual(['b', 'a'])
   })
+  it('deadline zet een taak in Vandaag of Binnenkort', () => {
+    const due = newTask({ title: 'due', when: { kind: 'anytime' }, deadline: '2026-11-09' })
+    const late = newTask({ title: 'late', when: { kind: 'anytime' }, deadline: '2026-11-01' })
+    const soon = newTask({ title: 'soon', when: { kind: 'someday' }, deadline: '2026-11-20' })
+    const dated = newTask({
+      title: 'dated',
+      when: { kind: 'date', date: '2026-11-15' },
+      deadline: '2026-11-20',
+    })
+    const tasks = [due, late, soon, dated]
+    expect(
+      views
+        .today(tasks, TODAY)
+        .map((t) => t.title)
+        .sort(),
+    ).toEqual(['due', 'late'])
+    expect(views.upcoming(tasks, TODAY).map((t) => t.title)).toEqual(['dated', 'soon'])
+    expect(views.upcomingDate(dated, TODAY)).toBe('2026-11-15')
+    expect(views.upcomingDate(soon, TODAY)).toBe('2026-11-20')
+  })
+  it('templates staan in geen enkele lijst', () => {
+    const template = newTask({
+      title: 'tpl',
+      when: { kind: 'date', date: TODAY },
+      repeat: {
+        unit: 'day',
+        every: 1,
+        basis: 'schedule',
+        weekdays: [],
+        start: TODAY,
+        until: null,
+        deadlineDays: null,
+      },
+    })
+    expect(views.today([template], TODAY)).toEqual([])
+    expect(views.anytime([template], TODAY)).toEqual([])
+    expect(
+      views.projectTasks(
+        [{ ...template, projectId: '01ARZ3NDEKTSV4RRFFQ69G5FAV' }],
+        '01ARZ3NDEKTSV4RRFFQ69G5FAV',
+      ),
+    ).toEqual([])
+  })
   it('sorteert op order', () => {
     const a = newTask({ title: 'a', when: { kind: 'anytime' } })
     const b = newTask({ title: 'b', when: { kind: 'anytime' }, order: orderBetween(a.order, null) })

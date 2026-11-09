@@ -29,7 +29,7 @@ export function AreaPage({ area, focusSignal }: Props) {
   const all = views.areaTasks(ws.tasks, area.id)
   const open = all.filter((task) => task.status === 'open')
   const completed = all.filter((task) => task.status !== 'open')
-  const { shown, toggle } = useLinger(open, ws.tasks, engine)
+  const { shown, toggle } = useLinger(open, ws, engine)
   const lingering = new Set(shown.map((task) => task.id))
   const completedToday = completed
     .filter((task) => completedDate(task) === ws.today && !lingering.has(task.id))

@@ -1,4 +1,16 @@
-import { type Area, orderBetween, type Project, type Task, views, type When } from '@dingen/core'
+import {
+  type Area,
+  firstOccurrence,
+  instanceOf,
+  nextOccurrence,
+  orderBetween,
+  type Project,
+  type Repeat,
+  type Task,
+  ulid,
+  views,
+  type When,
+} from '@dingen/core'
 import { useEffect, useRef, useState } from 'react'
 import type { Workspace } from './store/context.js'
 import type { SyncEngine } from './store/engine.js'
@@ -10,12 +22,123 @@ export type MoveTarget =
   | { kind: 'project'; projectId: string; headingId?: string | null }
   | { kind: 'area'; areaId: string }
 
-export function toggleTask(engine: SyncEngine, task: Task): void {
+/** Fields of an open instance that also change its repeating task, so later instances follow. */
+const MIRRORED = new Set([
+  'title',
+  'notes',
+  'tagIds',
+  'projectId',
+  'headingId',
+  'areaId',
+  'evening',
+])
+
+/** The one way to change a task: writes the change and mirrors it to the template when needed. */
+export function commitTask(
+  engine: SyncEngine,
+  ws: Workspace,
+  task: Task,
+  fields: Record<string, unknown>,
+): void {
+  if (Object.keys(fields).length === 0) return
+  engine.mutate('task', task.id, fields)
+  const template = task.templateId ? ws.templateById.get(task.templateId) : undefined
+  if (!template || task.status !== 'open') return
+  const mirrored = Object.fromEntries(Object.entries(fields).filter(([k]) => MIRRORED.has(k)))
+  if (Object.keys(mirrored).length > 0) engine.mutate('task', template.id, mirrored)
+}
+
+export function toggleTask(engine: SyncEngine, ws: Workspace, task: Task): void {
   const completing = task.status === 'open'
   engine.mutate('task', task.id, {
     status: completing ? 'completed' : 'open',
     completedAt: completing ? new Date().toISOString() : null,
   })
+  if (completing) spawnNext(engine, ws, task, ws.today)
+}
+
+/** Deleting an open instance skips that occurrence: the next one appears at once. */
+export function deleteTask(engine: SyncEngine, ws: Workspace, task: Task): void {
+  engine.mutate('task', task.id, { deleted: true })
+  if (task.status === 'open') spawnNext(engine, ws, task, null)
+}
+
+/**
+ * Creates the next instance after `task`. On a schedule the next date follows
+ * the instance's own date; after completion it follows `completedOn`.
+ */
+function spawnNext(
+  engine: SyncEngine,
+  ws: Workspace,
+  task: Task,
+  completedOn: string | null,
+): void {
+  const template = task.templateId ? ws.templateById.get(task.templateId) : undefined
+  const rule = template?.repeat
+  if (!template || !rule) return
+  const instanceDate = task.when.kind === 'date' ? task.when.date : ws.today
+  const after = rule.basis === 'completion' ? (completedOn ?? ws.today) : instanceDate
+  const next = nextOccurrence(rule, after, ws.today)
+  if (!next) return
+  engine.create('task', instanceOf(template, next, orderAfterSiblings(ws, template, task.id)))
+}
+
+function orderAfterSiblings(ws: Workspace, like: Task, exceptId: string): string {
+  const siblings = like.projectId
+    ? views
+        .projectTasks(ws.tasks, like.projectId)
+        .filter((s) => s.headingId === like.headingId && s.id !== exceptId)
+    : like.areaId
+      ? views.areaTasks(ws.tasks, like.areaId).filter((s) => s.id !== exceptId)
+      : []
+  return orderBetween(siblings.at(-1)?.order ?? like.order, null)
+}
+
+/**
+ * Gives a task a repeat rule. A plain task becomes the first instance of a new
+ * template with the same content; an instance's template gets the new rule and
+ * the instance moves to the rule's first date.
+ */
+export function setRepeat(engine: SyncEngine, ws: Workspace, task: Task, rule: Repeat): void {
+  const first = firstOccurrence(rule, ws.today)
+  if (!first) return
+  const deadline = rule.deadlineDays === null ? null : addDaysTo(first, rule.deadlineDays)
+  const existing = task.templateId ? ws.templateById.get(task.templateId) : undefined
+  if (existing) {
+    engine.mutate('task', existing.id, { repeat: rule })
+    engine.mutate('task', task.id, { when: { kind: 'date', date: first }, deadline })
+    return
+  }
+  const template: Task = {
+    ...task,
+    id: ulid(),
+    createdAt: new Date().toISOString(),
+    status: 'open',
+    completedAt: null,
+    when: { kind: 'anytime' },
+    deadline: null,
+    repeat: rule,
+    templateId: null,
+    todayOrder: null,
+  }
+  engine.create('task', template)
+  engine.mutate('task', task.id, {
+    templateId: template.id,
+    when: { kind: 'date', date: first },
+    deadline,
+  })
+}
+
+/** Ends the repetition; the current instance stays as an ordinary task. */
+export function stopRepeat(engine: SyncEngine, ws: Workspace, task: Task): void {
+  const template = task.templateId ? ws.templateById.get(task.templateId) : undefined
+  if (template) engine.mutate('task', template.id, { deleted: true })
+  engine.mutate('task', task.id, { templateId: null })
+}
+
+function addDaysTo(date: string, days: number): string {
+  const [y, m, d] = date.split('-').map(Number) as [number, number, number]
+  return views.toCalendarDate(new Date(y, m - 1, d + days))
 }
 
 export function toggleProject(engine: SyncEngine, project: Project): void {
@@ -55,8 +178,7 @@ export function deleteArea(engine: SyncEngine, ws: Workspace, area: Area): void 
  * its project. Leaving the Inbox for a container makes the task Anytime.
  */
 export function moveTask(engine: SyncEngine, ws: Workspace, task: Task, target: MoveTarget): void {
-  const fields = moveFields(ws, task, target)
-  if (Object.keys(fields).length > 0) engine.mutate('task', task.id, fields)
+  commitTask(engine, ws, task, moveFields(ws, task, target))
 }
 
 /** The field changes that `moveTask` would make; empty when nothing changes. */
@@ -133,10 +255,11 @@ const LINGER_MS = 1200
  */
 export function useLinger(
   visible: Task[],
-  all: Task[],
+  ws: Workspace,
   engine: SyncEngine,
   sort: (a: Task, b: Task) => number = views.byOrder,
 ): { shown: Task[]; toggle: (task: Task) => void } {
+  const all = ws.tasks
   const [lingering, setLingering] = useState<Set<string>>(new Set())
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>())
 
@@ -159,7 +282,7 @@ export function useLinger(
   }
 
   function toggle(task: Task) {
-    toggleTask(engine, task)
+    toggleTask(engine, ws, task)
     setLingering((s) => new Set(s).add(task.id))
     const existing = timers.current.get(task.id)
     if (existing) clearTimeout(existing)

@@ -1,5 +1,11 @@
-import type { Area, Project, Task, When } from '@dingen/core'
-import { toCalendarDate, views } from '@dingen/core'
+import type { Area, Project, Repeat, Task, When } from '@dingen/core'
+import {
+  addDays as coreAddDays,
+  daysBetween,
+  parseCalendarDate,
+  toCalendarDate,
+  views,
+} from '@dingen/core'
 import { formatDate, type MessageKey, t } from './i18n/index.js'
 import type { Workspace } from './store/context.js'
 
@@ -123,14 +129,35 @@ export function completedDate(item: { completedAt: string | null }): string {
   return item.completedAt ? toCalendarDate(new Date(item.completedAt)) : ''
 }
 
-export function parseDate(date: string): Date {
-  const [y, m, d] = date.split('-').map(Number) as [number, number, number]
-  return new Date(y, m - 1, d)
+export const parseDate = parseCalendarDate
+export const addDays = coreAddDays
+
+/** "today", "tomorrow", "3 days", or "2 days late" for a deadline. */
+export function describeDeadline(deadline: string, today: string): { text: string; late: boolean } {
+  const days = daysBetween(today, deadline)
+  if (days === 0) return { text: t('deadline.today'), late: false }
+  if (days === 1) return { text: t('deadline.tomorrow'), late: false }
+  if (days > 1) return { text: t('deadline.days', { n: days }), late: false }
+  return { text: t(-days === 1 ? 'deadline.late.one' : 'deadline.late', { n: -days }), late: true }
 }
 
-export function addDays(date: string, days: number): string {
-  const base = parseDate(date)
-  return toCalendarDate(new Date(base.getFullYear(), base.getMonth(), base.getDate() + days))
+/** "Every week on Mon, Thu", "Every 2 months after completion". */
+export function describeRepeat(rule: Repeat): string {
+  const base =
+    rule.every === 1
+      ? t(`repeat.each.${rule.unit}`)
+      : t(`repeat.everyN.${rule.unit}`, { n: rule.every })
+  const parts = [base]
+  if (rule.unit === 'week' && rule.basis === 'schedule') {
+    const days = rule.weekdays.length > 0 ? rule.weekdays : [parseDate(rule.start).getDay()]
+    const names = days
+      .slice()
+      .sort((a, b) => a - b)
+      .map((d) => formatDate(new Date(2026, 10, 1 + d), { weekday: 'short' }))
+    parts.push(t('repeat.on', { days: names.join(', ') }))
+  }
+  if (rule.basis === 'completion') parts.push(t('repeat.afterCompletion'))
+  return parts.join(' ')
 }
 
 /** "today", "tomorrow", "Wednesday", "12 Nov", "3 Jan 2027", in the current locale. */

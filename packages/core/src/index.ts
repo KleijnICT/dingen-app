@@ -13,11 +13,12 @@ export interface HealthStatus {
   sqliteVersion: string
 }
 
+export * from './dates.js'
 export * from './entities.js'
 export * from './factories.js'
 export * from './hlc.js'
 export * from './ids.js'
 export * from './order.js'
+export * from './repeat.js'
 export * from './sync.js'
 export * as views from './views.js'
-export { toCalendarDate } from './views.js'

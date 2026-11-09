@@ -1,5 +1,8 @@
+import { toCalendarDate } from './dates.js'
 import type { Area, CalendarDate, Heading, Project, Task } from './entities.js'
 import { compareOrder } from './order.js'
+
+export { toCalendarDate }
 
 /**
  * De lijsten van Things als pure functies. Gedeeld door web, server en MCP,
@@ -7,19 +10,29 @@ import { compareOrder } from './order.js'
  */
 
 export function isOpen(item: Task | Project): boolean {
-  return !item.deleted && item.status === 'open'
+  return !item.deleted && item.status === 'open' && !('repeat' in item && item.repeat !== null)
 }
 
 export function isInbox(task: Task): boolean {
   return isOpen(task) && task.when.kind === 'inbox'
 }
 
+/** Vandaag: gepland voor vandaag of eerder, of een deadline die vandaag of eerder is. */
 export function isToday(item: Task | Project, today: CalendarDate): boolean {
-  return isOpen(item) && item.when.kind === 'date' && item.when.date <= today
+  if (!isOpen(item)) return false
+  if (item.when.kind === 'date' && item.when.date <= today) return true
+  return item.deadline !== null && item.deadline <= today
+}
+
+/** De datum waarop een item in Binnenkort staat: zijn datum, anders zijn deadline. */
+export function upcomingDate(item: Task | Project, today: CalendarDate): CalendarDate | null {
+  if (!isOpen(item) || isToday(item, today)) return null
+  if (item.when.kind === 'date') return item.when.date
+  return item.deadline !== null && item.deadline > today ? item.deadline : null
 }
 
 export function isUpcoming(item: Task | Project, today: CalendarDate): boolean {
-  return isOpen(item) && item.when.kind === 'date' && item.when.date > today
+  return upcomingDate(item, today) !== null
 }
 
 /** Anytime: alles wat nu beschikbaar is, inclusief Vandaag, zonder Inbox en Ooit. */
@@ -43,8 +56,11 @@ export function notInSomedayProject(tasks: Task[], projects: Project[]): Task[] 
   return tasks.filter((t) => t.projectId === null || !someday.has(t.projectId))
 }
 
+/** Taken van een project, zonder templates. */
 export function projectTasks(tasks: Task[], projectId: string): Task[] {
-  return tasks.filter((t) => !t.deleted && t.projectId === projectId).sort(byOrder)
+  return tasks
+    .filter((t) => !t.deleted && t.repeat === null && t.projectId === projectId)
+    .sort(byOrder)
 }
 
 export function headingsOf(headings: Heading[], projectId: string): Heading[] {
@@ -54,7 +70,7 @@ export function headingsOf(headings: Heading[], projectId: string): Heading[] {
 /** Taken direct in een gebied (niet via een project). */
 export function areaTasks(tasks: Task[], areaId: string): Task[] {
   return tasks
-    .filter((t) => !t.deleted && t.projectId === null && t.areaId === areaId)
+    .filter((t) => !t.deleted && t.repeat === null && t.projectId === null && t.areaId === areaId)
     .sort(byOrder)
 }
 
@@ -71,7 +87,7 @@ export function progress(projectId: string, tasks: Task[]): number {
   let open = 0
   let done = 0
   for (const t of tasks) {
-    if (t.deleted || t.projectId !== projectId) continue
+    if (t.deleted || t.repeat !== null || t.projectId !== projectId) continue
     if (t.status === 'open') open += 1
     else if (t.status === 'completed') done += 1
   }
@@ -83,7 +99,7 @@ export function isSomeday(item: Task | Project): boolean {
 }
 
 export function isLogbook(item: Task | Project): boolean {
-  return !item.deleted && item.status !== 'open'
+  return !item.deleted && item.status !== 'open' && !('repeat' in item && item.repeat !== null)
 }
 
 export function byOrder<T extends { order: string }>(a: T, b: T): number {
@@ -115,8 +131,8 @@ export function upcoming(tasks: Task[], date: CalendarDate): Task[] {
   return tasks
     .filter((t) => isUpcoming(t, date))
     .sort((a, b) => {
-      const da = a.when.kind === 'date' ? a.when.date : ''
-      const db = b.when.kind === 'date' ? b.when.date : ''
+      const da = upcomingDate(a, date) ?? ''
+      const db = upcomingDate(b, date) ?? ''
       return da.localeCompare(db) || byOrder(a, b)
     })
 }
@@ -131,12 +147,4 @@ export function someday(tasks: Task[]): Task[] {
 
 export function logbook(tasks: Task[]): Task[] {
   return tasks.filter(isLogbook).sort(byCompletedDesc)
-}
-
-/** Kalenderdatum van een tijdstip in de lokale tijdzone van de aanroeper. */
-export function toCalendarDate(d: Date = new Date()): CalendarDate {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
 }

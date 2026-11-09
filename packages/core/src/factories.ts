@@ -24,6 +24,7 @@ export function newTask(fields: Partial<Task> & { title: string }): Task {
     deadline: null,
     tagIds: [],
     repeat: null,
+    templateId: null,
     order: firstOrder(),
     todayOrder: null,
     completedAt: null,

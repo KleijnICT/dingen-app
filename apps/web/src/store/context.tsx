@@ -38,6 +38,8 @@ export interface Workspace {
   areaById: Map<string, Area>
   headingById: Map<string, Heading>
   tagById: Map<string, Tag>
+  /** Repeating tasks (hidden templates) by id. */
+  templateById: Map<string, Task>
 }
 
 export const WorkspaceContext = createContext<Workspace | null>(null)
@@ -69,6 +71,7 @@ export function useBuildWorkspace(today: string): Workspace {
       areaById: new Map(areas.map((a) => [a.id, a])),
       headingById: new Map(headings.map((h) => [h.id, h])),
       tagById: new Map(tags.map((t) => [t.id, t])),
+      templateById: new Map(tasks.filter((t) => t.repeat !== null).map((t) => [t.id, t])),
     }
   }, [engine, version, today])
 }

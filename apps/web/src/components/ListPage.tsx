@@ -40,7 +40,7 @@ export function ListPage({ list, focusSignal }: Props) {
   const visible = listTasks(list.id, ws)
   const { shown: all, toggle } = useLinger(
     visible,
-    ws.tasks,
+    ws,
     engine,
     list.id === 'today' ? views.byTodayOrder : views.byOrder,
   )
@@ -132,15 +132,19 @@ export function ListPage({ list, focusSignal }: Props) {
       break
     }
     case 'upcoming':
-      body = groupByDate(shown, projects, (item) =>
-        item.when.kind === 'date' ? item.when.date : '',
-      ).map((g) => (
-        <div key={g.date} className="group">
-          <h2 className="group-title">{describeDate(g.date, ws.today)}</h2>
-          {g.projects.length > 0 && <ul className="tasks">{g.projects.map(projectRow)}</ul>}
-          {group(`date:${g.date}`, { kind: 'when', when: { kind: 'date', date: g.date } }, g.tasks)}
-        </div>
-      ))
+      body = groupByDate(shown, projects, (item) => views.upcomingDate(item, ws.today) ?? '').map(
+        (g) => (
+          <div key={g.date} className="group">
+            <h2 className="group-title">{describeDate(g.date, ws.today)}</h2>
+            {g.projects.length > 0 && <ul className="tasks">{g.projects.map(projectRow)}</ul>}
+            {group(
+              `date:${g.date}`,
+              { kind: 'when', when: { kind: 'date', date: g.date } },
+              g.tasks,
+            )}
+          </div>
+        ),
+      )
       break
     case 'logbook':
       body = groupByDate(shown, projects, completedDate, true).map((g) => (

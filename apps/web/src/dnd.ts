@@ -4,7 +4,7 @@ import type { DragEndEvent } from '@dnd-kit/core'
 import type { ListId } from './lists.js'
 import type { Workspace } from './store/context.js'
 import type { SyncEngine } from './store/engine.js'
-import { type MoveTarget, moveFields } from './taskActions.js'
+import { commitTask, type MoveTarget, moveFields } from './taskActions.js'
 
 /**
  * Drag and drop in one place. Every draggable or droppable element carries
@@ -63,14 +63,19 @@ function dropTask(
   switch (over.type) {
     case 'list': {
       const target = listTarget(over.listId, ws.today)
-      if (target) commit(engine, task, moveFields(ws, task, target))
+      if (target) commitTask(engine, ws, task, moveFields(ws, task, target))
       return
     }
     case 'project':
-      commit(engine, task, moveFields(ws, task, { kind: 'project', projectId: over.project.id }))
+      commitTask(
+        engine,
+        ws,
+        task,
+        moveFields(ws, task, { kind: 'project', projectId: over.project.id }),
+      )
       return
     case 'area':
-      commit(engine, task, moveFields(ws, task, { kind: 'area', areaId: over.area.id }))
+      commitTask(engine, ws, task, moveFields(ws, task, { kind: 'area', areaId: over.area.id }))
       return
     case 'group': {
       const siblings = over.siblings.filter((s) => s.id !== task.id)
@@ -78,7 +83,7 @@ function dropTask(
       const key = orderKey(over.group)
       const last = siblings.at(-1)
       fields[over.group.orderField ?? 'order'] = orderBetween(last ? key(last) : null, null)
-      commit(engine, task, fields)
+      commitTask(engine, ws, task, fields)
       return
     }
     case 'task': {
@@ -93,7 +98,7 @@ function dropTask(
         before ? key(before) : null,
         after ? key(after) : null,
       )
-      commit(engine, task, fields)
+      commitTask(engine, ws, task, fields)
       return
     }
   }
@@ -101,10 +106,6 @@ function dropTask(
 
 function targetFields(ws: Workspace, task: Task, group: TaskGroupInfo): Record<string, unknown> {
   return group.target ? moveFields(ws, task, group.target) : {}
-}
-
-function commit(engine: SyncEngine, task: Task, fields: Record<string, unknown>): void {
-  if (Object.keys(fields).length > 0) engine.mutate('task', task.id, fields)
 }
 
 export function listTarget(listId: ListId, today: string): MoveTarget | null {

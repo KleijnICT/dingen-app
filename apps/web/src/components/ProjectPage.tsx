@@ -6,6 +6,7 @@ import { navigate } from '../router.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { deleteProject, toggleProject, useLinger } from '../taskActions.js'
 import { ConfirmButton } from './ConfirmButton.js'
+import { DeadlineField } from './DeadlineField.js'
 import { ProgressCircle } from './Icons.js'
 import { InlineInput } from './InlineInput.js'
 import { QuickAdd } from './QuickAdd.js'
@@ -32,7 +33,7 @@ export function ProjectPage({ project, focusSignal }: Props) {
   const all = views.projectTasks(ws.tasks, project.id)
   const open = all.filter((task) => task.status === 'open')
   const completed = all.filter((task) => task.status !== 'open')
-  const { shown: shownOpen, toggle } = useLinger(open, ws.tasks, engine)
+  const { shown: shownOpen, toggle } = useLinger(open, ws, engine)
   // Completed today stays at the bottom of the project until the day changes, as in Things.
   const lingering = new Set(shownOpen.map((task) => task.id))
   const completedToday = completed
@@ -140,6 +141,11 @@ export function ProjectPage({ project, focusSignal }: Props) {
           evening={false}
           today={ws.today}
           onChange={(when) => engine.mutate('project', project.id, { when })}
+        />
+        <DeadlineField
+          deadline={project.deadline}
+          today={ws.today}
+          onChange={(deadline) => engine.mutate('project', project.id, { deadline })}
         />
         <TagEditor
           tagIds={project.tagIds}

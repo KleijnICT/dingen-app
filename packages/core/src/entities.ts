@@ -57,8 +57,22 @@ export const Heading = Base.extend({
 })
 export type Heading = z.infer<typeof Heading>
 
-/** Herhaalregel; wordt in onderdeel 6 ingevuld. Nu alleen "geen herhaling". */
-export const Repeat = z.null()
+/**
+ * Herhaalregel van een herhalende taak (template). `schedule` herhaalt op
+ * vaste datums vanaf `start`; `completion` telt het interval vanaf de dag van
+ * afronden. Maandelijks en jaarlijks nemen de dag van de maand van `start`.
+ */
+export const Repeat = z.object({
+  unit: z.enum(['day', 'week', 'month', 'year']),
+  every: z.number().int().min(1).max(999),
+  basis: z.enum(['schedule', 'completion']),
+  /** Alleen voor week + schedule; leeg betekent de weekdag van `start`. 0 = zondag. */
+  weekdays: z.array(z.number().int().min(0).max(6)),
+  start: CalendarDate,
+  until: CalendarDate.nullable(),
+  /** Deadline zoveel dagen na de datum van elk exemplaar; null = geen deadline. */
+  deadlineDays: z.number().int().min(0).max(3650).nullable(),
+})
 export type Repeat = z.infer<typeof Repeat>
 
 export const Task = Base.extend({
@@ -72,7 +86,9 @@ export const Task = Base.extend({
   evening: z.boolean(),
   deadline: CalendarDate.nullable(),
   tagIds: z.array(Id),
-  repeat: Repeat,
+  /** Een taak mét regel is een verborgen template; zijn exemplaren wijzen ernaar. */
+  repeat: Repeat.nullable(),
+  templateId: Id.nullable().default(null),
   order: Order,
   /** Volgorde in Vandaag, los van de projectvolgorde; null betekent: volg `order`. */
   todayOrder: Order.nullable().default(null),

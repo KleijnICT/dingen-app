@@ -871,3 +871,60 @@ button.link.danger {
 .confirm-question {
   color: var(--muted);
 }
+
+/* Deadlines and repeating */
+.deadline {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--muted);
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+.deadline.late {
+  color: #c2362b;
+}
+.deadline-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.deadline-label {
+  color: var(--muted);
+  font-size: 0.9em;
+}
+.task-delete.visible {
+  opacity: 1;
+}
+.repeat-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 0;
+  width: 100%;
+}
+.repeat-line {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 0.9em;
+  font-weight: 400;
+}
+.repeat-line select,
+.repeat-number {
+  font: inherit;
+  padding: 3px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: inherit;
+}
+.repeat-number {
+  width: 4.5em;
+}

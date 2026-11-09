@@ -4,8 +4,10 @@ import { type CSSProperties, type KeyboardEvent, useEffect, useRef, useState } f
 import { formatDate, useT } from '../i18n/index.js'
 import { containerOf, describeWhen } from '../lists.js'
 import { useEngine, useWorkspace } from '../store/context.js'
-import { moveTask } from '../taskActions.js'
-import { CheckIcon, MoonIcon, NotesIcon } from './Icons.js'
+import { commitTask, deleteTask, moveTask } from '../taskActions.js'
+import { DeadlineBadge, DeadlineField } from './DeadlineField.js'
+import { CheckIcon, MoonIcon, NotesIcon, RepeatIcon } from './Icons.js'
+import { RepeatEditor } from './RepeatEditor.js'
 import { TagEditor } from './TagEditor.js'
 import { WhenPicker } from './WhenPicker.js'
 
@@ -88,6 +90,8 @@ export function TaskRow({
           ))}
           {task.evening && <MoonIcon className="meta-icon" />}
           {task.notes && <NotesIcon className="meta-icon" />}
+          {task.templateId && <RepeatIcon className="meta-icon" />}
+          {!done && task.deadline && <DeadlineBadge deadline={task.deadline} today={ws.today} />}
           {showWhen && task.when.kind === 'date' && (
             <span className="meta-when">{describeWhen(task.when, ws.today)}</span>
           )}
@@ -104,7 +108,7 @@ export function TaskRow({
           className="task-delete"
           aria-label={t('task.delete')}
           title={t('task.delete')}
-          onClick={() => engine.mutate('task', task.id, { deleted: true })}
+          onClick={() => deleteTask(engine, ws, task)}
         >
           ×
         </button>
@@ -136,7 +140,7 @@ function TaskEditor({ task, onClose, onToggle }: EditorProps) {
     const fields: Record<string, unknown> = {}
     if (title !== task.title) fields.title = title
     if (notes !== task.notes) fields.notes = notes
-    if (Object.keys(fields).length > 0) engine.mutate('task', task.id, fields)
+    commitTask(engine, ws, task, fields)
   }
 
   function close() {
@@ -206,12 +210,20 @@ function TaskEditor({ task, onClose, onToggle }: EditorProps) {
         when={task.when}
         evening={task.evening}
         today={ws.today}
-        onChange={(when, evening) => engine.mutate('task', task.id, { when, evening })}
+        onChange={(when, evening) => commitTask(engine, ws, task, { when, evening })}
       />
+      <div className="editor-line">
+        <DeadlineField
+          deadline={task.deadline}
+          today={ws.today}
+          onChange={(deadline) => commitTask(engine, ws, task, { deadline })}
+        />
+        <RepeatEditor task={task} />
+      </div>
       <div className="editor-line">
         <TagEditor
           tagIds={task.tagIds}
-          onChange={(tagIds) => engine.mutate('task', task.id, { tagIds })}
+          onChange={(tagIds) => commitTask(engine, ws, task, { tagIds })}
         />
       </div>
       <div className="editor-line">
@@ -282,7 +294,7 @@ function TaskEditor({ task, onClose, onToggle }: EditorProps) {
           type="button"
           className="link danger"
           onClick={() => {
-            engine.mutate('task', task.id, { deleted: true })
+            deleteTask(engine, ws, task)
             onClose()
           }}
         >

@@ -3,6 +3,7 @@ import { views } from '@dingen/core'
 import { formatDate, useT } from '../i18n/index.js'
 import { navigate, projectPath } from '../router.js'
 import { useWorkspace } from '../store/context.js'
+import { DeadlineBadge } from './DeadlineField.js'
 import { ProgressCircle } from './Icons.js'
 
 interface Props {
@@ -30,6 +31,9 @@ export function ProjectRow({ project, showArea = true }: Props) {
           {showArea && area && <span className="task-caption">{area.title}</span>}
         </span>
         <span className="task-meta">
+          {!done && project.deadline && (
+            <DeadlineBadge deadline={project.deadline} today={ws.today} />
+          )}
           {done && project.completedAt && (
             <span className="meta-when">
               {formatDate(new Date(project.completedAt), { dateStyle: 'medium' })}

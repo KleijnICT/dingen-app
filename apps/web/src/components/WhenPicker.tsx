@@ -43,7 +43,7 @@ export function WhenPicker({ when, evening, today, onChange, forProject = false 
     {
       label: t('when.tomorrow'),
       active: isDate && when.date === addDays(today, 1),
-      apply: () => onChange({ kind: 'date', date: addDays(today, 1) }, false),
+      apply: () => onChange({ kind: 'date', date: addDays(today, 1) }, evening),
     },
     {
       label: t('when.anytime'),
@@ -75,7 +75,7 @@ export function WhenPicker({ when, evening, today, onChange, forProject = false 
         value={isDate ? when.date : ''}
         min={today}
         onChange={(e) => {
-          if (e.target.value) onChange({ kind: 'date', date: e.target.value }, false)
+          if (e.target.value) onChange({ kind: 'date', date: e.target.value }, evening)
         }}
         aria-label={t('when.pickDate')}
       />
