@@ -204,7 +204,7 @@ export class SyncEngine {
     if (res.status === 400) {
       // Een afgekeurde wijziging zou een bug zijn; laat hem niet de hele outbox blokkeren.
       const body = (await res.json()) as { problems?: { changeId: string; issues: string[] }[] }
-      console.error('Server keurde wijzigingen af', body.problems)
+      console.error('Server rejected changes', body.problems)
       await this.db.outbox.bulkDelete((body.problems ?? []).map((p) => p.changeId))
       return
     }

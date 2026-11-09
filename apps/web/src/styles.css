@@ -59,7 +59,7 @@ code {
   font-size: 0.9em;
 }
 
-/* --- Inloggen --- */
+/* --- Sign in --- */
 .shell {
   min-height: 100vh;
   display: grid;
@@ -99,6 +99,15 @@ input,
 textarea {
   font: inherit;
   color: var(--fg);
+}
+.card select {
+  font: inherit;
+  color: var(--fg);
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  max-width: 280px;
 }
 .card input,
 .row input {
@@ -165,7 +174,7 @@ button.link.danger {
   user-select: all;
 }
 
-/* --- Venster --- */
+/* --- Window --- */
 .app {
   display: grid;
   grid-template-columns: 220px 1fr;
@@ -210,16 +219,16 @@ button.link.danger {
 .nav-item.inbox .nav-icon {
   color: var(--inbox);
 }
-.nav-item.vandaag .nav-icon {
+.nav-item.today .nav-icon {
   color: var(--today);
 }
-.nav-item.binnenkort .nav-icon {
+.nav-item.upcoming .nav-icon {
   color: var(--upcoming);
 }
-.nav-item.ooit .nav-icon {
+.nav-item.someday .nav-icon {
   color: var(--someday);
 }
-.nav-item.logboek .nav-icon {
+.nav-item.logbook .nav-icon {
   color: var(--logbook);
 }
 .nav-item.account .nav-icon {
@@ -282,7 +291,7 @@ button.link.danger {
   margin: 0;
   letter-spacing: -0.02em;
 }
-.list-page.vandaag .list-header h1 {
+.list-page.today .list-header h1 {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -482,7 +491,7 @@ button.link.danger {
   padding-left: 30px;
 }
 
-/* --- Smal scherm --- */
+/* --- Narrow screens --- */
 @media (max-width: 720px) {
   .app {
     grid-template-columns: 1fr;

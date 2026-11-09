@@ -1,74 +1,58 @@
 import type { Task, When } from '@dingen/core'
 import { toCalendarDate, views } from '@dingen/core'
-import type { ReactNode } from 'react'
+import { formatDate, type MessageKey, t } from './i18n/index.js'
 
-export type ListId = 'inbox' | 'vandaag' | 'binnenkort' | 'ooit' | 'logboek'
+export type ListId = 'inbox' | 'today' | 'upcoming' | 'someday' | 'logbook'
 
 export interface ListDef {
   id: ListId
-  title: string
+  titleKey: MessageKey
   path: string
-  /** `when` voor een taak die in deze lijst wordt toegevoegd; null: geen snel toevoegen. */
+  /** `when` for a task added in this list; null means no quick add. */
   newWhen: (today: string) => When | null
 }
 
 export const LISTS: ListDef[] = [
-  { id: 'inbox', title: 'Inbox', path: '/inbox', newWhen: () => ({ kind: 'inbox' }) },
+  { id: 'inbox', titleKey: 'list.inbox', path: '/inbox', newWhen: () => ({ kind: 'inbox' }) },
   {
-    id: 'vandaag',
-    title: 'Vandaag',
-    path: '/vandaag',
+    id: 'today',
+    titleKey: 'list.today',
+    path: '/today',
     newWhen: (today) => ({ kind: 'date', date: today }),
   },
   {
-    id: 'binnenkort',
-    title: 'Binnenkort',
-    path: '/binnenkort',
+    id: 'upcoming',
+    titleKey: 'list.upcoming',
+    path: '/upcoming',
     newWhen: (today) => ({ kind: 'date', date: addDays(today, 1) }),
   },
-  { id: 'ooit', title: 'Ooit', path: '/ooit', newWhen: () => ({ kind: 'someday' }) },
-  { id: 'logboek', title: 'Logboek', path: '/logboek', newWhen: () => null },
+  {
+    id: 'someday',
+    titleKey: 'list.someday',
+    path: '/someday',
+    newWhen: () => ({ kind: 'someday' }),
+  },
+  { id: 'logbook', titleKey: 'list.logbook', path: '/logbook', newWhen: () => null },
 ]
 
 export function listTasks(id: ListId, tasks: Task[], today: string): Task[] {
   switch (id) {
     case 'inbox':
       return views.inbox(tasks)
-    case 'vandaag':
+    case 'today':
       return views.today(tasks, today)
-    case 'binnenkort':
+    case 'upcoming':
       return views.upcoming(tasks, today)
-    case 'ooit':
+    case 'someday':
       return views.someday(tasks)
-    case 'logboek':
+    case 'logbook':
       return views.logbook(tasks)
   }
 }
 
 export function countFor(id: ListId, tasks: Task[], today: string): number | null {
-  if (id === 'logboek' || id === 'binnenkort') return null
+  if (id === 'logbook' || id === 'upcoming') return null
   return listTasks(id, tasks, today).length
-}
-
-export function addDays(date: string, days: number): string {
-  const [y, m, d] = date.split('-').map(Number) as [number, number, number]
-  const next = new Date(y, m - 1, d + days)
-  return toCalendarDate(next)
-}
-
-const DAY_NAMES = ['zondag', 'maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag']
-const MONTHS = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec']
-
-/** "morgen", "woensdag", "12 nov", "3 jan 2027". */
-export function describeDate(date: string, today: string): string {
-  if (date === today) return 'vandaag'
-  if (date === addDays(today, 1)) return 'morgen'
-  const [y, m, d] = date.split('-').map(Number) as [number, number, number]
-  const target = new Date(y, m - 1, d)
-  const diff = Math.round((target.getTime() - parseDate(today).getTime()) / 86_400_000)
-  if (diff > 1 && diff < 7) return DAY_NAMES[target.getDay()] as string
-  const base = `${d} ${MONTHS[m - 1]}`
-  return y === parseDate(today).getFullYear() ? base : `${base} ${y}`
 }
 
 export function parseDate(date: string): Date {
@@ -76,14 +60,38 @@ export function parseDate(date: string): Date {
   return new Date(y, m - 1, d)
 }
 
-export function describeWhen(when: When, today: string): ReactNode {
+export function addDays(date: string, days: number): string {
+  const base = parseDate(date)
+  return toCalendarDate(new Date(base.getFullYear(), base.getMonth(), base.getDate() + days))
+}
+
+/** "today", "tomorrow", "Wednesday", "12 Nov", "3 Jan 2027", in the current locale. */
+export function describeDate(date: string, today: string): string {
+  if (date === today) return t('date.today')
+  if (date === addDays(today, 1)) return t('date.tomorrow')
+  const target = parseDate(date)
+  const diff = Math.round((target.getTime() - parseDate(today).getTime()) / 86_400_000)
+  if (diff > 1 && diff < 7) return formatDate(target, { weekday: 'long' })
+  const sameYear = target.getFullYear() === parseDate(today).getFullYear()
+  return formatDate(target, {
+    day: 'numeric',
+    month: 'short',
+    ...(sameYear ? {} : { year: 'numeric' }),
+  })
+}
+
+export function describeLongDate(date: string): string {
+  return formatDate(parseDate(date), { weekday: 'long', day: 'numeric', month: 'long' })
+}
+
+export function describeWhen(when: When, today: string): string {
   switch (when.kind) {
     case 'inbox':
-      return 'Inbox'
+      return t('when.inbox')
     case 'anytime':
-      return 'Anytime'
+      return t('when.anytime')
     case 'someday':
-      return 'Ooit'
+      return t('when.someday')
     case 'date':
       return describeDate(when.date, today)
   }

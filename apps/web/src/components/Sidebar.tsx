@@ -1,5 +1,6 @@
 import type { Task } from '@dingen/core'
 import type { ReactElement } from 'react'
+import { useT } from '../i18n/index.js'
 import { countFor, LISTS, type ListId } from '../lists.js'
 import { navigate } from '../router.js'
 import type { SyncStatus } from '../store/engine.js'
@@ -15,22 +16,17 @@ interface Props {
 
 const ICONS: Record<ListId, (p: { className?: string }) => ReactElement> = {
   inbox: InboxIcon,
-  vandaag: StarIcon,
-  binnenkort: CalendarIcon,
-  ooit: SomedayIcon,
-  logboek: LogbookIcon,
-}
-
-const STATUS_TEXT: Record<SyncStatus, string> = {
-  idle: 'Gesynchroniseerd',
-  syncing: 'Synchroniseren…',
-  offline: 'Offline, wijzigingen staan in de wacht',
-  unauthorized: 'Uitgelogd',
+  today: StarIcon,
+  upcoming: CalendarIcon,
+  someday: SomedayIcon,
+  logbook: LogbookIcon,
 }
 
 export function Sidebar({ path, tasks, today, status, email }: Props) {
+  const t = useT()
+  const statusText = t(`sync.${status}`)
   return (
-    <nav className="sidebar" aria-label="Lijsten">
+    <nav className="sidebar" aria-label={t('nav.lists')}>
       <ul className="nav">
         {LISTS.map((list) => {
           const Icon = ICONS[list.id]
@@ -46,7 +42,7 @@ export function Sidebar({ path, tasks, today, status, email }: Props) {
                 }}
               >
                 <Icon className="nav-icon" />
-                <span className="nav-title">{list.title}</span>
+                <span className="nav-title">{t(list.titleKey)}</span>
                 {count !== null && count > 0 && <span className="nav-count">{count}</span>}
               </a>
             </li>
@@ -64,11 +60,11 @@ export function Sidebar({ path, tasks, today, status, email }: Props) {
           title={email}
         >
           <PersonIcon className="nav-icon" />
-          <span className="nav-title">Account</span>
+          <span className="nav-title">{t('nav.account')}</span>
         </a>
-        <p className={`sync-status ${status}`} title={STATUS_TEXT[status]}>
+        <p className={`sync-status ${status}`} title={statusText}>
           <span className="dot" />
-          <span className="sync-text">{STATUS_TEXT[status]}</span>
+          <span className="sync-text">{statusText}</span>
         </p>
       </div>
     </nav>

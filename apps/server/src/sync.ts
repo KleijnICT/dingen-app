@@ -35,7 +35,7 @@ export interface Snapshot {
 
 export class SyncValidationError extends Error {
   constructor(public readonly problems: { changeId: string; issues: string[] }[]) {
-    super('Ongeldige wijzigingen')
+    super('Invalid changes')
   }
 }
 

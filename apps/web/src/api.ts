@@ -1,4 +1,6 @@
-/** Dunne laag over fetch voor de API van dezelfde oorsprong (cookie-sessie). */
+import { t } from './i18n/index.js'
+
+/** Thin layer over fetch for the same-origin API (cookie session). */
 
 export class ApiError extends Error {
   constructor(
@@ -24,7 +26,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
       const body = (await res.json()) as { error?: string }
       if (body.error) code = body.error
     } catch {
-      // geen JSON-body
+      // no JSON body
     }
     throw new ApiError(res.status, code)
   }
@@ -57,15 +59,19 @@ export interface ApiTokenInfo {
   lastUsedAt: string | null
 }
 
-export const ERROR_TEXT: Record<string, string> = {
-  invalid_credentials: 'E-mailadres of wachtwoord klopt niet.',
-  email_taken: 'Er bestaat al een account met dit e-mailadres.',
-  registration_closed: 'Registratie is gesloten op deze server.',
-  too_many_attempts: 'Te veel pogingen. Probeer het over een kwartier opnieuw.',
-  invalid_body: 'Controleer het e-mailadres en een wachtwoord van minstens 8 tekens.',
-}
+const AUTH_ERRORS = new Set([
+  'invalid_credentials',
+  'email_taken',
+  'registration_closed',
+  'too_many_attempts',
+  'invalid_body',
+])
 
 export function errorText(err: unknown): string {
-  if (err instanceof ApiError) return ERROR_TEXT[err.code] ?? `Er ging iets mis (${err.code}).`
-  return 'Geen verbinding met de server.'
+  if (err instanceof ApiError) {
+    if (AUTH_ERRORS.has(err.code))
+      return t(`auth.error.${err.code}` as `auth.error.${string}` & Parameters<typeof t>[0])
+    return t('app.unknownError', { code: err.code })
+  }
+  return t('app.noConnection')
 }

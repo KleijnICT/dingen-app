@@ -1,5 +1,6 @@
 import type { Task } from '@dingen/core'
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react'
+import { formatDate, useT } from '../i18n/index.js'
 import { describeWhen } from '../lists.js'
 import { useEngine } from '../store/context.js'
 import { CheckIcon, MoonIcon, NotesIcon } from './Icons.js'
@@ -17,6 +18,7 @@ interface Props {
 
 export function TaskRow({ task, today, open, showWhen, onOpen, onClose, onToggle }: Props) {
   const engine = useEngine()
+  const t = useT()
   const done = task.status !== 'open'
 
   if (open) {
@@ -28,14 +30,14 @@ export function TaskRow({ task, today, open, showWhen, onOpen, onClose, onToggle
       <button
         type="button"
         className="check"
-        aria-label={done ? 'Markeer als open' : 'Markeer als klaar'}
+        aria-label={done ? t('task.markOpen') : t('task.markDone')}
         aria-pressed={done}
         onClick={onToggle}
       >
         {done && <CheckIcon />}
       </button>
       <button type="button" className="task-main" onClick={onOpen}>
-        <span className="task-title">{task.title || <em>Zonder titel</em>}</span>
+        <span className="task-title">{task.title || <em>{t('task.untitled')}</em>}</span>
         <span className="task-meta">
           {task.evening && <MoonIcon className="meta-icon" />}
           {task.notes && <NotesIcon className="meta-icon" />}
@@ -44,7 +46,7 @@ export function TaskRow({ task, today, open, showWhen, onOpen, onClose, onToggle
           )}
           {done && task.completedAt && (
             <span className="meta-when">
-              {new Date(task.completedAt).toLocaleDateString('nl-NL')}
+              {formatDate(new Date(task.completedAt), { dateStyle: 'medium' })}
             </span>
           )}
         </span>
@@ -53,8 +55,8 @@ export function TaskRow({ task, today, open, showWhen, onOpen, onClose, onToggle
         <button
           type="button"
           className="task-delete"
-          aria-label="Verwijder taak"
-          title="Verwijderen"
+          aria-label={t('task.delete')}
+          title={t('task.delete')}
           onClick={() => engine.mutate('task', task.id, { deleted: true })}
         >
           ×
@@ -73,6 +75,7 @@ interface EditorProps {
 
 function TaskEditor({ task, today, onClose, onToggle }: EditorProps) {
   const engine = useEngine()
+  const t = useT()
   const [title, setTitle] = useState(task.title)
   const [notes, setNotes] = useState(task.notes)
   const titleRef = useRef<HTMLInputElement>(null)
@@ -111,7 +114,7 @@ function TaskEditor({ task, today, onClose, onToggle }: EditorProps) {
         <button
           type="button"
           className="check"
-          aria-label={done ? 'Markeer als open' : 'Markeer als klaar'}
+          aria-label={done ? t('task.markOpen') : t('task.markDone')}
           aria-pressed={done}
           onClick={onToggle}
         >
@@ -123,7 +126,7 @@ function TaskEditor({ task, today, onClose, onToggle }: EditorProps) {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onBlur={commit}
-          placeholder="Titel"
+          placeholder={t('task.title')}
         />
       </div>
       <textarea
@@ -131,7 +134,7 @@ function TaskEditor({ task, today, onClose, onToggle }: EditorProps) {
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
         onBlur={commit}
-        placeholder="Notities"
+        placeholder={t('task.notes')}
         rows={notes ? Math.min(12, notes.split('\n').length + 1) : 2}
       />
       <WhenPicker
@@ -149,10 +152,10 @@ function TaskEditor({ task, today, onClose, onToggle }: EditorProps) {
             onClose()
           }}
         >
-          Verwijderen
+          {t('task.delete')}
         </button>
         <button type="button" className="link" onClick={close}>
-          Klaar
+          {t('task.done')}
         </button>
       </div>
     </li>

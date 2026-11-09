@@ -13,7 +13,7 @@ interface Props {
   onSignedOut: () => void
 }
 
-/** Het venster na inloggen: zijbalk plus de gekozen lijst. */
+/** The window after signing in: sidebar plus the chosen list. */
 export function Shell({ user, onSignedOut }: Props) {
   const engine = useEngine()
   const tasks = useTasks()
@@ -21,7 +21,7 @@ export function Shell({ user, onSignedOut }: Props) {
   const [today, setToday] = useState(toCalendarDate())
   const [focusSignal, setFocusSignal] = useState(0)
 
-  // Dag wisselt om middernacht; eens per minuut kijken is genoeg.
+  // The day changes at midnight; checking once a minute is enough.
   useEffect(() => {
     const timer = setInterval(() => setToday(toCalendarDate()), 60_000)
     return () => clearInterval(timer)
@@ -29,7 +29,7 @@ export function Shell({ user, onSignedOut }: Props) {
 
   useEffect(() => {
     if (path === '/' || (!LISTS.some((l) => l.path === path) && path !== '/account')) {
-      navigate('/vandaag')
+      navigate('/today')
     }
   }, [path])
 

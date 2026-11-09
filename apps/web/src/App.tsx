@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AuthScreen } from './AuthScreen.js'
 import { type AuthStatus, api, errorText, type User } from './api.js'
+import { useT } from './i18n/index.js'
 import { Shell } from './Shell.js'
 import { EngineContext } from './store/context.js'
 import { SyncEngine } from './store/engine.js'
@@ -12,8 +13,9 @@ type State =
   | { kind: 'signedIn'; user: User; engine: SyncEngine }
 
 export function App() {
+  const t = useT()
   const [state, setState] = useState<State>({ kind: 'loading' })
-  // signIn en bootstrap verwijzen naar elkaar; de ref breekt de cirkel.
+  // signIn and bootstrap refer to each other; the ref breaks the cycle.
   const bootstrapRef = useRef<() => Promise<void>>(async () => {})
 
   const signIn = useCallback((user: User) => {
@@ -56,7 +58,7 @@ export function App() {
     case 'loading':
       return (
         <main className="shell">
-          <p className="muted">Laden…</p>
+          <p className="muted">{t('app.loading')}</p>
         </main>
       )
     case 'error':

@@ -1,6 +1,7 @@
 import { APP_NAME } from '@dingen/core'
 import { type FormEvent, useState } from 'react'
 import { type AuthStatus, api, errorText, type User } from './api.js'
+import { useT } from './i18n/index.js'
 
 interface Props {
   status: AuthStatus
@@ -8,7 +9,8 @@ interface Props {
 }
 
 export function AuthScreen({ status, onSignedIn }: Props) {
-  // Zonder gebruikers is registreren de enige zinnige eerste stap.
+  const t = useT()
+  // Without any users, registering is the only sensible first step.
   const [mode, setMode] = useState<'login' | 'register'>(status.hasUsers ? 'login' : 'register')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -29,33 +31,32 @@ export function AuthScreen({ status, onSignedIn }: Props) {
     }
   }
 
-  const canRegister = status.registrationOpen
+  const intro =
+    mode === 'register'
+      ? status.hasUsers
+        ? t('auth.createAccount')
+        : t('auth.welcomeFirst')
+      : t('auth.signInPrompt')
 
   return (
     <main className="shell">
       <form className="card" onSubmit={submit}>
         <h1>{APP_NAME}</h1>
-        <p className="muted">
-          {mode === 'register'
-            ? status.hasUsers
-              ? 'Maak een account aan.'
-              : 'Welkom. Maak het eerste account aan op deze server.'
-            : 'Log in om verder te gaan.'}
-        </p>
+        <p className="muted">{intro}</p>
         <label>
-          E-mailadres
+          {t('auth.email')}
           <input
             type="email"
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            // biome-ignore lint/a11y/noAutofocus: een inlogscherm heeft maar één zinnig startpunt
+            // biome-ignore lint/a11y/noAutofocus: a sign-in form has exactly one sensible starting point
             autoFocus
           />
         </label>
         <label>
-          Wachtwoord
+          {t('auth.password')}
           <input
             type="password"
             autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
@@ -67,15 +68,15 @@ export function AuthScreen({ status, onSignedIn }: Props) {
         </label>
         {error && <p className="error">{error}</p>}
         <button type="submit" disabled={busy}>
-          {mode === 'register' ? 'Account aanmaken' : 'Inloggen'}
+          {mode === 'register' ? t('auth.register') : t('auth.signIn')}
         </button>
-        {canRegister && status.hasUsers && (
+        {status.registrationOpen && status.hasUsers && (
           <button
             type="button"
             className="link"
             onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
           >
-            {mode === 'login' ? 'Nog geen account? Registreren' : 'Al een account? Inloggen'}
+            {mode === 'login' ? t('auth.toRegister') : t('auth.toSignIn')}
           </button>
         )}
       </form>

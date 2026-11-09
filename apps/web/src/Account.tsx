@@ -1,6 +1,15 @@
 import { APP_NAME } from '@dingen/core'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { type ApiTokenInfo, api, errorText, type User } from './api.js'
+import {
+  formatDate,
+  getLocaleChoice,
+  LOCALES,
+  type Locale,
+  type LocaleChoice,
+  setLocaleChoice,
+  useT,
+} from './i18n/index.js'
 
 interface Props {
   user: User
@@ -8,6 +17,7 @@ interface Props {
 }
 
 export function Account({ user, onSignedOut }: Props) {
+  const t = useT()
   const [tokens, setTokens] = useState<ApiTokenInfo[]>([])
   const [name, setName] = useState('')
   const [fresh, setFresh] = useState<{ name: string; token: string } | null>(null)
@@ -32,9 +42,7 @@ export function Account({ user, onSignedOut }: Props) {
     try {
       const { token, info } = await api.post<{ token: string; info: ApiTokenInfo }>(
         '/api/auth/tokens',
-        {
-          name,
-        },
+        { name },
       )
       setFresh({ name: info.name, token })
       setName('')
@@ -62,58 +70,71 @@ export function Account({ user, onSignedOut }: Props) {
   return (
     <section className="list-page account-page">
       <header className="list-header row">
-        <h1>Account</h1>
+        <h1>{t('account.title')}</h1>
         <button type="button" className="link" onClick={logout}>
-          Uitloggen
+          {t('account.signOut')}
         </button>
       </header>
-      <p className="muted">
-        Ingelogd als {user.email} bij {APP_NAME}.
-      </p>
+      <p className="muted">{t('account.signedInAs', { email: user.email, app: APP_NAME })}</p>
+
       <section className="card wide">
-        <h2>API-tokens</h2>
-        <p className="muted">
-          Voor Claude, de MCP-server en toekomstige apps. Een token zie je maar één keer.
-        </p>
+        <h2>{t('account.language')}</h2>
+        <select
+          value={getLocaleChoice()}
+          onChange={(e) => setLocaleChoice(e.target.value as LocaleChoice)}
+          aria-label={t('account.language')}
+        >
+          <option value="system">{t('account.language.system')}</option>
+          {(Object.keys(LOCALES) as Locale[]).map((code) => (
+            <option key={code} value={code}>
+              {LOCALES[code].name}
+            </option>
+          ))}
+        </select>
+
+        <h2>{t('account.tokens')}</h2>
+        <p className="muted">{t('account.tokens.intro')}</p>
         <form className="row" onSubmit={createToken}>
           <input
             type="text"
-            placeholder="Naam, bijv. Claude op de Mac"
+            placeholder={t('account.tokens.namePlaceholder')}
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
             maxLength={100}
           />
-          <button type="submit">Token maken</button>
+          <button type="submit">{t('account.tokens.create')}</button>
         </form>
         {fresh && (
           <div className="token-reveal">
-            <p>
-              Token voor <strong>{fresh.name}</strong>. Kopieer hem nu; hij wordt niet opnieuw
-              getoond.
-            </p>
+            <p>{t('account.tokens.reveal', { name: fresh.name })}</p>
             <code>{fresh.token}</code>
             <button type="button" className="link" onClick={() => setFresh(null)}>
-              Gekopieerd, verbergen
+              {t('account.tokens.hide')}
             </button>
           </div>
         )}
         {error && <p className="error">{error}</p>}
         <ul className="tokens">
-          {tokens.length === 0 && <li className="muted">Nog geen tokens.</li>}
-          {tokens.map((t) => (
-            <li key={t.id} className="row">
+          {tokens.length === 0 && <li className="muted">{t('account.tokens.none')}</li>}
+          {tokens.map((tok) => (
+            <li key={tok.id} className="row">
               <span>
-                <strong>{t.name}</strong> <code>{t.prefix}…</code>
+                <strong>{tok.name}</strong> <code>{tok.prefix}…</code>
                 <span className="muted">
                   {' '}
-                  {t.lastUsedAt
-                    ? `laatst gebruikt ${formatDate(t.lastUsedAt)}`
-                    : 'nog niet gebruikt'}
+                  {tok.lastUsedAt
+                    ? t('account.tokens.lastUsed', {
+                        date: formatDate(new Date(tok.lastUsedAt), {
+                          dateStyle: 'medium',
+                          timeStyle: 'short',
+                        }),
+                      })
+                    : t('account.tokens.unused')}
                 </span>
               </span>
-              <button type="button" className="link danger" onClick={() => revoke(t.id)}>
-                Intrekken
+              <button type="button" className="link danger" onClick={() => revoke(tok.id)}>
+                {t('account.tokens.revoke')}
               </button>
             </li>
           ))}
@@ -121,8 +142,4 @@ export function Account({ user, onSignedOut }: Props) {
       </section>
     </section>
   )
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString('nl-NL', { dateStyle: 'medium', timeStyle: 'short' })
 }

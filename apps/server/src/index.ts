@@ -24,10 +24,10 @@ if (fs.existsSync(config.webDist)) {
   app.use('/*', serveStatic({ root }))
   app.get('/*', serveStatic({ root, path: 'index.html' }))
 } else {
-  console.warn(`Web-build niet gevonden op ${config.webDist}; alleen de API draait.`)
+  console.warn(`Web build not found at ${config.webDist}; serving the API only.`)
 }
 
 serve({ fetch: app.fetch, port: config.port }, (info) => {
-  console.log(`Dingen ${config.version} luistert op http://localhost:${info.port}`)
+  console.log(`Dingen ${config.version} listening on http://localhost:${info.port}`)
   console.log(`Database: ${config.databasePath}`)
 })

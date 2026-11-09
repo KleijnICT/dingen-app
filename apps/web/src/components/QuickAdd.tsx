@@ -1,13 +1,14 @@
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react'
+import { useT } from '../i18n/index.js'
 
 interface Props {
-  placeholder: string
   onAdd: (title: string) => void
-  /** Loopt op als iemand `n` drukt; zet de cursor in het veld. */
+  /** Increments when someone presses `n`; puts the cursor in the field. */
   focusSignal: number
 }
 
-export function QuickAdd({ placeholder, onAdd, focusSignal }: Props) {
+export function QuickAdd({ onAdd, focusSignal }: Props) {
+  const t = useT()
   const [title, setTitle] = useState('')
   const ref = useRef<HTMLInputElement>(null)
 
@@ -35,10 +36,10 @@ export function QuickAdd({ placeholder, onAdd, focusSignal }: Props) {
         ref={ref}
         type="text"
         value={title}
-        placeholder={placeholder}
+        placeholder={t('task.new')}
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={onKeyDown}
-        aria-label="Nieuwe taak"
+        aria-label={t('task.new')}
       />
     </div>
   )

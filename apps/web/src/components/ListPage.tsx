@@ -1,6 +1,7 @@
 import { newTask, orderBetween, type Task } from '@dingen/core'
 import { useEffect, useRef, useState } from 'react'
-import { describeDate, type ListDef, listTasks } from '../lists.js'
+import { type MessageKey, useT } from '../i18n/index.js'
+import { describeDate, describeLongDate, type ListDef, listTasks } from '../lists.js'
 import { useEngine, useTasks } from '../store/context.js'
 import { QuickAdd } from './QuickAdd.js'
 import { TaskRow } from './TaskRow.js'
@@ -15,6 +16,7 @@ const LINGER_MS = 1200
 
 export function ListPage({ list, today, focusSignal }: Props) {
   const engine = useEngine()
+  const t = useT()
   const tasks = useTasks()
   const [openId, setOpenId] = useState<string | null>(null)
   // Net afgevinkte taken blijven even staan, zodat de handeling zichtbaar is.
@@ -66,9 +68,9 @@ export function ListPage({ list, today, focusSignal }: Props) {
     engine.create('task', newTask({ title, when, order: orderBetween(last?.order ?? null, null) }))
   }
 
-  const groups = list.id === 'binnenkort' ? groupByDate(shown, today) : null
-  const evening = list.id === 'vandaag' ? shown.filter((t) => t.evening) : []
-  const day = list.id === 'vandaag' ? shown.filter((t) => !t.evening) : shown
+  const groups = list.id === 'upcoming' ? groupByDate(shown) : null
+  const evening = list.id === 'today' ? shown.filter((task) => task.evening) : []
+  const day = list.id === 'today' ? shown.filter((task) => !task.evening) : shown
 
   const row = (task: Task) => (
     <TaskRow
@@ -76,7 +78,7 @@ export function ListPage({ list, today, focusSignal }: Props) {
       task={task}
       today={today}
       open={openId === task.id}
-      showWhen={list.id === 'inbox' || list.id === 'ooit' ? false : list.id !== 'vandaag'}
+      showWhen={list.id === 'logbook'}
       onOpen={() => setOpenId(task.id)}
       onClose={() => setOpenId(null)}
       onToggle={() => toggle(task)}
@@ -86,13 +88,11 @@ export function ListPage({ list, today, focusSignal }: Props) {
   return (
     <section className={`list-page ${list.id}`}>
       <header className="list-header">
-        <h1>{list.title}</h1>
-        {list.id === 'vandaag' && <p className="muted">{describeLongDate(today)}</p>}
+        <h1>{t(list.titleKey)}</h1>
+        {list.id === 'today' && <p className="muted">{describeLongDate(today)}</p>}
       </header>
-      {list.newWhen(today) && (
-        <QuickAdd placeholder="Nieuwe taak" onAdd={add} focusSignal={focusSignal} />
-      )}
-      {shown.length === 0 && <p className="empty">{EMPTY[list.id]}</p>}
+      {list.newWhen(today) && <QuickAdd onAdd={add} focusSignal={focusSignal} />}
+      {shown.length === 0 && <p className="empty">{t(`list.empty.${list.id}` as MessageKey)}</p>}
       {groups ? (
         groups.map((g) => (
           <div key={g.date} className="group">
@@ -105,7 +105,7 @@ export function ListPage({ list, today, focusSignal }: Props) {
           <ul className="tasks">{day.map(row)}</ul>
           {evening.length > 0 && (
             <div className="group evening">
-              <h2 className="group-title">Vanavond</h2>
+              <h2 className="group-title">{t('list.thisEvening')}</h2>
               <ul className="tasks">{evening.map(row)}</ul>
             </div>
           )}
@@ -115,15 +115,7 @@ export function ListPage({ list, today, focusSignal }: Props) {
   )
 }
 
-const EMPTY: Record<ListDef['id'], string> = {
-  inbox: 'Je Inbox is leeg.',
-  vandaag: 'Niets gepland voor vandaag.',
-  binnenkort: 'Niets gepland.',
-  ooit: 'Niets voor ooit.',
-  logboek: 'Nog niets afgerond.',
-}
-
-function groupByDate(tasks: Task[], _today: string): { date: string; tasks: Task[] }[] {
+function groupByDate(tasks: Task[]): { date: string; tasks: Task[] }[] {
   const groups = new Map<string, Task[]>()
   for (const t of tasks) {
     const date = t.when.kind === 'date' ? t.when.date : ''
@@ -132,13 +124,4 @@ function groupByDate(tasks: Task[], _today: string): { date: string; tasks: Task
   return [...groups]
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, tasks]) => ({ date, tasks }))
-}
-
-function describeLongDate(today: string): string {
-  const [y, m, d] = today.split('-').map(Number) as [number, number, number]
-  return new Date(y, m - 1, d).toLocaleDateString('nl-NL', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  })
 }
