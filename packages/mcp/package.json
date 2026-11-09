@@ -3,6 +3,29 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "MCP-server voor Dingen. Leeg tot onderdeel 8.",
-  "scripts": {}
+  "description": "MCP-server en importhulpen voor Dingen: Claude als client van je takenlijst.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "bin": {
+    "dingen-mcp": "dist/stdio.js",
+    "dingen-import": "dist/import/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@dingen/core": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.0.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
+  }
 }

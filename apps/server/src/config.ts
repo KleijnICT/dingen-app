@@ -11,6 +11,8 @@ export interface Config {
   version: string
   /** DINGEN_REGISTRATION=open laat iedereen een account maken; standaard alleen de eerste gebruiker. */
   registrationOpen: boolean
+  /** DINGEN_TIMEZONE bepaalt "vandaag" voor de MCP-ingang; standaard Europe/Amsterdam. */
+  timezone: string
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -22,5 +24,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     webDist: path.resolve(env.WEB_DIST ?? path.join(here, '../../web/dist')),
     version: env.DINGEN_VERSION ?? '0.1.0-dev',
     registrationOpen: env.DINGEN_REGISTRATION === 'open',
+    timezone: env.DINGEN_TIMEZONE ?? 'Europe/Amsterdam',
   }
 }

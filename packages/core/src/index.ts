@@ -13,6 +13,7 @@ export interface HealthStatus {
   sqliteVersion: string
 }
 
+export * from './actions.js'
 export * from './dates.js'
 export * from './entities.js'
 export * from './factories.js'

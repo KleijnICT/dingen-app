@@ -13,6 +13,7 @@ const app = createApp({
   version: config.version,
   sqliteVersion,
   registrationOpen: config.registrationOpen,
+  timezone: config.timezone,
 })
 
 // Onbekende API-paden krijgen JSON, nooit de SPA-fallback.

@@ -6,6 +6,7 @@ import { AuthService } from './auth/service.js'
 import type { Db } from './db.js'
 import type { AppEnv } from './env.js'
 import { authRoutes } from './routes/auth.js'
+import { mcpRoutes } from './routes/mcp.js'
 import { syncRoutes } from './routes/sync.js'
 import { SyncService } from './sync.js'
 
@@ -15,6 +16,8 @@ export interface AppDeps {
   sqliteVersion: string
   /** Registratie open voor iedereen (hosted) of alleen voor de eerste gebruiker. */
   registrationOpen?: boolean
+  /** Tijdzone waarin "vandaag" wordt bepaald voor de MCP; de browser gebruikt zijn eigen klok. */
+  timezone?: string
 }
 
 /** Bouwt de Hono-app zonder HTTP-server of statische bestanden, zodat tests hem direct kunnen aanroepen. */
@@ -29,6 +32,13 @@ export function createApp(deps: AppDeps) {
     await next()
   })
   app.use('/api/*', authenticate)
+  app.use('/mcp', async (c, next) => {
+    c.set('sync', sync)
+    c.set('auth', auth)
+    await next()
+  })
+  app.use('/mcp', authenticate)
+  app.route('/mcp', mcpRoutes(deps.timezone ?? 'Europe/Amsterdam'))
 
   app.get('/api/health', (c) => {
     const body: HealthStatus = {

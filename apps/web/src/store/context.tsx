@@ -1,5 +1,5 @@
-import type { Area, ChecklistItem, Heading, Project, Tag, Task } from '@dingen/core'
-import { views } from '@dingen/core'
+import type { Area, ChecklistItem, Heading, Project, Snapshot, Tag, Task } from '@dingen/core'
+import { buildSnapshot } from '@dingen/core'
 import { createContext, useContext, useMemo, useSyncExternalStore } from 'react'
 import type { SyncEngine } from './engine.js'
 
@@ -28,21 +28,11 @@ export function useTasks(): Task[] {
  * (deleted ones are already filtered out by the engine), lookup maps and the
  * current day. Provided by the Shell.
  */
-export interface Workspace {
-  today: string
-  tasks: Task[]
-  projects: Project[]
-  areas: Area[]
-  headings: Heading[]
-  tags: Tag[]
+export interface Workspace extends Snapshot {
   projectById: Map<string, Project>
   areaById: Map<string, Area>
   headingById: Map<string, Heading>
   tagById: Map<string, Tag>
-  /** Repeating tasks (hidden templates) by id. */
-  templateById: Map<string, Task>
-  /** Checklist items per task, sorted. */
-  checklistByTask: Map<string, ChecklistItem[]>
 }
 
 export const WorkspaceContext = createContext<Workspace | null>(null)
@@ -64,24 +54,12 @@ export function useBuildWorkspace(today: string): Workspace {
     const headings = engine.entities('heading') as Heading[]
     const tags = engine.entities('tag') as Tag[]
     const checklist = engine.entities('checklistItem') as ChecklistItem[]
-    const checklistByTask = new Map<string, ChecklistItem[]>()
-    for (const item of checklist) {
-      checklistByTask.set(item.taskId, [...(checklistByTask.get(item.taskId) ?? []), item])
-    }
-    for (const items of checklistByTask.values()) items.sort(views.byOrder)
     return {
-      today,
-      tasks,
-      projects,
-      areas,
-      headings,
-      tags,
+      ...buildSnapshot(today, { tasks, projects, areas, headings, tags, checklist }),
       projectById: new Map(projects.map((p) => [p.id, p])),
       areaById: new Map(areas.map((a) => [a.id, a])),
       headingById: new Map(headings.map((h) => [h.id, h])),
       tagById: new Map(tags.map((t) => [t.id, t])),
-      templateById: new Map(tasks.filter((t) => t.repeat !== null).map((t) => [t.id, t])),
-      checklistByTask,
     }
   }, [engine, version, today])
 }
