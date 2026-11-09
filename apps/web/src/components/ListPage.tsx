@@ -1,108 +1,81 @@
-import { newTask, orderBetween, type Task } from '@dingen/core'
-import { useEffect, useRef, useState } from 'react'
+import { newTask, orderBetween, type Project, type Task } from '@dingen/core'
+import { useState } from 'react'
 import { type MessageKey, useT } from '../i18n/index.js'
-import { describeDate, describeLongDate, type ListDef, listTasks } from '../lists.js'
-import { useEngine, useTasks } from '../store/context.js'
+import {
+  containerGroups,
+  describeDate,
+  describeLongDate,
+  groupKeyOf,
+  type ListDef,
+  listProjects,
+  listTasks,
+} from '../lists.js'
+import { areaPath, navigate, projectPath } from '../router.js'
+import { useEngine, useWorkspace } from '../store/context.js'
+import { useLinger } from '../taskActions.js'
+import { ProjectRow } from './ProjectRow.js'
 import { QuickAdd } from './QuickAdd.js'
+import { TagFilter } from './TagFilter.js'
 import { TaskRow } from './TaskRow.js'
 
 interface Props {
   list: ListDef
-  today: string
   focusSignal: number
 }
 
-const LINGER_MS = 1200
-
-export function ListPage({ list, today, focusSignal }: Props) {
+export function ListPage({ list, focusSignal }: Props) {
   const engine = useEngine()
   const t = useT()
-  const tasks = useTasks()
+  const ws = useWorkspace()
   const [openId, setOpenId] = useState<string | null>(null)
-  // Net afgevinkte taken blijven even staan, zodat de handeling zichtbaar is.
-  const [lingering, setLingering] = useState<Map<string, Task>>(new Map())
-  const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>())
+  const [tagFilter, setTagFilter] = useState<string | null>(null)
 
-  useEffect(() => {
-    const pending = timers.current
-    return () => {
-      for (const t of pending.values()) clearTimeout(t)
-    }
-  }, [])
-
-  const visible = listTasks(list.id, tasks, today)
-  const byId = new Map(tasks.map((t) => [t.id, t]))
-  const shown: Task[] = [...visible]
-  for (const [id] of lingering) {
-    const current = byId.get(id)
-    if (current && !shown.some((t) => t.id === id)) shown.push(current)
-  }
-  if (lingering.size > 0) shown.sort((a, b) => (a.order < b.order ? -1 : a.order > b.order ? 1 : 0))
-
-  function toggle(task: Task) {
-    const completing = task.status === 'open'
-    engine.mutate('task', task.id, {
-      status: completing ? 'completed' : 'open',
-      completedAt: completing ? new Date().toISOString() : null,
-    })
-    setLingering((m) => new Map(m).set(task.id, task))
-    const existing = timers.current.get(task.id)
-    if (existing) clearTimeout(existing)
-    timers.current.set(
-      task.id,
-      setTimeout(() => {
-        timers.current.delete(task.id)
-        setLingering((m) => {
-          const next = new Map(m)
-          next.delete(task.id)
-          return next
-        })
-      }, LINGER_MS),
-    )
-  }
+  const visible = listTasks(list.id, ws)
+  const { shown: all, toggle } = useLinger(visible, ws.tasks, engine)
+  const present = new Set(visible.flatMap((task) => task.tagIds))
+  const shown = tagFilter ? all.filter((task) => task.tagIds.includes(tagFilter)) : all
+  const projects = listProjects(list.id, ws)
 
   function add(title: string) {
-    const when = list.newWhen(today)
+    const when = list.newWhen(ws.today)
     if (!when) return
     const last = visible.at(-1)
-    engine.create('task', newTask({ title, when, order: orderBetween(last?.order ?? null, null) }))
+    engine.create(
+      'task',
+      newTask({
+        title,
+        when,
+        tagIds: tagFilter ? [tagFilter] : [],
+        order: orderBetween(last?.order ?? null, null),
+      }),
+    )
   }
-
-  const groups = list.id === 'upcoming' ? groupByDate(shown) : null
-  const evening = list.id === 'today' ? shown.filter((task) => task.evening) : []
-  const day = list.id === 'today' ? shown.filter((task) => !task.evening) : shown
 
   const row = (task: Task) => (
     <TaskRow
       key={task.id}
       task={task}
-      today={today}
       open={openId === task.id}
-      showWhen={list.id === 'logbook'}
+      showWhen={false}
+      showCaption={list.id !== 'anytime' && list.id !== 'someday'}
       onOpen={() => setOpenId(task.id)}
       onClose={() => setOpenId(null)}
       onToggle={() => toggle(task)}
     />
   )
+  const projectRow = (p: Project) => <ProjectRow key={p.id} project={p} />
 
-  return (
-    <section className={`list-page ${list.id}`}>
-      <header className="list-header">
-        <h1>{t(list.titleKey)}</h1>
-        {list.id === 'today' && <p className="muted">{describeLongDate(today)}</p>}
-      </header>
-      {list.newWhen(today) && <QuickAdd onAdd={add} focusSignal={focusSignal} />}
-      {shown.length === 0 && <p className="empty">{t(`list.empty.${list.id}` as MessageKey)}</p>}
-      {groups ? (
-        groups.map((g) => (
-          <div key={g.date} className="group">
-            <h2 className="group-title">{describeDate(g.date, today)}</h2>
-            <ul className="tasks">{g.tasks.map(row)}</ul>
-          </div>
-        ))
-      ) : (
+  let body: React.ReactNode
+  switch (list.id) {
+    case 'today': {
+      const evening = shown.filter((task) => task.evening)
+      const day = shown.filter((task) => !task.evening)
+      body = (
         <>
-          <ul className="tasks">{day.map(row)}</ul>
+          <ul className="tasks">
+            {projects.map(projectRow)}
+            {day.map(row)}
+          </ul>
           {evening.length > 0 && (
             <div className="group evening">
               <h2 className="group-title">{t('list.thisEvening')}</h2>
@@ -110,18 +83,141 @@ export function ListPage({ list, today, focusSignal }: Props) {
             </div>
           )}
         </>
+      )
+      break
+    }
+    case 'upcoming':
+      body = groupByDate(shown, projects, (item) =>
+        item.when.kind === 'date' ? item.when.date : '',
+      ).map((g) => (
+        <div key={g.date} className="group">
+          <h2 className="group-title">{describeDate(g.date, ws.today)}</h2>
+          <ul className="tasks">
+            {g.projects.map(projectRow)}
+            {g.tasks.map(row)}
+          </ul>
+        </div>
+      ))
+      break
+    case 'logbook':
+      body = groupByDate(
+        shown,
+        projects,
+        (item) => (item.completedAt ?? '').slice(0, 10),
+        true,
+      ).map((g) => (
+        <div key={g.date} className="group">
+          <h2 className="group-title">{describeDate(g.date, ws.today)}</h2>
+          <ul className="tasks">
+            {[
+              ...g.projects.map((p) => ({ at: p.completedAt ?? '', node: projectRow(p) })),
+              ...g.tasks.map((task) => ({ at: task.completedAt ?? '', node: row(task) })),
+            ]
+              .sort((a, b) => b.at.localeCompare(a.at))
+              .map((x) => x.node)}
+          </ul>
+        </div>
+      ))
+      break
+    case 'anytime':
+    case 'someday':
+      body = (
+        <>
+          {projects.length > 0 && (
+            <div className="group">
+              <h2 className="group-title">{t('list.projects')}</h2>
+              <ul className="tasks">{projects.map(projectRow)}</ul>
+            </div>
+          )}
+          {groupByContainer(shown).map((g) => (
+            <div key={g.key} className="group">
+              {g.key !== 'none' && (
+                <h2 className="group-title">
+                  <button type="button" className="group-link" onClick={() => navigate(g.href)}>
+                    {g.title}
+                  </button>
+                </h2>
+              )}
+              <ul className="tasks">{g.tasks.map(row)}</ul>
+            </div>
+          ))}
+        </>
+      )
+      break
+    default:
+      body = <ul className="tasks">{shown.map(row)}</ul>
+  }
+
+  function groupByContainer(tasks: Task[]) {
+    const byKey = new Map<string, Task[]>()
+    for (const task of tasks) {
+      const key = groupKeyOf(task)
+      byKey.set(key, [...(byKey.get(key) ?? []), task])
+    }
+    const groups: { key: string; title: string; href: string; tasks: Task[] }[] = []
+    const loose = byKey.get('none')
+    if (loose) groups.push({ key: 'none', title: '', href: '', tasks: loose })
+    for (const g of containerGroups(ws)) {
+      const items = byKey.get(g.key)
+      if (!items) continue
+      groups.push(
+        g.project
+          ? {
+              key: g.key,
+              title: g.project.title || t('project.untitled'),
+              href: projectPath(g.project.id),
+              tasks: items,
+            }
+          : {
+              key: g.key,
+              title: g.area?.title || t('area.untitled'),
+              href: areaPath(g.area?.id ?? ''),
+              tasks: items,
+            },
+      )
+    }
+    return groups
+  }
+
+  return (
+    <section className={`list-page ${list.id}`}>
+      <header className="list-header">
+        <h1>{t(list.titleKey)}</h1>
+        {list.id === 'today' && <p className="muted">{describeLongDate(ws.today)}</p>}
+      </header>
+      {list.newWhen(ws.today) && <QuickAdd onAdd={add} focusSignal={focusSignal} />}
+      <TagFilter present={present} active={tagFilter} onChange={setTagFilter} />
+      {shown.length === 0 && projects.length === 0 && (
+        <p className="empty">{t(`list.empty.${list.id}` as MessageKey)}</p>
       )}
+      {body}
     </section>
   )
 }
 
-function groupByDate(tasks: Task[]): { date: string; tasks: Task[] }[] {
-  const groups = new Map<string, Task[]>()
-  for (const t of tasks) {
-    const date = t.when.kind === 'date' ? t.when.date : ''
-    groups.set(date, [...(groups.get(date) ?? []), t])
+interface DateGroup {
+  date: string
+  tasks: Task[]
+  projects: Project[]
+}
+
+function groupByDate(
+  tasks: Task[],
+  projects: Project[],
+  dateOf: (item: Task | Project) => string,
+  descending = false,
+): DateGroup[] {
+  const groups = new Map<string, DateGroup>()
+  const get = (date: string) => {
+    let g = groups.get(date)
+    if (!g) {
+      g = { date, tasks: [], projects: [] }
+      groups.set(date, g)
+    }
+    return g
   }
-  return [...groups]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, tasks]) => ({ date, tasks }))
+  for (const p of projects) get(dateOf(p)).projects.push(p)
+  for (const task of tasks) get(dateOf(task)).tasks.push(task)
+  const sorted = [...groups.values()].sort((a, b) => a.date.localeCompare(b.date))
+  return descending ? sorted.reverse() : sorted
 }

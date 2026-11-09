@@ -90,3 +90,76 @@ export function CheckIcon({ size = 12, className }: IconProps) {
     </svg>
   )
 }
+
+export function AnytimeIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className} aria-hidden="true">
+      <rect x="4" y="4" width="7" height="7" rx="1.5" />
+      <rect x="13" y="4" width="7" height="7" rx="1.5" />
+      <rect x="4" y="13" width="7" height="7" rx="1.5" />
+      <rect x="13" y="13" width="7" height="7" rx="1.5" />
+    </svg>
+  )
+}
+
+export function AreaIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className} aria-hidden="true">
+      <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z" />
+      <path d="M12 12l8-4.5M12 12v9M12 12L4 7.5" />
+    </svg>
+  )
+}
+
+export function TagIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className} aria-hidden="true">
+      <path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9-9-9z" />
+      <circle cx="8" cy="8" r="1.2" />
+    </svg>
+  )
+}
+
+export function PlusIcon({ size = 16, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className} aria-hidden="true">
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  )
+}
+
+interface ProgressProps {
+  /** 0..1 */
+  value: number
+  size?: number
+  className?: string
+  done?: boolean
+}
+
+/** A pie that fills as tasks complete; a full circle when the project is done. */
+export function ProgressCircle({ value, size = 18, className, done = false }: ProgressProps) {
+  const r = 6
+  const c = 2 * Math.PI * r
+  const filled = done ? 1 : Math.max(0, Math.min(1, value))
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      className={className}
+      aria-hidden="true"
+      style={{ transform: 'rotate(-90deg)' }}
+    >
+      <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <circle
+        cx="12"
+        cy="12"
+        r={r}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={r * 2}
+        strokeDasharray={`${filled * c} ${c}`}
+      />
+    </svg>
+  )
+}

@@ -7,33 +7,48 @@ interface Props {
   evening: boolean
   today: string
   onChange: (when: When, evening: boolean) => void
+  /** Projects have no Inbox and no evening. */
+  forProject?: boolean
 }
 
-/** The one way to plan: Inbox, Today, This Evening, Tomorrow, Someday, or a date. */
-export function WhenPicker({ when, evening, today, onChange }: Props) {
+/** The one way to plan: Inbox, Today, This Evening, Tomorrow, Anytime, Someday, or a date. */
+export function WhenPicker({ when, evening, today, onChange, forProject = false }: Props) {
   const t = useT()
   const isDate = when.kind === 'date'
   const isToday = isDate && when.date <= today
   const options: { label: string; active: boolean; apply: () => void }[] = [
-    {
-      label: t('when.inbox'),
-      active: when.kind === 'inbox',
-      apply: () => onChange({ kind: 'inbox' }, false),
-    },
+    ...(forProject
+      ? []
+      : [
+          {
+            label: t('when.inbox'),
+            active: when.kind === 'inbox',
+            apply: () => onChange({ kind: 'inbox' }, false),
+          },
+        ]),
     {
       label: t('when.today'),
       active: isToday && !evening,
       apply: () => onChange({ kind: 'date', date: today }, false),
     },
-    {
-      label: t('when.thisEvening'),
-      active: isToday && evening,
-      apply: () => onChange({ kind: 'date', date: today }, true),
-    },
+    ...(forProject
+      ? []
+      : [
+          {
+            label: t('when.thisEvening'),
+            active: isToday && evening,
+            apply: () => onChange({ kind: 'date', date: today }, true),
+          },
+        ]),
     {
       label: t('when.tomorrow'),
       active: isDate && when.date === addDays(today, 1),
       apply: () => onChange({ kind: 'date', date: addDays(today, 1) }, false),
+    },
+    {
+      label: t('when.anytime'),
+      active: when.kind === 'anytime',
+      apply: () => onChange({ kind: 'anytime' }, false),
     },
     {
       label: t('when.someday'),

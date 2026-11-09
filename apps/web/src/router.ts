@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
 
-/** Routering in een paar regels: pad in de adresbalk, zonder bibliotheek. */
+/** Routing in a few lines: the path in the address bar, no library. */
 
 const listeners = new Set<() => void>()
 
@@ -22,3 +22,21 @@ function subscribe(listener: () => void): () => void {
 export function usePath(): string {
   return useSyncExternalStore(subscribe, () => window.location.pathname)
 }
+
+export type Route =
+  | { kind: 'list'; path: string }
+  | { kind: 'project'; id: string }
+  | { kind: 'area'; id: string }
+  | { kind: 'account' }
+
+export function parseRoute(path: string): Route {
+  const project = path.match(/^\/project\/([A-Za-z0-9]+)$/)
+  if (project?.[1]) return { kind: 'project', id: project[1] }
+  const area = path.match(/^\/area\/([A-Za-z0-9]+)$/)
+  if (area?.[1]) return { kind: 'area', id: area[1] }
+  if (path === '/account') return { kind: 'account' }
+  return { kind: 'list', path }
+}
+
+export const projectPath = (id: string) => `/project/${id}`
+export const areaPath = (id: string) => `/area/${id}`

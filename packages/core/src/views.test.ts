@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { newTask } from './factories.js'
+import { newHeading, newProject, newTask } from './factories.js'
 import { orderBetween } from './order.js'
 import * as views from './views.js'
 
@@ -63,5 +63,51 @@ describe('views', () => {
       order: orderBetween(a.order, b.order),
     })
     expect(views.anytime([b, c, a], TODAY).map((t) => t.title)).toEqual(['a', 'c', 'b'])
+  })
+
+  describe('structuur', () => {
+    const project = newProject({ title: 'p' })
+    const doneProject = newProject({ title: 'klaar', status: 'completed' })
+    const somedayProject = newProject({ title: 'ooit', when: { kind: 'someday' } })
+    const h1 = newHeading({ title: 'h1', projectId: project.id })
+    const h2 = newHeading({
+      title: 'h2',
+      projectId: project.id,
+      order: orderBetween(h1.order, null),
+    })
+    const tasks = [
+      newTask({ title: 'los', when: { kind: 'anytime' } }),
+      newTask({ title: 'in p', projectId: project.id, when: { kind: 'anytime' } }),
+      newTask({ title: 'in p klaar', projectId: project.id, status: 'completed' }),
+      newTask({ title: 'in klaar', projectId: doneProject.id, when: { kind: 'anytime' } }),
+      newTask({ title: 'in ooit', projectId: somedayProject.id, when: { kind: 'anytime' } }),
+      newTask({
+        title: 'in ooit, vandaag',
+        projectId: somedayProject.id,
+        when: { kind: 'date', date: TODAY },
+      }),
+    ]
+    const projects = [project, doneProject, somedayProject]
+
+    it('available verbergt taken van gesloten projecten', () => {
+      expect(views.available(tasks, projects).map((t) => t.title)).not.toContain('in klaar')
+      expect(views.available(tasks, projects)).toHaveLength(5)
+    })
+    it('Anytime zonder taken van Ooit-projecten, Vandaag mét', () => {
+      const avail = views.available(tasks, projects)
+      expect(
+        views.anytime(views.notInSomedayProject(avail, projects), TODAY).map((t) => t.title),
+      ).toEqual(['los', 'in p'])
+      expect(views.today(avail, TODAY).map((t) => t.title)).toEqual(['in ooit, vandaag'])
+    })
+    it('projectTasks, headingsOf en progress', () => {
+      expect(views.projectTasks(tasks, project.id).map((t) => t.title)).toEqual([
+        'in p',
+        'in p klaar',
+      ])
+      expect(views.headingsOf([h2, h1], project.id).map((h) => h.title)).toEqual(['h1', 'h2'])
+      expect(views.progress(project.id, tasks)).toBe(0.5)
+      expect(views.progress(somedayProject.id, [])).toBe(0)
+    })
   })
 })

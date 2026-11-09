@@ -1,29 +1,38 @@
-import type { Task } from '@dingen/core'
+import type { Tag, Task } from '@dingen/core'
+import { views } from '@dingen/core'
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react'
 import { formatDate, useT } from '../i18n/index.js'
-import { describeWhen } from '../lists.js'
-import { useEngine } from '../store/context.js'
+import { containerOf, describeWhen } from '../lists.js'
+import { useEngine, useWorkspace } from '../store/context.js'
+import { moveTask } from '../taskActions.js'
 import { CheckIcon, MoonIcon, NotesIcon } from './Icons.js'
+import { TagEditor } from './TagEditor.js'
 import { WhenPicker } from './WhenPicker.js'
 
 interface Props {
   task: Task
-  today: string
   open: boolean
   showWhen: boolean
+  /** Show the project or area under the title (off inside that project or area). */
+  showCaption: boolean
   onOpen: () => void
   onClose: () => void
   onToggle: () => void
 }
 
-export function TaskRow({ task, today, open, showWhen, onOpen, onClose, onToggle }: Props) {
+export function TaskRow({ task, open, showWhen, showCaption, onOpen, onClose, onToggle }: Props) {
   const engine = useEngine()
+  const ws = useWorkspace()
   const t = useT()
   const done = task.status !== 'open'
 
   if (open) {
-    return <TaskEditor task={task} today={today} onClose={onClose} onToggle={onToggle} />
+    return <TaskEditor task={task} onClose={onClose} onToggle={onToggle} />
   }
+
+  const container = showCaption ? containerOf(task, ws) : null
+  const heading = task.headingId ? ws.headingById.get(task.headingId) : null
+  const tags = task.tagIds.map((id) => ws.tagById.get(id)).filter((x): x is Tag => Boolean(x))
 
   return (
     <li className={`task ${done ? 'done' : ''}`}>
@@ -37,12 +46,25 @@ export function TaskRow({ task, today, open, showWhen, onOpen, onClose, onToggle
         {done && <CheckIcon />}
       </button>
       <button type="button" className="task-main" onClick={onOpen}>
-        <span className="task-title">{task.title || <em>{t('task.untitled')}</em>}</span>
+        <span className="task-text">
+          <span className="task-title">{task.title || <em>{t('task.untitled')}</em>}</span>
+          {container && (
+            <span className="task-caption">
+              {container.title}
+              {heading && !showCaption ? ` › ${heading.title}` : ''}
+            </span>
+          )}
+        </span>
         <span className="task-meta">
+          {tags.map((tag) => (
+            <span key={tag.id} className="tag-chip small">
+              {tag.title}
+            </span>
+          ))}
           {task.evening && <MoonIcon className="meta-icon" />}
           {task.notes && <NotesIcon className="meta-icon" />}
           {showWhen && task.when.kind === 'date' && (
-            <span className="meta-when">{describeWhen(task.when, today)}</span>
+            <span className="meta-when">{describeWhen(task.when, ws.today)}</span>
           )}
           {done && task.completedAt && (
             <span className="meta-when">
@@ -68,13 +90,13 @@ export function TaskRow({ task, today, open, showWhen, onOpen, onClose, onToggle
 
 interface EditorProps {
   task: Task
-  today: string
   onClose: () => void
   onToggle: () => void
 }
 
-function TaskEditor({ task, today, onClose, onToggle }: EditorProps) {
+function TaskEditor({ task, onClose, onToggle }: EditorProps) {
   const engine = useEngine()
+  const ws = useWorkspace()
   const t = useT()
   const [title, setTitle] = useState(task.title)
   const [notes, setNotes] = useState(task.notes)
@@ -105,6 +127,24 @@ function TaskEditor({ task, today, onClose, onToggle }: EditorProps) {
     if (e.key === 'Enter' && e.target === titleRef.current) {
       e.preventDefault()
       close()
+    }
+  }
+
+  const containerValue = task.projectId
+    ? `project:${task.projectId}`
+    : task.areaId
+      ? `area:${task.areaId}`
+      : 'none'
+  const headings = task.projectId ? views.headingsOf(ws.headings, task.projectId) : []
+  const looseProjects = views.projectsOf(ws.projects, null)
+  const areas = views.openAreas(ws.areas)
+
+  function onMove(value: string) {
+    if (value === 'none') moveTask(engine, ws, task, { kind: 'none' })
+    else if (value.startsWith('project:')) {
+      moveTask(engine, ws, task, { kind: 'project', projectId: value.slice(8) })
+    } else if (value.startsWith('area:')) {
+      moveTask(engine, ws, task, { kind: 'area', areaId: value.slice(5) })
     }
   }
 
@@ -140,9 +180,78 @@ function TaskEditor({ task, today, onClose, onToggle }: EditorProps) {
       <WhenPicker
         when={task.when}
         evening={task.evening}
-        today={today}
+        today={ws.today}
         onChange={(when, evening) => engine.mutate('task', task.id, { when, evening })}
       />
+      <div className="editor-line">
+        <TagEditor
+          tagIds={task.tagIds}
+          onChange={(tagIds) => engine.mutate('task', task.id, { tagIds })}
+        />
+      </div>
+      <div className="editor-line">
+        <select
+          className="move-select"
+          value={containerValue}
+          onChange={(e) => onMove(e.target.value)}
+          aria-label={t('task.moveTo')}
+        >
+          <option value="none">{t('task.noContainer')}</option>
+          {looseProjects.length > 0 && (
+            <optgroup label={t('move.projects')}>
+              {looseProjects.map((p) => (
+                <option key={p.id} value={`project:${p.id}`}>
+                  {p.title || t('project.untitled')}
+                </option>
+              ))}
+            </optgroup>
+          )}
+          {areas.map((area) => (
+            <optgroup key={area.id} label={area.title || t('area.untitled')}>
+              <option value={`area:${area.id}`}>{area.title || t('area.untitled')}</option>
+              {views.projectsOf(ws.projects, area.id).map((p) => (
+                <option key={p.id} value={`project:${p.id}`}>
+                  {' '}
+                  {p.title || t('project.untitled')}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+        {headings.length > 0 && task.projectId && (
+          <fieldset className="heading-picker" aria-label={t('project.heading')}>
+            <button
+              type="button"
+              className={`chip small ${task.headingId === null ? 'active' : ''}`}
+              onClick={() =>
+                moveTask(engine, ws, task, {
+                  kind: 'project',
+                  projectId: task.projectId as string,
+                  headingId: null,
+                })
+              }
+            >
+              {t('project.noHeading')}
+            </button>
+            {headings.map((h) => (
+              <button
+                type="button"
+                key={h.id}
+                className={`chip small ${task.headingId === h.id ? 'active' : ''}`}
+                onClick={() =>
+                  moveTask(engine, ws, task, {
+                    kind: 'project',
+                    projectId: task.projectId as string,
+                    headingId: h.id,
+                  })
+                }
+              >
+                {h.title || t('project.newHeading')}
+              </button>
+            ))}
+          </fieldset>
+        )}
+      </div>
       <div className="editor-foot">
         <button
           type="button"

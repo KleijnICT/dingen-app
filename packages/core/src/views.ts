@@ -1,4 +1,4 @@
-import type { CalendarDate, Project, Task } from './entities.js'
+import type { Area, CalendarDate, Heading, Project, Task } from './entities.js'
 import { compareOrder } from './order.js'
 
 /**
@@ -25,6 +25,57 @@ export function isUpcoming(item: Task | Project, today: CalendarDate): boolean {
 /** Anytime: alles wat nu beschikbaar is, inclusief Vandaag, zonder Inbox en Ooit. */
 export function isAnytime(item: Task | Project, today: CalendarDate): boolean {
   return isOpen(item) && (item.when.kind === 'anytime' || isToday(item, today))
+}
+
+/**
+ * Taken zonder project, of met een open project. Taken van een afgerond,
+ * geannuleerd of verwijderd project zijn nergens zichtbaar behalve in het
+ * Logboek; de lijstfuncties verwachten deze filtering vooraf.
+ */
+export function available(tasks: Task[], projects: Project[]): Task[] {
+  const open = new Set(projects.filter(isOpen).map((p) => p.id))
+  return tasks.filter((t) => t.projectId === null || open.has(t.projectId))
+}
+
+/** Taken van projecten die niet op Ooit staan; voor Anytime. */
+export function notInSomedayProject(tasks: Task[], projects: Project[]): Task[] {
+  const someday = new Set(projects.filter(isSomeday).map((p) => p.id))
+  return tasks.filter((t) => t.projectId === null || !someday.has(t.projectId))
+}
+
+export function projectTasks(tasks: Task[], projectId: string): Task[] {
+  return tasks.filter((t) => !t.deleted && t.projectId === projectId).sort(byOrder)
+}
+
+export function headingsOf(headings: Heading[], projectId: string): Heading[] {
+  return headings.filter((h) => !h.deleted && h.projectId === projectId).sort(byOrder)
+}
+
+/** Taken direct in een gebied (niet via een project). */
+export function areaTasks(tasks: Task[], areaId: string): Task[] {
+  return tasks
+    .filter((t) => !t.deleted && t.projectId === null && t.areaId === areaId)
+    .sort(byOrder)
+}
+
+export function projectsOf(projects: Project[], areaId: string | null): Project[] {
+  return projects.filter((p) => isOpen(p) && p.areaId === areaId).sort(byOrder)
+}
+
+export function openAreas(areas: Area[]): Area[] {
+  return areas.filter((a) => !a.deleted).sort(byOrder)
+}
+
+/** Voortgang van een project: afgerond / (open + afgerond), 0 zonder taken. */
+export function progress(projectId: string, tasks: Task[]): number {
+  let open = 0
+  let done = 0
+  for (const t of tasks) {
+    if (t.deleted || t.projectId !== projectId) continue
+    if (t.status === 'open') open += 1
+    else if (t.status === 'completed') done += 1
+  }
+  return open + done === 0 ? 0 : done / (open + done)
 }
 
 export function isSomeday(item: Task | Project): boolean {
