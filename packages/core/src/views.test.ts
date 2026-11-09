@@ -54,6 +54,17 @@ describe('views', () => {
   it('Logboek nieuwste eerst, zonder verwijderde', () => {
     expect(views.logbook(all).map((t) => t.title)).toEqual(['klaar2', 'klaar'])
   })
+  it('Vandaag heeft een eigen volgorde die terugvalt op order', () => {
+    const a = newTask({ title: 'a', when: { kind: 'date', date: TODAY } })
+    const b = newTask({
+      title: 'b',
+      when: { kind: 'date', date: TODAY },
+      order: orderBetween(a.order, null),
+    })
+    expect(views.today([a, b], TODAY).map((t) => t.title)).toEqual(['a', 'b'])
+    const bFirst = { ...b, todayOrder: orderBetween(null, a.order) }
+    expect(views.today([a, bFirst], TODAY).map((t) => t.title)).toEqual(['b', 'a'])
+  })
   it('sorteert op order', () => {
     const a = newTask({ title: 'a', when: { kind: 'anytime' } })
     const b = newTask({ title: 'b', when: { kind: 'anytime' }, order: orderBetween(a.order, null) })

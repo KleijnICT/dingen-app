@@ -25,6 +25,7 @@ export function newTask(fields: Partial<Task> & { title: string }): Task {
     tagIds: [],
     repeat: null,
     order: firstOrder(),
+    todayOrder: null,
     completedAt: null,
     ...fields,
   }

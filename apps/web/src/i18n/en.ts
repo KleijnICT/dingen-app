@@ -99,6 +99,12 @@ export const en = {
   'tags.add': 'Add tag…',
   'tags.remove': 'Remove tag {name}',
   'tags.all': 'All',
+  'today.view': 'Order',
+  'today.view.manual': 'My order',
+  'today.view.grouped': 'By project',
+  'confirm.cancel': 'Cancel',
+  'project.deleteQuestion': 'Delete this project and its tasks?',
+  'area.deleteQuestion': 'Delete this area with all its projects and tasks?',
 
   // Account
   'account.title': 'Account',

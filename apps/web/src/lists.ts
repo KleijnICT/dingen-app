@@ -118,6 +118,11 @@ export function groupKeyOf(task: Task): string {
   return 'none'
 }
 
+/** The local calendar day an item was completed on; '' when it is still open. */
+export function completedDate(item: { completedAt: string | null }): string {
+  return item.completedAt ? toCalendarDate(new Date(item.completedAt)) : ''
+}
+
 export function parseDate(date: string): Date {
   const [y, m, d] = date.split('-').map(Number) as [number, number, number]
   return new Date(y, m - 1, d)

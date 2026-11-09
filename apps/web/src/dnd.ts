@@ -16,6 +16,12 @@ export interface TaskGroupInfo {
   key: string
   /** What landing in this group means; null when the group is only an order. */
   target: MoveTarget | null
+  /** Which order the group is sorted by; Today has its own. */
+  orderField?: 'order' | 'todayOrder'
+}
+
+function orderKey(group: TaskGroupInfo): (task: Task) => string {
+  return group.orderField === 'todayOrder' ? views.todayKey : (task) => task.order
 }
 
 export type DragData =
@@ -69,7 +75,9 @@ function dropTask(
     case 'group': {
       const siblings = over.siblings.filter((s) => s.id !== task.id)
       const fields = over.group.key === active.group.key ? {} : targetFields(ws, task, over.group)
-      fields.order = orderBetween(siblings.at(-1)?.order ?? null, null)
+      const key = orderKey(over.group)
+      const last = siblings.at(-1)
+      fields[over.group.orderField ?? 'order'] = orderBetween(last ? key(last) : null, null)
       commit(engine, task, fields)
       return
     }
@@ -80,7 +88,11 @@ function dropTask(
       const before = below ? siblings[index] : siblings[index - 1]
       const after = below ? siblings[index + 1] : siblings[index]
       const fields = over.group.key === active.group.key ? {} : targetFields(ws, task, over.group)
-      fields.order = orderBetween(before?.order ?? null, after?.order ?? null)
+      const key = orderKey(over.group)
+      fields[over.group.orderField ?? 'order'] = orderBetween(
+        before ? key(before) : null,
+        after ? key(after) : null,
+      )
       commit(engine, task, fields)
       return
     }

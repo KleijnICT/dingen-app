@@ -90,6 +90,15 @@ export function byOrder<T extends { order: string }>(a: T, b: T): number {
   return compareOrder(a.order, b.order)
 }
 
+/** Vandaag heeft een eigen volgorde; zonder eigen plek volgt een taak zijn projectvolgorde. */
+export function todayKey(task: Task): string {
+  return task.todayOrder ?? task.order
+}
+
+export function byTodayOrder(a: Task, b: Task): number {
+  return compareOrder(todayKey(a), todayKey(b))
+}
+
 export function byCompletedDesc<T extends { completedAt: string | null }>(a: T, b: T): number {
   return (b.completedAt ?? '').localeCompare(a.completedAt ?? '')
 }
@@ -99,7 +108,7 @@ export function inbox(tasks: Task[]): Task[] {
 }
 
 export function today(tasks: Task[], date: CalendarDate): Task[] {
-  return tasks.filter((t) => isToday(t, date)).sort(byOrder)
+  return tasks.filter((t) => isToday(t, date)).sort(byTodayOrder)
 }
 
 export function upcoming(tasks: Task[], date: CalendarDate): Task[] {

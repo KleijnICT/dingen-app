@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { listTarget, type TaskGroupInfo } from '../dnd.js'
 import { type MessageKey, useT } from '../i18n/index.js'
 import {
+  completedDate,
   containerGroups,
   describeDate,
   describeLongDate,
@@ -12,6 +13,7 @@ import {
   listProjects,
   listTasks,
 } from '../lists.js'
+import { setTodayView, useTodayView } from '../prefs.js'
 import { areaPath, navigate, projectPath } from '../router.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { type MoveTarget, useLinger } from '../taskActions.js'
@@ -33,9 +35,15 @@ export function ListPage({ list, focusSignal }: Props) {
   const [openId, setOpenId] = useState<string | null>(null)
   const [tagFilter, setTagFilter] = useState<string | null>(null)
   const draggingSomething = useDndContext().active !== null
+  const todayView = useTodayView()
 
   const visible = listTasks(list.id, ws)
-  const { shown: all, toggle } = useLinger(visible, ws.tasks, engine)
+  const { shown: all, toggle } = useLinger(
+    visible,
+    ws.tasks,
+    engine,
+    list.id === 'today' ? views.byTodayOrder : views.byOrder,
+  )
   const present = new Set(visible.flatMap((task) => task.tagIds))
   const shown = tagFilter ? all.filter((task) => task.tagIds.includes(tagFilter)) : all
   const projects = listProjects(list.id, ws)
@@ -55,19 +63,28 @@ export function ListPage({ list, focusSignal }: Props) {
     )
   }
 
-  const rowProps = (task: Task): RowProps => ({
+  const rowProps = (
+    task: Task,
+    showCaption = list.id !== 'anytime' && list.id !== 'someday',
+  ): RowProps => ({
     open: openId === task.id,
     showWhen: false,
-    showCaption: list.id !== 'anytime' && list.id !== 'someday',
+    showCaption,
     onOpen: () => setOpenId(task.id),
     onClose: () => setOpenId(null),
     onToggle: () => toggle(task),
   })
-  const group = (key: string, target: MoveTarget | null, tasks: Task[]) => (
+  const group = (
+    key: string,
+    target: MoveTarget | null,
+    tasks: Task[],
+    orderField: TaskGroupInfo['orderField'] = 'order',
+    showCaption?: boolean,
+  ) => (
     <TaskGroup
-      group={{ key: `${list.id}:${key}`, target } satisfies TaskGroupInfo}
+      group={{ key: `${list.id}:${key}`, target, orderField } satisfies TaskGroupInfo}
       tasks={tasks}
-      rowProps={rowProps}
+      rowProps={(task) => rowProps(task, showCaption)}
       frozen={list.id === 'logbook'}
     />
   )
@@ -79,15 +96,36 @@ export function ListPage({ list, focusSignal }: Props) {
       const evening = shown.filter((task) => task.evening)
       const day = shown.filter((task) => !task.evening)
       const todayWhen = { kind: 'date', date: ws.today } as const
+      // "My order" is one flat list with its own order; "By project" follows each project's order.
+      const dayBody =
+        todayView === 'manual'
+          ? group('day', { kind: 'when', when: todayWhen, evening: false }, day, 'todayOrder')
+          : groupByContainer([...day].sort(views.byOrder)).map((g) => (
+              <div key={g.key} className="group">
+                {g.key !== 'none' && (
+                  <h2 className="group-title">
+                    <button type="button" className="group-link" onClick={() => navigate(g.href)}>
+                      {g.title}
+                    </button>
+                  </h2>
+                )}
+                {group(g.key, g.target, g.tasks, 'order', false)}
+              </div>
+            ))
       body = (
         <>
           {projects.length > 0 && <ul className="tasks">{projects.map(projectRow)}</ul>}
-          {group('day', { kind: 'when', when: todayWhen, evening: false }, day)}
+          {dayBody}
           <div className="group evening">
             {(evening.length > 0 || draggingSomething) && (
               <h2 className="group-title">{t('list.thisEvening')}</h2>
             )}
-            {group('evening', { kind: 'when', when: todayWhen, evening: true }, evening)}
+            {group(
+              'evening',
+              { kind: 'when', when: todayWhen, evening: true },
+              evening,
+              'todayOrder',
+            )}
           </div>
         </>
       )
@@ -105,12 +143,7 @@ export function ListPage({ list, focusSignal }: Props) {
       ))
       break
     case 'logbook':
-      body = groupByDate(
-        shown,
-        projects,
-        (item) => (item.completedAt ?? '').slice(0, 10),
-        true,
-      ).map((g) => (
+      body = groupByDate(shown, projects, completedDate, true).map((g) => (
         <div key={g.date} className="group">
           <h2 className="group-title">{describeDate(g.date, ws.today)}</h2>
           {g.projects.length > 0 && <ul className="tasks">{g.projects.map(projectRow)}</ul>}
@@ -192,6 +225,20 @@ export function ListPage({ list, focusSignal }: Props) {
       <header className="list-header">
         <h1>{t(list.titleKey)}</h1>
         {list.id === 'today' && <p className="muted">{describeLongDate(ws.today)}</p>}
+        {list.id === 'today' && (
+          <fieldset className="view-switch" aria-label={t('today.view')}>
+            {(['manual', 'grouped'] as const).map((view) => (
+              <button
+                type="button"
+                key={view}
+                className={`chip small ${todayView === view ? 'active' : ''}`}
+                onClick={() => setTodayView(view)}
+              >
+                {t(`today.view.${view}`)}
+              </button>
+            ))}
+          </fieldset>
+        )}
       </header>
       {list.newWhen(ws.today) && <QuickAdd onAdd={add} focusSignal={focusSignal} />}
       <TagFilter present={present} active={tagFilter} onChange={setTagFilter} />

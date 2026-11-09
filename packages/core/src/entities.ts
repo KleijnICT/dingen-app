@@ -74,6 +74,8 @@ export const Task = Base.extend({
   tagIds: z.array(Id),
   repeat: Repeat,
   order: Order,
+  /** Volgorde in Vandaag, los van de projectvolgorde; null betekent: volg `order`. */
+  todayOrder: Order.nullable().default(null),
   completedAt: IsoDateTime.nullable(),
 })
 export type Task = z.infer<typeof Task>

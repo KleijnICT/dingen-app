@@ -1,4 +1,4 @@
-import { orderBetween, type Project, type Task, views, type When } from '@dingen/core'
+import { type Area, orderBetween, type Project, type Task, views, type When } from '@dingen/core'
 import { useEffect, useRef, useState } from 'react'
 import type { Workspace } from './store/context.js'
 import type { SyncEngine } from './store/engine.js'
@@ -24,6 +24,30 @@ export function toggleProject(engine: SyncEngine, project: Project): void {
     status: completing ? 'completed' : 'open',
     completedAt: completing ? new Date().toISOString() : null,
   })
+}
+
+/** Deletes a project with its headings and tasks, as Things moves all of it to the trash. */
+export function deleteProject(engine: SyncEngine, ws: Workspace, project: Project): void {
+  for (const task of ws.tasks) {
+    if (task.projectId === project.id) engine.mutate('task', task.id, { deleted: true })
+  }
+  for (const heading of ws.headings) {
+    if (heading.projectId === project.id) engine.mutate('heading', heading.id, { deleted: true })
+  }
+  engine.mutate('project', project.id, { deleted: true })
+}
+
+/** Deletes an area with everything in it: its projects (and their tasks) and its loose tasks. */
+export function deleteArea(engine: SyncEngine, ws: Workspace, area: Area): void {
+  for (const project of ws.projects) {
+    if (project.areaId === area.id) deleteProject(engine, ws, project)
+  }
+  for (const task of ws.tasks) {
+    if (task.areaId === area.id && task.projectId === null) {
+      engine.mutate('task', task.id, { deleted: true })
+    }
+  }
+  engine.mutate('area', area.id, { deleted: true })
 }
 
 /**
@@ -111,6 +135,7 @@ export function useLinger(
   visible: Task[],
   all: Task[],
   engine: SyncEngine,
+  sort: (a: Task, b: Task) => number = views.byOrder,
 ): { shown: Task[]; toggle: (task: Task) => void } {
   const [lingering, setLingering] = useState<Set<string>>(new Set())
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>())
@@ -130,7 +155,7 @@ export function useLinger(
       const current = byId.get(id)
       if (current && !shown.some((t) => t.id === id)) shown.push(current)
     }
-    shown.sort(views.byOrder)
+    shown.sort(sort)
   }
 
   function toggle(task: Task) {

@@ -1,9 +1,11 @@
 import { type Heading, newHeading, newTask, orderBetween, type Project, views } from '@dingen/core'
 import { type ReactNode, useState } from 'react'
 import { useT } from '../i18n/index.js'
+import { completedDate } from '../lists.js'
 import { navigate } from '../router.js'
 import { useEngine, useWorkspace } from '../store/context.js'
-import { toggleProject, useLinger } from '../taskActions.js'
+import { deleteProject, toggleProject, useLinger } from '../taskActions.js'
+import { ConfirmButton } from './ConfirmButton.js'
 import { ProgressCircle } from './Icons.js'
 import { InlineInput } from './InlineInput.js'
 import { QuickAdd } from './QuickAdd.js'
@@ -31,6 +33,15 @@ export function ProjectPage({ project, focusSignal }: Props) {
   const open = all.filter((task) => task.status === 'open')
   const completed = all.filter((task) => task.status !== 'open')
   const { shown: shownOpen, toggle } = useLinger(open, ws.tasks, engine)
+  // Completed today stays at the bottom of the project until the day changes, as in Things.
+  const lingering = new Set(shownOpen.map((task) => task.id))
+  const completedToday = completed
+    .filter((task) => completedDate(task) === ws.today && !lingering.has(task.id))
+    .sort(views.byCompletedDesc)
+  const completedEarlier = completed
+    .filter((task) => completedDate(task) !== ws.today)
+    .sort(views.byCompletedDesc)
+  const completedShown = showCompleted ? [...completedToday, ...completedEarlier] : completedToday
   const present = new Set(open.flatMap((task) => task.tagIds))
   const filtered = tagFilter
     ? shownOpen.filter((task) => task.tagIds.includes(tagFilter))
@@ -69,7 +80,7 @@ export function ProjectPage({ project, focusSignal }: Props) {
   }
 
   function remove() {
-    engine.mutate('project', project.id, { deleted: true })
+    deleteProject(engine, ws, project)
     navigate(project.areaId ? `/area/${project.areaId}` : '/anytime')
   }
 
@@ -147,32 +158,34 @@ export function ProjectPage({ project, focusSignal }: Props) {
           )}
         </div>
       ))}
+      {completedShown.length > 0 && (
+        <TaskGroup
+          className="completed"
+          group={{ key: `project:${project.id}:completed`, target: null }}
+          tasks={completedShown}
+          rowProps={rowProps}
+          frozen
+        />
+      )}
       <div className="page-actions">
         {!done && (
           <button type="button" className="link" onClick={addHeading}>
             + {t('project.newHeading')}
           </button>
         )}
-        {completed.length > 0 && (
+        {completedEarlier.length > 0 && (
           <button type="button" className="link" onClick={() => setShowCompleted((s) => !s)}>
             {showCompleted
               ? t('project.hideCompleted')
-              : t('project.showCompleted', { n: completed.length })}
+              : t('project.showCompleted', { n: completedEarlier.length })}
           </button>
         )}
-        <button type="button" className="link danger" onClick={remove}>
-          {t('project.delete')}
-        </button>
-      </div>
-      {showCompleted && (
-        <TaskGroup
-          className="completed"
-          group={{ key: `project:${project.id}:completed`, target: null }}
-          tasks={completed.sort(views.byCompletedDesc)}
-          rowProps={rowProps}
-          frozen
+        <ConfirmButton
+          label={t('project.delete')}
+          question={t('project.deleteQuestion')}
+          onConfirm={remove}
         />
-      )}
+      </div>
     </section>
   )
 }

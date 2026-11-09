@@ -853,3 +853,21 @@ button.link.danger {
   white-space: nowrap;
   cursor: grabbing;
 }
+
+/* Today order switch and inline confirmations */
+.view-switch {
+  display: flex;
+  gap: 4px;
+  border: 0;
+  padding: 0;
+  margin: 8px 0 0;
+}
+.confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.confirm-question {
+  color: var(--muted);
+}
