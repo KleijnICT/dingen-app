@@ -35,6 +35,7 @@ ENV DINGEN_VERSION=$DINGEN_VERSION
 WORKDIR /app
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=prod-deps /app/apps/server/node_modules ./apps/server/node_modules
+COPY --from=prod-deps /app/packages/core/node_modules ./packages/core/node_modules
 COPY package.json pnpm-workspace.yaml ./
 COPY packages/core/package.json ./packages/core/
 COPY --from=build /app/packages/core/dist ./packages/core/dist

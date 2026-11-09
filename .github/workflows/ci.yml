@@ -33,4 +33,14 @@ jobs:
         with:
           context: .
           push: false
+          load: true
           tags: dingen:ci
+      - name: Rooktest: container start en health-check
+        run: |
+          docker run -d --name dingen -p 8080:8080 dingen:ci
+          for i in $(seq 1 20); do
+            if curl -fsS http://localhost:8080/api/health; then exit 0; fi
+            sleep 1
+          done
+          docker logs dingen
+          exit 1
