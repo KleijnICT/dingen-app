@@ -5,8 +5,9 @@ import { formatDate, useT } from '../i18n/index.js'
 import { containerOf, describeWhen } from '../lists.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { commitTask, deleteTask, moveTask } from '../taskActions.js'
+import { Checklist } from './Checklist.js'
 import { DeadlineBadge, DeadlineField } from './DeadlineField.js'
-import { CheckIcon, MoonIcon, NotesIcon, RepeatIcon } from './Icons.js'
+import { CheckIcon, ChecklistIcon, MoonIcon, NotesIcon, RepeatIcon } from './Icons.js'
 import { RepeatEditor } from './RepeatEditor.js'
 import { TagEditor } from './TagEditor.js'
 import { WhenPicker } from './WhenPicker.js'
@@ -55,6 +56,7 @@ export function TaskRow({
   const container = showCaption ? containerOf(task, ws) : null
   const heading = task.headingId ? ws.headingById.get(task.headingId) : null
   const tags = task.tagIds.map((id) => ws.tagById.get(id)).filter((x): x is Tag => Boolean(x))
+  const checklist = views.checklistProgress(ws.checklistByTask.get(task.id) ?? [])
 
   return (
     <li
@@ -90,6 +92,12 @@ export function TaskRow({
           ))}
           {task.evening && <MoonIcon className="meta-icon" />}
           {task.notes && <NotesIcon className="meta-icon" />}
+          {checklist.total > 0 && (
+            <span className="meta-checklist">
+              <ChecklistIcon className="meta-icon" />
+              {checklist.done}/{checklist.total}
+            </span>
+          )}
           {task.templateId && <RepeatIcon className="meta-icon" />}
           {!done && task.deadline && <DeadlineBadge deadline={task.deadline} today={ws.today} />}
           {showWhen && task.when.kind === 'date' && (
@@ -206,6 +214,7 @@ function TaskEditor({ task, onClose, onToggle }: EditorProps) {
         placeholder={t('task.notes')}
         rows={notes ? Math.min(12, notes.split('\n').length + 1) : 2}
       />
+      <Checklist task={task} />
       <WhenPicker
         when={task.when}
         evening={task.evening}

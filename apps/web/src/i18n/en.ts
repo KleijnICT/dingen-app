@@ -138,6 +138,12 @@ export const en = {
   'repeat.save': 'Save',
   'repeat.stop': 'Stop repeating',
   'repeat.icon': 'Repeating',
+  'checklist.label': 'Checklist',
+  'checklist.add': 'Add item',
+  'checklist.item': 'Checklist item',
+  'checklist.remove': 'Remove item',
+  'checklist.markDone': 'Mark item as done',
+  'checklist.markOpen': 'Mark item as open',
   'project.deleteQuestion': 'Delete this project and its tasks?',
   'area.deleteQuestion': 'Delete this area with all its projects and tasks?',
 

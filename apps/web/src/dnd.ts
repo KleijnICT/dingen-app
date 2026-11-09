@@ -1,10 +1,10 @@
-import type { Area, Project, Task } from '@dingen/core'
+import type { Area, ChecklistItem, Project, Task } from '@dingen/core'
 import { orderBetween, views } from '@dingen/core'
 import type { DragEndEvent } from '@dnd-kit/core'
 import type { ListId } from './lists.js'
 import type { Workspace } from './store/context.js'
 import type { SyncEngine } from './store/engine.js'
-import { commitTask, type MoveTarget, moveFields } from './taskActions.js'
+import { commitTask, type MoveTarget, mirrorChecklist, moveFields } from './taskActions.js'
 
 /**
  * Drag and drop in one place. Every draggable or droppable element carries
@@ -28,6 +28,7 @@ export type DragData =
   | { type: 'task'; task: Task; group: TaskGroupInfo; siblings: Task[] }
   | { type: 'project'; project: Project }
   | { type: 'area'; area: Area }
+  | { type: 'checklistItem'; item: ChecklistItem; task: Task; siblings: ChecklistItem[] }
 
 export type DropData =
   | DragData
@@ -50,6 +51,26 @@ export function handleDragEnd(engine: SyncEngine, ws: Workspace, event: DragEndE
   if (active.type === 'task') dropTask(engine, ws, active, over, below)
   else if (active.type === 'project') dropProject(engine, ws, active.project, over, below)
   else if (active.type === 'area') dropArea(engine, ws, active.area, over, below)
+  else if (active.type === 'checklistItem') dropChecklistItem(engine, ws, active, over, below)
+}
+
+function dropChecklistItem(
+  engine: SyncEngine,
+  ws: Workspace,
+  active: Extract<DragData, { type: 'checklistItem' }>,
+  over: DropData,
+  below: boolean,
+): void {
+  if (over.type !== 'checklistItem' || over.task.id !== active.task.id) return
+  const siblings = active.siblings.filter((i) => i.id !== active.item.id)
+  const index = siblings.findIndex((i) => i.id === over.item.id)
+  if (index < 0) return
+  const before = below ? siblings[index] : siblings[index - 1]
+  const after = below ? siblings[index + 1] : siblings[index]
+  const order = orderBetween(before?.order ?? null, after?.order ?? null)
+  engine.mutate('checklistItem', active.item.id, { order })
+  const moved = { ...active.item, order }
+  mirrorChecklist(engine, ws, active.task, [...siblings, moved])
 }
 
 function dropTask(

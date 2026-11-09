@@ -103,6 +103,15 @@ export function RepeatIcon({ size = 13, className }: IconProps) {
   )
 }
 
+export function ChecklistIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg {...base(size)} className={className} aria-hidden="true">
+      <path d="M4 6l2 2 3-3M4 13l2 2 3-3M4 20l2 2 3-3" />
+      <path d="M12 7h9M12 14h9M12 21h9" />
+    </svg>
+  )
+}
+
 export function CheckIcon({ size = 12, className }: IconProps) {
   return (
     <svg {...base(size)} className={className} strokeWidth={2.5} aria-hidden="true">

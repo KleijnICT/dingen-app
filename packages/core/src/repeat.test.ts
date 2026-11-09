@@ -1,8 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { addMonths, daysBetween } from './dates.js'
 import type { Repeat } from './entities.js'
-import { newTask } from './factories.js'
-import { firstOccurrence, instanceOf, nextOccurrence } from './repeat.js'
+import { newChecklistItem, newTask } from './factories.js'
+import { orderBetween } from './order.js'
+import {
+  checklistMirror,
+  firstOccurrence,
+  instanceChecklist,
+  instanceOf,
+  nextOccurrence,
+} from './repeat.js'
 
 const rule = (over: Partial<Repeat>): Repeat => ({
   unit: 'day',
@@ -80,5 +87,28 @@ describe('herhaling', () => {
     expect(task.deadline).toBe('2026-11-14')
     expect(task.projectId).toBe(template.projectId)
     expect(task.id).not.toBe(template.id)
+  })
+  it('kopieert de checklist onafgevinkt', () => {
+    const a = newChecklistItem({ title: 'a', taskId: 'tpl', done: true })
+    const b = newChecklistItem({ title: 'b', taskId: 'tpl', order: orderBetween(a.order, null) })
+    const copy = instanceChecklist([b, a], 'inst')
+    expect(copy.map((i) => [i.title, i.done, i.taskId])).toEqual([
+      ['a', false, 'inst'],
+      ['b', false, 'inst'],
+    ])
+    expect(copy[0]?.id).not.toBe(a.id)
+  })
+  it('spiegelt de checklist van het exemplaar naar de template', () => {
+    const t1 = newChecklistItem({ title: 'a', taskId: 'tpl' })
+    const t2 = newChecklistItem({ title: 'b', taskId: 'tpl', order: orderBetween(t1.order, null) })
+    const t3 = newChecklistItem({ title: 'c', taskId: 'tpl', order: orderBetween(t2.order, null) })
+    const i1 = newChecklistItem({ title: 'a', taskId: 'inst', order: t1.order, done: true })
+    const i2 = newChecklistItem({ title: 'B', taskId: 'inst', order: t2.order })
+    const plan = checklistMirror([t1, t2, t3], [i1, i2])
+    expect(plan.update).toEqual([{ id: t2.id, fields: { title: 'B' } }])
+    expect(plan.remove).toEqual([t3.id])
+    expect(plan.create).toEqual([])
+    const grown = checklistMirror([t1], [i1, i2])
+    expect(grown.create).toEqual([{ title: 'B', order: i2.order }])
   })
 })

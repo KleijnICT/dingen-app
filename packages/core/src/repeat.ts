@@ -1,6 +1,7 @@
 import { addDays, addMonths, addYears, dayOfMonth, weekdayOf } from './dates.js'
-import type { CalendarDate, Repeat, Task } from './entities.js'
+import type { CalendarDate, ChecklistItem, Repeat, Task } from './entities.js'
 import { ulid } from './ids.js'
+import { compareOrder } from './order.js'
 
 /**
  * Herhaling zoals Things: een verborgen herhalende taak (template) met een
@@ -99,6 +100,54 @@ export function instanceOf(template: Task, date: CalendarDate, order: string): T
     order,
     todayOrder: null,
   }
+}
+
+/** Een verse kopie van een checklist voor een nieuw exemplaar: alles onafgevinkt. */
+export function instanceChecklist(templateItems: ChecklistItem[], taskId: string): ChecklistItem[] {
+  return templateItems
+    .filter((i) => !i.deleted)
+    .sort((a, b) => compareOrder(a.order, b.order))
+    .map((i) => ({
+      ...i,
+      id: ulid(),
+      createdAt: new Date().toISOString(),
+      taskId,
+      done: false,
+    }))
+}
+
+export interface ChecklistMirror {
+  update: { id: string; fields: { title?: string; order?: string } }[]
+  create: { title: string; order: string }[]
+  remove: string[]
+}
+
+/**
+ * Wat er aan de checklist van de template moet gebeuren om die van het
+ * exemplaar te volgen: op volgorde gematcht, zonder afvinkstatus.
+ */
+export function checklistMirror(
+  templateItems: ChecklistItem[],
+  instanceItems: ChecklistItem[],
+): ChecklistMirror {
+  const sort = (items: ChecklistItem[]) =>
+    items.filter((i) => !i.deleted).sort((a, b) => compareOrder(a.order, b.order))
+  const tpl = sort(templateItems)
+  const inst = sort(instanceItems)
+  const plan: ChecklistMirror = { update: [], create: [], remove: [] }
+  inst.forEach((item, i) => {
+    const target = tpl[i]
+    if (!target) {
+      plan.create.push({ title: item.title, order: item.order })
+      return
+    }
+    const fields: { title?: string; order?: string } = {}
+    if (target.title !== item.title) fields.title = item.title
+    if (target.order !== item.order) fields.order = item.order
+    if (Object.keys(fields).length > 0) plan.update.push({ id: target.id, fields })
+  })
+  for (const extra of tpl.slice(inst.length)) plan.remove.push(extra.id)
+  return plan
 }
 
 function daysSince(start: CalendarDate, date: CalendarDate): number {

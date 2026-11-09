@@ -125,5 +125,6 @@ const collision: CollisionDetection = (args) => {
 function ghostTitle(d: DragData): string {
   if (d.type === 'task') return d.task.title
   if (d.type === 'project') return d.project.title
+  if (d.type === 'checklistItem') return d.item.title
   return d.area.title
 }

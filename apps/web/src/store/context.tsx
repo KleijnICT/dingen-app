@@ -1,4 +1,5 @@
-import type { Area, Heading, Project, Tag, Task } from '@dingen/core'
+import type { Area, ChecklistItem, Heading, Project, Tag, Task } from '@dingen/core'
+import { views } from '@dingen/core'
 import { createContext, useContext, useMemo, useSyncExternalStore } from 'react'
 import type { SyncEngine } from './engine.js'
 
@@ -40,6 +41,8 @@ export interface Workspace {
   tagById: Map<string, Tag>
   /** Repeating tasks (hidden templates) by id. */
   templateById: Map<string, Task>
+  /** Checklist items per task, sorted. */
+  checklistByTask: Map<string, ChecklistItem[]>
 }
 
 export const WorkspaceContext = createContext<Workspace | null>(null)
@@ -60,6 +63,12 @@ export function useBuildWorkspace(today: string): Workspace {
     const areas = engine.entities('area') as Area[]
     const headings = engine.entities('heading') as Heading[]
     const tags = engine.entities('tag') as Tag[]
+    const checklist = engine.entities('checklistItem') as ChecklistItem[]
+    const checklistByTask = new Map<string, ChecklistItem[]>()
+    for (const item of checklist) {
+      checklistByTask.set(item.taskId, [...(checklistByTask.get(item.taskId) ?? []), item])
+    }
+    for (const items of checklistByTask.values()) items.sort(views.byOrder)
     return {
       today,
       tasks,
@@ -72,6 +81,7 @@ export function useBuildWorkspace(today: string): Workspace {
       headingById: new Map(headings.map((h) => [h.id, h])),
       tagById: new Map(tags.map((t) => [t.id, t])),
       templateById: new Map(tasks.filter((t) => t.repeat !== null).map((t) => [t.id, t])),
+      checklistByTask,
     }
   }, [engine, version, today])
 }

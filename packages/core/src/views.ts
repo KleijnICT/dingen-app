@@ -1,5 +1,5 @@
 import { toCalendarDate } from './dates.js'
-import type { Area, CalendarDate, Heading, Project, Task } from './entities.js'
+import type { Area, CalendarDate, ChecklistItem, Heading, Project, Task } from './entities.js'
 import { compareOrder } from './order.js'
 
 export { toCalendarDate }
@@ -76,6 +76,14 @@ export function areaTasks(tasks: Task[], areaId: string): Task[] {
 
 export function projectsOf(projects: Project[], areaId: string | null): Project[] {
   return projects.filter((p) => isOpen(p) && p.areaId === areaId).sort(byOrder)
+}
+
+export function checklistOf(items: ChecklistItem[], taskId: string): ChecklistItem[] {
+  return items.filter((i) => !i.deleted && i.taskId === taskId).sort(byOrder)
+}
+
+export function checklistProgress(items: ChecklistItem[]): { done: number; total: number } {
+  return { done: items.filter((i) => i.done).length, total: items.length }
 }
 
 export function openAreas(areas: Area[]): Area[] {

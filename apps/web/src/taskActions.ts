@@ -1,7 +1,11 @@
 import {
   type Area,
+  type ChecklistItem,
+  checklistMirror,
   firstOccurrence,
+  instanceChecklist,
   instanceOf,
+  newChecklistItem,
   nextOccurrence,
   orderBetween,
   type Project,
@@ -80,7 +84,31 @@ function spawnNext(
   const after = rule.basis === 'completion' ? (completedOn ?? ws.today) : instanceDate
   const next = nextOccurrence(rule, after, ws.today)
   if (!next) return
-  engine.create('task', instanceOf(template, next, orderAfterSiblings(ws, template, task.id)))
+  const instance = instanceOf(template, next, orderAfterSiblings(ws, template, task.id))
+  engine.create('task', instance)
+  const items = instanceChecklist(ws.checklistByTask.get(template.id) ?? [], instance.id)
+  for (const item of items) engine.create('checklistItem', item)
+}
+
+/**
+ * After a change to an open instance's checklist, makes the template's
+ * checklist match it (matched by position; ticks are not copied).
+ * `nextItems` is the instance's checklist as it is after the change.
+ */
+export function mirrorChecklist(
+  engine: SyncEngine,
+  ws: Workspace,
+  task: Task,
+  nextItems: ChecklistItem[],
+): void {
+  const template = task.templateId ? ws.templateById.get(task.templateId) : undefined
+  if (!template || task.status !== 'open') return
+  const plan = checklistMirror(ws.checklistByTask.get(template.id) ?? [], nextItems)
+  for (const u of plan.update) engine.mutate('checklistItem', u.id, u.fields)
+  for (const c of plan.create) {
+    engine.create('checklistItem', newChecklistItem({ ...c, taskId: template.id }))
+  }
+  for (const id of plan.remove) engine.mutate('checklistItem', id, { deleted: true })
 }
 
 function orderAfterSiblings(ws: Workspace, like: Task, exceptId: string): string {
@@ -122,6 +150,9 @@ export function setRepeat(engine: SyncEngine, ws: Workspace, task: Task, rule: R
     todayOrder: null,
   }
   engine.create('task', template)
+  for (const item of instanceChecklist(ws.checklistByTask.get(task.id) ?? [], template.id)) {
+    engine.create('checklistItem', item)
+  }
   engine.mutate('task', task.id, {
     templateId: template.id,
     when: { kind: 'date', date: first },
