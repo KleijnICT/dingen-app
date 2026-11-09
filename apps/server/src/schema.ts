@@ -40,3 +40,42 @@ export const entities = sqliteTable(
   },
   (t) => [primaryKey({ columns: [t.userId, t.entityType, t.id] })],
 )
+
+export const users = sqliteTable('users', {
+  id: text('id').primaryKey(),
+  email: text('email').notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  createdAt: text('created_at').notNull(),
+})
+
+/** Browsersessies. `id` is de sha256 van het cookie-token. */
+export const sessions = sqliteTable(
+  'sessions',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: text('created_at').notNull(),
+    expiresAt: text('expires_at').notNull(),
+    lastSeenAt: text('last_seen_at').notNull(),
+  },
+  (t) => [index('sessions_user_idx').on(t.userId)],
+)
+
+/** API-tokens voor clients en Claude. Alleen de hash wordt bewaard. */
+export const apiTokens = sqliteTable(
+  'api_tokens',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    prefix: text('prefix').notNull(),
+    tokenHash: text('token_hash').notNull().unique(),
+    createdAt: text('created_at').notNull(),
+    lastUsedAt: text('last_used_at'),
+  },
+  (t) => [index('api_tokens_user_idx').on(t.userId)],
+)

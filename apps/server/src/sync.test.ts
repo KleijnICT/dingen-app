@@ -1,5 +1,5 @@
 import { type Change, createClock, newTask, ulid } from '@dingen/core'
-import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { createApp } from './app.js'
 import { openDatabase } from './db.js'
 import { SyncService, SyncValidationError } from './sync.js'
@@ -8,6 +8,23 @@ const database = openDatabase(':memory:')
 const app = createApp({ db: database.db, version: 'test', sqliteVersion: database.sqliteVersion })
 const service = new SyncService(database.db)
 const clock = createClock('TEST')
+
+/** De HTTP-tests draaien als één geregistreerde gebruiker met een API-token. */
+let bearer = ''
+beforeAll(async () => {
+  const res = await app.request('/api/auth/register', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email: 'sync@test.nl', password: 'wachtwoord123' }),
+  })
+  const cookie = res.headers.get('set-cookie') ?? ''
+  const tokenRes = await app.request('/api/auth/tokens', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ name: 'test' }),
+  })
+  bearer = `Bearer ${(await tokenRes.json()).token}`
+})
 
 afterAll(() => database.close())
 
@@ -38,14 +55,14 @@ function createTaskChange(
 async function push(changes: Change[]) {
   const res = await app.request('/api/sync/push', {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', authorization: bearer },
     body: JSON.stringify({ changes }),
   })
   return { status: res.status, body: await res.json() }
 }
 
 async function get(path: string) {
-  const res = await app.request(path)
+  const res = await app.request(path, { headers: { authorization: bearer } })
   return { status: res.status, body: await res.json() }
 }
 
@@ -157,7 +174,7 @@ describe('sync API', () => {
   it('weigert een onleesbare body', async () => {
     const res = await app.request('/api/sync/push', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', authorization: bearer },
       body: '{"changes": "nee"}',
     })
     expect(res.status).toBe(400)

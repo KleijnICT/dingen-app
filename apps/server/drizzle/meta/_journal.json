@@ -15,6 +15,13 @@
       "when": 1794214081766,
       "tag": "0001_sync",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1794214259514,
+      "tag": "0002_accounts",
+      "breakpoints": true
     }
   ]
 }

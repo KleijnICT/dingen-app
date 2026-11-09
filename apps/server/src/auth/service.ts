@@ -1,0 +1,228 @@
+import { createHash, randomBytes } from 'node:crypto'
+import { ulid } from '@dingen/core'
+import { and, count, desc, eq, gt } from 'drizzle-orm'
+import type { Db } from '../db.js'
+import { apiTokens, sessions, users } from '../schema.js'
+import { hashPassword, verifyPassword } from './password.js'
+
+export interface User {
+  id: string
+  email: string
+  createdAt: string
+}
+
+export interface ApiTokenInfo {
+  id: string
+  name: string
+  prefix: string
+  createdAt: string
+  lastUsedAt: string | null
+}
+
+export type AuthSource = 'session' | 'token'
+
+export class AuthError extends Error {
+  constructor(
+    public readonly code:
+      | 'email_taken'
+      | 'invalid_credentials'
+      | 'registration_closed'
+      | 'too_many_attempts',
+  ) {
+    super(code)
+  }
+}
+
+export interface AuthOptions {
+  /** Registratie open voor iedereen (hosted) of alleen voor de eerste gebruiker (self-hosted). */
+  registrationOpen: boolean
+  sessionTtlMs?: number
+}
+
+const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000
+const TOKEN_PREFIX = 'dgn_'
+const MAX_FAILED_ATTEMPTS = 10
+const ATTEMPT_WINDOW_MS = 15 * 60 * 1000
+
+function sha256(value: string): string {
+  return createHash('sha256').update(value).digest('hex')
+}
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase()
+}
+
+export class AuthService {
+  private readonly failedAttempts = new Map<string, { count: number; firstAt: number }>()
+  private readonly sessionTtlMs: number
+
+  constructor(
+    private readonly db: Db,
+    private readonly options: AuthOptions,
+  ) {
+    this.sessionTtlMs = options.sessionTtlMs ?? SESSION_TTL_MS
+  }
+
+  hasUsers(): boolean {
+    const row = this.db.select({ n: count() }).from(users).get()
+    return (row?.n ?? 0) > 0
+  }
+
+  registrationOpen(): boolean {
+    return this.options.registrationOpen || !this.hasUsers()
+  }
+
+  async register(emailInput: string, password: string): Promise<User> {
+    if (!this.registrationOpen()) throw new AuthError('registration_closed')
+    const email = normalizeEmail(emailInput)
+    const existing = this.db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, email))
+      .get()
+    if (existing) throw new AuthError('email_taken')
+    const user = { id: ulid(), email, createdAt: new Date().toISOString() }
+    this.db
+      .insert(users)
+      .values({ ...user, passwordHash: await hashPassword(password) })
+      .run()
+    return user
+  }
+
+  async login(emailInput: string, password: string, clientKey: string): Promise<User> {
+    const email = normalizeEmail(emailInput)
+    const attemptKey = `${email}|${clientKey}`
+    this.assertNotLocked(attemptKey)
+    const row = this.db.select().from(users).where(eq(users.email, email)).get()
+    const ok = row ? await verifyPassword(password, row.passwordHash) : false
+    if (!row || !ok) {
+      this.recordFailure(attemptKey)
+      throw new AuthError('invalid_credentials')
+    }
+    this.failedAttempts.delete(attemptKey)
+    return { id: row.id, email: row.email, createdAt: row.createdAt }
+  }
+
+  /** Maakt een sessie en geeft het geheime cookie-token terug (alleen de hash wordt bewaard). */
+  createSession(userId: string): { token: string; expiresAt: string } {
+    const token = randomBytes(32).toString('base64url')
+    const now = new Date()
+    const expiresAt = new Date(now.getTime() + this.sessionTtlMs).toISOString()
+    this.db
+      .insert(sessions)
+      .values({
+        id: sha256(token),
+        userId,
+        createdAt: now.toISOString(),
+        expiresAt,
+        lastSeenAt: now.toISOString(),
+      })
+      .run()
+    return { token, expiresAt }
+  }
+
+  resolveSession(token: string): User | null {
+    const now = new Date().toISOString()
+    const row = this.db
+      .select({
+        id: users.id,
+        email: users.email,
+        createdAt: users.createdAt,
+        sessionId: sessions.id,
+      })
+      .from(sessions)
+      .innerJoin(users, eq(users.id, sessions.userId))
+      .where(and(eq(sessions.id, sha256(token)), gt(sessions.expiresAt, now)))
+      .get()
+    if (!row) return null
+    this.db.update(sessions).set({ lastSeenAt: now }).where(eq(sessions.id, row.sessionId)).run()
+    return { id: row.id, email: row.email, createdAt: row.createdAt }
+  }
+
+  deleteSession(token: string): void {
+    this.db
+      .delete(sessions)
+      .where(eq(sessions.id, sha256(token)))
+      .run()
+  }
+
+  createToken(userId: string, name: string): { token: string; info: ApiTokenInfo } {
+    const secret = TOKEN_PREFIX + randomBytes(32).toString('base64url')
+    const info: ApiTokenInfo = {
+      id: ulid(),
+      name,
+      prefix: secret.slice(0, TOKEN_PREFIX.length + 6),
+      createdAt: new Date().toISOString(),
+      lastUsedAt: null,
+    }
+    this.db
+      .insert(apiTokens)
+      .values({ ...info, userId, tokenHash: sha256(secret) })
+      .run()
+    return { token: secret, info }
+  }
+
+  listTokens(userId: string): ApiTokenInfo[] {
+    return this.db
+      .select({
+        id: apiTokens.id,
+        name: apiTokens.name,
+        prefix: apiTokens.prefix,
+        createdAt: apiTokens.createdAt,
+        lastUsedAt: apiTokens.lastUsedAt,
+      })
+      .from(apiTokens)
+      .where(eq(apiTokens.userId, userId))
+      .orderBy(desc(apiTokens.createdAt))
+      .all()
+  }
+
+  deleteToken(userId: string, tokenId: string): boolean {
+    const result = this.db
+      .delete(apiTokens)
+      .where(and(eq(apiTokens.userId, userId), eq(apiTokens.id, tokenId)))
+      .run()
+    return result.changes > 0
+  }
+
+  resolveToken(secret: string): User | null {
+    if (!secret.startsWith(TOKEN_PREFIX)) return null
+    const row = this.db
+      .select({
+        id: users.id,
+        email: users.email,
+        createdAt: users.createdAt,
+        tokenId: apiTokens.id,
+      })
+      .from(apiTokens)
+      .innerJoin(users, eq(users.id, apiTokens.userId))
+      .where(eq(apiTokens.tokenHash, sha256(secret)))
+      .get()
+    if (!row) return null
+    this.db
+      .update(apiTokens)
+      .set({ lastUsedAt: new Date().toISOString() })
+      .where(eq(apiTokens.id, row.tokenId))
+      .run()
+    return { id: row.id, email: row.email, createdAt: row.createdAt }
+  }
+
+  private assertNotLocked(key: string): void {
+    const entry = this.failedAttempts.get(key)
+    if (!entry) return
+    if (Date.now() - entry.firstAt > ATTEMPT_WINDOW_MS) {
+      this.failedAttempts.delete(key)
+      return
+    }
+    if (entry.count >= MAX_FAILED_ATTEMPTS) throw new AuthError('too_many_attempts')
+  }
+
+  private recordFailure(key: string): void {
+    const entry = this.failedAttempts.get(key)
+    if (!entry || Date.now() - entry.firstAt > ATTEMPT_WINDOW_MS) {
+      this.failedAttempts.set(key, { count: 1, firstAt: Date.now() })
+    } else {
+      entry.count += 1
+    }
+  }
+}

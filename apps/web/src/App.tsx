@@ -1,34 +1,56 @@
-import { APP_NAME, type HealthStatus } from '@dingen/core'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { Account } from './Account.js'
+import { AuthScreen } from './AuthScreen.js'
+import { type AuthStatus, api, errorText, type User } from './api.js'
 
-type Health =
-  | { state: 'loading' }
-  | { state: 'ok'; data: HealthStatus }
-  | { state: 'error'; message: string }
+type State =
+  | { kind: 'loading' }
+  | { kind: 'error'; message: string }
+  | { kind: 'anonymous'; status: AuthStatus }
+  | { kind: 'signedIn'; user: User }
 
 export function App() {
-  const [health, setHealth] = useState<Health>({ state: 'loading' })
+  const [state, setState] = useState<State>({ kind: 'loading' })
 
-  useEffect(() => {
-    fetch('/api/health')
-      .then(async (res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        setHealth({ state: 'ok', data: (await res.json()) as HealthStatus })
-      })
-      .catch((err: unknown) => {
-        setHealth({ state: 'error', message: err instanceof Error ? err.message : String(err) })
-      })
+  const bootstrap = useCallback(async () => {
+    try {
+      const status = await api.get<AuthStatus>('/api/auth/status')
+      try {
+        const { user } = await api.get<{ user: User }>('/api/auth/me')
+        setState({ kind: 'signedIn', user })
+      } catch {
+        setState({ kind: 'anonymous', status })
+      }
+    } catch (err) {
+      setState({ kind: 'error', message: errorText(err) })
+    }
   }, [])
 
-  return (
-    <main className="shell">
-      <h1>{APP_NAME}</h1>
-      <p className="status" data-state={health.state}>
-        {health.state === 'loading' && 'Verbinden met server…'}
-        {health.state === 'ok' &&
-          `Server ${health.data.version}, SQLite ${health.data.sqliteVersion}`}
-        {health.state === 'error' && `Geen verbinding: ${health.message}`}
-      </p>
-    </main>
-  )
+  useEffect(() => {
+    void bootstrap()
+  }, [bootstrap])
+
+  switch (state.kind) {
+    case 'loading':
+      return (
+        <main className="shell">
+          <p className="muted">Laden…</p>
+        </main>
+      )
+    case 'error':
+      return (
+        <main className="shell">
+          <p className="error">{state.message}</p>
+        </main>
+      )
+    case 'anonymous':
+      return (
+        <AuthScreen
+          status={state.status}
+          onSignedIn={(user) => setState({ kind: 'signedIn', user })}
+        />
+      )
+    case 'signedIn':
+      return <Account user={state.user} onSignedOut={() => void bootstrap()} />
+  }
 }

@@ -8,7 +8,12 @@ import { openDatabase } from './db.js'
 
 const config = loadConfig()
 const { db, sqliteVersion } = openDatabase(config.databasePath)
-const app = createApp({ db, version: config.version, sqliteVersion })
+const app = createApp({
+  db,
+  version: config.version,
+  sqliteVersion,
+  registrationOpen: config.registrationOpen,
+})
 
 // Onbekende API-paden krijgen JSON, nooit de SPA-fallback.
 app.all('/api/*', (c) => c.json({ error: 'not_found' }, 404))

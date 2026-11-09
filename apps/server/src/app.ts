@@ -1,8 +1,11 @@
 import type { HealthStatus } from '@dingen/core'
 import { APP_NAME } from '@dingen/core'
 import { Hono } from 'hono'
+import { authenticate, requireAuth } from './auth/middleware.js'
+import { AuthService } from './auth/service.js'
 import type { Db } from './db.js'
 import type { AppEnv } from './env.js'
+import { authRoutes } from './routes/auth.js'
 import { syncRoutes } from './routes/sync.js'
 import { SyncService } from './sync.js'
 
@@ -10,21 +13,22 @@ export interface AppDeps {
   db: Db
   version: string
   sqliteVersion: string
+  /** Registratie open voor iedereen (hosted) of alleen voor de eerste gebruiker. */
+  registrationOpen?: boolean
 }
-
-/** Tot onderdeel 3 (accounts) draait alles onder één vaste ontwikkelgebruiker. */
-const DEV_USER_ID = 'dev'
 
 /** Bouwt de Hono-app zonder HTTP-server of statische bestanden, zodat tests hem direct kunnen aanroepen. */
 export function createApp(deps: AppDeps) {
   const app = new Hono<AppEnv>()
   const sync = new SyncService(deps.db)
+  const auth = new AuthService(deps.db, { registrationOpen: deps.registrationOpen ?? false })
 
   app.use('/api/*', async (c, next) => {
     c.set('sync', sync)
-    c.set('userId', DEV_USER_ID)
+    c.set('auth', auth)
     await next()
   })
+  app.use('/api/*', authenticate)
 
   app.get('/api/health', (c) => {
     const body: HealthStatus = {
@@ -37,6 +41,8 @@ export function createApp(deps: AppDeps) {
     return c.json(body)
   })
 
+  app.route('/api/auth', authRoutes())
+  app.use('/api/sync/*', requireAuth)
   app.route('/api/sync', syncRoutes())
 
   app.notFound((c) => {
