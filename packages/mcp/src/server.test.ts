@@ -95,6 +95,17 @@ describe('mcp', () => {
     expect(o.areas[0].projects[0].openTasks).toBe(1)
   })
 
+  it('creates an area with icon and colour and rejects unknown ids', async () => {
+    const area = await call('create_area', { title: 'Huis', icon: 'home', color: 'green' })
+    expect(area).toMatchObject({ icon: 'home', color: 'green' })
+    const o = await call('overview', {})
+    expect(o.areas.find((x: { id: string }) => x.id === area.id)).toMatchObject({
+      icon: 'home',
+      color: 'green',
+    })
+    await expect(call('create_area', { title: 'x', icon: 'nope' })).rejects.toThrow()
+  })
+
   it('updates, moves and completes', async () => {
     const [row] = await call('list_tasks', { project: 'Website' })
     const task = await call('get_task', { id: row.id })

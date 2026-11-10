@@ -1,5 +1,5 @@
 import type { Area, ChecklistItem, Project, Task } from '@dingen/core'
-import { orderBetween, views } from '@dingen/core'
+import { orderBetween, placeAt, views } from '@dingen/core'
 import type { DragEndEvent } from '@dnd-kit/core'
 import type { ListId } from './lists.js'
 import type { Workspace } from './store/context.js'
@@ -65,12 +65,12 @@ function dropChecklistItem(
   const siblings = active.siblings.filter((i) => i.id !== active.item.id)
   const index = siblings.findIndex((i) => i.id === over.item.id)
   if (index < 0) return
-  const before = below ? siblings[index] : siblings[index - 1]
-  const after = below ? siblings[index + 1] : siblings[index]
-  const order = orderBetween(before?.order ?? null, after?.order ?? null)
+  const { order, renumber } = placeAt(siblings, below ? index + 1 : index, (i) => i.order)
+  for (const [id, o] of renumber) engine.mutate('checklistItem', id, { order: o })
   engine.mutate('checklistItem', active.item.id, { order })
   const moved = { ...active.item, order }
-  mirrorChecklist(engine, ws, active.task, [...siblings, moved])
+  const rest = siblings.map((i) => ({ ...i, order: renumber.get(i.id) ?? i.order }))
+  mirrorChecklist(engine, ws, active.task, [...rest, moved])
 }
 
 function dropTask(
@@ -111,14 +111,11 @@ function dropTask(
       const siblings = over.siblings.filter((s) => s.id !== task.id)
       const index = siblings.findIndex((s) => s.id === over.task.id)
       if (index < 0) return
-      const before = below ? siblings[index] : siblings[index - 1]
-      const after = below ? siblings[index + 1] : siblings[index]
       const fields = over.group.key === active.group.key ? {} : targetFields(ws, task, over.group)
-      const key = orderKey(over.group)
-      fields[over.group.orderField ?? 'order'] = orderBetween(
-        before ? key(before) : null,
-        after ? key(after) : null,
-      )
+      const field = over.group.orderField ?? 'order'
+      const { order, renumber } = placeAt(siblings, below ? index + 1 : index, orderKey(over.group))
+      for (const [id, o] of renumber) engine.mutate('task', id, { [field]: o })
+      fields[field] = order
       commitTask(engine, ws, task, fields)
       return
     }
@@ -166,12 +163,9 @@ function dropProject(
     .filter((p) => p.id !== project.id)
   const index = siblings.findIndex((p) => p.id === over.project.id)
   if (index < 0) return
-  const before = below ? siblings[index] : siblings[index - 1]
-  const after = below ? siblings[index + 1] : siblings[index]
-  engine.mutate('project', project.id, {
-    areaId: over.project.areaId,
-    order: orderBetween(before?.order ?? null, after?.order ?? null),
-  })
+  const { order, renumber } = placeAt(siblings, below ? index + 1 : index, (p) => p.order)
+  for (const [id, o] of renumber) engine.mutate('project', id, { order: o })
+  engine.mutate('project', project.id, { areaId: over.project.areaId, order })
 }
 
 function dropArea(
@@ -185,9 +179,7 @@ function dropArea(
   const siblings = views.openAreas(ws.areas).filter((a) => a.id !== area.id)
   const index = siblings.findIndex((a) => a.id === over.area.id)
   if (index < 0) return
-  const before = below ? siblings[index] : siblings[index - 1]
-  const after = below ? siblings[index + 1] : siblings[index]
-  engine.mutate('area', area.id, {
-    order: orderBetween(before?.order ?? null, after?.order ?? null),
-  })
+  const { order, renumber } = placeAt(siblings, below ? index + 1 : index, (a) => a.order)
+  for (const [id, o] of renumber) engine.mutate('area', id, { order: o })
+  engine.mutate('area', area.id, { order })
 }

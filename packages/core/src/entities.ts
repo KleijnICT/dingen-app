@@ -31,9 +31,82 @@ export const When = z.discriminatedUnion('kind', [
 ])
 export type When = z.infer<typeof When>
 
+/** Icon ids an area can show; the web app maps each to a drawing. */
+export const AREA_ICONS = [
+  'home',
+  'briefcase',
+  'building',
+  'heart',
+  'heart-pulse',
+  'dumbbell',
+  'wrench',
+  'hammer',
+  'server',
+  'cpu',
+  'bot',
+  'code',
+  'laptop',
+  'wallet',
+  'piggy-bank',
+  'landmark',
+  'receipt',
+  'book-open',
+  'graduation-cap',
+  'pen-line',
+  'palette',
+  'camera',
+  'music',
+  'plane',
+  'car',
+  'bike',
+  'trees',
+  'sprout',
+  'sun',
+  'dog',
+  'baby',
+  'users',
+  'shopping-cart',
+  'utensils',
+  'coffee',
+  'gift',
+  'calendar',
+  'clipboard-list',
+  'folder',
+  'archive',
+  'globe',
+  'zap',
+  'shield',
+  'lightbulb',
+  'star',
+  'flag',
+] as const
+export type AreaIconId = (typeof AREA_ICONS)[number]
+
+/** Colour ids an area can have; the first is the neutral one. */
+export const AREA_COLORS = [
+  'gray',
+  'red',
+  'orange',
+  'yellow',
+  'green',
+  'mint',
+  'blue',
+  'indigo',
+  'purple',
+  'pink',
+] as const
+export type AreaColorId = (typeof AREA_COLORS)[number]
+
+/**
+ * `icon` and `color` are plain strings so ids from a newer version survive a
+ * round trip; null means the default look. Areas synced before these fields
+ * existed parse with nulls.
+ */
 export const Area = Base.extend({
   title: z.string(),
   order: Order,
+  icon: z.string().nullable().default(null),
+  color: z.string().nullable().default(null),
 })
 export type Area = z.infer<typeof Area>
 

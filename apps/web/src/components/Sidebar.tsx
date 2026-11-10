@@ -14,9 +14,9 @@ import {
 import { areaPath, navigate, projectPath } from '../router.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import type { SyncStatus } from '../store/engine.js'
+import { AreaGlyph } from './AreaIcons.js'
 import {
   AnytimeIcon,
-  AreaIcon,
   CalendarIcon,
   ChevronIcon,
   InboxIcon,
@@ -153,7 +153,7 @@ export function Sidebar({ path, status, email }: Props) {
                     drop={{ type: 'area', area }}
                     drag={{ type: 'area', area }}
                   >
-                    <AreaIcon className="nav-icon" />
+                    <AreaGlyph icon={area.icon} color={area.color} className="nav-icon" />
                     <span className="nav-title">{area.title || <em>{t('area.untitled')}</em>}</span>
                   </NavLink>
                   {projects.length > 0 && (

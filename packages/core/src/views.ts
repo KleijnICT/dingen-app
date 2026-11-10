@@ -110,8 +110,9 @@ export function isLogbook(item: Task | Project): boolean {
   return !item.deleted && item.status !== 'open' && !('repeat' in item && item.repeat !== null)
 }
 
-export function byOrder<T extends { order: string }>(a: T, b: T): number {
-  return compareOrder(a.order, b.order)
+/** By order; equal orders (from an import, or two devices) fall back to the id, so the row is stable. */
+export function byOrder<T extends { order: string; id: string }>(a: T, b: T): number {
+  return compareOrder(a.order, b.order) || compareOrder(a.id, b.id)
 }
 
 /** Vandaag heeft een eigen volgorde; zonder eigen plek volgt een taak zijn projectvolgorde. */
@@ -120,7 +121,7 @@ export function todayKey(task: Task): string {
 }
 
 export function byTodayOrder(a: Task, b: Task): number {
-  return compareOrder(todayKey(a), todayKey(b))
+  return compareOrder(todayKey(a), todayKey(b)) || compareOrder(a.id, b.id)
 }
 
 export function byCompletedDesc<T extends { completedAt: string | null }>(a: T, b: T): number {

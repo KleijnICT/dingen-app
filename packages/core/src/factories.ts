@@ -50,7 +50,15 @@ export function newProject(fields: Partial<Project> & { title: string }): Projec
 }
 
 export function newArea(fields: Partial<Area> & { title: string }): Area {
-  return { id: ulid(), createdAt: nowIso(), deleted: false, order: firstOrder(), ...fields }
+  return {
+    id: ulid(),
+    createdAt: nowIso(),
+    deleted: false,
+    order: firstOrder(),
+    icon: null,
+    color: null,
+    ...fields,
+  }
 }
 
 export function newHeading(

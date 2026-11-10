@@ -15,6 +15,15 @@
   --someday: #b08a5a;
   --logbook: #3f9f6e;
   --check: #c9c9c4;
+  --area-red: #e5484d;
+  --area-orange: #f0762b;
+  --area-yellow: #d9a400;
+  --area-green: #3fa34d;
+  --area-mint: #1fb5a0;
+  --area-blue: #2f7de1;
+  --area-indigo: #5b5bd6;
+  --area-purple: #9a52d0;
+  --area-pink: #dc4f93;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: 15px;
   color-scheme: light dark;
@@ -29,6 +38,15 @@
     --line: #333338;
     --hover: rgba(255, 255, 255, 0.05);
     --check: #4a4a50;
+    --area-red: #ff6369;
+    --area-orange: #ff9047;
+    --area-yellow: #f2c230;
+    --area-green: #5cc56b;
+    --area-mint: #3ccfba;
+    --area-blue: #5b9bf5;
+    --area-indigo: #8484f0;
+    --area-purple: #b98af0;
+    --area-pink: #f272ae;
   }
 }
 * {
@@ -1079,4 +1097,77 @@ button.link.danger {
 }
 .checklist-add {
   padding-left: 30px;
+}
+
+.area-appearance {
+  position: relative;
+  flex: none;
+}
+.area-appearance-button {
+  background: none;
+  padding: 0;
+  display: grid;
+  place-content: center;
+  border-radius: 8px;
+}
+.area-appearance-button:hover {
+  background: var(--hover);
+}
+.area-appearance-button:focus-visible,
+.picker-item:focus-visible,
+.swatch:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.area-picker {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  width: min(300px, calc(100vw - 32px));
+  padding: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+}
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(34px, 1fr));
+  gap: 2px;
+}
+.picker-item {
+  display: grid;
+  place-content: center;
+  height: 34px;
+  padding: 0;
+  background: none;
+  color: var(--fg);
+  border-radius: 8px;
+}
+.picker-item:hover {
+  background: var(--hover);
+}
+.picker-item[aria-pressed="true"] {
+  background: var(--hover);
+  box-shadow: inset 0 0 0 1.5px var(--muted);
+}
+.color-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.swatch {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 50%;
+}
+.swatch[aria-pressed="true"] {
+  box-shadow:
+    0 0 0 2px var(--surface),
+    0 0 0 4px var(--fg);
 }

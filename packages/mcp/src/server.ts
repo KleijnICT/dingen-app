@@ -1,4 +1,6 @@
 import {
+  AREA_COLORS,
+  AREA_ICONS,
   type Area,
   addDays,
   type ChecklistItem,
@@ -106,6 +108,8 @@ export function createMcpServer(client: DingenClient): McpServer {
         areas: views.openAreas(ws.areas).map((a) => ({
           id: a.id,
           title: a.title,
+          icon: a.icon,
+          color: a.color,
           projects: views.projectsOf(ws.projects, a.id).map((p) => projectRow(ws, p)),
           looseTasks: views.areaTasks(ws.tasks, a.id).filter(views.isOpen).length,
         })),
@@ -499,15 +503,24 @@ export function createMcpServer(client: DingenClient): McpServer {
     'create_area',
     {
       title: 'Create an area',
-      description: 'Creates an area of responsibility.',
-      inputSchema: { title: z.string().min(1) },
+      description: 'Creates an area of responsibility, optionally with an icon and a colour.',
+      inputSchema: {
+        title: z.string().min(1),
+        icon: z.enum(AREA_ICONS).optional(),
+        color: z.enum(AREA_COLORS).optional(),
+      },
     },
-    ({ title }) =>
+    ({ title, icon, color }) =>
       run((ws) => {
         const last = views.openAreas(ws.areas).at(-1)
-        const area = newArea({ title, order: orderBetween(last?.order ?? null, null) })
+        const area = newArea({
+          title,
+          order: orderBetween(last?.order ?? null, null),
+          icon: icon ?? null,
+          color: color === 'gray' ? null : (color ?? null),
+        })
         client.create('area', area)
-        return { id: area.id, title: area.title }
+        return { id: area.id, title: area.title, icon: area.icon, color: area.color }
       }),
   )
 

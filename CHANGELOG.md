@@ -4,6 +4,10 @@
 
 - Claude Code plugin: `/plugin install dingen --marketplace KleijnICT/dingen-app`
   connects the MCP server and adds a skill for Dingen's workflow.
+- Areas get an outline icon and a colour, chosen on the area page (also right
+  after creating one) and shown in the sidebar; `create_area` in the MCP accepts both.
+- Dragging areas, projects, tasks and checklist items works again when two of
+  them share an order (for example after an import); the row is renumbered.
 - Area titles use the full width of the page instead of being cut off.
 - Every push to `main` is now a release; the version comes from `package.json`.
 - The sidebar shows the version and build (commit) under the sync status;

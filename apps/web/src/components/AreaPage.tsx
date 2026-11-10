@@ -5,6 +5,7 @@ import { completedDate } from '../lists.js'
 import { navigate, projectPath } from '../router.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { deleteArea, useLinger } from '../taskActions.js'
+import { AreaAppearance } from './AreaAppearance.js'
 import { ConfirmButton } from './ConfirmButton.js'
 import { InlineInput } from './InlineInput.js'
 import { ProjectRow } from './ProjectRow.js'
@@ -82,7 +83,8 @@ export function AreaPage({ area, focusSignal }: Props) {
 
   return (
     <section className="list-page area">
-      <header className="list-header">
+      <header className="list-header project-header">
+        <AreaAppearance area={area} />
         <InlineInput
           className="title-input"
           value={area.title}

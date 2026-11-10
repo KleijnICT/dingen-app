@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { newHeading, newProject, newTask } from './factories.js'
-import { orderBetween } from './order.js'
+import { firstOrder, orderBetween } from './order.js'
 import * as views from './views.js'
 
 const TODAY = '2026-11-09'
@@ -132,7 +132,12 @@ describe('views', () => {
     const tasks = [
       newTask({ title: 'los', when: { kind: 'anytime' } }),
       newTask({ title: 'in p', projectId: project.id, when: { kind: 'anytime' } }),
-      newTask({ title: 'in p klaar', projectId: project.id, status: 'completed' }),
+      newTask({
+        title: 'in p klaar',
+        projectId: project.id,
+        status: 'completed',
+        order: orderBetween(firstOrder(), null),
+      }),
       newTask({ title: 'in klaar', projectId: doneProject.id, when: { kind: 'anytime' } }),
       newTask({ title: 'in ooit', projectId: somedayProject.id, when: { kind: 'anytime' } }),
       newTask({
