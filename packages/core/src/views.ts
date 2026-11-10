@@ -5,7 +5,7 @@ import { compareOrder } from './order.js'
 export { toCalendarDate }
 
 /**
- * De lijsten van Things als pure functies. Gedeeld door web, server en MCP,
+ * De lijsten als pure functies. Gedeeld door web, server en MCP,
  * zodat "Vandaag" overal hetzelfde betekent.
  */
 

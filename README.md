@@ -1,6 +1,6 @@
 # Dingen
 
-A task manager built around the Things way of working: Inbox, Today, Upcoming,
+A task manager for a GTD-style way of working: Inbox, Today, Upcoming,
 Anytime, Someday and Logbook, with areas, projects, headings, tags, deadlines,
 repeating tasks and checklists. Open source, web-based and self-hosted with
 Docker. Claude (or any MCP client) can read and manage your tasks through the
@@ -12,7 +12,7 @@ built-in MCP server.
 
 ## Features
 
-- **Things-style structure:** Inbox, Today (with This Evening), Upcoming,
+- **Structure:** Inbox, Today (with This Evening), Upcoming,
   Anytime, Someday, Logbook; areas, projects, headings and nested tags.
 - **Dates:** a "when" date for planning and a separate deadline.
 - **Repeating tasks:** on a schedule or after completion, with weekdays, end
@@ -111,7 +111,7 @@ To restore, stop the container and put a backup back as `/data/dingen.db`.
 Sign in, open **Account** and create an API token (it starts with `dgn_`).
 
 **Claude Code plugin** (recommended): connects the MCP server and adds a skill
-that teaches Claude the Things workflow (capture to the Inbox, when-dates
+that teaches Claude how Dingen works (capture to the Inbox, when-dates
 versus deadlines, repeating on a schedule or after completion).
 
 ```

@@ -34,7 +34,7 @@ export function ProjectPage({ project, focusSignal }: Props) {
   const open = all.filter((task) => task.status === 'open')
   const completed = all.filter((task) => task.status !== 'open')
   const { shown: shownOpen, toggle } = useLinger(open, ws, engine)
-  // Completed today stays at the bottom of the project until the day changes, as in Things.
+  // Completed today stays at the bottom of the project until the day changes.
   const lingering = new Set(shownOpen.map((task) => task.id))
   const completedToday = completed
     .filter((task) => completedDate(task) === ws.today && !lingering.has(task.id))

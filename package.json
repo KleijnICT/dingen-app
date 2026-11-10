@@ -2,7 +2,7 @@
   "name": "dingen",
   "private": true,
   "version": "0.1.0",
-  "description": "Takenapp met het model van Things. Open source, self-hosted of hosted.",
+  "description": "GTD task manager. Open source, self-hosted or hosted.",
   "license": "GPL-3.0-only",
   "packageManager": "pnpm@12.18.0",
   "engines": {

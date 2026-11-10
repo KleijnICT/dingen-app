@@ -4,7 +4,7 @@ import { ulid } from './ids.js'
 import { compareOrder } from './order.js'
 
 /**
- * Herhaling zoals Things: een verborgen herhalende taak (template) met een
+ * Herhaling: een verborgen herhalende taak (template) met een
  * regel, en steeds één open exemplaar. Deze functies rekenen alleen; het
  * aanmaken van het exemplaar is een gewone wijziging in de client.
  */

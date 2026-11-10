@@ -226,7 +226,7 @@ export function toggleProject(w: Writer, project: Project): void {
   })
 }
 
-/** Deletes a project with its headings and tasks, as Things moves all of it to the trash. */
+/** Deletes a project with its headings and tasks. */
 export function deleteProject(w: Writer, ws: Snapshot, project: Project): void {
   for (const task of ws.tasks) {
     if (task.projectId === project.id) w.mutate('task', task.id, { deleted: true })

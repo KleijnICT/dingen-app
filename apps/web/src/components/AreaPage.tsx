@@ -74,7 +74,7 @@ export function AreaPage({ area, focusSignal }: Props) {
     navigate(projectPath(project.id))
   }
 
-  /** Deleting an area takes everything in it along, as Things does. */
+  /** Deleting an area takes everything in it along. */
   function remove() {
     deleteArea(engine, ws, area)
     navigate('/anytime')

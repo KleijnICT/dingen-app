@@ -2,7 +2,7 @@
 
 ## 0.1.0 (first test release)
 
-- Things-style lists: Inbox, Today with This Evening, Upcoming, Anytime,
+- Lists: Inbox, Today with This Evening, Upcoming, Anytime,
   Someday and Logbook.
 - Areas, projects, headings and nested tags, with drag and drop.
 - When dates and deadlines; repeating tasks on a schedule or after completion.

@@ -4,7 +4,7 @@ Dingen is an early test release. The most useful contribution right now is a
 clear issue: what you did, what you expected, what happened, and the version
 (the image tag you run, or `version` from `/api/health`).
 
-Dingen follows the Things way of working on purpose and keeps few settings.
+Dingen follows one way of working on purpose and keeps few settings.
 Feature requests that add options are likely to be declined; requests that
 make the existing workflow work better are welcome.
 

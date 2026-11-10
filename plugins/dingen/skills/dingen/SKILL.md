@@ -1,11 +1,11 @@
 ---
 name: dingen
-description: Manage tasks in Dingen, a self-hosted task manager with the Things workflow, through its MCP tools. Use when the user wants to capture a task, see what is on today, plan or reschedule work, process the inbox, organise areas and projects, or review their lists in Dingen.
+description: Manage tasks in Dingen, a self-hosted GTD task manager, through its MCP tools. Use when the user wants to capture a task, see what is on today, plan or reschedule work, process the inbox, organise areas and projects, or review their lists in Dingen.
 ---
 
 # Dingen
 
-Dingen follows the Things way of working. The MCP server `dingen` gives you
+Dingen has one fixed way of working. The MCP server `dingen` gives you
 tools for it. Work with the model below instead of inventing your own
 structure: the user trusts the app because every task is filed the same way.
 

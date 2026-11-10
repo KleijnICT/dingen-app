@@ -46,7 +46,7 @@ jobs:
             type=raw,value=latest,enable=${{ !contains(github.ref_name, '-') }}
           labels: |
             org.opencontainers.image.title=Dingen
-            org.opencontainers.image.description=Self-hosted task manager with the Things workflow and a built-in MCP server
+            org.opencontainers.image.description=Self-hosted GTD task manager with an offline-first web app and a built-in MCP server
             org.opencontainers.image.licenses=GPL-3.0-only
       - uses: docker/build-push-action@v6
         with:
