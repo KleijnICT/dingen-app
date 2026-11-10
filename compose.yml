@@ -1,9 +1,13 @@
 services:
   dingen:
-    build: .
-    image: dingen:dev
+    image: kleijnict/dingen:latest
     ports:
       - "8080:8080"
+    environment:
+      # Decides what "today" is for the MCP server.
+      DINGEN_TIMEZONE: Europe/Amsterdam
+      # Uncomment to let anyone create an account (default: only the first user).
+      # DINGEN_REGISTRATION: open
     volumes:
       - dingen-data:/data
     restart: unless-stopped

@@ -1,0 +1,15 @@
+# Builds the image from source: docker compose -f compose.dev.yml up --build
+services:
+  dingen:
+    build: .
+    image: dingen:dev
+    ports:
+      - "8080:8080"
+    environment:
+      DINGEN_TIMEZONE: Europe/Amsterdam
+    volumes:
+      - dingen-data:/data
+    restart: unless-stopped
+
+volumes:
+  dingen-data:

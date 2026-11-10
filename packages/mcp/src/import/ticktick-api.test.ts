@@ -50,7 +50,7 @@ const DUMP: TickTickDump = {
     { id: 'inbox1', name: 'Postvak', sortOrder: null, closed: null, groupId: null },
   ],
   tags: [
-    { name: 'jordy', label: 'Jordy', sortOrder: 5, parent: 'personen' },
+    { name: 'robin', label: 'Robin', sortOrder: 5, parent: 'personen' },
     { name: 'personen', label: 'Personen', parent: null },
     { name: 'waiting', label: 'Waiting', parent: '' },
     { name: 'ongebruikt', label: 'Ongebruikt', sortOrder: 9, parent: null },
@@ -63,7 +63,7 @@ const DUMP: TickTickDump = {
         task('a1', 'p1', {
           sortOrder: 50,
           title: 'Late',
-          tags: ['jordy'],
+          tags: ['robin'],
           isAllDay: false,
           startDate: '2026-11-15T23:30:00+0000',
           reminders: ['TRIGGER:PT0S'],
@@ -171,12 +171,12 @@ describe('ticktick api import', () => {
 
   it('uses tag labels and parents, and keeps unused tags', () => {
     const tags = Object.fromEntries(result.tags.map((t) => [t.title, t]))
-    expect(Object.keys(tags).sort()).toEqual(['Jordy', 'Ongebruikt', 'Personen', 'Waiting'])
-    expect(tags.Jordy?.parentId).toBe(tags.Personen?.id)
+    expect(Object.keys(tags).sort()).toEqual(['Ongebruikt', 'Personen', 'Robin', 'Waiting'])
+    expect(tags.Robin?.parentId).toBe(tags.Personen?.id)
     expect(tags.Personen?.parentId).toBeNull()
     expect(tags.Waiting?.parentId).toBeNull()
-    expect(byId('a1').tagIds).toEqual([tags.Jordy?.id])
-    expect(tags.Jordy?.id).toBe(stableId('tag:jordy'))
+    expect(byId('a1').tagIds).toEqual([tags.Robin?.id])
+    expect(tags.Robin?.id).toBe(stableId('tag:robin'))
   })
 
   it('builds the checklist from items with desc as notes', () => {
