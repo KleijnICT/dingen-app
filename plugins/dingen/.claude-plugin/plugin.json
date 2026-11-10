@@ -1,7 +1,7 @@
 {
   "name": "dingen",
   "displayName": "Dingen",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Connects Claude to your self-hosted Dingen task manager (MCP) and teaches it how Dingen works: capture to the Inbox, plan with when-dates, keep deadlines for real deadlines.",
   "author": { "name": "KleijnICT", "url": "https://github.com/KleijnICT" },
   "homepage": "https://github.com/KleijnICT/dingen-app",

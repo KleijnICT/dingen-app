@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1
+
+- Claude Code plugin: `/plugin install dingen --marketplace KleijnICT/dingen-app`
+  connects the MCP server and adds a skill for Dingen's workflow.
+- Area titles use the full width of the page instead of being cut off.
+- Every push to `main` is now a release; the version comes from `package.json`.
+
 ## 0.1.0 (first test release)
 
 - Lists: Inbox, Today with This Evening, Upcoming, Anytime,
