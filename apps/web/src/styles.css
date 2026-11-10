@@ -177,7 +177,7 @@ button.link.danger {
 /* --- Window --- */
 .app {
   display: grid;
-  grid-template-columns: 220px 1fr;
+  grid-template-columns: var(--sidebar-width, 220px) 1fr;
   height: 100%;
 }
 .sidebar {
@@ -188,6 +188,20 @@ button.link.danger {
   padding: 18px 10px 12px;
   border-right: 1px solid var(--line);
   overflow: hidden;
+  position: relative;
+}
+.sidebar-resize {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  touch-action: none;
+}
+.sidebar-resize:hover,
+.sidebar-resize:active {
+  background: var(--line);
 }
 .nav {
   list-style: none;
@@ -549,6 +563,10 @@ button.link.danger {
   .sidebar-foot .sync-status {
     display: none;
   }
+  .sidebar-resize,
+  .area-toggle {
+    display: none;
+  }
   .content {
     padding: 20px 16px 40px;
   }
@@ -571,6 +589,50 @@ button.link.danger {
 }
 .area-group > .nav {
   padding-left: 12px;
+}
+.area-row {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+.area-row > .nav-item {
+  flex: 1;
+  min-width: 0;
+}
+.area-toggle {
+  position: absolute;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  opacity: 0;
+}
+.area-row:hover .area-toggle,
+.area-toggle:focus-visible,
+.area-toggle.closed {
+  opacity: 1;
+}
+.area-toggle:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+.area-toggle svg {
+  transition: transform 0.12s;
+}
+.area-toggle.closed svg {
+  transform: rotate(-90deg);
+}
+.nav-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .nav-item.area .nav-icon {
   color: var(--muted);

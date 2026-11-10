@@ -11,7 +11,7 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core'
-import { useCallback, useEffect, useState } from 'react'
+import { type CSSProperties, useCallback, useEffect, useState } from 'react'
 import { Account } from './Account.js'
 import type { User } from './api.js'
 import { AreaPage } from './components/AreaPage.js'
@@ -20,6 +20,7 @@ import { ProjectPage } from './components/ProjectPage.js'
 import { Sidebar } from './components/Sidebar.js'
 import { type DragData, handleDragEnd } from './dnd.js'
 import { LISTS } from './lists.js'
+import { useSidebarWidth } from './prefs.js'
 import { navigate, parseRoute, usePath } from './router.js'
 import { useBuildWorkspace, useEngine, WorkspaceContext } from './store/context.js'
 
@@ -35,6 +36,7 @@ export function Shell({ user, onSignedOut }: Props) {
   const [today, setToday] = useState(toCalendarDate())
   const [focusSignal, setFocusSignal] = useState(0)
   const ws = useBuildWorkspace(today)
+  const sidebarWidth = useSidebarWidth()
   const route = parseRoute(path)
   const [dragging, setDragging] = useState<DragData | null>(null)
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
@@ -100,7 +102,7 @@ export function Shell({ user, onSignedOut }: Props) {
         onDragEnd={onDragEnd}
         onDragCancel={() => setDragging(null)}
       >
-        <div className="app">
+        <div className="app" style={{ '--sidebar-width': `${sidebarWidth}px` } as CSSProperties}>
           <Sidebar path={path} status={engine.status} email={user.email} />
           <main className="content">{page}</main>
         </div>

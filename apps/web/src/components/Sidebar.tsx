@@ -1,9 +1,16 @@
 import { newArea, newProject, orderBetween, type Project, views } from '@dingen/core'
 import { useDraggable, useDroppable } from '@dnd-kit/core'
-import { type ReactElement, type ReactNode, useState } from 'react'
+import { type PointerEvent, type ReactElement, type ReactNode, useState } from 'react'
 import type { DragData, DropData } from '../dnd.js'
 import { useT } from '../i18n/index.js'
 import { countFor, LISTS, type ListId } from '../lists.js'
+import {
+  clampSidebar,
+  setSidebarWidth,
+  toggleAreaCollapsed,
+  useCollapsedAreas,
+  useSidebarWidth,
+} from '../prefs.js'
 import { areaPath, navigate, projectPath } from '../router.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import type { SyncStatus } from '../store/engine.js'
@@ -11,6 +18,7 @@ import {
   AnytimeIcon,
   AreaIcon,
   CalendarIcon,
+  ChevronIcon,
   InboxIcon,
   LogbookIcon,
   PersonIcon,
@@ -41,6 +49,28 @@ export function Sidebar({ path, status, email }: Props) {
   const ws = useWorkspace()
   const [adding, setAdding] = useState(false)
   const statusText = t(`sync.${status}`)
+  const collapsed = useCollapsedAreas()
+  const width = useSidebarWidth()
+
+  // Dragging the right edge resizes the sidebar; the pointer is captured so
+  // the drag keeps working when it leaves the thin handle.
+  function startResize(e: PointerEvent<HTMLDivElement>) {
+    e.preventDefault()
+    e.currentTarget.setPointerCapture(e.pointerId)
+    const startX = e.clientX
+    const startWidth = width
+    const handle = e.currentTarget
+    const move = (ev: globalThis.PointerEvent) =>
+      setSidebarWidth(clampSidebar(startWidth + ev.clientX - startX))
+    const stop = () => {
+      handle.removeEventListener('pointermove', move)
+      handle.removeEventListener('pointerup', stop)
+      handle.removeEventListener('pointercancel', stop)
+    }
+    handle.addEventListener('pointermove', move)
+    handle.addEventListener('pointerup', stop)
+    handle.addEventListener('pointercancel', stop)
+  }
 
   const link = (href: string, className: string, content: ReactElement, title?: string) => (
     <NavLink href={href} className={className} active={path === href} title={title}>
@@ -108,25 +138,45 @@ export function Sidebar({ path, status, email }: Props) {
           {views.projectsOf(ws.projects, null).map((p) => (
             <li key={p.id}>{projectItem(p)}</li>
           ))}
-          {views.openAreas(ws.areas).map((area) => (
-            <li key={area.id} className="area-group">
-              <NavLink
-                href={areaPath(area.id)}
-                className="area"
-                active={path === areaPath(area.id)}
-                drop={{ type: 'area', area }}
-                drag={{ type: 'area', area }}
-              >
-                <AreaIcon className="nav-icon" />
-                <span className="nav-title">{area.title || <em>{t('area.untitled')}</em>}</span>
-              </NavLink>
-              <ul className="nav">
-                {views.projectsOf(ws.projects, area.id).map((p) => (
-                  <li key={p.id}>{projectItem(p)}</li>
-                ))}
-              </ul>
-            </li>
-          ))}
+          {views.openAreas(ws.areas).map((area) => {
+            const projects = views.projectsOf(ws.projects, area.id)
+            const closed = collapsed.has(area.id)
+            return (
+              <li key={area.id} className="area-group">
+                <div className="area-row">
+                  <NavLink
+                    href={areaPath(area.id)}
+                    className="area"
+                    active={path === areaPath(area.id)}
+                    drop={{ type: 'area', area }}
+                    drag={{ type: 'area', area }}
+                  >
+                    <AreaIcon className="nav-icon" />
+                    <span className="nav-title">{area.title || <em>{t('area.untitled')}</em>}</span>
+                  </NavLink>
+                  {projects.length > 0 && (
+                    <button
+                      type="button"
+                      className={`area-toggle ${closed ? 'closed' : ''}`}
+                      aria-expanded={!closed}
+                      aria-label={t(closed ? 'nav.expand' : 'nav.collapse')}
+                      title={t(closed ? 'nav.expand' : 'nav.collapse')}
+                      onClick={() => toggleAreaCollapsed(area.id)}
+                    >
+                      <ChevronIcon />
+                    </button>
+                  )}
+                </div>
+                {!closed && (
+                  <ul className="nav">
+                    {projects.map((p) => (
+                      <li key={p.id}>{projectItem(p)}</li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            )
+          })}
         </ul>
       </div>
       <div className="sidebar-foot">
@@ -162,6 +212,17 @@ export function Sidebar({ path, status, email }: Props) {
           <span className="sync-text">{statusText}</span>
         </p>
       </div>
+      {/* biome-ignore lint/a11y/useSemanticElements: an <hr> cannot be dragged */}
+      <div
+        className="sidebar-resize"
+        role="separator"
+        aria-orientation="vertical"
+        aria-label={t('nav.resize')}
+        aria-valuenow={width}
+        tabIndex={-1}
+        onPointerDown={startResize}
+        onDoubleClick={() => setSidebarWidth(null)}
+      />
     </nav>
   )
 }
