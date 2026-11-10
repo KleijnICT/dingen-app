@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "dingen": {
+      "type": "http",
+      "url": "${user_config.dingen_url}/mcp",
+      "headers": {
+        "Authorization": "Bearer ${user_config.dingen_token}"
+      }
+    }
+  }
+}

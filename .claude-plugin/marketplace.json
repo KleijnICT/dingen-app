@@ -1,0 +1,12 @@
+{
+  "name": "dingen",
+  "owner": { "name": "KleijnICT", "url": "https://github.com/KleijnICT" },
+  "description": "Plugins for Dingen, the self-hosted task manager with the Things workflow.",
+  "plugins": [
+    {
+      "name": "dingen",
+      "source": "./plugins/dingen",
+      "description": "Dingen MCP server plus a skill for the Things workflow."
+    }
+  ]
+}

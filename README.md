@@ -110,7 +110,21 @@ To restore, stop the container and put a backup back as `/data/dingen.db`.
 
 Sign in, open **Account** and create an API token (it starts with `dgn_`).
 
-**Over HTTP**, for Claude Code:
+**Claude Code plugin** (recommended): connects the MCP server and adds a skill
+that teaches Claude the Things workflow (capture to the Inbox, when-dates
+versus deadlines, repeating on a schedule or after completion).
+
+```
+/plugin install dingen --marketplace KleijnICT/dingen-app
+```
+
+Claude Code asks for your Dingen URL (for example `https://dingen.example.com`)
+and the API token when you enable the plugin; the token is kept in Claude
+Code's secure credential store. On older Claude Code versions, run
+`/plugin marketplace add KleijnICT/dingen-app` and then
+`/plugin install dingen@dingen`.
+
+**Over HTTP**, for Claude Code without the plugin:
 
 ```sh
 claude mcp add --transport http dingen https://dingen.example.com/mcp \
