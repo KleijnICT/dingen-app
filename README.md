@@ -84,6 +84,12 @@ dingen.example.com {
 }
 ```
 
+### Development builds
+
+Every push to the `develop` branch publishes `ghcr.io/kleijnict/dingen:develop`
+(and `sha-<commit>`). Use it to try changes before they are released; it can
+break. Releases are `latest` and the version tags.
+
 ## Updating
 
 ```sh
