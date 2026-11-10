@@ -1,7 +1,7 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.6.6/schema.json",
   "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
-  "files": { "includes": ["**", "!**/dist", "!**/drizzle/meta", "!docs"] },
+  "files": { "includes": ["**", "!**/dist", "!**/drizzle/meta", "!docs", "!**/SKILL.md"] },
   "formatter": { "enabled": true, "indentStyle": "space", "lineWidth": 100 },
   "linter": { "enabled": true, "rules": { "preset": "recommended" } },
   "javascript": { "formatter": { "quoteStyle": "single", "semicolons": "asNeeded" } }

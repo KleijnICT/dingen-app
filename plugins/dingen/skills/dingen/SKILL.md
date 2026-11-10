@@ -1,5 +1,4 @@
 ---
-
 name: dingen
 description: Manage tasks in Dingen, a self-hosted task manager with the Things workflow, through its MCP tools. Use when the user wants to capture a task, see what is on today, plan or reschedule work, process the inbox, organise areas and projects, or review their lists in Dingen.
 ---
