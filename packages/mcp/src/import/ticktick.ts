@@ -50,6 +50,10 @@ export interface TickTickRow {
   parentId: string
   /** Lists TickTick marks as closed show up here; the export has no column for it. */
   listClosed: boolean
+  /** Structured checklist items (API path). When present, `content` is not scanned for items. */
+  items?: { title: string; done: boolean }[]
+  /** Known repeat basis (API path). Absent means the source did not say. */
+  repeatBasis?: 'schedule' | 'completion'
 }
 
 export function parseTickTickCsv(text: string): TickTickRow[] {
@@ -144,8 +148,20 @@ function parseCsv(text: string): string[][] {
 
 export interface ImportOptions {
   today: string
-  /** Tag name → parent tag name (TickTick's export has no tag hierarchy). */
+  /**
+   * Tag name → parent tag name. Both are TickTick tag names (the lowercase
+   * identifier, as in a task's tags), matched case-insensitively. The CSV
+   * export has no tag hierarchy, so the CSV path takes this from a file.
+   */
   tagParents?: Record<string, string>
+  /** Tag name (lowercase) → display title. Without an entry the name itself is the title. */
+  tagLabels?: Record<string, string>
+  /** Tag names to create even when no task uses them, in display order. */
+  allTags?: string[]
+  /** Areas and projects to create even when they hold no tasks, in display order. */
+  structure?: { areas: string[]; projects: { title: string; area: string | null }[] }
+  /** Warnings from the source reader, listed before the planner's own. */
+  notices?: string[]
   /** Names of lists that are closed in TickTick; they are skipped. */
   closedLists?: string[]
   timezone?: string
@@ -163,7 +179,7 @@ export interface ImportPlan {
 }
 
 export function planTickTickImport(rows: TickTickRow[], options: ImportOptions): ImportPlan {
-  const warnings: string[] = []
+  const warnings: string[] = [...(options.notices ?? [])]
   const closed = new Set((options.closedLists ?? []).map(normalize))
   const timezone = options.timezone ?? rows.find((r) => r.timezone)?.timezone ?? 'Europe/Amsterdam'
 
@@ -173,53 +189,78 @@ export function planTickTickImport(rows: TickTickRow[], options: ImportOptions):
   // Structure: areas from folders, projects from lists.
   const areas = new Map<string, Area>()
   const projects = new Map<string, Project>()
+  const projectAreaTitle = new Map<string, string | null>()
   const areaOrders = ordersBetween(null, null, 1000)
   const projectOrders = ordersBetween(null, null, 1000)
   let areaN = 0
   let projectN = 0
+  const ensureArea = (folder: string) => {
+    if (!folder || areas.has(folder)) return
+    areas.set(
+      folder,
+      newArea({
+        id: stableId(`area:${folder}`),
+        title: folder,
+        order: areaOrders[areaN++] ?? 'zz',
+      }),
+    )
+  }
+  const ensureProject = (list: string, folder: string) => {
+    if (projects.has(list)) return
+    projectAreaTitle.set(list, folder || null)
+    projects.set(
+      list,
+      newProject({
+        id: stableId(`project:${list}`),
+        title: list,
+        areaId: folder ? (areas.get(folder)?.id ?? null) : null,
+        order: projectOrders[projectN++] ?? 'zz',
+      }),
+    )
+  }
+  for (const a of options.structure?.areas ?? []) ensureArea(a)
+  for (const p of options.structure?.projects ?? []) {
+    ensureArea(p.area ?? '')
+    ensureProject(p.title, p.area ?? '')
+  }
   for (const r of live) {
-    if (r.folder && !areas.has(r.folder)) {
-      areas.set(
-        r.folder,
-        newArea({
-          id: stableId(`area:${r.folder}`),
-          title: r.folder,
-          order: areaOrders[areaN++] ?? 'zz',
-        }),
-      )
-    }
-    const kind = listKind(r)
-    if (kind === 'project' && !projects.has(r.list)) {
-      projects.set(
-        r.list,
-        newProject({
-          id: stableId(`project:${r.list}`),
-          title: r.list,
-          areaId: r.folder ? (areas.get(r.folder)?.id ?? null) : null,
-          order: projectOrders[projectN++] ?? 'zz',
-        }),
-      )
-    }
+    ensureArea(r.folder)
+    if (listKind(r) === 'project') ensureProject(r.list, r.folder)
   }
 
-  // Tags by name; parents from the option, because the export has none.
+  // Tags by name (case-insensitive); parents and labels from the options.
   const tags = new Map<string, Tag>()
   const tagOrders = ordersBetween(null, null, 2000)
+  const parentOf = new Map(
+    Object.entries(options.tagParents ?? {}).map(([k, v]) => [k.toLowerCase(), v]),
+  )
+  const labelOf = new Map(
+    Object.entries(options.tagLabels ?? {}).map(([k, v]) => [k.toLowerCase(), v]),
+  )
+  const resolving = new Set<string>()
   const tagFor = (name: string): Tag => {
     const key = name.toLowerCase()
     const existing = tags.get(key)
     if (existing) return existing
-    const parentName = options.tagParents?.[key]
-    const parent = parentName ? tagFor(parentName) : null
+    const parentName = parentOf.get(key)
+    let parent: Tag | null = null
+    if (parentName && !resolving.has(key)) {
+      resolving.add(key)
+      parent = tagFor(parentName)
+      resolving.delete(key)
+    }
+    const existingNow = tags.get(key)
+    if (existingNow) return existingNow
     const tag = newTag({
       id: stableId(`tag:${key}`),
-      title: name,
+      title: labelOf.get(key) ?? name,
       parentId: parent?.id ?? null,
       order: tagOrders[tags.size] ?? 'zz',
     })
     tags.set(key, tag)
     return tag
   }
+  for (const name of options.allTags ?? []) tagFor(name)
 
   // Tasks: subtasks become checklist items of their parent.
   const byId = new Map(live.map((r) => [r.taskId, r]))
@@ -270,12 +311,20 @@ export function planTickTickImport(rows: TickTickRow[], options: ImportOptions):
     }
   }
 
+  // Projects without tasks still show up in the report, so counts can be compared.
+  for (const [title, areaTitle] of projectAreaTitle) {
+    if (!summary.some((s) => s.project === title && s.area === areaTitle)) {
+      summary.push({ area: areaTitle, project: title, open: 0, completed: 0 })
+    }
+  }
+
   function taskFor(r: TickTickRow, order: string): { tasks: Task[]; checklist: ChecklistItem[] } {
     const kind = listKind(r)
     const project = kind === 'project' ? projects.get(r.list) : undefined
     const area = kind === 'area' && r.folder ? areas.get(r.folder) : undefined
-    const start = calendarDate(r.startDate, timezone)
-    const due = calendarDate(r.dueDate, timezone)
+    const zone = r.timezone || timezone
+    const start = calendarDate(r.startDate, zone)
+    const due = calendarDate(r.dueDate, zone)
     const hardDeadline = r.priority === 5 && due !== null
     const plannedDay = hardDeadline && start === due ? null : (start ?? (hardDeadline ? null : due))
     let when: When
@@ -285,7 +334,9 @@ export function planTickTickImport(rows: TickTickRow[], options: ImportOptions):
     else when = { kind: 'anytime' }
     if (kind === 'inbox' && plannedDay) when = { kind: 'date', date: plannedDay }
 
-    const { notes, items } = splitContent(r)
+    const { notes, items } = r.items
+      ? { notes: r.content.trim(), items: r.items.filter((i) => i.title) }
+      : splitContent(r)
     if (r.kind === 'NOTE')
       warnings.push(`"${r.title}": was a note in TickTick, imported as a task with notes`)
     const status = r.status === 0 ? 'open' : r.status === -1 ? 'canceled' : 'completed'
@@ -334,9 +385,9 @@ export function planTickTickImport(rows: TickTickRow[], options: ImportOptions):
         ? repeatRule(
             r.repeat,
             when.kind === 'date' ? when.date : options.today,
-            options.today,
             warnings,
             r.title,
+            r.repeatBasis,
           )
         : null
     if (!rule) return { tasks: [task], checklist: list }
@@ -350,7 +401,8 @@ export function planTickTickImport(rows: TickTickRow[], options: ImportOptions):
       deadline: null,
     }
     const instance = {
-      ...instanceOf(template, first, order),
+      // An overdue repeating task stays on its own date, as it was in TickTick.
+      ...instanceOf(template, when.kind === 'date' ? when.date : first, order),
       id: task.id,
       createdAt: task.createdAt,
     }
@@ -370,12 +422,22 @@ export function planTickTickImport(rows: TickTickRow[], options: ImportOptions):
     tasks,
     checklist,
     warnings,
-    skipped: { closedLists: options.closedLists ?? [], tasksInClosedLists: skippedTasks },
+    skipped: {
+      closedLists: [
+        ...new Set([
+          ...(options.closedLists ?? []),
+          ...rows.filter((r) => r.listClosed).map((r) => r.list),
+        ]),
+      ],
+      tasksInClosedLists: skippedTasks,
+    },
     summary,
   }
 }
 
-function listKind(r: TickTickRow): 'inbox' | 'someday' | 'area' | 'project' {
+export function listKind(
+  r: Pick<TickTickRow, 'folder' | 'list'>,
+): 'inbox' | 'someday' | 'area' | 'project' {
   const list = normalize(r.list)
   if (list === 'inbox' || list === '') return 'inbox'
   if (list === 'someday') return 'someday'
@@ -408,9 +470,9 @@ const WEEKDAYS: Record<string, number> = { SU: 0, MO: 1, TU: 2, WE: 3, TH: 4, FR
 function repeatRule(
   rrule: string,
   start: string,
-  today: string,
   warnings: string[],
   title: string,
+  knownBasis?: 'schedule' | 'completion',
 ): Repeat | null {
   if (!rrule) return null
   const body = rrule.replace(/^RRULE:/i, '')
@@ -439,25 +501,36 @@ function repeatRule(
     .split(',')
     .map((d) => WEEKDAYS[d.replace(/^[+-]?\d+/, '')])
     .filter((d): d is number => d !== undefined)
-  if (parts.BYMONTHDAY || parts.BYSETPOS || /^[+-]?\d+[A-Z]{2}/.test(parts.BYDAY ?? '')) {
+  // "Every year on 12 March" is what a plain yearly rule from 12 March already
+  // does; only a day that differs from the start date loses something.
+  const sameDay =
+    Number(parts.BYMONTHDAY) === Number(start.slice(8, 10)) &&
+    (!parts.BYMONTH || Number(parts.BYMONTH) === Number(start.slice(5, 7)))
+  if (
+    (parts.BYMONTHDAY && !sameDay) ||
+    parts.BYSETPOS ||
+    /^[+-]?\d+[A-Z]{2}/.test(parts.BYDAY ?? '')
+  ) {
     warnings.push(
       `"${title}": repeat "${rrule}" uses a day rule Dingen lacks; kept as plain ${unit}ly`,
     )
   }
   if (parts.COUNT)
     warnings.push(`"${title}": repeat with COUNT=${parts.COUNT} imported without an end`)
-  warnings.push(
-    `"${title}": repeats ${unit}ly on a schedule; check whether it should be "after completion"`,
-  )
+  if (!knownBasis) {
+    warnings.push(
+      `"${title}": repeats ${unit}ly on a schedule; check whether it should be "after completion"`,
+    )
+  }
   const until = parts.UNTIL
     ? `${parts.UNTIL.slice(0, 4)}-${parts.UNTIL.slice(4, 6)}-${parts.UNTIL.slice(6, 8)}`
     : null
   return {
     unit,
     every: Math.max(1, Number(parts.INTERVAL ?? 1) || 1),
-    basis: 'schedule',
+    basis: knownBasis ?? 'schedule',
     weekdays: unit === 'week' ? weekdays : [],
-    start: start < today ? today : start,
+    start,
     until,
     deadlineDays: null,
   }
@@ -530,9 +603,19 @@ export function describePlan(plan: ImportPlan): string {
     `Areas: ${plan.areas.length}, projects: ${plan.projects.length}, tags: ${plan.tags.length}, tasks: ${plan.tasks.filter((t) => t.repeat === null).length} (${plan.tasks.filter((t) => t.repeat !== null).length} repeating), checklist items: ${plan.checklist.length}`,
   )
   lines.push('')
-  for (const s of plan.summary) {
-    const where = [s.area, s.project].filter(Boolean).join(' › ') || '(loose)'
-    lines.push(`  ${where}: ${s.open} open, ${s.completed} done`)
+  const count = (e: { open: number; completed: number }) =>
+    `${e.open + e.completed} (${e.open} open, ${e.completed} done)`
+  const byArea = new Map<string | null, ImportPlan['summary']>()
+  for (const s of plan.summary) byArea.set(s.area, [...(byArea.get(s.area) ?? []), s])
+  for (const key of [...plan.areas.map((a) => a.title), null]) {
+    const entries = byArea.get(key) ?? []
+    if (key === null && entries.length === 0) continue
+    const total = entries.reduce(
+      (t, e) => ({ open: t.open + e.open, completed: t.completed + e.completed }),
+      { open: 0, completed: 0 },
+    )
+    lines.push(`  ${key ?? '(no area)'}: ${count(total)}`)
+    for (const e of entries) lines.push(`    ${e.project ?? 'loose tasks'}: ${count(e)}`)
   }
   if (plan.skipped.closedLists.length > 0) {
     lines.push(
