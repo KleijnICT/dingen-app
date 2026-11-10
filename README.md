@@ -32,7 +32,7 @@ With Docker Compose, save this as `compose.yml`:
 ```yaml
 services:
   dingen:
-    image: kleijnict/dingen:latest
+    image: ghcr.io/kleijnict/dingen:latest
     ports:
       - "8080:8080"
     environment:
@@ -52,15 +52,14 @@ docker compose up -d
 Or with plain Docker:
 
 ```sh
-docker run -d --name dingen -p 8080:8080 -v dingen-data:/data kleijnict/dingen:latest
+docker run -d --name dingen -p 8080:8080 -v dingen-data:/data ghcr.io/kleijnict/dingen:latest
 ```
 
 Open http://localhost:8080. **The first visitor creates the first account**;
 after that, registration is closed. Create your account right after starting
 the container, before exposing it to anyone else.
 
-The image is also available as `ghcr.io/kleijnict/dingen` and is built for
-`linux/amd64` and `linux/arm64`.
+The image is built for `linux/amd64` and `linux/arm64`.
 
 ## Configuration
 
@@ -134,7 +133,7 @@ Desktop), using the same image:
         "DINGEN_URL=https://dingen.example.com",
         "-e",
         "DINGEN_TOKEN=dgn_...",
-        "kleijnict/dingen:latest",
+        "ghcr.io/kleijnict/dingen:latest",
         "node",
         "packages/mcp/dist/stdio.js"
       ]

@@ -1,6 +1,6 @@
 services:
   dingen:
-    image: kleijnict/dingen:latest
+    image: ghcr.io/kleijnict/dingen:latest
     ports:
       - "8080:8080"
     environment:

@@ -14,4 +14,4 @@
 - TickTick import from a backup CSV.
 - Resizable sidebar with collapsible areas.
 - Interface in English and Dutch.
-- Docker image for linux/amd64 and linux/arm64 on Docker Hub and GHCR.
+- Docker image for linux/amd64 and linux/arm64 on GitHub Container Registry (`ghcr.io/kleijnict/dingen`).
