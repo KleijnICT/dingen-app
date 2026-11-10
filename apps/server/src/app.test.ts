@@ -12,7 +12,13 @@ describe('server', () => {
     const res = await app.request('/api/health')
     expect(res.status).toBe(200)
     const body = await res.json()
-    expect(body).toMatchObject({ status: 'ok', app: 'Dingen', version: 'test', database: 'ok' })
+    expect(body).toMatchObject({
+      status: 'ok',
+      app: 'Dingen',
+      version: 'test',
+      build: null,
+      database: 'ok',
+    })
     expect(body.sqliteVersion).toMatch(/^3\./)
   })
 

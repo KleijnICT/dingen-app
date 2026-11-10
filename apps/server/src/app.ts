@@ -13,6 +13,8 @@ import { SyncService } from './sync.js'
 export interface AppDeps {
   db: Db
   version: string
+  /** Korte commit-hash van de build (DINGEN_COMMIT). */
+  build?: string | null
   sqliteVersion: string
   /** Registratie open voor iedereen (hosted) of alleen voor de eerste gebruiker. */
   registrationOpen?: boolean
@@ -45,6 +47,7 @@ export function createApp(deps: AppDeps) {
       status: 'ok',
       app: APP_NAME,
       version: deps.version,
+      build: deps.build ?? null,
       database: 'ok',
       sqliteVersion: deps.sqliteVersion,
     }

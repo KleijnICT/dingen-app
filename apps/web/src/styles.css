@@ -284,6 +284,17 @@ button.link.danger {
 .sync-status.unauthorized .dot {
   background: var(--error);
 }
+.app-version {
+  margin: -6px 0 0;
+  padding: 0 10px 0 24px;
+  font-size: 0.72em;
+  color: var(--muted);
+  opacity: 0.8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
 .sync-text {
   white-space: nowrap;
   overflow: hidden;
@@ -560,7 +571,8 @@ button.link.danger {
     flex-direction: row;
     align-items: center;
   }
-  .sidebar-foot .sync-status {
+  .sidebar-foot .sync-status,
+  .sidebar-foot .app-version {
     display: none;
   }
   .sidebar-resize,

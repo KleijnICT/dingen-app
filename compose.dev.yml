@@ -1,7 +1,11 @@
 # Builds the image from source: docker compose -f compose.dev.yml up --build
 services:
   dingen:
-    build: .
+    build:
+      context: .
+      args:
+        # Shown in the sidebar; set with DINGEN_COMMIT=$(git rev-parse --short HEAD).
+        DINGEN_COMMIT: ${DINGEN_COMMIT:-local}
     image: dingen:dev
     ports:
       - "8080:8080"

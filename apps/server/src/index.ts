@@ -11,6 +11,7 @@ const { db, sqliteVersion } = openDatabase(config.databasePath)
 const app = createApp({
   db,
   version: config.version,
+  build: config.build,
   sqliteVersion,
   registrationOpen: config.registrationOpen,
   timezone: config.timezone,
@@ -29,6 +30,8 @@ if (fs.existsSync(config.webDist)) {
 }
 
 serve({ fetch: app.fetch, port: config.port }, (info) => {
-  console.log(`Dingen ${config.version} listening on http://localhost:${info.port}`)
+  console.log(
+    `Dingen ${config.version}${config.build ? ` (${config.build})` : ''} listening on http://localhost:${info.port}`,
+  )
   console.log(`Database: ${config.databasePath}`)
 })

@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.v.outputs.version }}
+      short: ${{ steps.v.outputs.short }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -32,6 +33,7 @@ jobs:
           fi
           grep -q "^## $version" CHANGELOG.md || { echo "::error::CHANGELOG.md has no entry for $version."; exit 1; }
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
   check:
     runs-on: ubuntu-latest
@@ -75,7 +77,9 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          build-args: DINGEN_VERSION=${{ needs.version.outputs.version }}
+          build-args: |
+            DINGEN_VERSION=${{ needs.version.outputs.version }}
+            DINGEN_COMMIT=${{ needs.version.outputs.short }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha

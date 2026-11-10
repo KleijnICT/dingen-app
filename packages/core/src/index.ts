@@ -9,6 +9,8 @@ export interface HealthStatus {
   status: 'ok'
   app: typeof APP_NAME
   version: string
+  /** Short commit hash of the build, or null when unknown. */
+  build: string | null
   database: 'ok'
   sqliteVersion: string
 }

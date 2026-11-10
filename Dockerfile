@@ -12,8 +12,10 @@ COPY apps/server/package.json apps/server/
 COPY apps/web/package.json apps/web/
 RUN pnpm install --frozen-lockfile
 COPY . .
-ARG DINGEN_VERSION=0.1.0-dev
+ARG DINGEN_VERSION=
+ARG DINGEN_COMMIT=
 ENV DINGEN_VERSION=$DINGEN_VERSION
+ENV DINGEN_COMMIT=$DINGEN_COMMIT
 RUN pnpm build
 
 # --- Alleen productie-afhankelijkheden ---
@@ -30,8 +32,10 @@ FROM node:26-bookworm-slim AS runtime
 ENV NODE_ENV=production
 ENV PORT=8080
 ENV DATA_DIR=/data
-ARG DINGEN_VERSION=0.1.0-dev
+ARG DINGEN_VERSION=
+ARG DINGEN_COMMIT=
 ENV DINGEN_VERSION=$DINGEN_VERSION
+ENV DINGEN_COMMIT=$DINGEN_COMMIT
 WORKDIR /app
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=prod-deps /app/apps/server/node_modules ./apps/server/node_modules

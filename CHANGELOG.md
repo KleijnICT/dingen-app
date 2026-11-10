@@ -6,6 +6,8 @@
   connects the MCP server and adds a skill for Dingen's workflow.
 - Area titles use the full width of the page instead of being cut off.
 - Every push to `main` is now a release; the version comes from `package.json`.
+- The sidebar shows the version and build (commit) under the sync status;
+  `/api/health` reports both.
 - Development builds: `ghcr.io/kleijnict/dingen:develop` follows the `develop` branch.
 
 ## 0.1.0 (first test release)

@@ -28,6 +28,8 @@ import {
   StarIcon,
 } from './Icons.js'
 
+const APP_VERSION_LABEL = `Dingen ${__DINGEN_VERSION__}${__DINGEN_BUILD__ ? ` · ${__DINGEN_BUILD__}` : ''}`
+
 interface Props {
   path: string
   status: SyncStatus
@@ -210,6 +212,9 @@ export function Sidebar({ path, status, email }: Props) {
         <p className={`sync-status ${status}`} title={statusText}>
           <span className="dot" />
           <span className="sync-text">{statusText}</span>
+        </p>
+        <p className="app-version" title={APP_VERSION_LABEL}>
+          {APP_VERSION_LABEL}
         </p>
       </div>
       {/* biome-ignore lint/a11y/useSemanticElements: an <hr> cannot be dragged */}
