@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { newHeading, newProject, newTask } from './factories.js'
-import { firstOrder, orderBetween } from './order.js'
+import { orderBetween, ordersBetween } from './order.js'
 import * as views from './views.js'
 
 const TODAY = '2026-11-09'
@@ -132,12 +132,7 @@ describe('views', () => {
     const tasks = [
       newTask({ title: 'los', when: { kind: 'anytime' } }),
       newTask({ title: 'in p', projectId: project.id, when: { kind: 'anytime' } }),
-      newTask({
-        title: 'in p klaar',
-        projectId: project.id,
-        status: 'completed',
-        order: orderBetween(firstOrder(), null),
-      }),
+      newTask({ title: 'in p klaar', projectId: project.id, status: 'completed' }),
       newTask({ title: 'in klaar', projectId: doneProject.id, when: { kind: 'anytime' } }),
       newTask({ title: 'in ooit', projectId: somedayProject.id, when: { kind: 'anytime' } }),
       newTask({
@@ -146,6 +141,11 @@ describe('views', () => {
         when: { kind: 'date', date: TODAY },
       }),
     ]
+    // Distinct, increasing orders: equal orders sort by (random) id.
+    const orders = ordersBetween(null, null, tasks.length)
+    tasks.forEach((task, i) => {
+      task.order = orders[i] as string
+    })
     const projects = [project, doneProject, somedayProject]
 
     it('available verbergt taken van gesloten projecten', () => {
