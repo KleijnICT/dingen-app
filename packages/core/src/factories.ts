@@ -30,6 +30,8 @@ export function newTask(fields: Partial<Task> & { title: string }): Task {
     areaId: null,
     when: { kind: 'inbox' },
     evening: false,
+    time: null,
+    reminder: null,
     deadline: null,
     tagIds: [],
     repeat: null,

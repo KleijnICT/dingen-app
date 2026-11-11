@@ -91,6 +91,8 @@ const MIRRORED = new Set([
   'headingId',
   'areaId',
   'evening',
+  'time',
+  'reminder',
 ])
 
 /** The one way to change a task: writes the change and mirrors it to the template when needed. */
@@ -101,11 +103,25 @@ export function commitTask(
   fields: Record<string, unknown>,
 ): void {
   if (Object.keys(fields).length === 0) return
-  w.mutate('task', task.id, fields)
+  w.mutate('task', task.id, { ...fields, ...clearedSchedule(task, fields) })
   const template = task.templateId ? ws.templateById.get(task.templateId) : undefined
   if (!template || task.status !== 'open') return
   const mirrored = Object.fromEntries(Object.entries(fields).filter(([k]) => MIRRORED.has(k)))
   if (Object.keys(mirrored).length > 0) w.mutate('task', template.id, mirrored)
+}
+
+/**
+ * Without a date there is no time and no reminder: moving a task to the Inbox,
+ * Anytime or Someday clears both. Only on the task itself, not on its template,
+ * so later occurrences keep their time.
+ */
+function clearedSchedule(task: Task, fields: Record<string, unknown>): Record<string, unknown> {
+  const when = fields.when as When | undefined
+  if (!when || when.kind === 'date') return {}
+  const cleared: Record<string, unknown> = {}
+  if (task.time !== null || fields.time != null) cleared.time = null
+  if (task.reminder !== null || fields.reminder != null) cleared.reminder = null
+  return cleared
 }
 
 export function toggleTask(w: Writer, ws: Snapshot, task: Task): void {

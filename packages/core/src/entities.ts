@@ -152,6 +152,21 @@ export const Repeat = z.object({
 })
 export type Repeat = z.infer<typeof Repeat>
 
+/** Kloktijd van de dag, `HH:MM` (24 uur). */
+export const TimeOfDay = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Tijd als HH:MM')
+export type TimeOfDay = z.infer<typeof TimeOfDay>
+
+/**
+ * Herinnering bij een taak met een datum: `daysBefore` dagen vóór de datum om
+ * `time` (in DINGEN_TIMEZONE). Relatief, zodat hij meeschuift met de datum en
+ * meegaat naar het volgende exemplaar van een herhalende taak.
+ */
+export const Reminder = z.object({
+  daysBefore: z.number().int().min(0).max(365),
+  time: TimeOfDay,
+})
+export type Reminder = z.infer<typeof Reminder>
+
 export const Task = Base.extend({
   title: z.string(),
   notes: z.string(),
@@ -161,6 +176,10 @@ export const Task = Base.extend({
   areaId: Id.nullable(),
   when: When,
   evening: z.boolean(),
+  /** Tijd van de dag bij een `when`-datum; null = geen tijd. */
+  time: TimeOfDay.nullable().default(null),
+  /** Herinnering bij een `when`-datum; null = geen. */
+  reminder: Reminder.nullable().default(null),
   deadline: CalendarDate.nullable(),
   tagIds: z.array(Id),
   /** Een taak mét regel is een verborgen template; zijn exemplaren wijzen ernaar. */

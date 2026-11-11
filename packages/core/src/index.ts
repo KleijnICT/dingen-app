@@ -24,6 +24,8 @@ export * from './factories.js'
 export * from './hlc.js'
 export * from './ids.js'
 export * from './order.js'
+// --- herinneringen ---
+export * from './reminders.js'
 export * from './repeat.js'
 export * from './review.js'
 export * from './sync.js'
