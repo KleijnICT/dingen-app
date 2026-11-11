@@ -42,6 +42,7 @@ export function buildExport(
     project: [],
     heading: [],
     task: [],
+    review: [],
     checklistItem: [],
     tag: [],
   }
@@ -76,6 +77,7 @@ const Envelope = z.object({
     task: z.array(RecordShape).default([]),
     checklistItem: z.array(RecordShape).default([]),
     tag: z.array(RecordShape).default([]),
+    review: z.array(RecordShape).default([]),
   }),
 })
 

@@ -272,6 +272,7 @@ export const en = {
   'data.type.task': 'Tasks',
   'data.type.checklistItem': 'Checklist items',
   'data.type.tag': 'Tags',
+  'data.type.review': 'Reviews',
   'pwa.updateAvailable': 'New version available.',
   'pwa.reload': 'Reload',
 } as const

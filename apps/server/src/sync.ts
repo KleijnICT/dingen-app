@@ -66,6 +66,7 @@ export function emptyCounts(): Record<EntityType, ImportCounts> {
     heading: zero(),
     task: zero(),
     checklistItem: zero(),
+    review: zero(),
     tag: zero(),
   }
 }
