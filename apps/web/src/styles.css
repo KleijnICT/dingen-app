@@ -1704,6 +1704,9 @@ a.button {
   }
   .update-notice {
     bottom: calc(72px + env(safe-area-inset-bottom));
+  }
+}
+
 /* --- Agenda --- */
 .calendar-events {
   list-style: none;
