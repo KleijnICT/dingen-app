@@ -53,4 +53,36 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(caches.match(request).then((hit) => hit || fetch(request)))
 })
 
-// Hier komt later de push-handler (web push en herinneringen).
+// --- herinneringen ---
+// Web push: de server stuurt { title, body, tag, url } op het moment van een herinnering.
+
+self.addEventListener('push', (event) => {
+  let data = {}
+  try {
+    data = event.data ? event.data.json() : {}
+  } catch {
+    data = { body: event.data ? event.data.text() : '' }
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'Dingen', {
+      body: data.body || '',
+      tag: data.tag || undefined,
+      renotify: Boolean(data.tag),
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      data: { url: data.url || '/' },
+    }),
+  )
+})
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const target = new URL(event.notification.data?.url || '/', self.location.origin).href
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
+      // An open Dingen only gets focus: navigating would reload it mid-edit.
+      const open = windows.find((w) => new URL(w.url).origin === self.location.origin)
+      return open ? open.focus() : self.clients.openWindow(target)
+    }),
+  )
+})

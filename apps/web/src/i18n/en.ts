@@ -295,6 +295,25 @@ export const en = {
   'calendar.error.feed_unreachable': 'The calendar could not be reached. Check the address.',
   'calendar.error.feed_invalid': 'The address does not return a calendar (ICS).',
   'calendar.error.feed_too_large': 'The calendar is too large (more than 10 MB).',
+  // --- herinneringen ---
+  'reminder.time': 'Time',
+  'reminder.clearTime': 'Remove time',
+  'reminder.label': 'Reminder',
+  'reminder.date': 'Reminder day',
+  'reminder.atTime': 'Reminder time',
+  'reminder.settings.title': 'Reminders',
+  'reminder.settings.device': 'Reminders on this device',
+  'reminder.settings.help':
+    'Get a notification at the reminder time of a task, also when Dingen is closed. Turn it on for every device where you want them.',
+  'reminder.settings.insecure':
+    'Reminders need a secure connection (HTTPS, or localhost). Open Dingen over HTTPS to turn them on for this device.',
+  'reminder.settings.unsupported': 'This browser cannot show reminders from Dingen.',
+  'reminder.settings.denied':
+    'Notifications are blocked for Dingen. Allow them in the browser settings and try again.',
+  'reminder.settings.failed': 'That did not work. Try again later.',
+  'reminder.settings.test': 'Send a test notification',
+  'reminder.settings.testTitle': 'Dingen',
+  'reminder.settings.testBody': 'Reminders work on this device.',
 } as const
 
 export type MessageKey = keyof typeof en
