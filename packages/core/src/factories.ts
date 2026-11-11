@@ -1,4 +1,13 @@
-import type { Area, ChecklistItem, Heading, Project, Tag, Task } from './entities.js'
+import type {
+  Area,
+  ChecklistItem,
+  Heading,
+  Project,
+  Review,
+  ReviewKind,
+  Tag,
+  Task,
+} from './entities.js'
 import { ulid } from './ids.js'
 import { firstOrder } from './order.js'
 
@@ -45,6 +54,7 @@ export function newProject(fields: Partial<Project> & { title: string }): Projec
     tagIds: [],
     order: firstOrder(),
     completedAt: null,
+    reviewedAt: null,
     ...fields,
   }
 }
@@ -57,6 +67,7 @@ export function newArea(fields: Partial<Area> & { title: string }): Area {
     order: firstOrder(),
     icon: null,
     color: null,
+    reviewedAt: null,
     ...fields,
   }
 }
@@ -87,6 +98,20 @@ export function newTag(fields: Partial<Tag> & { title: string }): Tag {
     deleted: false,
     parentId: null,
     order: firstOrder(),
+    ...fields,
+  }
+}
+
+/** Starts a review of one kind; `startedAt` and `createdAt` are now. */
+export function newReview(fields: Partial<Review> & { kind: ReviewKind }): Review {
+  const now = nowIso()
+  return {
+    id: ulid(),
+    createdAt: now,
+    deleted: false,
+    startedAt: now,
+    completedAt: null,
+    doneSteps: [],
     ...fields,
   }
 }
