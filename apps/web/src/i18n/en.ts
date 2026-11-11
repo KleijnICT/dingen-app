@@ -243,6 +243,11 @@ export const en = {
   'menu.projectActions': 'Project actions',
   'menu.areaActions': 'Area actions',
   'menu.headingActions': 'Heading actions',
+  'menu.when': 'When',
+  'menu.deadline': 'Deadline',
+  'menu.tags': 'Tags',
+  'menu.move': 'Move to area',
+  'project.noArea': 'No area',
 } as const
 
 export type MessageKey = keyof typeof en

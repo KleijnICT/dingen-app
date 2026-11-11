@@ -1,5 +1,5 @@
 import { type Task, views } from '@dingen/core'
-import { ArrowRight, CalendarDays, type LucideIcon, Plus, Search } from 'lucide-react'
+import { CalendarClock, CirclePlus, FolderInput, type LucideIcon, TextSearch } from 'lucide-react'
 import { createContext, type ReactNode, useContext, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useT } from '../i18n/index.js'
@@ -66,23 +66,23 @@ export function TaskToolbar({ onNew, extra, selected }: TaskToolbarProps) {
   return (
     <PageToolbar>
       <div className="toolbar-inner" ref={root}>
-        {onNew && <ToolbarButton icon={Plus} label={t('toolbar.newTask')} onClick={onNew} />}
+        {onNew && <ToolbarButton icon={CirclePlus} label={t('toolbar.newTask')} onClick={onNew} />}
         {extra}
         <ToolbarButton
-          icon={CalendarDays}
+          icon={CalendarClock}
           label={t('toolbar.when')}
           disabled={selected?.status !== 'open'}
           expanded={shown === 'when'}
           onClick={() => setPopup((p) => (p === 'when' ? null : 'when'))}
         />
         <ToolbarButton
-          icon={ArrowRight}
+          icon={FolderInput}
           label={t('toolbar.move')}
           disabled={selected?.status !== 'open'}
           expanded={shown === 'move'}
           onClick={() => setPopup((p) => (p === 'move' ? null : 'move'))}
         />
-        <ToolbarButton icon={Search} label={t('toolbar.search')} onClick={openSearch} />
+        <ToolbarButton icon={TextSearch} label={t('toolbar.search')} onClick={openSearch} />
         {shown && selected && (
           <div className="popover toolbar-popover" role="dialog" aria-label={t(`toolbar.${shown}`)}>
             {shown === 'when' ? (

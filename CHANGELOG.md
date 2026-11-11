@@ -20,7 +20,11 @@
 - Tasks can be selected: click selects, double click or Enter opens, arrow keys
   move the selection. When and Move in the bottom bar act on the selection.
 - Search (button or `/`) finds areas, projects and open tasks and jumps to them.
-- Projects, areas and headings get a `…` menu for their actions.
+- Projects, areas and headings get a `⋮` menu for their actions. A project's
+  When, Deadline, Tags and area are set from that menu; under the title only
+  what is set is shown.
+- Task rows no longer have a delete cross: select a task and press Backspace
+  or Delete, or use Delete in the open task.
 - Settings open in a window with tabs (General, Account, Connections, About)
   from the button at the bottom of the sidebar; `/account` opens it too.
 - The sidebar ends with "New List" (project or area) and the settings button.

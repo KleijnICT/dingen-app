@@ -1,5 +1,5 @@
 import { type Area, newProject, newTask, orderBetween, type Task, views } from '@dingen/core'
-import { CirclePlus } from 'lucide-react'
+import { FolderPlus } from 'lucide-react'
 import { useState } from 'react'
 import { useT } from '../i18n/index.js'
 import { completedDate } from '../lists.js'
@@ -139,7 +139,7 @@ export function AreaPage({ area, focusSignal }: Props) {
       )}
       <TaskToolbar
         onNew={addNew}
-        extra={<ToolbarButton icon={CirclePlus} label={t('nav.newProject')} onClick={addProject} />}
+        extra={<ToolbarButton icon={FolderPlus} label={t('nav.newProject')} onClick={addProject} />}
         selected={taskList.selected}
       />
     </section>

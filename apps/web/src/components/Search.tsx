@@ -1,6 +1,6 @@
 import type { Task } from '@dingen/core'
 import { views } from '@dingen/core'
-import { Search as SearchIcon } from 'lucide-react'
+import { TextSearch as SearchIcon } from 'lucide-react'
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react'
 import { useT } from '../i18n/index.js'
 import { containerOf, LISTS, listTasks } from '../lists.js'

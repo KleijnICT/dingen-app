@@ -1,6 +1,6 @@
 import { newArea, newProject, orderBetween, type Project, views } from '@dingen/core'
 import { useDraggable, useDroppable } from '@dnd-kit/core'
-import { Plus, SlidersHorizontal } from 'lucide-react'
+import { ListPlus, Settings } from 'lucide-react'
 import { type PointerEvent, type ReactElement, type ReactNode, useRef, useState } from 'react'
 import type { DragData, DropData } from '../dnd.js'
 import { useT } from '../i18n/index.js'
@@ -190,7 +190,7 @@ export function Sidebar({ path, status, onOpenSettings }: Props) {
               aria-expanded={adding}
               onClick={() => setAdding((a) => !a)}
             >
-              <Plus size={16} strokeWidth={1.8} aria-hidden="true" />
+              <ListPlus size={16} strokeWidth={1.8} aria-hidden="true" />
               <span>{t('nav.newList')}</span>
             </button>
             {adding && (
@@ -224,7 +224,7 @@ export function Sidebar({ path, status, onOpenSettings }: Props) {
             title={t('settings.title')}
             onClick={onOpenSettings}
           >
-            <SlidersHorizontal size={16} strokeWidth={1.8} aria-hidden="true" />
+            <Settings size={16} strokeWidth={1.8} aria-hidden="true" />
           </button>
         </div>
         <p className={`sync-status ${status}`} title={`${statusText} · ${APP_VERSION_LABEL}`}>

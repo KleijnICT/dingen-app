@@ -1,5 +1,5 @@
-import { Ellipsis } from 'lucide-react'
-import { type RefObject, useEffect, useRef, useState } from 'react'
+import { ChevronLeft, EllipsisVertical } from 'lucide-react'
+import { type ReactNode, type RefObject, useEffect, useRef, useState } from 'react'
 import { useT } from '../i18n/index.js'
 
 /** Closes a popover on a pointer down outside `root` or on Escape. */
@@ -35,6 +35,8 @@ export interface MenuItem {
   danger?: boolean
   /** Asks this question inside the menu before acting. */
   confirm?: string
+  /** Shows this inside the menu instead of acting; `close` closes the menu. */
+  panel?: (close: () => void) => ReactNode
 }
 
 interface Props {
@@ -49,15 +51,23 @@ export function MoreMenu({ label, items, alignEnd = false }: Props) {
   const t = useT()
   const [open, setOpen] = useState(false)
   const [asking, setAsking] = useState<MenuItem | null>(null)
+  const [panelLabel, setPanel] = useState<string | null>(null)
+  // Look the item up on every render so its panel shows current values.
+  const panel = panelLabel ? items.find((i) => i.label === panelLabel) : undefined
   const root = useRef<HTMLDivElement>(null)
   const button = useRef<HTMLButtonElement>(null)
   const close = useRef(() => {
     setOpen(false)
     setAsking(null)
+    setPanel(null)
   }).current
   useDismiss(open, close, root, button)
 
   function choose(item: MenuItem) {
+    if (item.panel) {
+      setPanel(item.label)
+      return
+    }
     if (item.confirm && asking !== item) {
       setAsking(item)
       return
@@ -78,11 +88,19 @@ export function MoreMenu({ label, items, alignEnd = false }: Props) {
         aria-expanded={open}
         onClick={() => (open ? close() : setOpen(true))}
       >
-        <Ellipsis size={18} strokeWidth={2} aria-hidden="true" />
+        <EllipsisVertical size={17} strokeWidth={2} aria-hidden="true" />
       </button>
       {open && (
-        <div className="popover menu" role="menu" aria-label={label}>
-          {asking ? (
+        <div className={`popover menu ${panel ? 'with-panel' : ''}`} role="menu" aria-label={label}>
+          {panel?.panel ? (
+            <>
+              <button type="button" className="menu-back" onClick={() => setPanel(null)}>
+                <ChevronLeft size={15} aria-hidden="true" />
+                {panel.label}
+              </button>
+              <div className="menu-panel">{panel.panel(close)}</div>
+            </>
+          ) : asking ? (
             <>
               <p className="menu-question">{asking.confirm}</p>
               <button

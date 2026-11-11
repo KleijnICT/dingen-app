@@ -236,4 +236,9 @@ export const nl: Messages = {
   'menu.projectActions': 'Projectacties',
   'menu.areaActions': 'Gebiedsacties',
   'menu.headingActions': 'Kopacties',
+  'menu.when': 'Wanneer',
+  'menu.deadline': 'Deadline',
+  'menu.tags': 'Tags',
+  'menu.move': 'Naar gebied',
+  'project.noArea': 'Geen gebied',
 }

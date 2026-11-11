@@ -1,12 +1,13 @@
 import { type Heading, newHeading, newTask, orderBetween, type Project, views } from '@dingen/core'
-import { SquarePlus } from 'lucide-react'
+import { Heading as HeadingIcon } from 'lucide-react'
 import { type ReactNode, useState } from 'react'
 import { useT } from '../i18n/index.js'
-import { completedDate } from '../lists.js'
+import { completedDate, describeWhen } from '../lists.js'
 import { navigate } from '../router.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { deleteProject, toggleProject, useLinger } from '../taskActions.js'
-import { DeadlineField } from './DeadlineField.js'
+import { AreaGlyph } from './AreaIcons.js'
+import { DeadlineBadge, DeadlineField } from './DeadlineField.js'
 import { ProgressCircle } from './Icons.js'
 import { InlineInput } from './InlineInput.js'
 import { MoreMenu } from './Menu.js'
@@ -84,6 +85,15 @@ export function ProjectPage({ project, focusSignal }: Props) {
     engine.mutate('heading', heading.id, { deleted: true })
   }
 
+  function moveToArea(areaId: string | null) {
+    if (areaId === project.areaId) return
+    const last = views.projectsOf(ws.projects, areaId).at(-1)
+    engine.mutate('project', project.id, {
+      areaId,
+      order: orderBetween(last?.order ?? null, null),
+    })
+  }
+
   function remove() {
     deleteProject(engine, ws, project)
     navigate(project.areaId ? `/area/${project.areaId}` : '/anytime')
@@ -130,7 +140,70 @@ export function ProjectPage({ project, focusSignal }: Props) {
               label: done ? t('project.reopen') : t('project.complete'),
               onSelect: () => toggleProject(engine, project),
             },
-            ...(done ? [] : [{ label: t('project.newHeading'), onSelect: addHeading }]),
+            {
+              label: t('menu.when'),
+              onSelect: () => {},
+              panel: (close) => (
+                <WhenPicker
+                  forProject
+                  when={project.when}
+                  evening={false}
+                  today={ws.today}
+                  onChange={(when) => {
+                    engine.mutate('project', project.id, { when })
+                    close()
+                  }}
+                />
+              ),
+            },
+            {
+              label: t('menu.deadline'),
+              onSelect: () => {},
+              panel: () => (
+                <DeadlineField
+                  deadline={project.deadline}
+                  today={ws.today}
+                  onChange={(deadline) => engine.mutate('project', project.id, { deadline })}
+                />
+              ),
+            },
+            {
+              label: t('menu.tags'),
+              onSelect: () => {},
+              panel: () => (
+                <TagEditor
+                  tagIds={project.tagIds}
+                  onChange={(tagIds) => engine.mutate('project', project.id, { tagIds })}
+                />
+              ),
+            },
+            {
+              label: t('menu.move'),
+              onSelect: () => {},
+              panel: (close) => (
+                <div className="move-list">
+                  {[null, ...views.openAreas(ws.areas)].map((a) => (
+                    <button
+                      key={a?.id ?? 'none'}
+                      type="button"
+                      className="move-item"
+                      aria-pressed={project.areaId === (a?.id ?? null)}
+                      onClick={() => {
+                        moveToArea(a?.id ?? null)
+                        close()
+                      }}
+                    >
+                      {a ? (
+                        <AreaGlyph icon={a.icon} color={a.color} size={15} />
+                      ) : (
+                        <span className="move-none" />
+                      )}
+                      <span>{a ? a.title || t('area.untitled') : t('project.noArea')}</span>
+                    </button>
+                  ))}
+                </div>
+              ),
+            },
             {
               label: t('project.delete'),
               danger: true,
@@ -148,24 +221,22 @@ export function ProjectPage({ project, focusSignal }: Props) {
         aria-label={t('project.notes')}
         onCommit={(notes) => engine.mutate('project', project.id, { notes })}
       />
-      <div className="page-plan">
-        <WhenPicker
-          forProject
-          when={project.when}
-          evening={false}
-          today={ws.today}
-          onChange={(when) => engine.mutate('project', project.id, { when })}
-        />
-        <DeadlineField
-          deadline={project.deadline}
-          today={ws.today}
-          onChange={(deadline) => engine.mutate('project', project.id, { deadline })}
-        />
-        <TagEditor
-          tagIds={project.tagIds}
-          onChange={(tagIds) => engine.mutate('project', project.id, { tagIds })}
-        />
-      </div>
+      {(project.when.kind !== 'anytime' || project.deadline || project.tagIds.length > 0) && (
+        <div className="page-meta">
+          {project.when.kind !== 'anytime' && (
+            <span className="when-chip">{describeWhen(project.when, ws.today)}</span>
+          )}
+          {project.deadline && <DeadlineBadge deadline={project.deadline} today={ws.today} />}
+          {project.tagIds.map((id) => {
+            const tag = ws.tagById.get(id)
+            return tag ? (
+              <span key={id} className="tag-chip small">
+                {tag.title}
+              </span>
+            ) : null
+          })}
+        </div>
+      )}
       <TagFilter present={present} active={tagFilter} onChange={setTagFilter} />
       {all.length === 0 && <p className="empty">{t('project.empty')}</p>}
       {group(null)}
@@ -199,7 +270,11 @@ export function ProjectPage({ project, focusSignal }: Props) {
         onNew={done ? undefined : addNew}
         extra={
           !done && (
-            <ToolbarButton icon={SquarePlus} label={t('project.newHeading')} onClick={addHeading} />
+            <ToolbarButton
+              icon={HeadingIcon}
+              label={t('project.newHeading')}
+              onClick={addHeading}
+            />
           )
         }
         selected={taskList.selected}

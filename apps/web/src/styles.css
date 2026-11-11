@@ -437,9 +437,6 @@ button.link.danger {
 .task-delete:hover {
   color: var(--error);
 }
-.task:hover .task-delete {
-  opacity: 1;
-}
 
 /* --- Editor --- */
 .task.editing {
@@ -590,9 +587,6 @@ button.link.danger {
   }
   .content {
     padding: 20px 16px 40px;
-  }
-  .task-delete {
-    opacity: 1;
   }
 }
 
@@ -1580,4 +1574,46 @@ button.link.danger {
 }
 .search-hit.active .search-check {
   border-color: white;
+}
+
+/* --- Project page: what is set, shown under the title --- */
+.page-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding-left: 36px;
+  margin: -4px 0 14px;
+  font-size: 0.85em;
+  color: var(--muted);
+}
+.when-chip {
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--hover);
+  color: var(--fg);
+}
+.menu.with-panel {
+  min-width: 280px;
+}
+.menu-back {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  margin-bottom: 4px;
+  border-radius: 6px;
+  background: none;
+  color: var(--muted);
+  font-size: 0.85em;
+  font-weight: 500;
+}
+.menu-back:hover {
+  color: var(--fg);
+}
+.menu-panel {
+  padding: 4px 6px 6px;
+}
+.menu-panel .when-picker {
+  padding-left: 0;
 }

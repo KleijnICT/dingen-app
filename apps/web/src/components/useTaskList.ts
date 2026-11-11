@@ -77,6 +77,18 @@ export function useTaskList(tasks: Task[], toggle: (task: Task) => void): TaskLi
         setSelectedId(null)
         return
       }
+      if ((e.key === 'Backspace' || e.key === 'Delete') && selectedId) {
+        const task = tasks.find((t) => t.id === selectedId)
+        if (!task) return
+        e.preventDefault()
+        const ids = [...document.querySelectorAll<HTMLElement>('.content [data-task-id]')].map(
+          (el) => el.dataset.taskId as string,
+        )
+        const at = ids.indexOf(selectedId)
+        setSelectedId(ids[at + 1] ?? ids[at - 1] ?? null)
+        deleteTask(engine, ws, task)
+        return
+      }
       if (e.key === 'Enter' && selectedId) {
         e.preventDefault()
         setOpenId(selectedId)
@@ -98,7 +110,7 @@ export function useTaskList(tasks: Task[], toggle: (task: Task) => void): TaskLi
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [openId, selectedId])
+  }, [openId, selectedId, tasks, engine, ws])
 
   const openNew = useCallback((id: string) => {
     setNewId(id)

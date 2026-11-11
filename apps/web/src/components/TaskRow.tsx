@@ -50,7 +50,6 @@ export function TaskRow({
   onToggle,
   drag,
 }: Props) {
-  const engine = useEngine()
   const ws = useWorkspace()
   const t = useT()
   const done = task.status !== 'open'
@@ -125,17 +124,6 @@ export function TaskRow({
           )}
         </span>
       </button>
-      {!done && (
-        <button
-          type="button"
-          className="task-delete"
-          aria-label={t('task.delete')}
-          title={t('task.delete')}
-          onClick={() => deleteTask(engine, ws, task)}
-        >
-          ×
-        </button>
-      )}
     </li>
   )
 }
