@@ -1423,6 +1423,7 @@ button.link.danger {
 }
 .settings-tabs {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: 4px;
   padding: 10px 12px 12px;
@@ -1433,8 +1434,8 @@ button.link.danger {
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  min-width: 82px;
-  padding: 8px 10px 6px;
+  min-width: 68px;
+  padding: 8px 6px 6px;
   border-radius: 9px;
   background: none;
   color: var(--muted);
