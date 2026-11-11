@@ -28,6 +28,7 @@
 - Settings open in a window with tabs (General, Account, Connections, About)
   from the button at the bottom of the sidebar; `/account` opens it too.
 - The sidebar ends with "New List" (project or area) and the settings button.
+- New icons: a sun for Today and a shrugging person for Someday.
 
 ## 0.1.0 (first test release)
 

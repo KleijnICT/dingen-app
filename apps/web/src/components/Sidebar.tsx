@@ -24,7 +24,7 @@ import {
   LogbookIcon,
   ProgressCircle,
   SomedayIcon,
-  StarIcon,
+  TodayIcon,
 } from './Icons.js'
 import { useDismiss } from './Menu.js'
 
@@ -38,7 +38,7 @@ interface Props {
 
 const ICONS: Record<ListId, (p: { className?: string }) => ReactElement> = {
   inbox: InboxIcon,
-  today: StarIcon,
+  today: TodayIcon,
   upcoming: CalendarIcon,
   anytime: AnytimeIcon,
   someday: SomedayIcon,

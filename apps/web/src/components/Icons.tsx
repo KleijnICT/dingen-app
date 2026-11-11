@@ -23,10 +23,11 @@ export function InboxIcon({ size = 18, className }: IconProps) {
   )
 }
 
-export function StarIcon({ size = 18, className }: IconProps) {
+export function TodayIcon({ size = 18, className }: IconProps) {
   return (
     <svg {...base(size)} className={className} aria-hidden="true">
-      <path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.9l-5.2 2.8 1-5.9-4.3-4.1 5.9-.8L12 3.5z" />
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" />
     </svg>
   )
 }
@@ -40,11 +41,14 @@ export function CalendarIcon({ size = 18, className }: IconProps) {
   )
 }
 
+/** A person shrugging: maybe, some day. */
 export function SomedayIcon({ size = 18, className }: IconProps) {
   return (
     <svg {...base(size)} className={className} aria-hidden="true">
-      <rect x="3" y="7" width="18" height="13" rx="2" />
-      <path d="M3 11h18M8 7V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
+      <circle cx="12" cy="6.5" r="2.6" />
+      <path d="M8.6 21v-5.6a3.4 3.4 0 0 1 6.8 0V21" />
+      <path d="M8.4 13.4 5.6 15.6 3.4 11.4M15.6 13.4l2.8 2.2 2.2-4.2" />
+      <path d="M2.2 11.4h2.6M19.2 11.4h2.6" />
     </svg>
   )
 }
