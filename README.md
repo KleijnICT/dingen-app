@@ -70,7 +70,7 @@ The image is built for `linux/amd64` and `linux/arm64`.
 | `PORT`                | `8080`             | Port the server listens on inside the container.                            |
 | `DATA_DIR`            | `/data`            | Directory for the SQLite database (`dingen.db`).                            |
 | `DINGEN_REGISTRATION` | closed             | Set to `open` to let anyone create an account. Default: only the first one. |
-| `DINGEN_TIMEZONE`     | `Europe/Amsterdam` | Time zone that decides what "today" is for the MCP server, and on which day and at what time calendar appointments are shown. |
+| `DINGEN_TIMEZONE`     | `Europe/Amsterdam` | Time zone for "today" in the MCP and for calendar appointments.             |
 
 ### HTTPS and reverse proxies
 
