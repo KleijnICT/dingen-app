@@ -248,6 +248,26 @@ export const en = {
   'menu.tags': 'Tags',
   'menu.move': 'Move to area',
   'project.noArea': 'No area',
+  // --- agenda ---
+  'settings.tab.calendars': 'Calendars',
+  'calendar.events': 'Calendar',
+  'calendar.allDay': 'all day',
+  'calendar.untitled': '(no title)',
+  'calendar.intro':
+    'Show appointments from your calendars in Today and Upcoming. Dingen only reads them; it never writes to a calendar.',
+  'calendar.none': 'No calendars yet.',
+  'calendar.namePlaceholder': 'Name, e.g. Work',
+  'calendar.urlPlaceholder': 'Secret iCal address (https:// or webcal://)',
+  'calendar.add': 'Add calendar',
+  'calendar.checking': 'Checking…',
+  'calendar.rename': 'Calendar name',
+  'calendar.remove': 'Remove',
+  'calendar.help':
+    'Most calendar apps have a private iCal (ICS) link in the calendar\'s settings, such as "Secret address in iCal format" or "Publish calendar". The link stays on the server; only its host is shown here. Appointments refresh every 15 minutes.',
+  'calendar.error.invalid_url': 'That is not a valid https:// or webcal:// address.',
+  'calendar.error.feed_unreachable': 'The calendar could not be reached. Check the address.',
+  'calendar.error.feed_invalid': 'The address does not return a calendar (ICS).',
+  'calendar.error.feed_too_large': 'The calendar is too large (more than 10 MB).',
 } as const
 
 export type MessageKey = keyof typeof en

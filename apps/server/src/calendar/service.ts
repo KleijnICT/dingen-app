@@ -5,7 +5,7 @@ import {
   type CalendarEventsResponse,
   ulid,
 } from '@dingen/core'
-import { and, asc, eq } from 'drizzle-orm'
+import { and, asc, eq, sql } from 'drizzle-orm'
 import type { Db } from '../db.js'
 import { calendars } from '../schema.js'
 import { expandEvents, FeedError, type ParsedFeed, parseFeed } from './ics.js'
@@ -216,12 +216,15 @@ export class CalendarService {
   }
 
   private rows(userId: string) {
-    return this.db
-      .select()
-      .from(calendars)
-      .where(eq(calendars.userId, userId))
-      .orderBy(asc(calendars.createdAt), asc(calendars.id))
-      .all()
+    return (
+      this.db
+        .select()
+        .from(calendars)
+        .where(eq(calendars.userId, userId))
+        // Volgorde van toevoegen; rowid breekt gelijke tijdstempels.
+        .orderBy(asc(calendars.createdAt), asc(sql`rowid`))
+        .all()
+    )
   }
 
   /** De feed uit de cache, ververst als hij ouder is dan REFRESH_MS. Null als er nooit iets lukte. */

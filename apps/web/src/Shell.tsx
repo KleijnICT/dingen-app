@@ -13,6 +13,7 @@ import {
 } from '@dnd-kit/core'
 import { type CSSProperties, useCallback, useEffect, useMemo, useState } from 'react'
 import type { User } from './api.js'
+import { useCalendarFeed } from './calendar.js'
 import { AreaPage } from './components/AreaPage.js'
 import { ListPage } from './components/ListPage.js'
 import { ProjectPage } from './components/ProjectPage.js'
@@ -38,6 +39,7 @@ export function Shell({ user, onSignedOut }: Props) {
   const [today, setToday] = useState(toCalendarDate())
   const [focusSignal, setFocusSignal] = useState(0)
   const ws = useBuildWorkspace(today)
+  useCalendarFeed(user.id, today)
   const sidebarWidth = useSidebarWidth()
   const route = parseRoute(path)
   const [dragging, setDragging] = useState<DragData | null>(null)

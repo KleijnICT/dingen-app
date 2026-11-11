@@ -1,13 +1,15 @@
 import { APP_NAME } from '@dingen/core'
-import { Info, Plug, Settings as SettingsIcon, UserRound, X } from 'lucide-react'
+import { CalendarDays, Info, Plug, Settings as SettingsIcon, UserRound, X } from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { type ApiTokenInfo, api, errorText, type User } from './api.js'
+import { CalendarSettings } from './components/CalendarSettings.js'
 import { formatDate, LOCALES, type Locale, setLocale, useLocale, useT } from './i18n/index.js'
 
 const TABS = [
   { id: 'general', icon: SettingsIcon },
   { id: 'account', icon: UserRound },
   { id: 'connections', icon: Plug },
+  { id: 'calendars', icon: CalendarDays },
   { id: 'about', icon: Info },
 ] as const
 type TabId = (typeof TABS)[number]['id']
@@ -79,6 +81,7 @@ export function Settings({ user, onSignedOut, onClose }: Props) {
           {tab === 'general' && <General />}
           {tab === 'account' && <Account user={user} onSignedOut={onSignedOut} />}
           {tab === 'connections' && <Connections />}
+          {tab === 'calendars' && <CalendarSettings />}
           {tab === 'about' && <About />}
         </div>
       </div>
