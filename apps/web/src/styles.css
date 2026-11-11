@@ -1837,6 +1837,15 @@ a.button {
   padding: 16px 10px 0;
   border-top: 1px solid var(--line);
 }
+.review-skip {
+  margin: 12px 0 0;
+  padding: 0 10px;
+}
+.review-blocked {
+  margin: 8px 10px 0;
+  text-align: right;
+  font-size: 0.85em;
+}
 .review-foot-count {
   font-size: 0.85em;
 }

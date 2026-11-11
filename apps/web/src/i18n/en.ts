@@ -377,6 +377,8 @@ export const en = {
   'review.banner.running.weekly': 'Your Weekly Review is in progress.',
   'review.banner.running.monthly': 'Your Monthly Review is in progress.',
   'review.banner.running.daily': 'Your Daily Review is in progress.',
+  'review.skipRest': 'Skip the rest',
+  'review.completeBlocked': 'Still open: {steps}. Finish these steps to complete the review.',
 } as const
 
 export type MessageKey = keyof typeof en

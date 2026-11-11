@@ -12,7 +12,14 @@ import { Check } from 'lucide-react'
 import { useState } from 'react'
 import { formatDate, type MessageKey, useT } from '../i18n/index.js'
 import { describeDate } from '../lists.js'
-import { REVIEW_KINDS, stepAfter, stepBefore, stepStates, withDoneStep } from '../reviewFlow.js'
+import {
+  openStepsAfter,
+  REVIEW_KINDS,
+  stepAfter,
+  stepBefore,
+  stepStates,
+  withDoneStep,
+} from '../reviewFlow.js'
 import { navigate } from '../router.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { ReviewStepView } from './ReviewSteps.js'
@@ -105,6 +112,9 @@ function ReviewRunner({ review }: { review: Review }) {
   const doneCount = states.filter((s) => s.done).length
   const last = stepAfter(review.kind, step.id) === null
   const previous = stepBefore(review.kind, step.id)
+  const stepDone = states.find((s) => s.step.id === step.id)?.done ?? false
+  // Completing needs every step done (moving on ticks off a step with one tick).
+  const open = openStepsAfter(states, step.id)
 
   function goTo(id: ReviewStepId) {
     setStepId(id)
@@ -112,12 +122,19 @@ function ReviewRunner({ review }: { review: Review }) {
   }
 
   function complete() {
+    if (open.length > 0) return
     engine.mutate('review', review.id, { completedAt: new Date().toISOString() })
     navigate('/review')
   }
 
+  /** Ticks off a step per item in one go; the items left are skipped. */
+  function skipRest() {
+    engine.mutate('review', review.id, { doneSteps: withDoneStep(review, step?.id ?? '') })
+  }
+
   function next() {
-    // A step with one tick is done by moving on; the others are done by their items.
+    // A step with one tick is done by moving on. The Inbox is done when it is
+    // empty, a step per item when all items are reviewed (or skipped).
     if (step?.check === 'once') {
       engine.mutate('review', review.id, { doneSteps: withDoneStep(review, step.id) })
     }
@@ -175,6 +192,13 @@ function ReviewRunner({ review }: { review: Review }) {
         )}
       </header>
       <ReviewStepView key={step.id} review={review} stepId={step.id} />
+      {step.check === 'perItem' && !stepDone && (
+        <p className="review-skip">
+          <button type="button" className="link" onClick={skipRest}>
+            {t('review.skipRest')}
+          </button>
+        </p>
+      )}
       <footer className="review-foot">
         {previous ? (
           <button type="button" className="link" onClick={() => goTo(previous)}>
@@ -186,10 +210,17 @@ function ReviewRunner({ review }: { review: Review }) {
         <span className="muted review-foot-count">
           {t('review.stepOf', { n: index + 1, total: steps.length })}
         </span>
-        <button type="button" onClick={next}>
+        <button type="button" onClick={next} disabled={last && open.length > 0}>
           {last ? t('review.complete') : t('review.next')}
         </button>
       </footer>
+      {last && open.length > 0 && (
+        <p className="review-blocked muted">
+          {t('review.completeBlocked', {
+            steps: open.map((id) => t(`review.step.${id}` as MessageKey)).join(', '),
+          })}
+        </p>
+      )}
     </section>
   )
 }

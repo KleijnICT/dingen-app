@@ -57,6 +57,17 @@ export function stepStates(review: Review, ws: Snapshot): StepState[] {
   }))
 }
 
+/**
+ * Steps still open once the person moves on from `stepId`: moving on ticks
+ * off a step with one tick, nothing else. Reviews complete only when this is
+ * empty (the same rule as the MCP tools, without their force option).
+ */
+export function openStepsAfter(states: StepState[], stepId: ReviewStepId): ReviewStepId[] {
+  return states
+    .filter((s) => !s.done && !(s.step.id === stepId && s.step.check === 'once'))
+    .map((s) => s.step.id)
+}
+
 /** The step after `id` in this kind of review, or null after the last. */
 export function stepAfter(kind: ReviewKind, id: ReviewStepId): ReviewStepId | null {
   const steps = reviewSteps(kind)

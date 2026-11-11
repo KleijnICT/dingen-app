@@ -370,4 +370,6 @@ export const nl: Messages = {
   'review.banner.running.weekly': 'Je weekreview is bezig.',
   'review.banner.running.monthly': 'Je maandreview is bezig.',
   'review.banner.running.daily': 'Je dagreview is bezig.',
+  'review.skipRest': 'Rest overslaan',
+  'review.completeBlocked': 'Nog open: {steps}. Rond deze stappen af om de review af te ronden.',
 }

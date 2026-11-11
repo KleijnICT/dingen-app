@@ -2,6 +2,7 @@ import { buildSnapshot, newReview, newTask } from '@dingen/core'
 import { describe, expect, it } from 'vitest'
 import {
   nextToReview,
+  openStepsAfter,
   parseReviewKind,
   reviewBanners,
   showReviewDot,
@@ -65,6 +66,26 @@ describe('steps', () => {
     ])
     // No projects or areas: those steps are done by themselves.
     expect(states.find((s) => s.step.id === 'projects')?.done).toBe(true)
+  })
+
+  it('completes only when every step is done, moving on ticks off a once-step', () => {
+    const ws = buildSnapshot(today, {
+      tasks: [newTask({ title: 'In the Inbox' })],
+      projects: [],
+      areas: [],
+      headings: [],
+      tags: [],
+      checklist: [],
+    })
+    const all = ['mindSweep', 'weekLookBack', 'dueSoon', 'looseTasks', 'somedayScan']
+    const review = newReview({ kind: 'weekly', doneSteps: all })
+    // The Inbox is not empty: it cannot be ticked off, only emptied.
+    expect(openStepsAfter(stepStates(review, ws), 'triggers')).toEqual(['inbox'])
+    const empty = { ...ws, tasks: [] }
+    expect(openStepsAfter(stepStates(review, empty), 'triggers')).toEqual([])
+    expect(openStepsAfter(stepStates(review, empty), 'inbox')).toEqual(['triggers'])
+    const daily = newReview({ kind: 'daily' })
+    expect(openStepsAfter(stepStates(daily, ws), 'inbox')).toEqual(['inbox'])
   })
 
   it('adds and removes done keys without duplicates', () => {
