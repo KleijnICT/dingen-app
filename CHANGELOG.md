@@ -11,6 +11,10 @@
   `@dingen/core` knows when a review is due, its steps, what each step shows
   and the signals on a project or area (no next action, deadline soon, long
   quiet, not reviewed lately).
+- Imports: `dingen-import todoist` (CSV export of a project, or the unzipped
+  backup folder) and `dingen-import csv` (generic CSV with columns title, notes,
+  project, area, tags, when, deadline, done). Both do a dry run by default,
+  write with `--apply` and do not create duplicates when run again.
 
 ## 0.1.1
 
