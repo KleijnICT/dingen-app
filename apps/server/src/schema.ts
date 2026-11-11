@@ -79,3 +79,24 @@ export const apiTokens = sqliteTable(
   },
   (t) => [index('api_tokens_user_idx').on(t.userId)],
 )
+
+/**
+ * Agenda's die een gebruiker volgt (alleen lezen). De URL is geheim: hij gaat
+ * na het toevoegen nooit meer naar een client en komt niet in logs.
+ */
+export const calendars = sqliteTable(
+  'calendars',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    color: text('color'),
+    /** Nu altijd 'ics'; ruimte voor 'caldav'. */
+    kind: text('kind').notNull().default('ics'),
+    url: text('url').notNull(),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => [index('calendars_user_idx').on(t.userId)],
+)
