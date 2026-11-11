@@ -6,10 +6,13 @@ import { AuthService } from './auth/service.js'
 import { CalendarService, type FetchFeed } from './calendar/service.js'
 import type { Db } from './db.js'
 import type { AppEnv } from './env.js'
+import { PushService, webPushSender } from './push/service.js'
+import { loadVapidKeys } from './push/vapid.js'
 import { authRoutes } from './routes/auth.js'
 import { calendarRoutes } from './routes/calendars.js'
 import { dataRoutes } from './routes/data.js'
 import { mcpRoutes } from './routes/mcp.js'
+import { pushRoutes } from './routes/push.js'
 import { syncRoutes } from './routes/sync.js'
 import { SyncService } from './sync.js'
 
@@ -25,6 +28,8 @@ export interface AppDeps {
   timezone?: string
   /** Ophalen van agenda-feeds; tests geven een nep-versie mee. */
   fetchFeed?: FetchFeed
+  /** Web push; zonder wordt er een gemaakt met de sleutels uit de database. */
+  push?: PushService
 }
 
 /** Bouwt de Hono-app zonder HTTP-server of statische bestanden, zodat tests hem direct kunnen aanroepen. */
@@ -71,6 +76,11 @@ export function createApp(deps: AppDeps) {
   app.use('/api/calendars/*', requireAuth)
   app.route('/api/calendars', calendarRoutes(calendars, deps.timezone ?? 'Europe/Amsterdam'))
 
+  // --- herinneringen ---
+  const push = deps.push ?? defaultPush(deps.db)
+  app.use('/api/push/*', requireAuth)
+  app.route('/api/push', pushRoutes(push))
+
   app.notFound((c) => {
     if (c.req.path.startsWith('/api/')) {
       return c.json({ error: 'not_found' }, 404)
@@ -84,4 +94,10 @@ export function createApp(deps: AppDeps) {
   })
 
   return app
+}
+
+/** Push met de VAPID-sleutels van deze server (uit env of database). */
+export function defaultPush(db: Db): PushService {
+  const keys = loadVapidKeys(db)
+  return new PushService(db, keys.publicKey, webPushSender(keys))
 }

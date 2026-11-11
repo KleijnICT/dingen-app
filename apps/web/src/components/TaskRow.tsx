@@ -9,6 +9,7 @@ import { Checklist } from './Checklist.js'
 import { DeadlineBadge, DeadlineField } from './DeadlineField.js'
 import { CheckIcon, ChecklistIcon, MoonIcon, NotesIcon, RepeatIcon } from './Icons.js'
 import { RepeatEditor } from './RepeatEditor.js'
+import { ScheduleBadge, ScheduleField } from './ScheduleField.js'
 import { TagEditor } from './TagEditor.js'
 import { WhenPicker } from './WhenPicker.js'
 
@@ -104,6 +105,7 @@ export function TaskRow({
               {tag.title}
             </span>
           ))}
+          {!done && <ScheduleBadge task={task} />}
           {task.evening && <MoonIcon className="meta-icon" />}
           {task.notes && <NotesIcon className="meta-icon" />}
           {checklist.total > 0 && (
@@ -228,6 +230,7 @@ function TaskEditor({ task, onClose, onToggle }: EditorProps) {
         today={ws.today}
         onChange={(when, evening) => commitTask(engine, ws, task, { when, evening })}
       />
+      <ScheduleField task={task} onChange={(fields) => commitTask(engine, ws, task, fields)} />
       <div className="editor-line">
         <DeadlineField
           deadline={task.deadline}

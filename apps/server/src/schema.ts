@@ -100,3 +100,42 @@ export const calendars = sqliteTable(
   },
   (t) => [index('calendars_user_idx').on(t.userId)],
 )
+
+// --- herinneringen ---
+
+/**
+ * Web-push-abonnementen: één per browser (apparaat). Het endpoint is uniek;
+ * meldt een ander account zich op hetzelfde apparaat aan, dan neemt dat het over.
+ */
+export const pushSubscriptions = sqliteTable(
+  'push_subscriptions',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    endpoint: text('endpoint').notNull().unique(),
+    p256dh: text('p256dh').notNull(),
+    auth: text('auth').notNull(),
+    userAgent: text('user_agent'),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => [index('push_subscriptions_user_idx').on(t.userId)],
+)
+
+/**
+ * Verstuurde herinneringen. `moment` is het tijdstip (ISO) waarop hij afging;
+ * een verzette herinnering heeft een nieuw moment en gaat dus opnieuw uit.
+ */
+export const reminderDeliveries = sqliteTable(
+  'reminder_deliveries',
+  {
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    taskId: text('task_id').notNull(),
+    moment: text('moment').notNull(),
+    sentAt: text('sent_at').notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.taskId, t.moment] })],
+)

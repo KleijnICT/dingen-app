@@ -11,6 +11,7 @@ import {
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { ApiError, type ApiTokenInfo, api, errorText, type User } from './api.js'
 import { CalendarSettings } from './components/CalendarSettings.js'
+import { ReminderSettings } from './components/ReminderSettings.js'
 import { formatDate, LOCALES, type Locale, setLocale, useLocale, useT } from './i18n/index.js'
 
 const TABS = [
@@ -114,6 +115,7 @@ function General() {
           ))}
         </select>
       </label>
+      <ReminderSettings />
     </div>
   )
 }

@@ -12,6 +12,13 @@
   monthly review, one screen per step with a progress bar, project and area
   cards with signals and "Reviewed" (shortcut R), and a bar on Today when the
   weekly or monthly review is ready.
+- Times and reminders: a task with a date can get a time of day and a
+  reminder (by default at that time, or on its own, also on an earlier day).
+  The time shows in the row, in Today and in Upcoming; both go along to the
+  next occurrence of a repeating task. Reminders arrive as notifications via
+  web push: turn them on per device in Settings → General (needs HTTPS or
+  localhost). The server sends them at the right moment in `DINGEN_TIMEZONE`.
+  MCP: `create_task` and `update_task` take `time` and `reminder`.
 - Export and import: Settings → Data downloads everything as one JSON file and
   reads such a file back (merging by id, newest change per field wins; importing
   the same file twice changes nothing). Tokens and sessions are never included.

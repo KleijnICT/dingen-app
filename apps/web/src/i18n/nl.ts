@@ -392,4 +392,23 @@ export const nl: Messages = {
   'review.banner.running.daily': 'Je dagreview is bezig.',
   'review.skipRest': 'Rest overslaan',
   'review.completeBlocked': 'Nog open: {steps}. Rond deze stappen af om de review af te ronden.',
+  // --- herinneringen ---
+  'reminder.time': 'Tijd',
+  'reminder.clearTime': 'Tijd weghalen',
+  'reminder.label': 'Herinnering',
+  'reminder.date': 'Dag van de herinnering',
+  'reminder.atTime': 'Tijd van de herinnering',
+  'reminder.settings.title': 'Herinneringen',
+  'reminder.settings.device': 'Herinneringen op dit apparaat',
+  'reminder.settings.help':
+    'Krijg een melding op het moment van de herinnering van een taak, ook als Dingen dicht is. Zet het aan op elk apparaat waar je ze wilt krijgen.',
+  'reminder.settings.insecure':
+    'Herinneringen hebben een beveiligde verbinding nodig (HTTPS, of localhost). Open Dingen via HTTPS om ze op dit apparaat aan te zetten.',
+  'reminder.settings.unsupported': 'Deze browser kan geen herinneringen van Dingen tonen.',
+  'reminder.settings.denied':
+    'Meldingen van Dingen zijn geblokkeerd. Sta ze toe in de instellingen van de browser en probeer het opnieuw.',
+  'reminder.settings.failed': 'Dat lukte niet. Probeer het later nog eens.',
+  'reminder.settings.test': 'Proefmelding sturen',
+  'reminder.settings.testTitle': 'Dingen',
+  'reminder.settings.testBody': 'Herinneringen werken op dit apparaat.',
 }

@@ -29,6 +29,13 @@
       "when": 1794395870122,
       "tag": "0003_calendars",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1794396949055,
+      "tag": "0004_reminders",
+      "breakpoints": true
     }
   ]
 }

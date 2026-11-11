@@ -2212,3 +2212,48 @@ a.button {
     flex-wrap: wrap;
   }
 }
+
+/* --- herinneringen --- */
+.schedule-field {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding-left: 30px;
+}
+.schedule-time,
+.schedule-reminder {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.reminder-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+}
+.reminder-toggle.active {
+  color: white;
+}
+.meta-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--muted);
+  font-size: 0.85em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.toolbar-popover .schedule-field {
+  padding-left: 0;
+  margin-top: 10px;
+}
+.reminder-settings .reminder-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.reminder-settings .reminder-switch input {
+  width: auto;
+}

@@ -8,6 +8,7 @@ import { commitTask, type MoveTarget, moveTask } from '../taskActions.js'
 import { AreaGlyph } from './AreaIcons.js'
 import { ProgressCircle } from './Icons.js'
 import { useDismiss } from './Menu.js'
+import { ScheduleField } from './ScheduleField.js'
 import { WhenPicker } from './WhenPicker.js'
 
 /** The element at the bottom of the content pane that pages fill with their buttons. */
@@ -101,15 +102,18 @@ function WhenPopup({ task, onDone }: { task: Task; onDone: () => void }) {
   const engine = useEngine()
   const ws = useWorkspace()
   return (
-    <WhenPicker
-      when={task.when}
-      evening={task.evening}
-      today={ws.today}
-      onChange={(when, evening) => {
-        commitTask(engine, ws, task, { when, evening })
-        onDone()
-      }}
-    />
+    <>
+      <WhenPicker
+        when={task.when}
+        evening={task.evening}
+        today={ws.today}
+        onChange={(when, evening) => {
+          commitTask(engine, ws, task, { when, evening })
+          onDone()
+        }}
+      />
+      <ScheduleField task={task} onChange={(fields) => commitTask(engine, ws, task, fields)} />
+    </>
   )
 }
 

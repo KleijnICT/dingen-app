@@ -15,6 +15,8 @@ built-in MCP server.
 - **Structure:** Inbox, Today (with This Evening), Upcoming,
   Anytime, Someday, Logbook; areas, projects, headings and nested tags.
 - **Dates:** a "when" date for planning and a separate deadline.
+- **Times and reminders:** a time of day on a task and a reminder, delivered
+  as a notification on every device where you turn it on (web push).
 - **Repeating tasks:** on a schedule or after completion, with weekdays, end
   dates and deadlines.
 - **Checklists and notes** on every task.
@@ -70,7 +72,28 @@ The image is built for `linux/amd64` and `linux/arm64`.
 | `PORT`                | `8080`             | Port the server listens on inside the container.                            |
 | `DATA_DIR`            | `/data`            | Directory for the SQLite database (`dingen.db`).                            |
 | `DINGEN_REGISTRATION` | closed             | Set to `open` to let anyone create an account. Default: only the first one. |
-| `DINGEN_TIMEZONE`     | `Europe/Amsterdam` | Time zone for "today" in the MCP and for calendar appointments.             |
+| `DINGEN_TIMEZONE`     | `Europe/Amsterdam` | Time zone for "today" in the MCP, calendar appointments and reminders.      |
+
+### Reminders (web push)
+
+Reminders arrive as notifications through web push. Turn them on per device in
+**Settings → General**. Browsers only allow this in a secure context: over
+HTTPS (see below) or on `http://localhost`. Over plain HTTP on another address
+the rest of Dingen works as usual, but reminders cannot be turned on. On an
+iPhone or iPad, add Dingen to the home screen first (Share → Add to Home
+Screen) and turn reminders on from there.
+
+The server creates its push keys (VAPID) on first start and keeps them in the
+database, so they survive updates and are part of your backup. Optional:
+
+| Variable                   | Meaning                                                                   |
+| -------------------------- | ------------------------------------------------------------------------- |
+| `DINGEN_VAPID_SUBJECT`     | Contact for push services, `mailto:you@example.com` or an `https://` URL. |
+| `DINGEN_VAPID_PUBLIC_KEY`  | Use your own key pair instead of the generated one (set both or neither). |
+| `DINGEN_VAPID_PRIVATE_KEY` | Private key belonging to `DINGEN_VAPID_PUBLIC_KEY`.                       |
+
+Changing the keys stops reminders on devices that were already subscribed;
+turn them off and on again there.
 
 ### HTTPS and reverse proxies
 
@@ -256,7 +279,6 @@ An example file is in [docs/voorbeeld-import.csv](docs/voorbeeld-import.csv).
 
 - Web only; native apps for Android and macOS are planned in separate
   repositories.
-- No reminders or times of day.
 - No shared projects or teams.
 - MCP over HTTP needs an API token; OAuth for claude.ai connectors is not
   supported yet.

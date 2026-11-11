@@ -5,6 +5,7 @@ import {
   addDays,
   type ChecklistItem,
   commitTask,
+  daysBetween,
   deleteTask,
   type Heading,
   mirrorChecklist,
@@ -17,8 +18,10 @@ import {
   newTask,
   orderBetween,
   type Project,
+  type Reminder,
   Repeat,
   type Snapshot,
+  scheduleFields,
   setRepeat,
   signals,
   stopRepeat,
@@ -70,6 +73,17 @@ const ChecklistInput = z
     }),
   )
   .describe('The whole checklist in order; items not listed are removed')
+
+// --- herinneringen ---
+const TimeInput = z
+  .string()
+  .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'A time HH:MM')
+  .describe("Time of day HH:MM (24 h) on the task's date; null removes it. Needs a date in `when`.")
+const ReminderInput = z
+  .string()
+  .describe(
+    "'HH:MM' on the task's date, or 'YYYY-MM-DD HH:MM' on or before it; null removes it. Setting `time` without `reminder` also sets a reminder at that time.",
+  )
 
 class ToolError extends Error {}
 
@@ -220,6 +234,8 @@ export function createMcpServer(client: DingenClient): McpServer {
         createTags: z.boolean().default(false),
         checklist: z.array(z.string()).default([]),
         repeat: RepeatInput.optional(),
+        time: TimeInput.nullable().optional(),
+        reminder: ReminderInput.nullable().optional(),
       },
     },
     (input) =>
@@ -257,6 +273,7 @@ export function createMcpServer(client: DingenClient): McpServer {
           tagIds,
           order: orderBetween(siblings.at(-1)?.order ?? null, null),
         })
+        Object.assign(task, scheduleInput(task, input, ws.today))
         client.create('task', task)
         let order: string | null = null
         for (const title of input.checklist) {
@@ -292,6 +309,8 @@ export function createMcpServer(client: DingenClient): McpServer {
         createTags: z.boolean().default(false),
         checklist: ChecklistInput.optional(),
         repeat: RepeatInput.nullable().optional(),
+        time: TimeInput.nullable().optional(),
+        reminder: ReminderInput.nullable().optional(),
       },
     },
     (input) =>
@@ -320,6 +339,7 @@ export function createMcpServer(client: DingenClient): McpServer {
         ) {
           Object.assign(fields, moveFieldsFor(ws, task, input))
         }
+        Object.assign(fields, scheduleInput({ ...task, ...fields } as Task, input, ws.today))
         commitTask(client, ws, task, fields)
         if (input.checklist !== undefined) replaceChecklist(client, ws, task, input.checklist)
         if (input.repeat !== undefined) {
@@ -764,6 +784,33 @@ function parseWhen(input: string, today: string): When {
   }
 }
 
+/** Time and reminder from tool input, as task fields; needs a date. */
+function scheduleInput(
+  task: Task,
+  input: { time?: string | null | undefined; reminder?: string | null | undefined },
+  today: string,
+): Record<string, unknown> {
+  if (input.time === undefined && input.reminder === undefined) return {}
+  if (task.when.kind !== 'date') {
+    if (!input.time && !input.reminder) return {}
+    throw new ToolError('A time or reminder needs a date in `when`')
+  }
+  const date = task.when.date
+  let reminder: Reminder | null | undefined
+  if (input.reminder === null || input.reminder === undefined) reminder = input.reminder
+  else {
+    const m = input.reminder.trim().match(/^(?:(\S+)[ T])?(\d{2}:\d{2})$/)
+    const time = m?.[2]
+    if (!m || !time || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time))
+      throw new ToolError(`Not a reminder: "${input.reminder}"`)
+    const daysBefore = m[1] ? daysBetween(parseDate(m[1], today), date) : 0
+    if (daysBefore < 0) throw new ToolError("A reminder cannot be after the task's date")
+    if (daysBefore > 365) throw new ToolError('A reminder can be at most a year before')
+    reminder = { daysBefore, time }
+  }
+  return scheduleFields(task, { time: input.time, reminder })
+}
+
 function parseRepeat(input: z.infer<typeof RepeatInput>, today: string): Repeat {
   return Repeat.parse({
     unit: input.unit,
@@ -794,6 +841,10 @@ function taskRow(ws: Snapshot, t: Task) {
     status: t.status,
     when: describeWhen(t.when),
     ...(t.evening ? { evening: true } : {}),
+    ...(t.time ? { time: t.time } : {}),
+    ...(t.reminder && t.when.kind === 'date'
+      ? { reminder: `${addDays(t.when.date, -t.reminder.daysBefore)} ${t.reminder.time}` }
+      : {}),
     ...(t.deadline ? { deadline: t.deadline } : {}),
     ...(project ? { project: project.title } : {}),
     ...(heading ? { heading: heading.title } : {}),
