@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Reviews, groundwork (no screens yet): projects and areas get `reviewedAt`,
+  a new synced entity `review` (daily, weekly, monthly) keeps progress, and
+  `@dingen/core` knows when a review is due, its steps, what each step shows
+  and the signals on a project or area (no next action, deadline soon, long
+  quiet, not reviewed lately).
+
 ## 0.1.1
 
 - Claude Code plugin: `/plugin install dingen --marketplace KleijnICT/dingen-app`
