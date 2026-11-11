@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Imports: `dingen-import todoist` (CSV export of a project, or the unzipped
+  backup folder) and `dingen-import csv` (generic CSV with columns title, notes,
+  project, area, tags, when, deadline, done). Both do a dry run by default,
+  write with `--apply` and do not create duplicates when run again.
+
 ## 0.1.1
 
 - Claude Code plugin: `/plugin install dingen --marketplace KleijnICT/dingen-app`

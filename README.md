@@ -22,7 +22,7 @@ built-in MCP server.
   it is back online.
 - **Multi-user accounts** with API tokens.
 - **MCP server** built in (`/mcp`, Streamable HTTP) and as a stdio command.
-- **TickTick import** from a TickTick backup (CSV).
+- **Imports** from TickTick (backup CSV), Todoist (CSV export) and a generic CSV.
 - Interface in English and Dutch.
 
 ## Quick start
@@ -170,7 +170,15 @@ the app.
 API tokens only work for the API and MCP; the `/mcp` endpoint never accepts a
 browser session.
 
-## Importing from TickTick
+## Importing
+
+All importers work the same way: `dingen-import <source> <file>` prints a dry
+run, `--apply` writes it to a running Dingen server, and running it again does
+not create duplicates. The examples below run inside the container; copy the
+file in first with `docker compose cp`. Use an API token (`--token` or
+`DINGEN_TOKEN`) and `--url`.
+
+### TickTick
 
 Generate a backup in TickTick (in the web app: Settings, Account, Backup &
 Restore), then:
@@ -182,10 +190,48 @@ docker compose exec -e DINGEN_TOKEN=dgn_... dingen \
   --url http://localhost:8080
 ```
 
-Without `--apply` this is a dry run that prints what would be imported. Add
-`--apply` to write it. Running the import again does not create duplicates.
 Folders become areas, lists become projects, and the TickTick inbox becomes
 the Inbox. Times of day, reminders and completed tasks are not imported.
+
+### Todoist
+
+Todoist no longer offers a JSON backup. Use either the backup (Settings,
+Backups: a zip with one CSV per project; unzip it) or "Export as CSV" from a
+single project's menu, then point the importer at the file or the folder:
+
+```sh
+node packages/mcp/dist/import/cli.js todoist ~/Downloads/todoist-backup/ \
+  [--area "Name"] --url http://localhost:8080
+```
+
+Each file becomes a project (`Inbox.csv` becomes the Inbox), sections become
+headings, subtasks become checklist items, comments are added to the notes of
+the task above them, and "every ..." dates become repeating tasks. `--area`
+puts all imported projects in one area. Priorities, completed tasks, times of
+day and reminders are not imported. The export has no task ids, so a task you
+rename in Todoist counts as a new one on the next run.
+
+### Generic CSV
+
+For anything else, make a spreadsheet with these English column names (only
+`title` is required) and export it as CSV (comma or semicolon separated):
+
+| Column     | Meaning                                                                                                                           |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `title`    | Task title                                                                                                                        |
+| `notes`    | Notes                                                                                                                             |
+| `project`  | Project name (created if needed)                                                                                                  |
+| `area`     | Area name (created if needed); a project is placed in it                                                                          |
+| `tags`     | Tag names separated by commas or semicolons                                                                                       |
+| `when`     | `YYYY-MM-DD`, `today`, `tomorrow`, `someday`, `anytime` or `inbox`; empty means Inbox, or Anytime when there is a project or area |
+| `deadline` | `YYYY-MM-DD`                                                                                                                      |
+| `done`     | `yes`, `true`, `1` or `x` for a completed task                                                                                    |
+
+```sh
+node packages/mcp/dist/import/cli.js csv tasks.csv --url http://localhost:8080
+```
+
+An example file is in [docs/voorbeeld-import.csv](docs/voorbeeld-import.csv).
 
 ## Known limitations
 
