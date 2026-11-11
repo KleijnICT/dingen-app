@@ -23,6 +23,8 @@ built-in MCP server.
 - **Multi-user accounts** with API tokens.
 - **MCP server** built in (`/mcp`, Streamable HTTP) and as a stdio command.
 - **TickTick import** from a TickTick backup (CSV).
+- **Calendars (read-only):** subscribe to ICS feeds; appointments appear in
+  Today and Upcoming. The server fetches them, so feed URLs stay private.
 - Interface in English and Dutch.
 
 ## Quick start
@@ -68,7 +70,7 @@ The image is built for `linux/amd64` and `linux/arm64`.
 | `PORT`                | `8080`             | Port the server listens on inside the container.                            |
 | `DATA_DIR`            | `/data`            | Directory for the SQLite database (`dingen.db`).                            |
 | `DINGEN_REGISTRATION` | closed             | Set to `open` to let anyone create an account. Default: only the first one. |
-| `DINGEN_TIMEZONE`     | `Europe/Amsterdam` | Time zone that decides what "today" is for the MCP server.                  |
+| `DINGEN_TIMEZONE`     | `Europe/Amsterdam` | Time zone that decides what "today" is for the MCP server, and on which day and at what time calendar appointments are shown. |
 
 ### HTTPS and reverse proxies
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Calendars (read-only): add ICS feeds (`https://` or `webcal://`) under
+  Settings → Calendars, give them a name and colour. Appointments show in a
+  compact block at the top of Today and per day in Upcoming (the next 14 days).
+  The server fetches the feeds every 15 minutes, handles repeating
+  appointments, exceptions and time zones (`DINGEN_TIMEZONE`), and never sends
+  a feed URL back to the browser. The web app keeps the last appointments for
+  offline use.
+
 ## 0.1.1
 
 - Claude Code plugin: `/plugin install dingen --marketplace KleijnICT/dingen-app`
