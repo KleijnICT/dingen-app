@@ -4,12 +4,37 @@ import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
 import type { Context } from 'hono'
 import { createApp, defaultPush } from './app.js'
+import { backupBeforeMigrations } from './backup.js'
 import { loadConfig } from './config.js'
-import { openDatabase } from './db.js'
+import { migrationsFolder, openDatabase } from './db.js'
 import { ReminderPlanner } from './push/planner.js'
 import { staticHeaders } from './static.js'
 
 const config = loadConfig()
+
+// Staan er migraties klaar voor een bestaande database, dan eerst een kopie.
+// Lukt die niet, dan niet migreren: liever niet starten dan data riskeren.
+try {
+  const backup = await backupBeforeMigrations({
+    databasePath: config.databasePath,
+    backupDir: path.join(config.dataDir, 'backups'),
+    migrationsFolder,
+  })
+  if (backup) {
+    console.log(
+      `Database migration ${backup.from} → ${backup.to}: backup written to ${backup.file}`,
+    )
+  }
+} catch (err) {
+  console.error(
+    `Could not back up the database before migrating; not starting. ${err instanceof Error ? err.message : String(err)}`,
+  )
+  console.error(
+    `Check free disk space and write access to ${path.join(config.dataDir, 'backups')}.`,
+  )
+  process.exit(1)
+}
+
 const { db, sqliteVersion } = openDatabase(config.databasePath)
 const push = defaultPush(db)
 const app = createApp({
@@ -18,7 +43,7 @@ const app = createApp({
   version: config.version,
   build: config.build,
   sqliteVersion,
-  registrationOpen: config.registrationOpen,
+  registration: config.registration,
   timezone: config.timezone,
 })
 
