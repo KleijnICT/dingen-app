@@ -1,4 +1,12 @@
-import { applyChange, type Change, type EntityRecord, recordKey } from '@dingen/core'
+import {
+  addDays,
+  applyChange,
+  type Change,
+  dateOf,
+  type EntityRecord,
+  newReview,
+  recordKey,
+} from '@dingen/core'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js'
 import { beforeAll, describe, expect, it } from 'vitest'
@@ -142,5 +150,135 @@ describe('mcp', () => {
     ])
     const found = await call('search', { query: 'planten' })
     expect(found.tasks).toHaveLength(1)
+  })
+})
+
+describe('mcp reviews', () => {
+  const store = new MemoryTransport()
+  const claude = new Client({ name: 'test-review', version: '0' })
+
+  async function rcall(name: string, args: Record<string, unknown> = {}) {
+    const res = await claude.callTool({ name, arguments: args })
+    const text = (res.content as { type: string; text: string }[])[0]?.text ?? ''
+    if (res.isError) throw new Error(text)
+    return JSON.parse(text)
+  }
+
+  beforeAll(async () => {
+    const server = createMcpServer(new DingenClient(store, { today: () => TODAY }))
+    const [a, b] = InMemoryTransport.createLinkedPair()
+    await server.connect(a)
+    await claude.connect(b)
+  })
+
+  it('shows every review as due when there never was one', async () => {
+    const r = await rcall('get_review')
+    expect(r.due).toEqual(['daily', 'weekly', 'monthly'])
+    expect(r.reviews.map((x: { running: unknown }) => x.running)).toEqual([null, null, null])
+    await expect(
+      rcall('complete_review_step', { kind: 'weekly', step: 'mindSweep' }),
+    ).rejects.toThrow(/start_review/)
+  })
+
+  it('starts a weekly review once and resumes it', async () => {
+    const first = await rcall('start_review', { kind: 'weekly' })
+    expect(first.resumed).toBe(false)
+    expect(first.currentStep).toBe('mindSweep')
+    expect(first.items).toEqual({ kind: 'none' })
+    const again = await rcall('start_review', { kind: 'weekly' })
+    expect(again).toMatchObject({ resumed: true, id: first.id })
+  })
+
+  it('ticks steps; the Inbox step only by emptying the Inbox', async () => {
+    const task = await rcall('create_task', { title: 'Lamp vervangen' })
+    const ticked = await rcall('complete_review_step', { kind: 'weekly', step: 'mindSweep' })
+    expect(ticked.currentStep).toBe('inbox')
+    expect(ticked.items.tasks.map((t: { title: string }) => t.title)).toEqual(['Lamp vervangen'])
+    await expect(rcall('complete_review_step', { kind: 'weekly', step: 'inbox' })).rejects.toThrow(
+      /Inbox is empty/,
+    )
+    await expect(rcall('complete_review_step', { kind: 'weekly', step: 'nope' })).rejects.toThrow(
+      /No step/,
+    )
+    await rcall('update_task', { id: task.id, when: 'anytime' })
+    const r = await rcall('get_review', { kind: 'weekly' })
+    expect(r.reviews[0].running.currentStep).toBe('weekLookBack')
+    await rcall('complete_review_step', { kind: 'weekly', step: 'weekLookBack' })
+    const due = await rcall('complete_review_step', { kind: 'weekly', step: 'dueSoon' })
+    // No projects or areas yet: those steps are done by an empty list.
+    expect(due.currentStep).toBe('looseTasks')
+  })
+
+  it('shows projects with signals and ticks them off one by one', async () => {
+    const area = await rcall('create_area', { title: 'Thuis' })
+    const project = await rcall('create_project', { title: 'Zolder opruimen', area: area.id })
+    expect(project).toMatchObject({ reviewedAt: null, signals: ['noNextAction'] })
+    const r = await rcall('get_review', { kind: 'weekly' })
+    const items = r.reviews[0].running.items
+    expect(items.kind).toBe('projects')
+    expect(items.projects).toEqual([
+      expect.objectContaining({ id: project.id, reviewed: false, signals: ['noNextAction'] }),
+    ])
+    await expect(rcall('mark_reviewed', {})).rejects.toThrow(/exactly one/)
+    await expect(rcall('mark_reviewed', { project: project.id, area: area.id })).rejects.toThrow(
+      /exactly one/,
+    )
+    const marked = await rcall('mark_reviewed', { project: 'zolder opruimen' })
+    expect(marked.reviewed.project).toBe(project.id)
+    const after = await rcall('get_review', { kind: 'weekly' })
+    expect(after.reviews[0].running.currentStep).toBe('areas')
+    expect(after.reviews[0].running.items.areas[0]).toMatchObject({
+      id: area.id,
+      reviewed: false,
+      projects: ['Zolder opruimen'],
+    })
+    const o = await rcall('overview')
+    expect(o.areas[0]).toMatchObject({ id: area.id, reviewedAt: null })
+    expect(o.areas[0].projects[0].reviewedAt).toBe(marked.reviewedAt)
+  })
+
+  it('refuses to complete with open steps, then completes', async () => {
+    await expect(rcall('complete_review', { kind: 'weekly' })).rejects.toThrow(/Steps still open/)
+    await rcall('mark_reviewed', { area: 'Thuis' })
+    for (const step of ['looseTasks', 'somedayScan', 'triggers']) {
+      await rcall('complete_review_step', { kind: 'weekly', step })
+    }
+    const r = await rcall('get_review', { kind: 'weekly' })
+    expect(r.reviews[0].running.currentStep).toBeNull()
+    const done = await rcall('complete_review', { kind: 'weekly' })
+    expect(done.skippedSteps).toEqual([])
+    expect(done.nextDue).toBe(addDays(dateOf(done.completedAt), 7))
+    const after = await rcall('get_review')
+    expect(after.due).not.toContain('weekly')
+    expect(after.reviews[1]).toMatchObject({ kind: 'weekly', running: null })
+  })
+
+  it('ticks Someday groups in the monthly review', async () => {
+    await rcall('create_task', { title: 'Italiaans leren', when: 'someday', area: 'Thuis' })
+    await rcall('start_review', { kind: 'monthly' })
+    await expect(
+      rcall('complete_review_step', { kind: 'monthly', step: 'somedayDeep', group: 'elders' }),
+    ).rejects.toThrow(/No Someday group/)
+    const r = await rcall('get_review', { kind: 'monthly', step: 'somedayDeep' })
+    const group = r.reviews[0].running.items.groups[0]
+    expect(group).toMatchObject({ area: 'Thuis', done: false })
+    const ticked = await rcall('complete_review_step', {
+      kind: 'monthly',
+      step: 'somedayDeep',
+      group: group.group,
+    })
+    expect(ticked.ticked).toBe(`somedayDeep:${group.group}`)
+    const forced = await rcall('complete_review', { kind: 'monthly', force: true })
+    expect(forced.skippedSteps).toEqual(['monthLookBack', 'areasDeep'])
+  })
+
+  it('resumes a review started on another device', async () => {
+    const app = new DingenClient(store, { today: () => TODAY })
+    await app.refresh()
+    const review = newReview({ kind: 'daily' })
+    app.create('review', review)
+    await app.flush()
+    const resumed = await rcall('start_review', { kind: 'daily' })
+    expect(resumed).toMatchObject({ resumed: true, id: review.id, currentStep: null })
   })
 })
