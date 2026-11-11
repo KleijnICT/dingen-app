@@ -2,6 +2,7 @@ name: Release
 
 # Every push to main is a release. The version comes from package.json; the
 # run fails if that version was already released, so bump it on develop first.
+# Pre-releases (a version with "-") also become :latest; main is what testers run.
 on:
   push:
     branches: [main]
@@ -67,7 +68,7 @@ jobs:
           tags: |
             type=semver,pattern={{version}},value=${{ needs.version.outputs.version }}
             type=semver,pattern={{major}}.{{minor}},value=${{ needs.version.outputs.version }}
-            type=raw,value=latest,enable=${{ !contains(needs.version.outputs.version, '-') }}
+            type=raw,value=latest
           labels: |
             org.opencontainers.image.title=Dingen
             org.opencontainers.image.description=Self-hosted GTD task manager with an offline-first web app and a built-in MCP server
