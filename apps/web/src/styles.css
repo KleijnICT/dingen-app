@@ -1617,3 +1617,62 @@ button.link.danger {
 .menu-panel .when-picker {
   padding-left: 0;
 }
+
+/* --- PWA: update notice, safe areas and phones --- */
+.update-notice {
+  position: fixed;
+  left: 50%;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 8px 8px 16px;
+  background: var(--fg);
+  color: var(--bg);
+  border-radius: 999px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  font-size: 0.9em;
+  white-space: nowrap;
+}
+.update-notice button {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+
+@media (max-width: 720px) {
+  /* Bottom navigation bar clears the iPhone home indicator. */
+  .sidebar {
+    padding-bottom: calc(6px + env(safe-area-inset-bottom));
+    padding-left: max(8px, env(safe-area-inset-left));
+    padding-right: max(8px, env(safe-area-inset-right));
+  }
+  /* The list's own bar sits above the navigation bar, so it needs no bottom inset. */
+  .toolbar {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+  .content {
+    padding-top: calc(20px + env(safe-area-inset-top));
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
+  .settings,
+  .search {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  /* 16px inputs: iOS zooms into smaller ones when they are focused. */
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+  .update-notice {
+    bottom: calc(72px + env(safe-area-inset-bottom));
+  }
+}
