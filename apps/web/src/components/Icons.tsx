@@ -58,15 +58,6 @@ export function LogbookIcon({ size = 18, className }: IconProps) {
   )
 }
 
-export function PersonIcon({ size = 18, className }: IconProps) {
-  return (
-    <svg {...base(size)} className={className} aria-hidden="true">
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4 21a8 8 0 0 1 16 0" />
-    </svg>
-  )
-}
-
 export function NotesIcon({ size = 14, className }: IconProps) {
   return (
     <svg {...base(size)} className={className} aria-hidden="true">
@@ -153,14 +144,6 @@ export function ChevronIcon({ size = 14, className }: IconProps) {
   return (
     <svg {...base(size)} className={className} aria-hidden="true">
       <path d="M6 9l6 6 6-6" />
-    </svg>
-  )
-}
-
-export function PlusIcon({ size = 16, className }: IconProps) {
-  return (
-    <svg {...base(size)} className={className} aria-hidden="true">
-      <path d="M12 5v14M5 12h14" />
     </svg>
   )
 }

@@ -114,7 +114,7 @@ To restore, stop the container and put a backup back as `/data/dingen.db`.
 
 ## Connecting Claude (MCP)
 
-Sign in, open **Account** and create an API token (it starts with `dgn_`).
+Sign in, open **Settings** (bottom left) → **Connections** and create an API token (it starts with `dgn_`).
 
 **Claude Code plugin** (recommended): connects the MCP server and adds a skill
 that teaches Claude how Dingen works (capture to the Inbox, when-dates

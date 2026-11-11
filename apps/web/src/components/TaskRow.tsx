@@ -14,9 +14,13 @@ import { WhenPicker } from './WhenPicker.js'
 
 export interface RowProps {
   open: boolean
+  selected: boolean
   showWhen: boolean
   /** Show the project or area under the title (off inside that project or area). */
   showCaption: boolean
+  /** One click: select (on touch screens this opens). */
+  onSelect: () => void
+  /** Double click or Enter. */
   onOpen: () => void
   onClose: () => void
   onToggle: () => void
@@ -37,8 +41,10 @@ interface Props extends RowProps {
 export function TaskRow({
   task,
   open,
+  selected,
   showWhen,
   showCaption,
+  onSelect,
   onOpen,
   onClose,
   onToggle,
@@ -62,7 +68,10 @@ export function TaskRow({
     <li
       ref={drag?.ref}
       style={drag?.style}
-      className={`task ${done ? 'done' : ''} ${drag?.dragging ? 'dragging' : ''}`}
+      data-task-id={task.id}
+      className={`task ${done ? 'done' : ''} ${selected ? 'selected' : ''} ${
+        drag?.dragging ? 'dragging' : ''
+      }`}
       {...drag?.listeners}
     >
       <button
@@ -74,7 +83,13 @@ export function TaskRow({
       >
         {done && <CheckIcon />}
       </button>
-      <button type="button" className="task-main" onClick={onOpen}>
+      <button
+        type="button"
+        className="task-main"
+        aria-pressed={selected}
+        onClick={onSelect}
+        onDoubleClick={onOpen}
+      >
         <span className="task-text">
           <span className="task-title">{task.title || <em>{t('task.untitled')}</em>}</span>
           {container && (
@@ -186,7 +201,11 @@ function TaskEditor({ task, onClose, onToggle }: EditorProps) {
   }
 
   return (
-    <li className={`task editing ${done ? 'done' : ''}`} onKeyDown={onKeyDown}>
+    <li
+      data-task-id={task.id}
+      className={`task editing ${done ? 'done' : ''}`}
+      onKeyDown={onKeyDown}
+    >
       <div className="editor-row">
         <button
           type="button"

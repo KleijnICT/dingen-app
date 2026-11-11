@@ -1,19 +1,21 @@
 import { type Heading, newHeading, newTask, orderBetween, type Project, views } from '@dingen/core'
+import { SquarePlus } from 'lucide-react'
 import { type ReactNode, useState } from 'react'
 import { useT } from '../i18n/index.js'
 import { completedDate } from '../lists.js'
 import { navigate } from '../router.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { deleteProject, toggleProject, useLinger } from '../taskActions.js'
-import { ConfirmButton } from './ConfirmButton.js'
 import { DeadlineField } from './DeadlineField.js'
 import { ProgressCircle } from './Icons.js'
 import { InlineInput } from './InlineInput.js'
-import { QuickAdd } from './QuickAdd.js'
+import { MoreMenu } from './Menu.js'
 import { TagEditor } from './TagEditor.js'
 import { TagFilter } from './TagFilter.js'
 import { TaskGroup } from './TaskGroup.js'
 import type { RowProps } from './TaskRow.js'
+import { TaskToolbar, ToolbarButton } from './Toolbar.js'
+import { useOnSignal, useTaskList } from './useTaskList.js'
 import { WhenPicker } from './WhenPicker.js'
 
 interface Props {
@@ -25,7 +27,6 @@ export function ProjectPage({ project, focusSignal }: Props) {
   const engine = useEngine()
   const t = useT()
   const ws = useWorkspace()
-  const [openId, setOpenId] = useState<string | null>(null)
   const [showCompleted, setShowCompleted] = useState(false)
   const [tagFilter, setTagFilter] = useState<string | null>(null)
   const done = project.status !== 'open'
@@ -50,19 +51,22 @@ export function ProjectPage({ project, focusSignal }: Props) {
   const headings = views.headingsOf(ws.headings, project.id)
   const progress = views.progress(project.id, ws.tasks)
 
-  function add(title: string) {
+  const taskList = useTaskList([...shownOpen, ...completedShown], toggle)
+
+  function addNew() {
+    if (done) return
     const siblings = open.filter((task) => task.headingId === null)
-    engine.create(
-      'task',
-      newTask({
-        title,
-        projectId: project.id,
-        when: { kind: 'anytime' },
-        tagIds: tagFilter ? [tagFilter] : [],
-        order: orderBetween(siblings.at(-1)?.order ?? null, null),
-      }),
-    )
+    const task = newTask({
+      title: '',
+      projectId: project.id,
+      when: { kind: 'anytime' },
+      tagIds: tagFilter ? [tagFilter] : [],
+      order: orderBetween(siblings.at(-1)?.order ?? null, null),
+    })
+    engine.create('task', task)
+    taskList.openNew(task.id)
   }
+  useOnSignal(focusSignal, addNew)
 
   function addHeading() {
     const heading = newHeading({
@@ -85,14 +89,8 @@ export function ProjectPage({ project, focusSignal }: Props) {
     navigate(project.areaId ? `/area/${project.areaId}` : '/anytime')
   }
 
-  const rowProps = (task: (typeof all)[number]): RowProps => ({
-    open: openId === task.id,
-    showWhen: true,
-    showCaption: false,
-    onOpen: () => setOpenId(task.id),
-    onClose: () => setOpenId(null),
-    onToggle: () => toggle(task),
-  })
+  const rowProps = (task: (typeof all)[number]): RowProps =>
+    taskList.rowProps(task, { showWhen: true })
   const group = (headingId: string | null, header?: ReactNode) => (
     <TaskGroup
       group={{
@@ -125,6 +123,22 @@ export function ProjectPage({ project, focusSignal }: Props) {
           autoFocus={project.title === ''}
           onCommit={(title) => engine.mutate('project', project.id, { title })}
         />
+        <MoreMenu
+          label={t('menu.projectActions')}
+          items={[
+            {
+              label: done ? t('project.reopen') : t('project.complete'),
+              onSelect: () => toggleProject(engine, project),
+            },
+            ...(done ? [] : [{ label: t('project.newHeading'), onSelect: addHeading }]),
+            {
+              label: t('project.delete'),
+              danger: true,
+              confirm: t('project.deleteQuestion'),
+              onSelect: remove,
+            },
+          ]}
+        />
       </header>
       <InlineInput
         multiline
@@ -152,7 +166,6 @@ export function ProjectPage({ project, focusSignal }: Props) {
           onChange={(tagIds) => engine.mutate('project', project.id, { tagIds })}
         />
       </div>
-      {!done && <QuickAdd onAdd={add} focusSignal={focusSignal} />}
       <TagFilter present={present} active={tagFilter} onChange={setTagFilter} />
       {all.length === 0 && <p className="empty">{t('project.empty')}</p>}
       {group(null)}
@@ -173,25 +186,24 @@ export function ProjectPage({ project, focusSignal }: Props) {
           frozen
         />
       )}
-      <div className="page-actions">
-        {!done && (
-          <button type="button" className="link" onClick={addHeading}>
-            + {t('project.newHeading')}
-          </button>
-        )}
-        {completedEarlier.length > 0 && (
-          <button type="button" className="link" onClick={() => setShowCompleted((s) => !s)}>
+      {completedEarlier.length > 0 && (
+        <div className="page-actions">
+          <button type="button" className="link" onClick={() => setShowCompleted((c) => !c)}>
             {showCompleted
               ? t('project.hideCompleted')
               : t('project.showCompleted', { n: completedEarlier.length })}
           </button>
-        )}
-        <ConfirmButton
-          label={t('project.delete')}
-          question={t('project.deleteQuestion')}
-          onConfirm={remove}
-        />
-      </div>
+        </div>
+      )}
+      <TaskToolbar
+        onNew={done ? undefined : addNew}
+        extra={
+          !done && (
+            <ToolbarButton icon={SquarePlus} label={t('project.newHeading')} onClick={addHeading} />
+          )
+        }
+        selected={taskList.selected}
+      />
     </section>
   )
 }
@@ -214,15 +226,11 @@ function HeadingRow({ heading, onRemove }: HeadingProps) {
         autoFocus={heading.title === ''}
         onCommit={(title) => engine.mutate('heading', heading.id, { title })}
       />
-      <button
-        type="button"
-        className="task-delete"
-        aria-label={t('heading.delete')}
-        title={t('heading.delete')}
-        onClick={onRemove}
-      >
-        ×
-      </button>
+      <MoreMenu
+        alignEnd
+        label={t('menu.headingActions')}
+        items={[{ label: t('heading.delete'), danger: true, onSelect: onRemove }]}
+      />
     </div>
   )
 }

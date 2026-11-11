@@ -35,7 +35,6 @@ export const en = {
   'list.empty.someday': 'Nothing for someday.',
   'list.empty.logbook': 'Nothing completed yet.',
   'nav.lists': 'Lists',
-  'nav.account': 'Account',
 
   // Sync
   'sync.idle': 'Synced',
@@ -44,7 +43,6 @@ export const en = {
   'sync.unauthorized': 'Signed out',
 
   // Tasks
-  'task.new': 'New task',
   'task.untitled': 'Untitled',
   'task.title': 'Title',
   'task.notes': 'Notes',
@@ -69,7 +67,6 @@ export const en = {
   'list.empty.anytime': 'Nothing available right now.',
   'list.projects': 'Projects',
   'date.yesterday': 'yesterday',
-  'nav.new': 'New',
   'nav.newProject': 'New project',
   'nav.newArea': 'New area',
   'nav.collapse': 'Collapse',
@@ -151,7 +148,6 @@ export const en = {
   'area.deleteQuestion': 'Delete this area with all its projects and tasks?',
 
   // Account
-  'account.title': 'Account',
   'account.signOut': 'Sign out',
   'account.signedInAs': 'Signed in as {email} at {app}.',
   'account.language': 'Language',
@@ -225,6 +221,28 @@ export const en = {
   'areaColor.indigo': 'Indigo',
   'areaColor.purple': 'Purple',
   'areaColor.pink': 'Pink',
+
+  'nav.newList': 'New List',
+  'nav.newProject.hint': 'A goal with an end, made of tasks.',
+  'nav.newArea.hint': 'A part of life with no end, like work or home.',
+  'settings.title': 'Settings',
+  'settings.close': 'Close',
+  'settings.tab.general': 'General',
+  'settings.tab.account': 'Account',
+  'settings.tab.connections': 'Connections',
+  'settings.tab.about': 'About',
+  'settings.version': 'Version',
+  'settings.build': 'Build',
+  'settings.source': 'Source code',
+  'toolbar.newTask': 'New task',
+  'toolbar.when': 'When',
+  'toolbar.move': 'Move',
+  'toolbar.search': 'Search',
+  'search.placeholder': 'Search tasks, projects and areas',
+  'search.none': 'Nothing found.',
+  'menu.projectActions': 'Project actions',
+  'menu.areaActions': 'Area actions',
+  'menu.headingActions': 'Heading actions',
 } as const
 
 export type MessageKey = keyof typeof en

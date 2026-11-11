@@ -18,10 +18,11 @@ import { areaPath, navigate, projectPath } from '../router.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { type MoveTarget, useLinger } from '../taskActions.js'
 import { ProjectRow } from './ProjectRow.js'
-import { QuickAdd } from './QuickAdd.js'
 import { TagFilter } from './TagFilter.js'
 import { TaskGroup } from './TaskGroup.js'
 import type { RowProps } from './TaskRow.js'
+import { TaskToolbar } from './Toolbar.js'
+import { useOnSignal, useTaskList } from './useTaskList.js'
 
 interface Props {
   list: ListDef
@@ -32,7 +33,6 @@ export function ListPage({ list, focusSignal }: Props) {
   const engine = useEngine()
   const t = useT()
   const ws = useWorkspace()
-  const [openId, setOpenId] = useState<string | null>(null)
   const [tagFilter, setTagFilter] = useState<string | null>(null)
   const draggingSomething = useDndContext().active !== null
   const todayView = useTodayView()
@@ -48,32 +48,30 @@ export function ListPage({ list, focusSignal }: Props) {
   const shown = tagFilter ? all.filter((task) => task.tagIds.includes(tagFilter)) : all
   const projects = listProjects(list.id, ws)
 
-  function add(title: string) {
+  const taskList = useTaskList(shown, toggle)
+  const canAdd = list.newWhen(ws.today) !== null
+
+  function addNew() {
     const when = list.newWhen(ws.today)
     if (!when) return
     const last = visible.at(-1)
-    engine.create(
-      'task',
-      newTask({
-        title,
-        when,
-        tagIds: tagFilter ? [tagFilter] : [],
-        order: orderBetween(last?.order ?? null, null),
-      }),
-    )
+    const task = newTask({
+      title: '',
+      when,
+      tagIds: tagFilter ? [tagFilter] : [],
+      order: orderBetween(last?.order ?? null, null),
+    })
+    engine.create('task', task)
+    taskList.openNew(task.id)
   }
+
+  // `n` anywhere in the window adds a task here.
+  useOnSignal(focusSignal, addNew)
 
   const rowProps = (
     task: Task,
     showCaption = list.id !== 'anytime' && list.id !== 'someday',
-  ): RowProps => ({
-    open: openId === task.id,
-    showWhen: false,
-    showCaption,
-    onOpen: () => setOpenId(task.id),
-    onClose: () => setOpenId(null),
-    onToggle: () => toggle(task),
-  })
+  ): RowProps => taskList.rowProps(task, { showCaption })
   const group = (
     key: string,
     target: MoveTarget | null,
@@ -245,12 +243,12 @@ export function ListPage({ list, focusSignal }: Props) {
           </fieldset>
         )}
       </header>
-      {list.newWhen(ws.today) && <QuickAdd onAdd={add} focusSignal={focusSignal} />}
       <TagFilter present={present} active={tagFilter} onChange={setTagFilter} />
       {shown.length === 0 && projects.length === 0 && (
         <p className="empty">{t(`list.empty.${list.id}` as MessageKey)}</p>
       )}
       {body}
+      <TaskToolbar onNew={canAdd ? addNew : undefined} selected={taskList.selected} />
     </section>
   )
 }

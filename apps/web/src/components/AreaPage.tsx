@@ -1,4 +1,5 @@
 import { type Area, newProject, newTask, orderBetween, type Task, views } from '@dingen/core'
+import { CirclePlus } from 'lucide-react'
 import { useState } from 'react'
 import { useT } from '../i18n/index.js'
 import { completedDate } from '../lists.js'
@@ -6,13 +7,14 @@ import { navigate, projectPath } from '../router.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { deleteArea, useLinger } from '../taskActions.js'
 import { AreaAppearance } from './AreaAppearance.js'
-import { ConfirmButton } from './ConfirmButton.js'
 import { InlineInput } from './InlineInput.js'
+import { MoreMenu } from './Menu.js'
 import { ProjectRow } from './ProjectRow.js'
-import { QuickAdd } from './QuickAdd.js'
 import { TagFilter } from './TagFilter.js'
 import { TaskGroup } from './TaskGroup.js'
 import type { RowProps } from './TaskRow.js'
+import { TaskToolbar, ToolbarButton } from './Toolbar.js'
+import { useOnSignal, useTaskList } from './useTaskList.js'
 
 interface Props {
   area: Area
@@ -23,7 +25,6 @@ export function AreaPage({ area, focusSignal }: Props) {
   const engine = useEngine()
   const t = useT()
   const ws = useWorkspace()
-  const [openId, setOpenId] = useState<string | null>(null)
   const [tagFilter, setTagFilter] = useState<string | null>(null)
   const [showCompleted, setShowCompleted] = useState(false)
 
@@ -43,27 +44,22 @@ export function AreaPage({ area, focusSignal }: Props) {
   const filtered = tagFilter ? shown.filter((task) => task.tagIds.includes(tagFilter)) : shown
   const projects = views.projectsOf(ws.projects, area.id)
 
-  function add(title: string) {
-    engine.create(
-      'task',
-      newTask({
-        title,
-        areaId: area.id,
-        when: { kind: 'anytime' },
-        tagIds: tagFilter ? [tagFilter] : [],
-        order: orderBetween(open.at(-1)?.order ?? null, null),
-      }),
-    )
-  }
+  const taskList = useTaskList([...shown, ...completedShown], toggle)
 
-  const rowProps = (task: Task): RowProps => ({
-    open: openId === task.id,
-    showWhen: true,
-    showCaption: false,
-    onOpen: () => setOpenId(task.id),
-    onClose: () => setOpenId(null),
-    onToggle: () => toggle(task),
-  })
+  function addNew() {
+    const task = newTask({
+      title: '',
+      areaId: area.id,
+      when: { kind: 'anytime' },
+      tagIds: tagFilter ? [tagFilter] : [],
+      order: orderBetween(open.at(-1)?.order ?? null, null),
+    })
+    engine.create('task', task)
+    taskList.openNew(task.id)
+  }
+  useOnSignal(focusSignal, addNew)
+
+  const rowProps = (task: Task): RowProps => taskList.rowProps(task, { showWhen: true })
 
   function addProject() {
     const project = newProject({
@@ -93,8 +89,19 @@ export function AreaPage({ area, focusSignal }: Props) {
           autoFocus={area.title === ''}
           onCommit={(title) => engine.mutate('area', area.id, { title })}
         />
+        <MoreMenu
+          label={t('menu.areaActions')}
+          items={[
+            { label: t('nav.newProject'), onSelect: addProject },
+            {
+              label: t('area.delete'),
+              danger: true,
+              confirm: t('area.deleteQuestion'),
+              onSelect: remove,
+            },
+          ]}
+        />
       </header>
-      <QuickAdd onAdd={add} focusSignal={focusSignal} />
       <TagFilter present={present} active={tagFilter} onChange={setTagFilter} />
       {all.length === 0 && projects.length === 0 && <p className="empty">{t('area.empty')}</p>}
       <TaskGroup
@@ -121,23 +128,20 @@ export function AreaPage({ area, focusSignal }: Props) {
           </ul>
         </div>
       )}
-      <div className="page-actions">
-        <button type="button" className="link" onClick={addProject}>
-          + {t('nav.newProject')}
-        </button>
-        {completedEarlier.length > 0 && (
-          <button type="button" className="link" onClick={() => setShowCompleted((s) => !s)}>
+      {completedEarlier.length > 0 && (
+        <div className="page-actions">
+          <button type="button" className="link" onClick={() => setShowCompleted((c) => !c)}>
             {showCompleted
               ? t('project.hideCompleted')
               : t('project.showCompleted', { n: completedEarlier.length })}
           </button>
-        )}
-        <ConfirmButton
-          label={t('area.delete')}
-          question={t('area.deleteQuestion')}
-          onConfirm={remove}
-        />
-      </div>
+        </div>
+      )}
+      <TaskToolbar
+        onNew={addNew}
+        extra={<ToolbarButton icon={CirclePlus} label={t('nav.newProject')} onClick={addProject} />}
+        selected={taskList.selected}
+      />
     </section>
   )
 }

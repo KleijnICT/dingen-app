@@ -13,6 +13,17 @@
 - The sidebar shows the version and build (commit) under the sync status;
   `/api/health` reports both.
 - Development builds: `ghcr.io/kleijnict/dingen:develop` follows the `develop` branch.
+- New bottom bar under every list: new task, new heading (projects) or new
+  project (areas), When, Move and Search. New tasks appear as an empty row that
+  opens straight away; an empty one disappears when closed. The input line at
+  the top of a list is gone.
+- Tasks can be selected: click selects, double click or Enter opens, arrow keys
+  move the selection. When and Move in the bottom bar act on the selection.
+- Search (button or `/`) finds areas, projects and open tasks and jumps to them.
+- Projects, areas and headings get a `…` menu for their actions.
+- Settings open in a window with tabs (General, Account, Connections, About)
+  from the button at the bottom of the sidebar; `/account` opens it too.
+- The sidebar ends with "New List" (project or area) and the settings button.
 
 ## 0.1.0 (first test release)
 

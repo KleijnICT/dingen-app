@@ -1,6 +1,7 @@
 import { newArea, newProject, orderBetween, type Project, views } from '@dingen/core'
 import { useDraggable, useDroppable } from '@dnd-kit/core'
-import { type PointerEvent, type ReactElement, type ReactNode, useState } from 'react'
+import { Plus, SlidersHorizontal } from 'lucide-react'
+import { type PointerEvent, type ReactElement, type ReactNode, useRef, useState } from 'react'
 import type { DragData, DropData } from '../dnd.js'
 import { useT } from '../i18n/index.js'
 import { countFor, LISTS, type ListId } from '../lists.js'
@@ -21,19 +22,18 @@ import {
   ChevronIcon,
   InboxIcon,
   LogbookIcon,
-  PersonIcon,
-  PlusIcon,
   ProgressCircle,
   SomedayIcon,
   StarIcon,
 } from './Icons.js'
+import { useDismiss } from './Menu.js'
 
 const APP_VERSION_LABEL = `Dingen ${__DINGEN_VERSION__}${__DINGEN_BUILD__ ? ` · ${__DINGEN_BUILD__}` : ''}`
 
 interface Props {
   path: string
   status: SyncStatus
-  email: string
+  onOpenSettings: () => void
 }
 
 const ICONS: Record<ListId, (p: { className?: string }) => ReactElement> = {
@@ -45,7 +45,7 @@ const ICONS: Record<ListId, (p: { className?: string }) => ReactElement> = {
   logbook: LogbookIcon,
 }
 
-export function Sidebar({ path, status, email }: Props) {
+export function Sidebar({ path, status, onOpenSettings }: Props) {
   const t = useT()
   const engine = useEngine()
   const ws = useWorkspace()
@@ -53,6 +53,10 @@ export function Sidebar({ path, status, email }: Props) {
   const statusText = t(`sync.${status}`)
   const collapsed = useCollapsedAreas()
   const width = useSidebarWidth()
+  const addRoot = useRef<HTMLDivElement>(null)
+  const addButton = useRef<HTMLButtonElement>(null)
+  const closeAdd = useRef(() => setAdding(false)).current
+  useDismiss(adding, closeAdd, addRoot, addButton)
 
   // Dragging the right edge resizes the sidebar; the pointer is captured so
   // the drag keeps working when it leaves the thin handle.
@@ -73,12 +77,6 @@ export function Sidebar({ path, status, email }: Props) {
     handle.addEventListener('pointerup', stop)
     handle.addEventListener('pointercancel', stop)
   }
-
-  const link = (href: string, className: string, content: ReactElement, title?: string) => (
-    <NavLink href={href} className={className} active={path === href} title={title}>
-      {content}
-    </NavLink>
-  )
 
   function addProject(areaId: string | null) {
     const last = views.projectsOf(ws.projects, areaId).at(-1)
@@ -182,39 +180,57 @@ export function Sidebar({ path, status, email }: Props) {
         </ul>
       </div>
       <div className="sidebar-foot">
-        {adding ? (
-          <div className="nav-add-menu">
-            <button type="button" className="link" onClick={() => addProject(null)}>
-              {t('nav.newProject')}
+        <div className="foot-row">
+          <div className="new-list" ref={addRoot}>
+            <button
+              type="button"
+              ref={addButton}
+              className="foot-button new-list-button"
+              aria-haspopup="menu"
+              aria-expanded={adding}
+              onClick={() => setAdding((a) => !a)}
+            >
+              <Plus size={16} strokeWidth={1.8} aria-hidden="true" />
+              <span>{t('nav.newList')}</span>
             </button>
-            <button type="button" className="link" onClick={addArea}>
-              {t('nav.newArea')}
-            </button>
-            <button type="button" className="link muted" onClick={() => setAdding(false)}>
-              ×
-            </button>
+            {adding && (
+              <div className="popover menu new-list-menu" role="menu">
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="menu-item"
+                  onClick={() => addProject(null)}
+                >
+                  <ProgressCircle value={0} size={16} />
+                  <span>
+                    <strong>{t('nav.newProject')}</strong>
+                    <small>{t('nav.newProject.hint')}</small>
+                  </span>
+                </button>
+                <button type="button" role="menuitem" className="menu-item" onClick={addArea}>
+                  <AreaGlyph icon={null} color={null} size={16} />
+                  <span>
+                    <strong>{t('nav.newArea')}</strong>
+                    <small>{t('nav.newArea.hint')}</small>
+                  </span>
+                </button>
+              </div>
+            )}
           </div>
-        ) : (
-          <button type="button" className="nav-item nav-add" onClick={() => setAdding(true)}>
-            <PlusIcon className="nav-icon" />
-            <span className="nav-title">{t('nav.new')}</span>
+          <button
+            type="button"
+            className="foot-button settings-button"
+            aria-label={t('settings.title')}
+            title={t('settings.title')}
+            onClick={onOpenSettings}
+          >
+            <SlidersHorizontal size={16} strokeWidth={1.8} aria-hidden="true" />
           </button>
-        )}
-        {link(
-          '/account',
-          'account',
-          <>
-            <PersonIcon className="nav-icon" />
-            <span className="nav-title">{t('nav.account')}</span>
-          </>,
-          email,
-        )}
-        <p className={`sync-status ${status}`} title={statusText}>
+        </div>
+        <p className={`sync-status ${status}`} title={`${statusText} · ${APP_VERSION_LABEL}`}>
           <span className="dot" />
           <span className="sync-text">{statusText}</span>
-        </p>
-        <p className="app-version" title={APP_VERSION_LABEL}>
-          {APP_VERSION_LABEL}
+          <span className="app-version">{APP_VERSION_LABEL}</span>
         </p>
       </div>
       {/* biome-ignore lint/a11y/useSemanticElements: an <hr> cannot be dragged */}
