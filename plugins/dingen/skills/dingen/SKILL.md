@@ -32,6 +32,10 @@ structure: the user trusts the app because every task is filed the same way.
 - **deadline** is a hard date with consequences. Set it only when there is one.
 - No date is the default. A wished-for date clutters Today; only set one when
   the user names it or there is a real deadline.
+- **time** is a time of day on the when-date ("call at 14:30"); setting it
+  also sets a **reminder** at that time, which the user gets as a
+  notification. Set a time only when the user names one. A reminder can also
+  be on its own or on an earlier day ("remind me the evening before").
 
 ### Repeating tasks
 
@@ -72,7 +76,9 @@ week" is usually after completion, "pay rent on the 1st" on a schedule.
 - `list_tasks` filters combine: a list, a project, an area or a tag.
 - `create_task` accepts `when` as `inbox`, `anytime`, `someday`, `today`,
   `tomorrow` or `YYYY-MM-DD`, plus `evening`, `deadline`, `heading`,
-  `checklist` and `repeat`.
+  `checklist`, `repeat`, `time` (`HH:MM`) and `reminder` (`HH:MM`, or
+  `YYYY-MM-DD HH:MM` on or before the date; `null` for none). Time and
+  reminder need a date and go along with a repeating task.
 - `update_task` with `checklist` replaces the whole checklist; pass existing
   item ids to keep them. `repeat: null` stops repeating.
 - `complete_project` hides the project's open tasks from the lists; it can be
