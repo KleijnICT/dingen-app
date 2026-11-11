@@ -37,7 +37,7 @@ function followsTime(task: Task): boolean {
  */
 export function scheduleFields(
   task: Task,
-  input: { time?: TimeOfDay | null; reminder?: Reminder | null },
+  input: { time?: TimeOfDay | null | undefined; reminder?: Reminder | null | undefined },
 ): Record<string, unknown> {
   if (task.when.kind !== 'date') return {}
   const fields: Record<string, unknown> = {}
