@@ -3,14 +3,17 @@ import path from 'node:path'
 import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
 import type { Context } from 'hono'
-import { createApp } from './app.js'
+import { createApp, defaultPush } from './app.js'
 import { loadConfig } from './config.js'
 import { openDatabase } from './db.js'
+import { ReminderPlanner } from './push/planner.js'
 import { staticHeaders } from './static.js'
 
 const config = loadConfig()
 const { db, sqliteVersion } = openDatabase(config.databasePath)
+const push = defaultPush(db)
 const app = createApp({
+  push,
   db,
   version: config.version,
   build: config.build,
@@ -35,6 +38,8 @@ if (fs.existsSync(config.webDist)) {
 } else {
   console.warn(`Web build not found at ${config.webDist}; serving the API only.`)
 }
+
+new ReminderPlanner(db, push, { timezone: config.timezone }).start()
 
 serve({ fetch: app.fetch, port: config.port }, (info) => {
   console.log(
