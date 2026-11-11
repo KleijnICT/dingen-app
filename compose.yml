@@ -6,8 +6,9 @@ services:
     environment:
       # Decides what "today" is for the MCP server.
       DINGEN_TIMEZONE: Europe/Amsterdam
-      # Uncomment to let anyone create an account (default: only the first user).
-      # DINGEN_REGISTRATION: open
+      # Who can create an account after the first one: closed (default),
+      # invite (only with an invitation link) or open (anyone).
+      # DINGEN_REGISTRATION: invite
     volumes:
       - dingen-data:/data
     restart: unless-stopped

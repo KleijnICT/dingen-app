@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- Invitations: `DINGEN_REGISTRATION=invite` lets people register only with
+  an invitation link. The first account is the administrator (on existing
+  servers: the oldest account) and creates, copies and withdraws links in
+  Settings → Invitations. A link works once and expires after 14 days.
+  API: `GET`, `POST /api/invitations`, `DELETE /api/invitations/:id`;
+  `/api/auth/me` reports `isAdmin`.
+- Backup before migrations: when an update brings database migrations,
+  Dingen first copies the database to `DATA_DIR/backups` (ten most recent
+  kept). If the copy fails it does not migrate and stops.
+
 ## 1.0.0-alpha.1
 
 First alpha on the way to 1.0: reviews, calendars, reminders, export and
