@@ -266,4 +266,6 @@ export const nl: Messages = {
   'data.type.task': 'Taken',
   'data.type.checklistItem': 'Checklistitems',
   'data.type.tag': 'Tags',
+  'pwa.updateAvailable': 'Nieuwe versie beschikbaar.',
+  'pwa.reload': 'Herladen',
 }

@@ -15,6 +15,13 @@
   backup folder) and `dingen-import csv` (generic CSV with columns title, notes,
   project, area, tags, when, deadline, done). Both do a dry run by default,
   write with `--apply` and do not create duplicates when run again.
+- Dingen is installable as an app (PWA) with its own icon, and the app itself now
+  starts offline; a new version is downloaded in the background and a small bar
+  offers "Reload" when it is ready. The API is never cached.
+- Better on phones: the bottom bars stay clear of the iPhone home indicator and
+  notch, and inputs no longer make iOS zoom in.
+- The server serves `sw.js`, the manifest and `index.html` with `no-cache` and
+  hashed assets as immutable.
 
 ## 0.1.1
 

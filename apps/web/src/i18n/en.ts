@@ -272,6 +272,8 @@ export const en = {
   'data.type.task': 'Tasks',
   'data.type.checklistItem': 'Checklist items',
   'data.type.tag': 'Tags',
+  'pwa.updateAvailable': 'New version available.',
+  'pwa.reload': 'Reload',
 } as const
 
 export type MessageKey = keyof typeof en

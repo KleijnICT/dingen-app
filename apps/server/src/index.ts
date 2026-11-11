@@ -2,9 +2,11 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
+import type { Context } from 'hono'
 import { createApp } from './app.js'
 import { loadConfig } from './config.js'
 import { openDatabase } from './db.js'
+import { staticHeaders } from './static.js'
 
 const config = loadConfig()
 const { db, sqliteVersion } = openDatabase(config.databasePath)
@@ -23,8 +25,13 @@ app.all('/api/*', (c) => c.json({ error: 'not_found' }, 404))
 if (fs.existsSync(config.webDist)) {
   // serveStatic werkt met paden relatief aan de huidige werkmap.
   const root = path.relative(process.cwd(), config.webDist) || '.'
-  app.use('/*', serveStatic({ root }))
-  app.get('/*', serveStatic({ root, path: 'index.html' }))
+  const setHeaders = (_file: string, c: Context) => {
+    for (const [name, value] of Object.entries(staticHeaders(new URL(c.req.url).pathname))) {
+      c.header(name, value)
+    }
+  }
+  app.use('/*', serveStatic({ root, onFound: setHeaders }))
+  app.get('/*', serveStatic({ root, path: 'index.html', onFound: setHeaders }))
 } else {
   console.warn(`Web build not found at ${config.webDist}; serving the API only.`)
 }
