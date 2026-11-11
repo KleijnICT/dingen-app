@@ -19,6 +19,7 @@ import { ProjectPage } from './components/ProjectPage.js'
 import { Search } from './components/Search.js'
 import { Sidebar } from './components/Sidebar.js'
 import { ShellActions, ToolbarSlot } from './components/Toolbar.js'
+import { UpdateNotice } from './components/UpdateNotice.js'
 import { type DragData, handleDragEnd } from './dnd.js'
 import { LISTS } from './lists.js'
 import { useSidebarWidth } from './prefs.js'
@@ -135,6 +136,7 @@ export function Shell({ user, onSignedOut }: Props) {
         </DndContext>
         {settingsOpen && <Settings user={user} onSignedOut={onSignedOut} onClose={closeSettings} />}
         {searchOpen && <Search onClose={closeSearch} />}
+        <UpdateNotice />
       </ShellActions.Provider>
     </WorkspaceContext.Provider>
   )

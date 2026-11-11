@@ -248,6 +248,8 @@ export const en = {
   'menu.tags': 'Tags',
   'menu.move': 'Move to area',
   'project.noArea': 'No area',
+  'pwa.updateAvailable': 'New version available.',
+  'pwa.reload': 'Reload',
 } as const
 
 export type MessageKey = keyof typeof en

@@ -241,4 +241,6 @@ export const nl: Messages = {
   'menu.tags': 'Tags',
   'menu.move': 'Naar gebied',
   'project.noArea': 'Geen gebied',
+  'pwa.updateAvailable': 'Nieuwe versie beschikbaar.',
+  'pwa.reload': 'Herladen',
 }
