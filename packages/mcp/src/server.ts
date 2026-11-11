@@ -20,6 +20,7 @@ import {
   Repeat,
   type Snapshot,
   setRepeat,
+  signals,
   stopRepeat,
   type Tag,
   type Task,
@@ -31,6 +32,7 @@ import {
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import type { DingenClient } from './client.js'
+import { areaRow, registerReviewTools } from './review-tools.js'
 
 /**
  * The MCP tools. Every tool refreshes the replica, works on a snapshot with
@@ -106,10 +108,7 @@ export function createMcpServer(client: DingenClient): McpServer {
           someday: views.someday(available(ws)).length,
         },
         areas: views.openAreas(ws.areas).map((a) => ({
-          id: a.id,
-          title: a.title,
-          icon: a.icon,
-          color: a.color,
+          ...areaRow(ws, a),
           projects: views.projectsOf(ws.projects, a.id).map((p) => projectRow(ws, p)),
           looseTasks: views.areaTasks(ws.tasks, a.id).filter(views.isOpen).length,
         })),
@@ -561,6 +560,17 @@ export function createMcpServer(client: DingenClient): McpServer {
       }),
   )
 
+  registerReviewTools(server, client, {
+    run,
+    fail: (message) => {
+      throw new ToolError(message)
+    },
+    findProject,
+    findArea,
+    projectRow,
+    taskRow,
+  })
+
   return server
 }
 
@@ -829,6 +839,8 @@ function projectRow(ws: Snapshot, p: Project) {
     ...(p.notes ? { notes: p.notes } : {}),
     openTasks: open,
     headings: views.headingsOf(ws.headings, p.id).map((h) => ({ id: h.id, title: h.title })),
+    reviewedAt: p.reviewedAt,
+    signals: signals(p, ws, ws.today),
   }
 }
 

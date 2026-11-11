@@ -67,6 +67,41 @@ week" is usually after completion, "pay rent on the 1st" on a schedule.
 8. **Report back briefly** after changes: what was created or changed, where,
    and with which date, so the user does not need to open the app to check.
 
+## Reviews
+
+Dingen has three built-in reviews; you can guide the user through one. The
+progress is the same as in the app (a review started there can be finished
+here and the other way round), so always read it with `get_review` instead of
+keeping your own list.
+
+- **Daily**: one step, the Inbox empty.
+- **Weekly** (due 7 days after the last one): mind sweep, Inbox, look back on
+  the last 7 days, overdue and due soon, every active project, every area,
+  loose tasks, a Someday scan, and a last "anything forgotten?" sweep.
+- **Monthly** (same day next month): look back, every area in depth, Someday
+  in depth.
+
+How to guide one:
+
+1. `get_review` shows what is due. `start_review` with the `kind` starts it,
+   or resumes the one that is running; it returns the current step and its
+   items.
+2. Take the steps in order and keep it conversational: show the items of the
+   step briefly, ask what the user wants, apply it with the normal tools,
+   then tick it off. A project or area is ticked with `mark_reviewed`; other
+   steps with `complete_review_step`. The Inbox step is done when the Inbox is
+   empty, so process the Inbox (rule 4) rather than ticking it.
+3. Use the **signals** on projects and areas to ask the right question:
+   `noNextAction` (what is the next step?), `deadlineSoon`, `longQuiet` (still
+   alive?), `notReviewedLately`.
+4. Propose, do not decide. Completing a project, moving it to Someday,
+   canceling or deleting, and ticking a whole step of projects or areas that
+   were not each looked at, happen only after the user agrees. Prefer the
+   reversible option (Someday over delete).
+5. `complete_review` only when the user agrees the review is done. It refuses
+   while steps are open; pass `force: true` only when the user wants to stop
+   early.
+
 ## Tool notes
 
 - `list_tasks` filters combine: a list, a project, an area or a tag.
@@ -77,4 +112,6 @@ week" is usually after completion, "pay rent on the 1st" on a schedule.
   item ids to keep them. `repeat: null` stops repeating.
 - `complete_project` hides the project's open tasks from the lists; it can be
   reopened.
+- Project and area output carries `reviewedAt` and `signals`; `overview`
+  shows them for every open project and area.
 - Dates are in the user's time zone; "today" follows the server setting.
