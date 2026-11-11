@@ -18,6 +18,7 @@ import { areaPath, navigate, projectPath } from '../router.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { type MoveTarget, useLinger } from '../taskActions.js'
 import { ProjectRow } from './ProjectRow.js'
+import { ReviewBanner } from './ReviewBanner.js'
 import { TagFilter } from './TagFilter.js'
 import { TaskGroup } from './TaskGroup.js'
 import type { RowProps } from './TaskRow.js'
@@ -243,6 +244,7 @@ export function ListPage({ list, focusSignal }: Props) {
           </fieldset>
         )}
       </header>
+      {list.id === 'today' && <ReviewBanner />}
       <TagFilter present={present} active={tagFilter} onChange={setTagFilter} />
       {shown.length === 0 && projects.length === 0 && (
         <p className="empty">{t(`list.empty.${list.id}` as MessageKey)}</p>

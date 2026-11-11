@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Reviews in the web app: a "Review" item in the sidebar (with a dot when the
+  weekly or monthly review is ready), a page with the daily, weekly and
+  monthly review, one screen per step with a progress bar, project and area
+  cards with signals and "Reviewed" (shortcut R), and a bar on Today when the
+  weekly or monthly review is ready.
 - Export and import: Settings → Data downloads everything as one JSON file and
   reads such a file back (merging by id, newest change per field wins; importing
   the same file twice changes nothing). Tokens and sessions are never included.

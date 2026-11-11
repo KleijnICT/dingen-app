@@ -16,6 +16,7 @@ import type { User } from './api.js'
 import { AreaPage } from './components/AreaPage.js'
 import { ListPage } from './components/ListPage.js'
 import { ProjectPage } from './components/ProjectPage.js'
+import { ReviewPage } from './components/ReviewPage.js'
 import { Search } from './components/Search.js'
 import { Sidebar } from './components/Sidebar.js'
 import { ShellActions, ToolbarSlot } from './components/Toolbar.js'
@@ -23,6 +24,7 @@ import { UpdateNotice } from './components/UpdateNotice.js'
 import { type DragData, handleDragEnd } from './dnd.js'
 import { LISTS } from './lists.js'
 import { useSidebarWidth } from './prefs.js'
+import { parseReviewKind } from './reviewFlow.js'
 import { navigate, parseRoute, usePath } from './router.js'
 import { Settings } from './Settings.js'
 import { useBuildWorkspace, useEngine, WorkspaceContext } from './store/context.js'
@@ -72,7 +74,8 @@ export function Shell({ user, onSignedOut }: Props) {
   const missing =
     (route.kind === 'list' && !list) ||
     (route.kind === 'project' && !project) ||
-    (route.kind === 'area' && !area)
+    (route.kind === 'area' && !area) ||
+    (route.kind === 'review' && route.reviewKind !== null && !parseReviewKind(route.reviewKind))
 
   // Only redirect once the replica is loaded; a project link must survive a fresh page load.
   const redirect = (missing && engine.ready) || route.kind === 'account'
@@ -106,6 +109,9 @@ export function Shell({ user, onSignedOut }: Props) {
   else if (project) {
     page = <ProjectPage key={project.id} project={project} focusSignal={focusSignal} />
   } else if (area) page = <AreaPage key={area.id} area={area} focusSignal={focusSignal} />
+  else if (route.kind === 'review') {
+    page = <ReviewPage kind={parseReviewKind(route.reviewKind ?? undefined)} />
+  }
 
   return (
     <WorkspaceContext.Provider value={ws}>

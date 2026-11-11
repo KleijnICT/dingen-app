@@ -28,6 +28,7 @@ export type Route =
   | { kind: 'project'; id: string }
   | { kind: 'area'; id: string }
   | { kind: 'account' }
+  | { kind: 'review'; reviewKind: string | null }
 
 export function parseRoute(path: string): Route {
   const project = path.match(/^\/project\/([A-Za-z0-9]+)$/)
@@ -35,6 +36,8 @@ export function parseRoute(path: string): Route {
   const area = path.match(/^\/area\/([A-Za-z0-9]+)$/)
   if (area?.[1]) return { kind: 'area', id: area[1] }
   if (path === '/account') return { kind: 'account' }
+  const review = path.match(/^\/review(?:\/([a-z]+))?$/)
+  if (review) return { kind: 'review', reviewKind: review[1] ?? null }
   return { kind: 'list', path }
 }
 
