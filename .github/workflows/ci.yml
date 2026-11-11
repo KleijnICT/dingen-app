@@ -84,3 +84,7 @@ jobs:
             org.opencontainers.image.version=${{ steps.v.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Deploy to dev
+        env:
+          WEBHOOK: ${{ secrets.DEPLOY_WEBHOOK_DEV }}
+        run: .github/scripts/deploy.sh "$WEBHOOK" https://dev.doe.dingen.app/api/health "${{ steps.v.outputs.short }}"
