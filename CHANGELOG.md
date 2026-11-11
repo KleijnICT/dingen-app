@@ -1,6 +1,12 @@
 # Changelog
 
-## Unreleased
+## 1.0.0-alpha.1
+
+First alpha on the way to 1.0: reviews, calendars, reminders, export and
+import, more imports and an installable web app. Not feature complete yet
+(see `docs/11-roadmap-plan.md`); expect changes before 1.0.0. This is a
+pre-release, so `:latest` stays on 0.1.0; use the image tag `1.0.0-alpha.1`
+to try it.
 
 - MCP: reviews with Claude. New tools `get_review`, `start_review`,
   `mark_reviewed`, `complete_review_step` and `complete_review`, with the same
@@ -46,8 +52,6 @@
   appointments, exceptions and time zones (`DINGEN_TIMEZONE`), and never sends
   a feed URL back to the browser. The web app keeps the last appointments for
   offline use.
-
-## 0.1.1
 
 - Claude Code plugin: `/plugin install dingen --marketplace KleijnICT/dingen-app`
   connects the MCP server and adds a skill for Dingen's workflow.
