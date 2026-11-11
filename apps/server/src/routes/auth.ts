@@ -10,6 +10,8 @@ const Credentials = z.object({
   password: z.string().min(8).max(1024),
 })
 
+const Registration = Credentials.extend({ invite: z.string().min(1).max(200).optional() })
+
 const TokenBody = z.object({ name: z.string().trim().min(1).max(100) })
 
 type Ctx = Context<AppEnv>
@@ -36,7 +38,14 @@ function startSession(c: Ctx, userId: string): void {
 
 function handleAuthError(c: Ctx, err: unknown) {
   if (err instanceof AuthError) {
-    const status = err.code === 'too_many_attempts' ? 429 : err.code === 'email_taken' ? 409 : 401
+    const status =
+      err.code === 'too_many_attempts'
+        ? 429
+        : err.code === 'email_taken'
+          ? 409
+          : err.code.startsWith('invite_')
+            ? 403
+            : 401
     return c.json({ error: err.code }, status)
   }
   throw err
@@ -47,14 +56,28 @@ export function authRoutes() {
 
   app.get('/status', (c) => {
     const auth = c.get('auth')
-    return c.json({ hasUsers: auth.hasUsers(), registrationOpen: auth.registrationOpen() })
+    return c.json({
+      hasUsers: auth.hasUsers(),
+      registrationOpen: auth.registrationOpen(),
+      registration: auth.registrationMode(),
+    })
+  })
+
+  // Controleert een uitnodigingslink voordat iemand het formulier invult.
+  app.get('/invite/:token', (c) => {
+    const check = c.get('auth').checkInvitation(c.req.param('token'))
+    return check.ok
+      ? c.json({ ok: true, expiresAt: check.row.expiresAt })
+      : c.json({ error: check.problem }, check.problem === 'invite_invalid' ? 404 : 410)
   })
 
   app.post('/register', async (c) => {
-    const parsed = Credentials.safeParse(await c.req.json().catch(() => null))
+    const parsed = Registration.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return c.json({ error: 'invalid_body', issues: parsed.error.issues }, 400)
     try {
-      const user = await c.get('auth').register(parsed.data.email, parsed.data.password)
+      const user = await c
+        .get('auth')
+        .register(parsed.data.email, parsed.data.password, parsed.data.invite)
       startSession(c, user.id)
       return c.json({ user }, 201)
     } catch (err) {
