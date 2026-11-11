@@ -107,6 +107,8 @@ export const Area = Base.extend({
   order: Order,
   icon: z.string().nullable().default(null),
   color: z.string().nullable().default(null),
+  /** Last time the area was ticked off in a review; null = never. */
+  reviewedAt: IsoDateTime.nullable().default(null),
 })
 export type Area = z.infer<typeof Area>
 
@@ -120,6 +122,8 @@ export const Project = Base.extend({
   tagIds: z.array(Id),
   order: Order,
   completedAt: IsoDateTime.nullable(),
+  /** Last time the project was ticked off in a review; null = never. */
+  reviewedAt: IsoDateTime.nullable().default(null),
 })
 export type Project = z.infer<typeof Project>
 
@@ -184,6 +188,22 @@ export const Tag = Base.extend({
 })
 export type Tag = z.infer<typeof Tag>
 
+export const ReviewKind = z.enum(['daily', 'weekly', 'monthly'])
+export type ReviewKind = z.infer<typeof ReviewKind>
+
+/**
+ * One run of a review. `completedAt` is null while it runs. `doneSteps` holds
+ * step ids (and group keys such as `somedayDeep:<areaId>`); plain strings so
+ * ids from a newer version survive a round trip.
+ */
+export const Review = Base.extend({
+  kind: ReviewKind,
+  startedAt: IsoDateTime,
+  completedAt: IsoDateTime.nullable(),
+  doneSteps: z.array(z.string()),
+})
+export type Review = z.infer<typeof Review>
+
 export const entitySchemas = {
   area: Area,
   project: Project,
@@ -191,13 +211,22 @@ export const entitySchemas = {
   task: Task,
   checklistItem: ChecklistItem,
   tag: Tag,
+  review: Review,
 } as const
 
-export const EntityType = z.enum(['area', 'project', 'heading', 'task', 'checklistItem', 'tag'])
+export const EntityType = z.enum([
+  'area',
+  'project',
+  'heading',
+  'task',
+  'checklistItem',
+  'tag',
+  'review',
+])
 export type EntityType = z.infer<typeof EntityType>
 
 export type EntityOf<T extends EntityType> = z.infer<(typeof entitySchemas)[T]>
-export type Entity = Area | Project | Heading | Task | ChecklistItem | Tag
+export type Entity = Area | Project | Heading | Task | ChecklistItem | Tag | Review
 
 /**
  * Eén wijziging aan één entiteit. `fields` bevat alleen de gewijzigde velden.

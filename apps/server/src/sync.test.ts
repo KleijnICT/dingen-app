@@ -1,4 +1,4 @@
-import { type Change, createClock, newTask, ulid } from '@dingen/core'
+import { type Change, createClock, newProject, newReview, newTask, ulid } from '@dingen/core'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { createApp } from './app.js'
 import { openDatabase } from './db.js'
@@ -169,6 +169,37 @@ describe('sync API', () => {
     expect(res.body.applied).toBe(2)
     const snapshot = await get('/api/sync/snapshot')
     expect(snapshot.body.entities[0].data.title).toBe('Daarna')
+  })
+
+  it('laat reviews en reviewedAt door, ook naast projecten van vóór reviewedAt', async () => {
+    const change = (
+      entityType: Change['entityType'],
+      entityId: string,
+      fields: Record<string, unknown>,
+    ): Change => ({ id: ulid(), entityType, entityId, fields, ts: clock.now(), clientId: 'TEST' })
+
+    const { id: reviewId, ...review } = newReview({ kind: 'weekly' })
+    // A project as an older client writes it: without reviewedAt.
+    const { id: projectId, reviewedAt: _, ...project } = newProject({ title: 'Oud project' })
+    const reviewedAt = new Date().toISOString()
+    const res = await push([
+      change('review', reviewId, review),
+      change('project', projectId, project),
+      change('project', projectId, { reviewedAt }),
+      change('review', reviewId, { doneSteps: ['mindSweep'], completedAt: reviewedAt }),
+    ])
+    expect(res.status).toBe(200)
+    expect(res.body.applied).toBe(4)
+
+    const snapshot = await get('/api/sync/snapshot')
+    const byType = (t: string) =>
+      snapshot.body.entities.find((e: { entityType: string }) => e.entityType === t)
+    expect(byType('review').data).toMatchObject({ kind: 'weekly', doneSteps: ['mindSweep'] })
+    expect(byType('project').data.reviewedAt).toBe(reviewedAt)
+
+    const bad = await push([change('review', ulid(), { ...review, kind: 'quarterly' })])
+    expect(bad.status).toBe(400)
+    expect(bad.body.error).toBe('invalid_changes')
   })
 
   it('weigert een onleesbare body', async () => {
