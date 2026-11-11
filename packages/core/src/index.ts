@@ -16,6 +16,8 @@ export interface HealthStatus {
 }
 
 export * from './actions.js'
+// --- agenda ---
+export * from './calendar.js'
 export * from './dates.js'
 export * from './entities.js'
 export * from './factories.js'

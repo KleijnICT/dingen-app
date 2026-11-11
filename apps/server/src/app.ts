@@ -3,10 +3,12 @@ import { APP_NAME } from '@dingen/core'
 import { Hono } from 'hono'
 import { authenticate, requireAuth } from './auth/middleware.js'
 import { AuthService } from './auth/service.js'
+import { CalendarService, type FetchFeed } from './calendar/service.js'
 import type { Db } from './db.js'
 import type { AppEnv } from './env.js'
 import { authRoutes } from './routes/auth.js'
 import { dataRoutes } from './routes/data.js'
+import { calendarRoutes } from './routes/calendars.js'
 import { mcpRoutes } from './routes/mcp.js'
 import { syncRoutes } from './routes/sync.js'
 import { SyncService } from './sync.js'
@@ -21,6 +23,8 @@ export interface AppDeps {
   registrationOpen?: boolean
   /** Tijdzone waarin "vandaag" wordt bepaald voor de MCP; de browser gebruikt zijn eigen klok. */
   timezone?: string
+  /** Ophalen van agenda-feeds; tests geven een nep-versie mee. */
+  fetchFeed?: FetchFeed
 }
 
 /** Bouwt de Hono-app zonder HTTP-server of statische bestanden, zodat tests hem direct kunnen aanroepen. */
@@ -61,6 +65,11 @@ export function createApp(deps: AppDeps) {
   app.use('/api/export', requireAuth)
   app.use('/api/import', requireAuth)
   app.route('/api', dataRoutes(deps.db, deps.version))
+
+  const calendars = new CalendarService(deps.db, { fetchFeed: deps.fetchFeed })
+  app.use('/api/calendars', requireAuth)
+  app.use('/api/calendars/*', requireAuth)
+  app.route('/api/calendars', calendarRoutes(calendars, deps.timezone ?? 'Europe/Amsterdam'))
 
   app.notFound((c) => {
     if (c.req.path.startsWith('/api/')) {

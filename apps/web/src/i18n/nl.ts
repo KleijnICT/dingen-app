@@ -269,4 +269,24 @@ export const nl: Messages = {
   'data.type.review': 'Reviews',
   'pwa.updateAvailable': 'Nieuwe versie beschikbaar.',
   'pwa.reload': 'Herladen',
+  // --- agenda ---
+  'settings.tab.calendars': "Agenda's",
+  'calendar.events': 'Agenda',
+  'calendar.allDay': 'hele dag',
+  'calendar.untitled': '(geen titel)',
+  'calendar.intro':
+    "Toon afspraken uit je agenda's in Vandaag en Binnenkort. Dingen leest ze alleen; het schrijft nooit naar een agenda.",
+  'calendar.none': "Nog geen agenda's.",
+  'calendar.namePlaceholder': 'Naam, bijvoorbeeld Werk',
+  'calendar.urlPlaceholder': 'Geheim iCal-adres (https:// of webcal://)',
+  'calendar.add': 'Agenda toevoegen',
+  'calendar.checking': 'Controleren…',
+  'calendar.rename': 'Naam van de agenda',
+  'calendar.remove': 'Verwijderen',
+  'calendar.help':
+    'De meeste agenda-apps hebben in de instellingen van een agenda een privé-iCal-link (ICS), zoals "Geheim adres in iCal-indeling" of "Agenda publiceren". De link blijft op de server; hier zie je alleen de host. Afspraken worden elke 15 minuten ververst.',
+  'calendar.error.invalid_url': 'Dit is geen geldig https://- of webcal://-adres.',
+  'calendar.error.feed_unreachable': 'De agenda is niet bereikbaar. Controleer het adres.',
+  'calendar.error.feed_invalid': 'Het adres levert geen agenda (ICS) op.',
+  'calendar.error.feed_too_large': 'De agenda is te groot (meer dan 10 MB).',
 }

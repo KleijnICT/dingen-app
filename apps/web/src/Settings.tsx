@@ -1,13 +1,23 @@
 import { APP_NAME, type EntityType } from '@dingen/core'
-import { ArrowDownUp, Info, Plug, Settings as SettingsIcon, UserRound, X } from 'lucide-react'
+import {
+  ArrowDownUp,
+  CalendarDays,
+  Info,
+  Plug,
+  Settings as SettingsIcon,
+  UserRound,
+  X,
+} from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { ApiError, type ApiTokenInfo, api, errorText, type User } from './api.js'
+import { CalendarSettings } from './components/CalendarSettings.js'
 import { formatDate, LOCALES, type Locale, setLocale, useLocale, useT } from './i18n/index.js'
 
 const TABS = [
   { id: 'general', icon: SettingsIcon },
   { id: 'account', icon: UserRound },
   { id: 'connections', icon: Plug },
+  { id: 'calendars', icon: CalendarDays },
   { id: 'data', icon: ArrowDownUp },
   { id: 'about', icon: Info },
 ] as const
@@ -80,6 +90,7 @@ export function Settings({ user, onSignedOut, onClose }: Props) {
           {tab === 'general' && <General />}
           {tab === 'account' && <Account user={user} onSignedOut={onSignedOut} />}
           {tab === 'connections' && <Connections />}
+          {tab === 'calendars' && <CalendarSettings />}
           {tab === 'data' && <DataTab />}
           {tab === 'about' && <About />}
         </div>

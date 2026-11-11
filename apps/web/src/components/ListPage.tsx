@@ -1,9 +1,11 @@
 import { newTask, orderBetween, type Project, type Task, views } from '@dingen/core'
 import { useDndContext } from '@dnd-kit/core'
 import { useState } from 'react'
+import { daysWithEvents, rangeFor, useCalendarData } from '../calendar.js'
 import { listTarget, type TaskGroupInfo } from '../dnd.js'
 import { type MessageKey, useT } from '../i18n/index.js'
 import {
+  addDays,
   completedDate,
   containerGroups,
   describeDate,
@@ -17,6 +19,7 @@ import { setTodayView, useTodayView } from '../prefs.js'
 import { areaPath, navigate, projectPath } from '../router.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { type MoveTarget, useLinger } from '../taskActions.js'
+import { DayEvents } from './CalendarEvents.js'
 import { ProjectRow } from './ProjectRow.js'
 import { TagFilter } from './TagFilter.js'
 import { TaskGroup } from './TaskGroup.js'
@@ -36,6 +39,7 @@ export function ListPage({ list, focusSignal }: Props) {
   const [tagFilter, setTagFilter] = useState<string | null>(null)
   const draggingSomething = useDndContext().active !== null
   const todayView = useTodayView()
+  const calendar = useCalendarData()
 
   const visible = listTasks(list.id, ws)
   const { shown: all, toggle } = useLinger(
@@ -112,6 +116,7 @@ export function ListPage({ list, focusSignal }: Props) {
             ))
       body = (
         <>
+          <DayEvents date={ws.today} />
           {projects.length > 0 && <ul className="tasks">{projects.map(projectRow)}</ul>}
           {dayBody}
           <div className="group evening">
@@ -131,15 +136,20 @@ export function ListPage({ list, focusSignal }: Props) {
     }
     case 'upcoming':
       // A task that was just checked off lingers in its group; it has no upcoming date any more.
-      body = groupByDate(
-        shown,
-        projects,
-        (item) =>
-          views.upcomingDate(item, ws.today) ??
-          (item.when.kind === 'date' ? item.when.date : (item.deadline ?? ws.today)),
+      body = withEventDays(
+        groupByDate(
+          shown,
+          projects,
+          (item) =>
+            views.upcomingDate(item, ws.today) ??
+            (item.when.kind === 'date' ? item.when.date : (item.deadline ?? ws.today)),
+        ),
+        // Afspraken vanaf morgen; vandaag staat in Vandaag.
+        daysWithEvents(calendar.events, addDays(ws.today, 1), rangeFor(ws.today).to),
       ).map((g) => (
         <div key={g.date} className="group">
           <h2 className="group-title">{describeDate(g.date, ws.today)}</h2>
+          <DayEvents date={g.date} />
           {g.projects.length > 0 && <ul className="tasks">{g.projects.map(projectRow)}</ul>}
           {group(`date:${g.date}`, { kind: 'when', when: { kind: 'date', date: g.date } }, g.tasks)}
         </div>
@@ -278,4 +288,13 @@ function groupByDate(
   for (const task of tasks) get(dateOf(task)).tasks.push(task)
   const sorted = [...groups.values()].sort((a, b) => a.date.localeCompare(b.date))
   return descending ? sorted.reverse() : sorted
+}
+
+/** Voegt lege dagen toe voor dagen met alleen afspraken, op datum gesorteerd. */
+function withEventDays(groups: DateGroup[], eventDays: string[]): DateGroup[] {
+  const have = new Set(groups.map((g) => g.date))
+  const extra = eventDays
+    .filter((date) => !have.has(date))
+    .map((date) => ({ date, tasks: [], projects: [] }))
+  return [...groups, ...extra].sort((a, b) => a.date.localeCompare(b.date))
 }
