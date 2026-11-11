@@ -6,6 +6,7 @@ export class ApiError extends Error {
   constructor(
     public readonly status: number,
     public readonly code: string,
+    public readonly issues: string[] = [],
   ) {
     super(code)
   }
@@ -22,13 +23,15 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   })
   if (!res.ok) {
     let code = `http_${res.status}`
+    let issues: string[] = []
     try {
-      const body = (await res.json()) as { error?: string }
+      const body = (await res.json()) as { error?: string; issues?: unknown }
       if (body.error) code = body.error
+      if (Array.isArray(body.issues)) issues = body.issues.filter((i) => typeof i === 'string')
     } catch {
       // no JSON body
     }
-    throw new ApiError(res.status, code)
+    throw new ApiError(res.status, code, issues)
   }
   return (await res.json()) as T
 }

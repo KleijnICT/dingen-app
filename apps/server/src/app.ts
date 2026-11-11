@@ -6,6 +6,7 @@ import { AuthService } from './auth/service.js'
 import type { Db } from './db.js'
 import type { AppEnv } from './env.js'
 import { authRoutes } from './routes/auth.js'
+import { dataRoutes } from './routes/data.js'
 import { mcpRoutes } from './routes/mcp.js'
 import { syncRoutes } from './routes/sync.js'
 import { SyncService } from './sync.js'
@@ -57,6 +58,9 @@ export function createApp(deps: AppDeps) {
   app.route('/api/auth', authRoutes())
   app.use('/api/sync/*', requireAuth)
   app.route('/api/sync', syncRoutes())
+  app.use('/api/export', requireAuth)
+  app.use('/api/import', requireAuth)
+  app.route('/api', dataRoutes(deps.db, deps.version))
 
   app.notFound((c) => {
     if (c.req.path.startsWith('/api/')) {

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Export and import: Settings → Data downloads everything as one JSON file and
+  reads such a file back (merging by id, newest change per field wins; importing
+  the same file twice changes nothing). Tokens and sessions are never included.
+  API: `GET /api/export` and `POST /api/import`.
+
 ## 0.1.1
 
 - Claude Code plugin: `/plugin install dingen --marketplace KleijnICT/dingen-app`

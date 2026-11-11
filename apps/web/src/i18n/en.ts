@@ -248,6 +248,30 @@ export const en = {
   'menu.tags': 'Tags',
   'menu.move': 'Move to area',
   'project.noArea': 'No area',
+  'settings.tab.data': 'Data',
+  'data.export.title': 'Export',
+  'data.export.intro':
+    'Download everything in your account as one JSON file: areas, projects, tasks, tags and checklists. Tokens and sessions are not included. Use it as a backup or to move to another Dingen.',
+  'data.export.button': 'Export all data',
+  'data.import.title': 'Import',
+  'data.import.intro':
+    'Read an export file from Dingen. Items are matched by id: new ones are added and existing ones are merged, the most recent change wins. Importing the same file twice changes nothing.',
+  'data.import.choose': 'Choose file…',
+  'data.import.confirm': 'Import “{name}” and merge it with your current data?',
+  'data.import.confirmButton': 'Import',
+  'data.import.cancel': 'Cancel',
+  'data.import.working': 'Importing…',
+  'data.import.done': 'Import finished: {created} new, {updated} updated, {unchanged} unchanged.',
+  'data.import.failed': 'Import failed: {reason}',
+  'data.import.notJson': 'this is not a JSON file',
+  'data.import.invalid': 'the file is not a valid Dingen export ({issue})',
+  'data.import.tooLarge': 'the file is too large',
+  'data.type.area': 'Areas',
+  'data.type.project': 'Projects',
+  'data.type.heading': 'Headings',
+  'data.type.task': 'Tasks',
+  'data.type.checklistItem': 'Checklist items',
+  'data.type.tag': 'Tags',
 } as const
 
 export type MessageKey = keyof typeof en

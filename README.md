@@ -112,6 +112,15 @@ docker compose cp dingen:/data/backup.db ./dingen-backup.db
 
 To restore, stop the container and put a backup back as `/data/dingen.db`.
 
+You can also export from the app: **Settings → Data → Export all data** downloads
+one JSON file with your areas, projects, tasks, tags and checklists (no tokens or
+sessions). **Import** reads such a file into any Dingen account, also on another
+server, which is the way to move between self-hosted and hosted. Items are matched
+by id and merged, the most recent change per field wins, so importing the same
+file twice changes nothing. The same is available over the API:
+`GET /api/export` and `POST /api/import?mode=merge|reject` (`reject` refuses when
+the account already has data).
+
 ## Connecting Claude (MCP)
 
 Sign in, open **Settings** (bottom left) → **Connections** and create an API token (it starts with `dgn_`).
@@ -191,7 +200,6 @@ the Inbox. Times of day, reminders and completed tasks are not imported.
 
 - Web only; native apps for Android and macOS are planned in separate
   repositories.
-- No export or backup button in the app yet (see Backups above).
 - No reminders or times of day.
 - No shared projects or teams.
 - MCP over HTTP needs an API token; OAuth for claude.ai connectors is not
