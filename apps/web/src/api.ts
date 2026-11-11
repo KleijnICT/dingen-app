@@ -53,11 +53,17 @@ export interface User {
   id: string
   email: string
   createdAt: string
+  /** Administrator of this server (the first account); may invite others. */
+  isAdmin?: boolean
 }
+
+export type RegistrationMode = 'closed' | 'open' | 'invite'
 
 export interface AuthStatus {
   hasUsers: boolean
+  /** Can someone register without an invitation right now? */
   registrationOpen: boolean
+  registration?: RegistrationMode
 }
 
 export interface ApiTokenInfo {
@@ -74,6 +80,11 @@ const AUTH_ERRORS = new Set([
   'registration_closed',
   'too_many_attempts',
   'invalid_body',
+  'invite_required',
+  'invite_invalid',
+  'invite_expired',
+  'invite_used',
+  'invite_revoked',
 ])
 
 export function errorText(err: unknown): string {

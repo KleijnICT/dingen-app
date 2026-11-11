@@ -411,4 +411,32 @@ export const nl: Messages = {
   'reminder.settings.test': 'Proefmelding sturen',
   'reminder.settings.testTitle': 'Dingen',
   'reminder.settings.testBody': 'Herinneringen werken op dit apparaat.',
+  // --- uitnodigingen ---
+  'settings.tab.invitations': 'Uitnodigingen',
+  'auth.error.invite_required':
+    'Op deze server kun je alleen op uitnodiging een account maken. Vraag de beheerder om een uitnodigingslink.',
+  'auth.error.invite_invalid': 'Deze uitnodigingslink is niet geldig. Vraag om een nieuwe.',
+  'auth.error.invite_expired': 'Deze uitnodigingslink is verlopen. Vraag om een nieuwe.',
+  'auth.error.invite_used': 'Deze uitnodigingslink is al gebruikt. Log in, of vraag om een nieuwe.',
+  'auth.error.invite_revoked': 'Deze uitnodigingslink is ingetrokken. Vraag om een nieuwe.',
+  'invite.welcome': 'Je bent uitgenodigd. Maak je account aan.',
+  'invite.intro':
+    'Nodig iemand uit met een link die één keer werkt en na 14 dagen verloopt. Iedereen met de link kan een account maken, dus stuur hem alleen naar wie je bedoelt.',
+  'invite.modeClosed':
+    'Registreren is op deze server gesloten, dus uitnodigingen werken niet. Zet DINGEN_REGISTRATION=invite om ze te gebruiken.',
+  'invite.modeOpen':
+    'Registreren is op deze server open: iedereen kan een account maken, met of zonder uitnodiging.',
+  'invite.create': 'Uitnodigingslink maken',
+  'invite.reveal': 'Kopieer deze link nu; hij is maar één keer te zien.',
+  'invite.copy': 'Link kopiëren',
+  'invite.copied': 'Gekopieerd',
+  'invite.hide': 'Klaar',
+  'invite.none': 'Nog geen uitnodigingen.',
+  'invite.createdOn': 'Gemaakt op {date}',
+  'invite.status.open': 'open tot {date}',
+  'invite.status.used': 'gebruikt door {email} op {date}',
+  'invite.status.expired': 'verlopen op {date}',
+  'invite.status.revoked': 'ingetrokken op {date}',
+  'invite.removedAccount': 'een verwijderd account',
+  'invite.revoke': 'Intrekken',
 }

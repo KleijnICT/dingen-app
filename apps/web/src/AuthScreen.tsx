@@ -1,7 +1,8 @@
 import { APP_NAME } from '@dingen/core'
-import { type FormEvent, useState } from 'react'
-import { type AuthStatus, api, errorText, type User } from './api.js'
+import { type FormEvent, useEffect, useState } from 'react'
+import { ApiError, type AuthStatus, api, errorText, type User } from './api.js'
 import { useT } from './i18n/index.js'
+import { inviteFromSearch, withoutInvite } from './invite.js'
 
 interface Props {
   status: AuthStatus
@@ -10,19 +11,55 @@ interface Props {
 
 export function AuthScreen({ status, onSignedIn }: Props) {
   const t = useT()
-  // Without any users, registering is the only sensible first step.
-  const [mode, setMode] = useState<'login' | 'register'>(status.hasUsers ? 'login' : 'register')
+  // An invitation link (?invite=…) only matters once the server has users.
+  const [invite] = useState(() =>
+    status.hasUsers && typeof window !== 'undefined'
+      ? inviteFromSearch(window.location.search)
+      : null,
+  )
+  const [inviteState, setInviteState] = useState<'checking' | 'valid' | 'invalid' | null>(
+    invite ? 'checking' : null,
+  )
+  // Without any users, registering is the only sensible first step; with an invitation as well.
+  const [mode, setMode] = useState<'login' | 'register'>(
+    !status.hasUsers || invite ? 'register' : 'login',
+  )
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    if (!invite) return
+    let cancelled = false
+    api
+      .get(`/api/auth/invite/${encodeURIComponent(invite)}`)
+      .then(() => {
+        if (!cancelled) setInviteState('valid')
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return
+        // A link that no longer works: say why and offer signing in instead.
+        setInviteState('invalid')
+        setMode('login')
+        setError(err instanceof ApiError ? errorText(err) : t('auth.error.invite_invalid'))
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [invite, t])
 
   async function submit(e: FormEvent) {
     e.preventDefault()
     setBusy(true)
     setError(null)
     try {
-      const { user } = await api.post<{ user: User }>(`/api/auth/${mode}`, { email, password })
+      const body =
+        mode === 'register' && invite && inviteState === 'valid'
+          ? { email, password, invite }
+          : { email, password }
+      const { user } = await api.post<{ user: User }>(`/api/auth/${mode}`, body)
+      if (invite) window.history.replaceState(null, '', withoutInvite(window.location.href))
       onSignedIn(user)
     } catch (err) {
       setError(errorText(err))
@@ -33,10 +70,13 @@ export function AuthScreen({ status, onSignedIn }: Props) {
 
   const intro =
     mode === 'register'
-      ? status.hasUsers
-        ? t('auth.createAccount')
-        : t('auth.welcomeFirst')
+      ? inviteState === 'valid'
+        ? t('invite.welcome')
+        : status.hasUsers
+          ? t('auth.createAccount')
+          : t('auth.welcomeFirst')
       : t('auth.signInPrompt')
+  const canRegister = status.registrationOpen || inviteState === 'valid'
 
   return (
     <main className="shell">
@@ -67,10 +107,10 @@ export function AuthScreen({ status, onSignedIn }: Props) {
           />
         </label>
         {error && <p className="error">{error}</p>}
-        <button type="submit" disabled={busy}>
+        <button type="submit" disabled={busy || inviteState === 'checking'}>
           {mode === 'register' ? t('auth.register') : t('auth.signIn')}
         </button>
-        {status.registrationOpen && status.hasUsers && (
+        {canRegister && status.hasUsers && (
           <button
             type="button"
             className="link"
