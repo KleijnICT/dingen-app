@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- MCP: reviews with Claude. New tools `get_review`, `start_review`,
+  `mark_reviewed`, `complete_review_step` and `complete_review`, with the same
+  steps, signals and progress as the app; project and area output includes
+  `reviewedAt` and signals. The skill explains how Claude guides a review.
+
 - Export and import: Settings → Data downloads everything as one JSON file and
   reads such a file back (merging by id, newest change per field wins; importing
   the same file twice changes nothing). Tokens and sessions are never included.

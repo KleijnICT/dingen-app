@@ -176,6 +176,14 @@ complete, reopen, cancel and delete tasks, and to create areas, projects,
 headings and tags. Renaming or deleting areas, projects and tags is left to
 the app.
 
+For the daily, weekly and monthly review there are `get_review` (what is due,
+the steps and the items of the current step with their signals),
+`start_review`, `mark_reviewed` (a project or area), `complete_review_step`
+and `complete_review`. They share their progress with the app, so a review can
+be started in one and finished in the other. Project and area output includes
+`reviewedAt` and the signals (no next action, deadline soon, long quiet, not
+reviewed lately).
+
 API tokens only work for the API and MCP; the `/mcp` endpoint never accepts a
 browser session.
 
