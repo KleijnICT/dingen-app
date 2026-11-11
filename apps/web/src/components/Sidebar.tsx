@@ -1,6 +1,6 @@
 import { newArea, newProject, orderBetween, type Project, views } from '@dingen/core'
 import { useDraggable, useDroppable } from '@dnd-kit/core'
-import { ListPlus, Settings } from 'lucide-react'
+import { ListPlus, ListRestart, Settings } from 'lucide-react'
 import { type PointerEvent, type ReactElement, type ReactNode, useRef, useState } from 'react'
 import type { DragData, DropData } from '../dnd.js'
 import { useT } from '../i18n/index.js'
@@ -12,6 +12,7 @@ import {
   useCollapsedAreas,
   useSidebarWidth,
 } from '../prefs.js'
+import { showReviewDot } from '../reviewFlow.js'
 import { areaPath, navigate, projectPath } from '../router.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import type { SyncStatus } from '../store/engine.js'
@@ -27,6 +28,7 @@ import {
   TodayIcon,
 } from './Icons.js'
 import { useDismiss } from './Menu.js'
+import { useReviews } from './useReviews.js'
 
 const APP_VERSION_LABEL = `Dingen ${__DINGEN_VERSION__}${__DINGEN_BUILD__ ? ` · ${__DINGEN_BUILD__}` : ''}`
 
@@ -49,6 +51,7 @@ export function Sidebar({ path, status, onOpenSettings }: Props) {
   const t = useT()
   const engine = useEngine()
   const ws = useWorkspace()
+  const reviewDot = showReviewDot(useReviews(), ws.today)
   const [adding, setAdding] = useState(false)
   const statusText = t(`sync.${status}`)
   const collapsed = useCollapsedAreas()
@@ -118,7 +121,7 @@ export function Sidebar({ path, status, onOpenSettings }: Props) {
           {LISTS.map((list) => {
             const Icon = ICONS[list.id]
             const count = countFor(list.id, ws)
-            return (
+            const item = (
               <li key={list.id}>
                 <NavLink
                   href={list.path}
@@ -132,6 +135,25 @@ export function Sidebar({ path, status, onOpenSettings }: Props) {
                 </NavLink>
               </li>
             )
+            // --- review: "Review" sits between Someday and Logbook ---
+            if (list.id !== 'logbook') return item
+            return [
+              <li key="review">
+                <NavLink href="/review" className="review" active={path.startsWith('/review')}>
+                  <ListRestart
+                    size={18}
+                    strokeWidth={1.8}
+                    className="nav-icon"
+                    aria-hidden="true"
+                  />
+                  <span className="nav-title">{t('review.nav')}</span>
+                  {reviewDot && (
+                    <span className="review-dot" role="img" aria-label={t('review.nav.ready')} />
+                  )}
+                </NavLink>
+              </li>,
+              item,
+            ]
           })}
         </ul>
         <ul className="nav tree">
