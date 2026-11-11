@@ -39,7 +39,7 @@ describe('registratie en login', () => {
 
   it('laat de eerste gebruiker registreren en sluit daarna de registratie', async () => {
     const before = await (await app.request('/api/auth/status')).json()
-    expect(before).toEqual({ hasUsers: false, registrationOpen: true })
+    expect(before).toEqual({ hasUsers: false, registrationOpen: true, registration: 'closed' })
 
     const first = await register('Martien@Example.com')
     expect(first.res.status).toBe(201)
@@ -48,7 +48,7 @@ describe('registratie en login', () => {
     expect(first.cookie).toMatch(/SameSite=Lax/)
 
     const after = await (await app.request('/api/auth/status')).json()
-    expect(after).toEqual({ hasUsers: true, registrationOpen: false })
+    expect(after).toEqual({ hasUsers: true, registrationOpen: false, registration: 'closed' })
 
     const second = await register('ander@example.com')
     expect(second.res.status).toBe(401)

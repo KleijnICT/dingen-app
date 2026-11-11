@@ -1,14 +1,18 @@
 import { createHash, randomBytes } from 'node:crypto'
 import { ulid } from '@dingen/core'
 import { and, count, desc, eq, gt } from 'drizzle-orm'
+import type { RegistrationMode } from '../config.js'
 import type { Db } from '../db.js'
-import { apiTokens, sessions, users } from '../schema.js'
+import { apiTokens, invitations, sessions, users } from '../schema.js'
+import { checkInvitation, type InvitationProblem } from './invitations.js'
 import { hashPassword, verifyPassword } from './password.js'
 
 export interface User {
   id: string
   email: string
   createdAt: string
+  /** Beheerder van deze installatie (het eerste account). */
+  isAdmin: boolean
 }
 
 export interface ApiTokenInfo {
@@ -27,15 +31,17 @@ export class AuthError extends Error {
       | 'email_taken'
       | 'invalid_credentials'
       | 'registration_closed'
-      | 'too_many_attempts',
+      | 'too_many_attempts'
+      | 'invite_required'
+      | InvitationProblem,
   ) {
     super(code)
   }
 }
 
 export interface AuthOptions {
-  /** Registratie open voor iedereen (hosted) of alleen voor de eerste gebruiker (self-hosted). */
-  registrationOpen: boolean
+  /** Wie een account mag maken naast de eerste gebruiker: niemand, iedereen of wie een uitnodiging heeft. */
+  registration: RegistrationMode
   sessionTtlMs?: number
 }
 
@@ -68,25 +74,69 @@ export class AuthService {
     return (row?.n ?? 0) > 0
   }
 
-  registrationOpen(): boolean {
-    return this.options.registrationOpen || !this.hasUsers()
+  registrationMode(): RegistrationMode {
+    return this.options.registration
   }
 
-  async register(emailInput: string, password: string): Promise<User> {
-    if (!this.registrationOpen()) throw new AuthError('registration_closed')
+  /** Kan iemand zonder uitnodiging nu een account maken? */
+  registrationOpen(): boolean {
+    return this.options.registration === 'open' || !this.hasUsers()
+  }
+
+  /**
+   * Maakt een account. Het eerste account kan altijd en wordt beheerder; daarna
+   * hangt het af van de stand. Bij `invite` wordt de uitnodiging in dezelfde
+   * transactie verbruikt, zodat één link nooit twee accounts oplevert.
+   */
+  async register(emailInput: string, password: string, invite?: string): Promise<User> {
     const email = normalizeEmail(emailInput)
-    const existing = this.db
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.email, email))
-      .get()
+    // Snel weigeren vóór het (trage) wachtwoord-hashen; de transactie controleert opnieuw.
+    this.admit(this.db, email, invite)
+    const passwordHash = await hashPassword(password)
+    return this.db.transaction((tx) => {
+      const { first, invitationId } = this.admit(tx, email, invite)
+      const now = new Date().toISOString()
+      const user: User = { id: ulid(), email, createdAt: now, isAdmin: first }
+      tx.insert(users)
+        .values({ ...user, passwordHash })
+        .run()
+      if (invitationId) {
+        tx.update(invitations)
+          .set({ usedBy: user.id, usedAt: now })
+          .where(eq(invitations.id, invitationId))
+          .run()
+      }
+      return user
+    })
+  }
+
+  /** Is deze uitnodiging (nog) bruikbaar? */
+  checkInvitation(secret: string) {
+    return checkInvitation(this.db, secret)
+  }
+
+  /** Mag dit account er komen? Gooit een AuthError als dat niet zo is. */
+  private admit(
+    db: Pick<Db, 'select'>,
+    email: string,
+    invite: string | undefined,
+  ): { first: boolean; invitationId: string | null } {
+    const n = db.select({ n: count() }).from(users).get()?.n ?? 0
+    const existing = db.select({ id: users.id }).from(users).where(eq(users.email, email)).get()
     if (existing) throw new AuthError('email_taken')
-    const user = { id: ulid(), email, createdAt: new Date().toISOString() }
-    this.db
-      .insert(users)
-      .values({ ...user, passwordHash: await hashPassword(password) })
-      .run()
-    return user
+    if (n === 0) return { first: true, invitationId: null }
+    switch (this.options.registration) {
+      case 'open':
+        return { first: false, invitationId: null }
+      case 'closed':
+        throw new AuthError('registration_closed')
+      case 'invite': {
+        if (!invite) throw new AuthError('invite_required')
+        const check = checkInvitation(db, invite)
+        if (!check.ok) throw new AuthError(check.problem)
+        return { first: false, invitationId: check.row.id }
+      }
+    }
   }
 
   async login(emailInput: string, password: string, clientKey: string): Promise<User> {
@@ -100,7 +150,7 @@ export class AuthService {
       throw new AuthError('invalid_credentials')
     }
     this.failedAttempts.delete(attemptKey)
-    return { id: row.id, email: row.email, createdAt: row.createdAt }
+    return { id: row.id, email: row.email, createdAt: row.createdAt, isAdmin: row.isAdmin }
   }
 
   /** Maakt een sessie en geeft het geheime cookie-token terug (alleen de hash wordt bewaard). */
@@ -128,6 +178,7 @@ export class AuthService {
         id: users.id,
         email: users.email,
         createdAt: users.createdAt,
+        isAdmin: users.isAdmin,
         sessionId: sessions.id,
       })
       .from(sessions)
@@ -136,7 +187,7 @@ export class AuthService {
       .get()
     if (!row) return null
     this.db.update(sessions).set({ lastSeenAt: now }).where(eq(sessions.id, row.sessionId)).run()
-    return { id: row.id, email: row.email, createdAt: row.createdAt }
+    return { id: row.id, email: row.email, createdAt: row.createdAt, isAdmin: row.isAdmin }
   }
 
   deleteSession(token: string): void {
@@ -192,6 +243,7 @@ export class AuthService {
         id: users.id,
         email: users.email,
         createdAt: users.createdAt,
+        isAdmin: users.isAdmin,
         tokenId: apiTokens.id,
       })
       .from(apiTokens)
@@ -204,7 +256,7 @@ export class AuthService {
       .set({ lastUsedAt: new Date().toISOString() })
       .where(eq(apiTokens.id, row.tokenId))
       .run()
-    return { id: row.id, email: row.email, createdAt: row.createdAt }
+    return { id: row.id, email: row.email, createdAt: row.createdAt, isAdmin: row.isAdmin }
   }
 
   private assertNotLocked(key: string): void {

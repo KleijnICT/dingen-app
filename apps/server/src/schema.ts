@@ -46,6 +46,8 @@ export const users = sqliteTable('users', {
   email: text('email').notNull().unique(),
   passwordHash: text('password_hash').notNull(),
   createdAt: text('created_at').notNull(),
+  /** Beheerder van deze installatie: mag uitnodigingen maken. Het eerste account. */
+  isAdmin: integer('is_admin', { mode: 'boolean' }).notNull().default(false),
 })
 
 /** Browsersessies. `id` is de sha256 van het cookie-token. */
@@ -138,4 +140,25 @@ export const reminderDeliveries = sqliteTable(
     sentAt: text('sent_at').notNull(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.taskId, t.moment] })],
+)
+
+/**
+ * Uitnodigingen om een account te maken (DINGEN_REGISTRATION=invite). Eenmalig
+ * bruikbaar; alleen de sha256 van het geheim wordt bewaard.
+ */
+export const invitations = sqliteTable(
+  'invitations',
+  {
+    id: text('id').primaryKey(),
+    tokenHash: text('token_hash').notNull().unique(),
+    createdBy: text('created_by')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: text('created_at').notNull(),
+    expiresAt: text('expires_at').notNull(),
+    usedBy: text('used_by').references(() => users.id, { onDelete: 'set null' }),
+    usedAt: text('used_at'),
+    revokedAt: text('revoked_at'),
+  },
+  (t) => [index('invitations_created_by_idx').on(t.createdBy)],
 )

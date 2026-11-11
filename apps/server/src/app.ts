@@ -1,9 +1,11 @@
 import type { HealthStatus } from '@dingen/core'
 import { APP_NAME } from '@dingen/core'
 import { Hono } from 'hono'
+import { InvitationService } from './auth/invitations.js'
 import { authenticate, requireAuth } from './auth/middleware.js'
 import { AuthService } from './auth/service.js'
 import { CalendarService, type FetchFeed } from './calendar/service.js'
+import type { RegistrationMode } from './config.js'
 import type { Db } from './db.js'
 import type { AppEnv } from './env.js'
 import { PushService, webPushSender } from './push/service.js'
@@ -11,6 +13,7 @@ import { loadVapidKeys } from './push/vapid.js'
 import { authRoutes } from './routes/auth.js'
 import { calendarRoutes } from './routes/calendars.js'
 import { dataRoutes } from './routes/data.js'
+import { invitationRoutes } from './routes/invitations.js'
 import { mcpRoutes } from './routes/mcp.js'
 import { pushRoutes } from './routes/push.js'
 import { syncRoutes } from './routes/sync.js'
@@ -22,7 +25,9 @@ export interface AppDeps {
   /** Korte commit-hash van de build (DINGEN_COMMIT). */
   build?: string | null
   sqliteVersion: string
-  /** Registratie open voor iedereen (hosted) of alleen voor de eerste gebruiker. */
+  /** Wie een account mag maken naast de eerste gebruiker (DINGEN_REGISTRATION). */
+  registration?: RegistrationMode
+  /** Verkorte vorm voor tests: true is `open`. `registration` gaat voor. */
   registrationOpen?: boolean
   /** Tijdzone waarin "vandaag" wordt bepaald voor de MCP; de browser gebruikt zijn eigen klok. */
   timezone?: string
@@ -36,7 +41,9 @@ export interface AppDeps {
 export function createApp(deps: AppDeps) {
   const app = new Hono<AppEnv>()
   const sync = new SyncService(deps.db)
-  const auth = new AuthService(deps.db, { registrationOpen: deps.registrationOpen ?? false })
+  const auth = new AuthService(deps.db, {
+    registration: deps.registration ?? (deps.registrationOpen ? 'open' : 'closed'),
+  })
 
   app.use('/api/*', async (c, next) => {
     c.set('sync', sync)
@@ -80,6 +87,11 @@ export function createApp(deps: AppDeps) {
   const push = deps.push ?? defaultPush(deps.db)
   app.use('/api/push/*', requireAuth)
   app.route('/api/push', pushRoutes(push))
+
+  // --- uitnodigingen ---
+  app.use('/api/invitations', requireAuth)
+  app.use('/api/invitations/*', requireAuth)
+  app.route('/api/invitations', invitationRoutes(new InvitationService(deps.db)))
 
   app.notFound((c) => {
     if (c.req.path.startsWith('/api/')) {

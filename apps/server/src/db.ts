@@ -7,7 +7,8 @@ import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 import * as schema from './schema.js'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
-const migrationsFolder = path.join(here, '../drizzle')
+/** De map met SQL-migraties en `meta/_journal.json`. */
+export const migrationsFolder = path.join(here, '../drizzle')
 
 export type Db = BetterSQLite3Database<typeof schema>
 
@@ -20,9 +21,13 @@ export interface OpenedDatabase {
 
 /**
  * Opent (of maakt) de SQLite-database en voert openstaande migraties uit.
- * Gebruik ':memory:' voor tests.
+ * Gebruik ':memory:' voor tests. Draai bij een bestaande database eerst
+ * `backupBeforeMigrations` (zie backup.ts).
  */
-export function openDatabase(filePath: string): OpenedDatabase {
+export function openDatabase(
+  filePath: string,
+  options: { migrationsFolder?: string } = {},
+): OpenedDatabase {
   if (filePath !== ':memory:') {
     fs.mkdirSync(path.dirname(filePath), { recursive: true })
   }
@@ -30,7 +35,7 @@ export function openDatabase(filePath: string): OpenedDatabase {
   sqlite.pragma('journal_mode = WAL')
   sqlite.pragma('foreign_keys = ON')
   const db = drizzle(sqlite, { schema })
-  migrate(db, { migrationsFolder })
+  migrate(db, { migrationsFolder: options.migrationsFolder ?? migrationsFolder })
   const row = sqlite.prepare('select sqlite_version() as v').get() as { v: string }
   return {
     db,

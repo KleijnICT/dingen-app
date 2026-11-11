@@ -5,12 +5,14 @@ import {
   Info,
   Plug,
   Settings as SettingsIcon,
+  Ticket,
   UserRound,
   X,
 } from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { ApiError, type ApiTokenInfo, api, errorText, type User } from './api.js'
 import { CalendarSettings } from './components/CalendarSettings.js'
+import { InvitationSettings } from './components/InvitationSettings.js'
 import { ReminderSettings } from './components/ReminderSettings.js'
 import { formatDate, LOCALES, type Locale, setLocale, useLocale, useT } from './i18n/index.js'
 
@@ -20,6 +22,8 @@ const TABS = [
   { id: 'connections', icon: Plug },
   { id: 'calendars', icon: CalendarDays },
   { id: 'data', icon: ArrowDownUp },
+  // --- uitnodigingen: alleen voor de beheerder ---
+  { id: 'invitations', icon: Ticket, adminOnly: true },
   { id: 'about', icon: Info },
 ] as const
 type TabId = (typeof TABS)[number]['id']
@@ -73,7 +77,7 @@ export function Settings({ user, onSignedOut, onClose }: Props) {
           </button>
         </header>
         <div className="settings-tabs" role="tablist">
-          {TABS.map(({ id, icon: Icon }) => (
+          {TABS.filter((tab) => !('adminOnly' in tab) || user.isAdmin).map(({ id, icon: Icon }) => (
             <button
               key={id}
               type="button"
@@ -93,6 +97,7 @@ export function Settings({ user, onSignedOut, onClose }: Props) {
           {tab === 'connections' && <Connections />}
           {tab === 'calendars' && <CalendarSettings />}
           {tab === 'data' && <DataTab />}
+          {tab === 'invitations' && user.isAdmin && <InvitationSettings />}
           {tab === 'about' && <About />}
         </div>
       </div>

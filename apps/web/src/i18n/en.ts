@@ -418,6 +418,35 @@ export const en = {
   'reminder.settings.test': 'Send a test notification',
   'reminder.settings.testTitle': 'Dingen',
   'reminder.settings.testBody': 'Reminders work on this device.',
+  // --- uitnodigingen ---
+  'settings.tab.invitations': 'Invitations',
+  'auth.error.invite_required':
+    'This server is invite-only. Ask its administrator for an invitation link.',
+  'auth.error.invite_invalid': 'This invitation link is not valid. Ask for a new one.',
+  'auth.error.invite_expired': 'This invitation link has expired. Ask for a new one.',
+  'auth.error.invite_used':
+    'This invitation link has already been used. Sign in, or ask for a new one.',
+  'auth.error.invite_revoked': 'This invitation link has been withdrawn. Ask for a new one.',
+  'invite.welcome': 'You have been invited. Create your account.',
+  'invite.intro':
+    'Invite someone with a link that works once and expires after 14 days. Anyone with the link can create an account, so send it only to the person you mean.',
+  'invite.modeClosed':
+    'Registration on this server is closed, so invitations do not work. Set DINGEN_REGISTRATION=invite to use them.',
+  'invite.modeOpen':
+    'Registration on this server is open: anyone can create an account, with or without an invitation.',
+  'invite.create': 'Create invitation link',
+  'invite.reveal': 'Copy this link now; it is shown only once.',
+  'invite.copy': 'Copy link',
+  'invite.copied': 'Copied',
+  'invite.hide': 'Done',
+  'invite.none': 'No invitations yet.',
+  'invite.createdOn': 'Created {date}',
+  'invite.status.open': 'open until {date}',
+  'invite.status.used': 'used by {email} on {date}',
+  'invite.status.expired': 'expired on {date}',
+  'invite.status.revoked': 'withdrawn on {date}',
+  'invite.removedAccount': 'a removed account',
+  'invite.revoke': 'Withdraw',
 } as const
 
 export type MessageKey = keyof typeof en

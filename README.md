@@ -59,20 +59,29 @@ Or with plain Docker:
 docker run -d --name dingen -p 8080:8080 -v dingen-data:/data ghcr.io/kleijnict/dingen:latest
 ```
 
-Open http://localhost:8080. **The first visitor creates the first account**;
-after that, registration is closed. Create your account right after starting
-the container, before exposing it to anyone else.
+Open http://localhost:8080. **The first visitor creates the first account**
+and becomes the administrator; after that, registration is closed. Create your
+account right after starting the container, before exposing it to anyone else.
 
 The image is built for `linux/amd64` and `linux/arm64`.
 
 ## Configuration
 
-| Variable              | Default            | Meaning                                                                     |
-| --------------------- | ------------------ | --------------------------------------------------------------------------- |
-| `PORT`                | `8080`             | Port the server listens on inside the container.                            |
-| `DATA_DIR`            | `/data`            | Directory for the SQLite database (`dingen.db`).                            |
-| `DINGEN_REGISTRATION` | closed             | Set to `open` to let anyone create an account. Default: only the first one. |
-| `DINGEN_TIMEZONE`     | `Europe/Amsterdam` | Time zone for "today" in the MCP, calendar appointments and reminders.      |
+| Variable              | Default            | Meaning                                                                 |
+| --------------------- | ------------------ | ----------------------------------------------------------------------- |
+| `PORT`                | `8080`             | Port the server listens on inside the container.                        |
+| `DATA_DIR`            | `/data`            | Directory for the SQLite database (`dingen.db`).                        |
+| `DINGEN_REGISTRATION` | `closed`           | Who may register after the first account: `closed`, `invite` or `open`. |
+| `DINGEN_TIMEZONE`     | `Europe/Amsterdam` | Time zone for "today" in the MCP, calendar appointments and reminders.  |
+
+### Inviting people
+
+`DINGEN_REGISTRATION=closed` (the default) allows only the first account,
+`open` lets anyone register. With `invite`, the administrator (the first account)
+invites others from **Settings → Invitations**: create a link, copy it and send
+it to the person you mean. A link works once and expires after 14 days; open
+links can be withdrawn. Whoever opens the link can create an account on your
+server. The very first account never needs an invitation.
 
 ### Reminders (web push)
 
@@ -122,7 +131,11 @@ docker compose pull
 docker compose up -d
 ```
 
-Database migrations run automatically at start-up. Make a backup first.
+Database migrations run automatically at start-up. When an update brings new
+migrations, Dingen first copies the database to
+`/data/backups/dingen-<date>-<from>-<to>.db` (the ten most recent copies are
+kept). If that copy fails, Dingen does not migrate and stops with a message in
+the log.
 
 ## Backups
 
