@@ -2535,12 +2535,7 @@ button.agent-main .muted {
   display: inline-flex;
   flex: none;
   align-items: center;
-}
-.member-stack .member-avatar {
-  box-shadow: 0 0 0 2px var(--bg);
-}
-.member-stack .member-avatar + .member-avatar {
-  margin-left: -5px;
+  gap: 3px;
 }
 .member-stack .member-avatar.agent {
   background: color-mix(in srgb, currentColor 14%, var(--bg));
