@@ -13,7 +13,6 @@ import {
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 import { createApp } from '../app.js'
 import { openDatabase } from '../db.js'
-import { agentGrants, agents } from '../schema.js'
 import { SyncService } from '../sync.js'
 import { changeTimeMs } from './derive.js'
 import { ActivityService } from './service.js'
@@ -55,7 +54,7 @@ function write(
     ts: clock.now(),
     clientId: 'TEST',
   }
-  const { seq } = sync.push(user, [change])
+  const { seq } = sync.push(user, [change], { receivedAt: new Date(wall).toISOString() })
   if (actor) database.sqlite.prepare('update changes set actor = ? where seq = ?').run(actor, seq)
   return seq
 }
@@ -213,10 +212,8 @@ describe('derivation', () => {
     expect(items[1]?.container?.title).toBe('Trip')
   })
 
-  it('uses the HLC wall time, capped at the moment the server received it', () => {
-    expect(changeTimeMs(clock.now(), '2026-11-10T10:00:00.000Z')).toBe(BASE)
-    wall = Date.parse('2030-01-01T00:00:00Z')
-    expect(changeTimeMs(clock.now(), '2026-11-10T10:00:00.000Z')).toBe(
+  it('times a line by when the server received it, so days follow the order', () => {
+    expect(changeTimeMs({ receivedAt: '2026-11-10T10:00:00.000Z' })).toBe(
       Date.parse('2026-11-10T10:00:00.000Z'),
     )
   })
@@ -351,30 +348,17 @@ describe('GET /api/activity', () => {
         { id: ulid(), entityType: type, entityId: id, fields, ts: clock.now(), clientId: 'TEST' },
       ])
     }
-    const tokenRes = await app.request('/api/auth/tokens', {
+    const created = await app.request('/api/agents', {
       method: 'POST',
       headers: { 'content-type': 'application/json', cookie },
-      body: JSON.stringify({ name: 'bot' }),
-    })
-    const token = ((await tokenRes.json()) as { token: string }).token
-    // Make the token an agent with one project grant (agents-server does this through its API).
-    const agentId = ulid()
-    database.db
-      .insert(agents)
-      .values({
-        id: agentId,
-        userId,
+      body: JSON.stringify({
         name: 'Bot',
         icon: 'bot',
         color: 'gray',
-        createdAt: new Date().toISOString(),
-      })
-      .run()
-    database.db
-      .insert(agentGrants)
-      .values({ agentId, scope: 'project', scopeId: project.id, level: 'read' })
-      .run()
-    database.sqlite.prepare('update api_tokens set agent_id = ? where name = ?').run(agentId, 'bot')
+        grants: [{ scope: 'project', id: project.id, level: 'read' }],
+      }),
+    })
+    const token = ((await created.json()) as { token: string }).token
 
     const res = await app.request('/api/activity', {
       headers: { authorization: `Bearer ${token}` },

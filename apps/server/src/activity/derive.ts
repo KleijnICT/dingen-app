@@ -1,5 +1,4 @@
 import type { ActivityItem, MemberId } from '@dingen/core'
-import { parseTimestamp } from '@dingen/core'
 
 /**
  * Activity (plan 19, part D): turning the change log into Logbook lines.
@@ -58,22 +57,16 @@ export interface Group {
 }
 
 /**
- * When a change happened: the wall time of its HLC timestamp (the moment it was
- * made on the device, so offline edits and imports keep their own time), but
- * never later than when the server received it, so a device clock that runs
- * ahead cannot put a change in the future. That cap also gives the property
- * the service relies on: `at <= receivedAt`, and `receivedAt` grows with `seq`.
+ * When a change happened: the moment the server received it. Lines are ordered
+ * and paged on `seq`, and `receivedAt` grows with `seq`, so times and day
+ * groups always follow the order of the list. The HLC wall time would be
+ * closer for offline edits, but it does not follow `seq`: an import writes
+ * months of history in entity order, and an offline device syncs yesterday's
+ * edits today, which would scatter days through the list. The service also
+ * relies on this to stop reading once it is past `since`.
  */
-export function changeTimeMs(ts: string, receivedAt: string): number {
-  const received = Date.parse(receivedAt)
-  let wall = Number.NaN
-  try {
-    wall = parseTimestamp(ts).wall
-  } catch {
-    // keep NaN
-  }
-  if (!Number.isFinite(wall) || wall <= 0) return received
-  return Math.min(wall, received)
+export function changeTimeMs(row: Pick<LogRow, 'receivedAt'>): number {
+  return Date.parse(row.receivedAt)
 }
 
 /** A missing actor is the owner: rows from before plan 19 and sessions without one. */
@@ -104,7 +97,7 @@ export class Folder {
 
   push(row: LogRow, subject: Subject): Group | null {
     const actor = actorOf(row, this.ownerId)
-    const at = changeTimeMs(row.ts, row.receivedAt)
+    const at = changeTimeMs(row)
     const g = this.open
     if (
       g &&

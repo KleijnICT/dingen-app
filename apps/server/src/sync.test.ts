@@ -18,10 +18,15 @@ beforeAll(async () => {
     body: JSON.stringify({ email: 'sync@test.nl', password: 'wachtwoord123' }),
   })
   const cookie = res.headers.get('set-cookie') ?? ''
-  const tokenRes = await app.request('/api/auth/tokens', {
+  const tokenRes = await app.request('/api/agents', {
     method: 'POST',
     headers: { 'content-type': 'application/json', cookie },
-    body: JSON.stringify({ name: 'test' }),
+    body: JSON.stringify({
+      name: 'test',
+      icon: 'bot',
+      color: 'gray',
+      grants: [{ scope: 'all', level: 'manage' }],
+    }),
   })
   bearer = `Bearer ${(await tokenRes.json()).token}`
 })

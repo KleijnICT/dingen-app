@@ -19,10 +19,15 @@ async function account(email: string): Promise<string> {
     body: JSON.stringify({ email, password: 'wachtwoord123' }),
   })
   const cookie = res.headers.get('set-cookie') ?? ''
-  const tokenRes = await app.request('/api/auth/tokens', {
+  const tokenRes = await app.request('/api/agents', {
     method: 'POST',
     headers: { 'content-type': 'application/json', cookie },
-    body: JSON.stringify({ name: 'test' }),
+    body: JSON.stringify({
+      name: 'test',
+      icon: 'bot',
+      color: 'gray',
+      grants: [{ scope: 'all', level: 'manage' }],
+    }),
   })
   return `Bearer ${(await tokenRes.json()).token}`
 }

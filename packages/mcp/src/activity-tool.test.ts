@@ -56,11 +56,15 @@ describe('formatActivity', () => {
 })
 
 describe('filters', () => {
-  it('resolves who by name, me or id', () => {
-    expect(resolveWho('research', members)).toBe('agent:A1')
-    expect(resolveWho('me', members)).toBe('user:U1')
-    expect(resolveWho('agent:ZZ', members)).toBe('agent:ZZ')
-    expect(() => resolveWho('nobody', members)).toThrow(/known: sam@example.com, Research/)
+  it('resolves who by name, owner, me or id', async () => {
+    const me = async () => 'agent:A1'
+    expect(await resolveWho('research', members, me)).toBe('agent:A1')
+    expect(await resolveWho('owner', members, me)).toBe('user:U1')
+    expect(await resolveWho('me', members, me)).toBe('agent:A1')
+    expect(await resolveWho('agent:ZZ', members, me)).toBe('agent:ZZ')
+    await expect(resolveWho('nobody', members, me)).rejects.toThrow(
+      /known: sam@example.com, Research/,
+    )
   })
 
   it('turns days into instants in the timezone', () => {

@@ -1,9 +1,10 @@
 import type { HealthStatus } from '@dingen/core'
 import { APP_NAME } from '@dingen/core'
-import { Hono } from 'hono'
+import { type Context, Hono, type Next } from 'hono'
 import { ActivityService } from './activity/service.js'
+import { AgentService } from './agents/service.js'
 import { InvitationService } from './auth/invitations.js'
-import { authenticate, requireAuth } from './auth/middleware.js'
+import { authenticate, requireAllScope, requireAuth } from './auth/middleware.js'
 import { AuthService } from './auth/service.js'
 import { CalendarService, type FetchFeed } from './calendar/service.js'
 import type { RegistrationMode } from './config.js'
@@ -12,6 +13,7 @@ import type { AppEnv } from './env.js'
 import { PushService, webPushSender } from './push/service.js'
 import { loadVapidKeys } from './push/vapid.js'
 import { activityRoutes } from './routes/activity.js'
+import { agentRoutes } from './routes/agents.js'
 import { authRoutes } from './routes/auth.js'
 import { calendarRoutes } from './routes/calendars.js'
 import { dataRoutes } from './routes/data.js'
@@ -49,20 +51,20 @@ export function createApp(deps: AppDeps) {
     registration: deps.registration ?? (deps.registrationOpen ? 'open' : 'closed'),
   })
 
-  app.use('/api/*', async (c, next) => {
+  const agents = new AgentService(deps.db)
+  const services = async (c: Context<AppEnv>, next: Next) => {
     c.set('sync', sync)
     c.set('auth', auth)
+    c.set('agents', agents)
     await next()
-  })
+  }
+
+  app.use('/api/*', services)
   app.use('/api/*', authenticate)
-  app.use('/mcp', async (c, next) => {
-    c.set('sync', sync)
-    c.set('auth', auth)
-    await next()
-  })
+  app.use('/mcp', services)
   app.use('/mcp', authenticate)
   const activity = new ActivityService(deps.db)
-  app.route('/mcp', mcpRoutes(deps.timezone ?? 'Europe/Amsterdam', deps.db, activity))
+  app.route('/mcp', mcpRoutes(deps.timezone ?? 'Europe/Amsterdam', activity))
 
   app.get('/api/health', (c) => {
     const body: HealthStatus = {
@@ -77,29 +79,31 @@ export function createApp(deps: AppDeps) {
   })
 
   app.route('/api/auth', authRoutes({ demo: deps.demo ?? false }))
-  app.use('/api/sync/*', requireAuth)
+  app.route('/api', agentRoutes())
+  // Account-wide endpoints: the owner, or an agent with an `all` grant.
+  app.use('/api/sync/*', requireAllScope('read'))
   app.route('/api/sync', syncRoutes())
-  app.use('/api/export', requireAuth)
-  app.use('/api/import', requireAuth)
+  app.use('/api/export', requireAllScope('read'))
+  app.use('/api/import', requireAllScope('manage'))
   app.route('/api', dataRoutes(deps.db, deps.version))
 
   // --- activity (Logbook) ---
   app.use('/api/activity', requireAuth)
-  app.route('/api/activity', activityRoutes(deps.db, activity))
+  app.route('/api/activity', activityRoutes(activity))
 
   const calendars = new CalendarService(deps.db, { fetchFeed: deps.fetchFeed })
-  app.use('/api/calendars', requireAuth)
-  app.use('/api/calendars/*', requireAuth)
+  app.use('/api/calendars', requireAllScope('read'))
+  app.use('/api/calendars/*', requireAllScope('read'))
   app.route('/api/calendars', calendarRoutes(calendars, deps.timezone ?? 'Europe/Amsterdam'))
 
   // --- herinneringen ---
   const push = deps.push ?? defaultPush(deps.db)
-  app.use('/api/push/*', requireAuth)
+  app.use('/api/push/*', requireAllScope('read'))
   app.route('/api/push', pushRoutes(push))
 
   // --- uitnodigingen ---
-  app.use('/api/invitations', requireAuth)
-  app.use('/api/invitations/*', requireAuth)
+  app.use('/api/invitations', requireAllScope('manage'))
+  app.use('/api/invitations/*', requireAllScope('manage'))
   app.route('/api/invitations', invitationRoutes(new InvitationService(deps.db)))
 
   app.notFound((c) => {

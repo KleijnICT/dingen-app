@@ -28,7 +28,9 @@ export function registerActivityTool(server: McpServer, client: DingenClient): v
         who: z
           .string()
           .optional()
-          .describe("'me' (the owner), an agent's name, or a member id such as agent:<id>"),
+          .describe(
+            "'owner' (the person whose data it is), 'me' (whoever this connection acts as, usually you the agent), an agent's name, or a member id such as agent:<id>",
+          ),
         since: DayInput.optional().describe('From the start of this day (or this instant)'),
         until: DayInput.optional().describe('Up to the end of this day (or this instant)'),
         before: z.number().int().min(1).optional().describe('The nextBefore of an earlier call'),
@@ -37,11 +39,12 @@ export function registerActivityTool(server: McpServer, client: DingenClient): v
     },
     async (input) => {
       try {
-        const members = await client.members()
+        // Older servers have no member list; names then fall back to ids.
+        const members = await client.members().catch(() => [])
         const today = todayIn(client.timezone)
         const filter: ActivityFilter = {
           kinds: input.kinds,
-          actor: input.who ? resolveWho(input.who, members) : undefined,
+          actor: input.who ? await resolveWho(input.who, members, () => client.me()) : undefined,
           since: input.since ? instant(input.since, today, client.timezone, 'start') : undefined,
           until: input.until ? instant(input.until, today, client.timezone, 'end') : undefined,
           before: input.before,
@@ -66,13 +69,18 @@ export function registerActivityTool(server: McpServer, client: DingenClient): v
   )
 }
 
-/** A member id from 'me', a name or an id. */
-export function resolveWho(who: string, members: Member[]): string {
+/** A member id from 'owner', 'me', a name or an id. */
+export async function resolveWho(
+  who: string,
+  members: Member[],
+  me: () => Promise<string>,
+): Promise<string> {
   const w = who.trim()
   if (/^(user|agent):/.test(w)) return w
-  if (w.toLowerCase() === 'me' || w.toLowerCase() === 'owner') {
+  if (w.toLowerCase() === 'me') return me()
+  if (w.toLowerCase() === 'owner') {
     const owner = members.find((m) => m.kind === 'user')
-    if (!owner) throw new Error("Cannot tell who 'me' is on this server; use a member id")
+    if (!owner) throw new Error('Cannot tell who the owner is on this server; use a member id')
     return owner.id
   }
   const match = members.find((m) => m.name.toLowerCase() === w.toLowerCase())

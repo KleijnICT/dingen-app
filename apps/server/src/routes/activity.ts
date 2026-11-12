@@ -1,9 +1,7 @@
 import { ACTIVITY_KINDS, parseMemberId } from '@dingen/core'
 import { Hono } from 'hono'
 import { z } from 'zod'
-import { requestAccess } from '../activity/access.js'
 import { type ActivityService, MAX_LIMIT } from '../activity/service.js'
-import type { Db } from '../db.js'
 import type { AppEnv } from '../env.js'
 
 const Instant = z
@@ -35,7 +33,7 @@ const ActivityQuery = z.object({
 })
 
 /** `GET /api/activity`: the Logbook lines, newest first, paged on `seq`. */
-export function activityRoutes(db: Db, activity: ActivityService) {
+export function activityRoutes(activity: ActivityService) {
   const app = new Hono<AppEnv>()
 
   app.get('/', (c) => {
@@ -44,7 +42,6 @@ export function activityRoutes(db: Db, activity: ActivityService) {
       return c.json({ error: 'invalid_query', issues: parsed.error.issues }, 400)
     }
     const q = parsed.data
-    const access = requestAccess(c, db)
     const page = activity.list(
       c.get('userId'),
       {
@@ -55,7 +52,7 @@ export function activityRoutes(db: Db, activity: ActivityService) {
         before: q.before,
         limit: q.limit,
       },
-      access.grants,
+      c.get('grants'),
     )
     return c.json(page)
   })

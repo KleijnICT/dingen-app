@@ -48,8 +48,8 @@ export function LogbookPage({ list, user, focusSignal }: Props) {
   const header = (
     <header className="list-header">
       <h1>{t(list.titleKey)}</h1>
-      <div className="activity-filters" role="group" aria-label={t('activity.filters')}>
-        <fieldset className="view-switch">
+      <div className="activity-filters">
+        <fieldset className="view-switch" aria-label={t('activity.filters')}>
           {KIND_FILTERS.map((k) => (
             <button
               type="button"
@@ -146,7 +146,8 @@ function ActivityList({ filter, me, owner, byId }: ListProps) {
     [kindsKey, filter.actor, since],
   )
 
-  // A new filter starts over.
+  // A new filter (or "Try again") starts over.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `attempt` only re-runs the load
   useEffect(() => {
     let alive = true
     setState('loading')

@@ -1,21 +1,21 @@
-import type { AgentGrant, Change, Member } from '@dingen/core'
+import type { Change, Member } from '@dingen/core'
 import { type ActivityFilter, createMcpServer, DingenClient, type SyncTransport } from '@dingen/mcp'
 import { StreamableHTTPTransport } from '@hono/mcp'
-import { eq } from 'drizzle-orm'
 import { Hono } from 'hono'
-import { requestAccess } from '../activity/access.js'
 import type { ActivityKind, ActivityService } from '../activity/service.js'
-import type { Db } from '../db.js'
+import type { Access } from '../agents/access.js'
+import type { AgentService } from '../agents/service.js'
+import { accessOf } from '../auth/middleware.js'
 import type { AppEnv } from '../env.js'
-import { agents, users } from '../schema.js'
 import type { SyncService } from '../sync.js'
 
 /**
  * MCP over Streamable HTTP, in the server itself: Claude Code connects to
- * /mcp with an API token and gets the same tools as `dingen-mcp` over stdio.
- * Stateless: every request gets a fresh replica from the sync service.
+ * /mcp with an agent token and gets the same tools as `dingen-mcp` over stdio.
+ * Stateless: every request gets a fresh replica from the sync service, with
+ * only what the agent can read; its writes are checked against its grants.
  */
-export function mcpRoutes(timezone: string, db: Db, activity: ActivityService) {
+export function mcpRoutes(timezone: string, activity: ActivityService) {
   const app = new Hono<AppEnv>()
 
   app.all('/', async (c) => {
@@ -23,45 +23,32 @@ export function mcpRoutes(timezone: string, db: Db, activity: ActivityService) {
     if (!c.get('user') || c.get('authSource') !== 'token') {
       return c.json({ error: 'unauthorized' }, 401)
     }
-    const serviceTransport = new ServiceTransport(c.get('sync'), c.get('userId'), {
-      db,
-      activity,
-      grants: requestAccess(c, db).grants,
-    })
-    const client = new DingenClient(serviceTransport, {
-      today: () => todayIn(timezone),
-      timezone,
-    })
+    const transport = new ServiceTransport(c.get('sync'), c.get('agents'), accessOf(c), activity)
+    const client = new DingenClient(transport, { today: () => todayIn(timezone), timezone })
     const server = createMcpServer(client)
-    const transport = new StreamableHTTPTransport()
-    await server.connect(transport)
-    const res = await transport.handleRequest(c)
+    const http = new StreamableHTTPTransport()
+    await server.connect(http)
+    const res = await http.handleRequest(c)
     return res ?? c.body(null, 204)
   })
 
   return app
 }
 
-interface ActivityAccess {
-  db: Db
-  activity: ActivityService
-  /** The agent's grants; null for the owner. */
-  grants: AgentGrant[] | null
-}
-
 class ServiceTransport implements SyncTransport {
   constructor(
     private readonly sync: SyncService,
-    private readonly userId: string,
-    private readonly access: ActivityAccess,
+    private readonly agents: AgentService,
+    private readonly access: Access,
+    private readonly activityService: ActivityService,
   ) {}
 
   async activity(filter: ActivityFilter) {
-    return this.access.activity.list(
-      this.userId,
+    return this.activityService.list(
+      this.access.userId,
       {
         kinds: filter.kinds as ActivityKind[] | undefined,
-        actor: filter.actor as `user:${string}` | `agent:${string}` | undefined,
+        actor: filter.actor as Access['actor'] | undefined,
         since: filter.since,
         until: filter.until,
         before: filter.before,
@@ -71,45 +58,27 @@ class ServiceTransport implements SyncTransport {
     )
   }
 
-  /** The owner and every agent, revoked ones too: their past actions keep a name. */
-  async members(): Promise<Member[]> {
-    const { db } = this.access
-    const owner = db.select().from(users).where(eq(users.id, this.userId)).get()
-    const own = db.select().from(agents).where(eq(agents.userId, this.userId)).all()
-    return [
-      ...(owner
-        ? [
-            {
-              id: `user:${owner.id}`,
-              kind: 'user',
-              name: owner.email,
-              icon: null,
-              color: null,
-            } as Member,
-          ]
-        : []),
-      ...own.map(
-        (a): Member => ({
-          id: `agent:${a.id}`,
-          kind: 'agent',
-          name: a.name,
-          icon: a.icon,
-          color: a.color,
-        }),
-      ),
-    ]
-  }
-
   async snapshot() {
-    return this.sync.snapshot(this.userId)
+    return this.sync.snapshot(this.access.userId, this.access.grants)
   }
 
   async pull(since: number) {
-    return this.sync.pull(this.userId, since)
+    return this.sync.pull(this.access.userId, since, undefined, this.access.grants)
   }
 
   async push(changes: Change[]) {
-    return this.sync.push(this.userId, changes)
+    return this.sync.push(this.access.userId, changes, {
+      access: this.access,
+      members: this.agents.memberGrants(this.access.userId),
+    })
+  }
+
+  async whoami() {
+    return this.access.actor
+  }
+
+  async members(): Promise<Member[]> {
+    return this.agents.members(this.access.userId)
   }
 }
 

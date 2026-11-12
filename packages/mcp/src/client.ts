@@ -63,7 +63,9 @@ export interface SyncTransport {
   push(changes: Change[]): Promise<unknown>
   /** The activity log (Logbook); absent on transports that have none. */
   activity?(filter: ActivityFilter): Promise<ActivityBody>
-  /** The owner and agents, to put names to actors; absent or empty when unknown. */
+  /** The member id of whoever this transport acts as (`agent:<id>` for a token). */
+  whoami?(): Promise<string>
+  /** The owner and their agents, for assigning. */
   members?(): Promise<Member[]>
 }
 
@@ -97,6 +99,12 @@ export class HttpTransport implements SyncTransport {
       },
     })
     if (res.status === 401) throw new Error('Dingen rejected the token (401)')
+    if (res.status === 403) {
+      const body = (await res.json().catch(() => ({}))) as { error?: string; message?: string }
+      if (body.error === 'agent_scope')
+        throw new Error(body.message ?? "Outside this agent's scope (403)")
+      throw new Error(`Dingen ${path} refused: ${body.error ?? res.status}`)
+    }
     if (!res.ok) throw new Error(`Dingen ${path} failed: ${res.status} ${await res.text()}`)
     return res
   }
@@ -124,14 +132,15 @@ export class HttpTransport implements SyncTransport {
     ).json() as Promise<ActivityBody>
   }
 
+  async whoami(): Promise<string> {
+    const body = (await (await this.request('/api/auth/me')).json()) as { member?: string }
+    if (!body.member) throw new Error('This Dingen server does not know members yet')
+    return body.member
+  }
+
   async members(): Promise<Member[]> {
-    try {
-      const body = (await (await this.request('/api/members')).json()) as { members?: Member[] }
-      return body.members ?? []
-    } catch {
-      // Older servers have no member list; names then fall back to ids.
-      return []
-    }
+    const body = (await (await this.request('/api/members')).json()) as { members: Member[] }
+    return body.members
   }
 }
 
@@ -152,6 +161,7 @@ export class DingenClient implements Writer {
   private cursor = 0
   private loaded = false
   private pending: Change[] = []
+  private self: string | undefined
 
   constructor(
     private readonly transport: SyncTransport,
@@ -169,12 +179,20 @@ export class DingenClient implements Writer {
     return this.transport.activity(filter)
   }
 
-  async members(): Promise<Member[]> {
-    return this.transport.members ? this.transport.members() : []
-  }
-
   get today(): string {
     return this.todayFn()
+  }
+
+  /** The member this client acts as; needed for "me" in assigning and filters. */
+  async me(): Promise<string> {
+    if (!this.transport.whoami) throw new Error('This connection does not know who "me" is')
+    this.self ??= await this.transport.whoami()
+    return this.self
+  }
+
+  /** The owner and their agents; empty when the transport cannot tell. */
+  async members(): Promise<Member[]> {
+    return this.transport.members ? this.transport.members() : []
   }
 
   /** Loads the replica the first time, then catches up with new changes. */
@@ -207,8 +225,15 @@ export class DingenClient implements Writer {
     if (this.pending.length === 0) return
     const all = this.pending
     this.pending = []
-    for (let i = 0; i < all.length; i += 500) {
-      await this.transport.push(all.slice(i, i + 500))
+    try {
+      for (let i = 0; i < all.length; i += 500) {
+        await this.transport.push(all.slice(i, i + 500))
+      }
+    } catch (err) {
+      // The server refused: drop the local edits by loading a fresh replica next time.
+      this.records.clear()
+      this.loaded = false
+      throw err
     }
   }
 

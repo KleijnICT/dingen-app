@@ -1,9 +1,10 @@
-import { createHash, randomBytes } from 'node:crypto'
+import { randomBytes } from 'node:crypto'
 import { ulid } from '@dingen/core'
-import { and, count, desc, eq, gt } from 'drizzle-orm'
+import { and, count, eq, gt } from 'drizzle-orm'
+import { sha256 } from '../agents/service.js'
 import type { RegistrationMode } from '../config.js'
 import type { Db } from '../db.js'
-import { apiTokens, invitations, sessions, users } from '../schema.js'
+import { invitations, sessions, users } from '../schema.js'
 import { checkInvitation, type InvitationProblem } from './invitations.js'
 import { hashPassword, verifyPassword } from './password.js'
 
@@ -13,14 +14,6 @@ export interface User {
   createdAt: string
   /** Beheerder van deze installatie (het eerste account). */
   isAdmin: boolean
-}
-
-export interface ApiTokenInfo {
-  id: string
-  name: string
-  prefix: string
-  createdAt: string
-  lastUsedAt: string | null
 }
 
 export type AuthSource = 'session' | 'token'
@@ -46,13 +39,8 @@ export interface AuthOptions {
 }
 
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000
-const TOKEN_PREFIX = 'dgn_'
 const MAX_FAILED_ATTEMPTS = 10
 const ATTEMPT_WINDOW_MS = 15 * 60 * 1000
-
-function sha256(value: string): string {
-  return createHash('sha256').update(value).digest('hex')
-}
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase()
@@ -153,6 +141,14 @@ export class AuthService {
     return { id: row.id, email: row.email, createdAt: row.createdAt, isAdmin: row.isAdmin }
   }
 
+  /** The account with this id, or null. */
+  findById(id: string): User | null {
+    const row = this.db.select().from(users).where(eq(users.id, id)).get()
+    return row
+      ? { id: row.id, email: row.email, createdAt: row.createdAt, isAdmin: row.isAdmin }
+      : null
+  }
+
   /** The account with this email address, or null. */
   findByEmail(emailInput: string): User | null {
     const row = this.db
@@ -207,68 +203,6 @@ export class AuthService {
       .delete(sessions)
       .where(eq(sessions.id, sha256(token)))
       .run()
-  }
-
-  createToken(userId: string, name: string): { token: string; info: ApiTokenInfo } {
-    const secret = TOKEN_PREFIX + randomBytes(32).toString('base64url')
-    const info: ApiTokenInfo = {
-      id: ulid(),
-      name,
-      prefix: secret.slice(0, TOKEN_PREFIX.length + 6),
-      createdAt: new Date().toISOString(),
-      lastUsedAt: null,
-    }
-    this.db
-      .insert(apiTokens)
-      .values({ ...info, userId, tokenHash: sha256(secret) })
-      .run()
-    return { token: secret, info }
-  }
-
-  listTokens(userId: string): ApiTokenInfo[] {
-    return this.db
-      .select({
-        id: apiTokens.id,
-        name: apiTokens.name,
-        prefix: apiTokens.prefix,
-        createdAt: apiTokens.createdAt,
-        lastUsedAt: apiTokens.lastUsedAt,
-      })
-      .from(apiTokens)
-      .where(eq(apiTokens.userId, userId))
-      .orderBy(desc(apiTokens.createdAt))
-      .all()
-  }
-
-  deleteToken(userId: string, tokenId: string): boolean {
-    const result = this.db
-      .delete(apiTokens)
-      .where(and(eq(apiTokens.userId, userId), eq(apiTokens.id, tokenId)))
-      .run()
-    return result.changes > 0
-  }
-
-  resolveToken(secret: string): User | null {
-    if (!secret.startsWith(TOKEN_PREFIX)) return null
-    const row = this.db
-      .select({
-        id: users.id,
-        email: users.email,
-        createdAt: users.createdAt,
-        isAdmin: users.isAdmin,
-        tokenId: apiTokens.id,
-      })
-      .from(apiTokens)
-      .innerJoin(users, eq(users.id, apiTokens.userId))
-      .where(eq(apiTokens.tokenHash, sha256(secret)))
-      .get()
-    if (!row) return null
-    this.db
-      .update(apiTokens)
-      .set({ lastUsedAt: new Date().toISOString() })
-      .where(eq(apiTokens.id, row.tokenId))
-      .run()
-    return { id: row.id, email: row.email, createdAt: row.createdAt, isAdmin: row.isAdmin }
   }
 
   private assertNotLocked(key: string): void {

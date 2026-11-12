@@ -39,7 +39,7 @@ export function dataRoutes(db: Db, version: string) {
         return c.json({ error: 'account_not_empty' }, 409)
       }
       try {
-        const result = sync.importRecords(userId, parsed.records)
+        const result = sync.importRecords(userId, parsed.records, c.get('actor'))
         const total = { created: 0, updated: 0, unchanged: 0 }
         for (const counts of Object.values(result.counts)) {
           total.created += counts.created

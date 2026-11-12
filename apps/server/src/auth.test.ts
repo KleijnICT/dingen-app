@@ -119,27 +119,40 @@ describe('API-tokens en scheiding', () => {
     )
     expect(login.status).toBe(200)
     const cookie = login.headers.get('set-cookie') ?? ''
-    const created = await app.request('/api/auth/tokens', json({ name: 'Claude' }, { cookie }))
+    const created = await app.request(
+      '/api/agents',
+      json(
+        { name: 'Claude', icon: 'bot', color: 'gray', grants: [{ scope: 'all', level: 'manage' }] },
+        { cookie },
+      ),
+    )
     expect(created.status).toBe(201)
-    const { token, info } = await created.json()
+    const { token, agent } = await created.json()
     expect(token).toMatch(/^dgn_/)
-    expect(info.prefix).toBe(token.slice(0, 10))
+    expect(agent.tokenPrefix).toBe(token.slice(0, 10))
 
     const me = await app.request('/api/auth/me', { headers: { authorization: `Bearer ${token}` } })
     expect(me.status).toBe(200)
-    expect((await me.json()).source).toBe('token')
+    const meBody = await me.json()
+    expect(meBody.source).toBe('token')
+    expect(meBody.member).toBe(`agent:${agent.id}`)
 
-    const list = await app.request('/api/auth/tokens', { headers: { cookie } })
-    expect((await list.json()).tokens).toHaveLength(1)
+    const list = await app.request('/api/agents', { headers: { cookie } })
+    expect((await list.json()).agents).toHaveLength(1)
 
-    // Een token mag geen nieuwe tokens maken.
+    // Een token mag geen agents maken of zien.
     const viaToken = await app.request(
-      '/api/auth/tokens',
-      json({ name: 'nee' }, { authorization: `Bearer ${token}` }),
+      '/api/agents',
+      json(
+        { name: 'nee', icon: 'bot', color: 'gray', grants: [] },
+        { authorization: `Bearer ${token}` },
+      ),
     )
     expect(viaToken.status).toBe(403)
+    const old = await app.request('/api/auth/tokens', { headers: { cookie } })
+    expect(old.status).toBe(404)
 
-    const del = await app.request(`/api/auth/tokens/${info.id}`, {
+    const del = await app.request(`/api/agents/${agent.id}`, {
       method: 'DELETE',
       headers: { cookie },
     })

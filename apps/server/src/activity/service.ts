@@ -1,12 +1,6 @@
-import {
-  type ACTIVITY_KINDS,
-  type ActivityItem,
-  type AgentGrant,
-  levelFor,
-  type MemberId,
-  type Place,
-} from '@dingen/core'
+import type { ACTIVITY_KINDS, ActivityItem, AgentGrant, EntityType, MemberId } from '@dingen/core'
 import type Database from 'better-sqlite3'
+import { canRead, type Lookup } from '../agents/access.js'
 import type { Db } from '../db.js'
 import {
   ACTIVITY_ENTITY_TYPES,
@@ -140,7 +134,7 @@ export class ActivityService {
         cursor = raw.seq
         scanned += 1
         const row: LogRow = { ...raw, fields: JSON.parse(raw.fields) }
-        // `at <= receivedAt` and `receivedAt` grows with seq: nothing older can be in the period.
+        // `at` is `receivedAt`, which grows with seq: nothing older can be in the period.
         if (sinceMs !== null && Date.parse(row.receivedAt) < sinceMs) {
           done = true
           break scan
@@ -190,39 +184,18 @@ export class ActivityService {
     return { type: row.entityType as Subject['type'], id: row.entityId }
   }
 
-  private placeOf(
-    subject: Subject,
-    load: (type: string, id: string) => EntityRow | null,
-  ): Place | null {
-    const data = load(subject.type, subject.id)?.data
-    if (!data) return null
-    const projectPlace = (projectId: string): Place => {
-      const areaId = load('project', projectId)?.data.areaId
-      return { kind: 'project', projectId, areaId: typeof areaId === 'string' ? areaId : null }
-    }
-    switch (subject.type) {
-      case 'area':
-        return { kind: 'area', areaId: subject.id }
-      case 'project':
-        return projectPlace(subject.id)
-      case 'heading':
-        return typeof data.projectId === 'string' ? projectPlace(data.projectId) : null
-      case 'task': {
-        const projectId = taskProjectId(data, load)
-        if (projectId) return projectPlace(projectId)
-        if (typeof data.areaId === 'string') return { kind: 'area', areaId: data.areaId }
-        return { kind: 'inbox' }
-      }
-    }
-  }
-
+  /** The same read check as everywhere else (agents/access.ts), on the cached records. */
   private readable(
-    subject: Subject,
+    subject: { type: string; id: string },
     grants: readonly AgentGrant[],
     load: (type: string, id: string) => EntityRow | null,
   ): boolean {
-    const place = this.placeOf(subject, load)
-    return place !== null && levelFor(grants, place) !== null
+    const lookup: Lookup = (entityType, id) => {
+      const row = load(entityType, id)
+      return row ? { entityType, id, data: row.data, fieldTs: {} } : undefined
+    }
+    const record = lookup(subject.type as EntityType, subject.id)
+    return record !== undefined && canRead([...grants], record, lookup)
   }
 
   private container(

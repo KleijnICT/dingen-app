@@ -8,6 +8,7 @@ import { useEngine, useWorkspace } from '../store/context.js'
 import { deleteArea, useLinger } from '../taskActions.js'
 import { AreaAppearance } from './AreaAppearance.js'
 import { InlineInput } from './InlineInput.js'
+import { MemberAvatars, MembersPanel, useAccess } from './MembersPanel.js'
 import { MoreMenu } from './Menu.js'
 import { ProjectRow } from './ProjectRow.js'
 import { TagFilter } from './TagFilter.js'
@@ -25,6 +26,7 @@ export function AreaPage({ area, focusSignal }: Props) {
   const engine = useEngine()
   const t = useT()
   const ws = useWorkspace()
+  const access = useAccess('area', area.id)
   const [tagFilter, setTagFilter] = useState<string | null>(null)
   const [showCompleted, setShowCompleted] = useState(false)
 
@@ -89,10 +91,16 @@ export function AreaPage({ area, focusSignal }: Props) {
           autoFocus={area.title === ''}
           onCommit={(title) => engine.mutate('area', area.id, { title })}
         />
+        <MemberAvatars entries={access.entries} />
         <MoreMenu
           label={t('menu.areaActions')}
           items={[
             { label: t('nav.newProject'), onSelect: addProject },
+            {
+              label: t('members.title'),
+              onSelect: () => {},
+              panel: () => <MembersPanel type="area" id={area.id} access={access} />,
+            },
             {
               label: t('area.delete'),
               danger: true,
