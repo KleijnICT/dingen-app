@@ -19,6 +19,8 @@ export const changes = sqliteTable(
     fields: text('fields', { mode: 'json' }).notNull().$type<Record<string, unknown>>(),
     ts: text('ts').notNull(),
     receivedAt: text('received_at').notNull(),
+    /** Who made the change: `user:<id>` or `agent:<id>` (plan 19). Old rows: the owner. */
+    actor: text('actor'),
   },
   (t) => [
     uniqueIndex('changes_user_change_idx').on(t.userId, t.id),
@@ -78,8 +80,42 @@ export const apiTokens = sqliteTable(
     tokenHash: text('token_hash').notNull().unique(),
     createdAt: text('created_at').notNull(),
     lastUsedAt: text('last_used_at'),
+    /** The agent this token belongs to (plan 19); one active token per agent. */
+    agentId: text('agent_id').references(() => agents.id, { onDelete: 'cascade' }),
   },
-  (t) => [index('api_tokens_user_idx').on(t.userId)],
+  (t) => [index('api_tokens_user_idx').on(t.userId), index('api_tokens_agent_idx').on(t.agentId)],
+)
+
+/** Agents (plan 19): a named member of one user, acting through its own token. */
+export const agents = sqliteTable(
+  'agents',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    icon: text('icon').notNull(),
+    color: text('color').notNull(),
+    createdAt: text('created_at').notNull(),
+    revokedAt: text('revoked_at'),
+  },
+  (t) => [index('agents_user_idx').on(t.userId)],
+)
+
+/** What an agent may do where: scope `all`, `inbox`, `area` or `project` with a level. */
+export const agentGrants = sqliteTable(
+  'agent_grants',
+  {
+    agentId: text('agent_id')
+      .notNull()
+      .references(() => agents.id, { onDelete: 'cascade' }),
+    scope: text('scope').notNull().$type<'all' | 'inbox' | 'area' | 'project'>(),
+    /** Area or project id; '' for `all` and `inbox`. */
+    scopeId: text('scope_id').notNull().default(''),
+    level: text('level').notNull().$type<'read' | 'edit' | 'manage'>(),
+  },
+  (t) => [primaryKey({ columns: [t.agentId, t.scope, t.scopeId] })],
 )
 
 /**

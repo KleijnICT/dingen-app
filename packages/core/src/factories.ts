@@ -39,6 +39,7 @@ export function newTask(fields: Partial<Task> & { title: string }): Task {
     order: firstOrder(),
     todayOrder: null,
     completedAt: null,
+    assigneeId: null,
     ...fields,
   }
 }

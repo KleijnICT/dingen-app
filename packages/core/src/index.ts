@@ -23,6 +23,7 @@ export * from './entities.js'
 export * from './factories.js'
 export * from './hlc.js'
 export * from './ids.js'
+export * from './members.js'
 export * from './order.js'
 // --- herinneringen ---
 export * from './reminders.js'

@@ -191,6 +191,8 @@ export const Task = Base.extend({
   /** Volgorde in Vandaag, los van de projectvolgorde; null betekent: volg `order`. */
   todayOrder: Order.nullable().default(null),
   completedAt: IsoDateTime.nullable(),
+  /** Who the task is assigned to: a member id (`user:<id>` or `agent:<id>`), or null. */
+  assigneeId: z.string().nullable().default(null),
 })
 export type Task = z.infer<typeof Task>
 
