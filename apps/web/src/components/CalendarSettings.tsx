@@ -29,7 +29,9 @@ export function nextColor(used: (string | null)[]): AreaColorId {
  */
 export function CalendarSettings() {
   const t = useT()
-  const [calendars, setCalendars] = useState<CalendarSummary[]>([])
+  // Null tot de lijst binnen is: anders staat er even (of na een fout) "geen agenda's".
+  const [loaded, setLoaded] = useState<CalendarSummary[] | null>(null)
+  const calendars = loaded ?? []
   const [name, setName] = useState('')
   const [url, setUrl] = useState('')
   const [busy, setBusy] = useState(false)
@@ -46,7 +48,7 @@ export function CalendarSettings() {
   const load = useCallback(async () => {
     try {
       const res = await api.get<{ calendars: CalendarSummary[] }>('/api/calendars')
-      setCalendars(res.calendars)
+      setLoaded(res.calendars)
     } catch (err) {
       setError(describe(err))
     }
@@ -105,7 +107,7 @@ export function CalendarSettings() {
     <div className="settings-form">
       <p className="muted">{t('calendar.intro')}</p>
       <ul className="calendar-list">
-        {calendars.length === 0 && <li className="muted">{t('calendar.none')}</li>}
+        {loaded?.length === 0 && <li className="muted">{t('calendar.none')}</li>}
         {calendars.map((cal) => (
           <CalendarItem
             key={cal.id}

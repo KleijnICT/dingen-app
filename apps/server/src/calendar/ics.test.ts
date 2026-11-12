@@ -298,6 +298,198 @@ describe('expandEvents', () => {
       expect.objectContaining({ title: '', startTime: '12:00', endTime: '12:00' }),
     ])
   })
+
+  it('houdt dubbele hoofdevents met dezelfde UID en toont een voorkomen nooit twee keer', () => {
+    const event = (start: string, title: string) => [
+      'BEGIN:VEVENT',
+      'UID:dubbel',
+      `DTSTART;TZID=Europe/Amsterdam:${start}`,
+      'DURATION:PT1H',
+      `SUMMARY:${title}`,
+      'END:VEVENT',
+    ]
+    const text = feed(
+      ...event('20261112T090000', 'Eerste'),
+      ...event('20261113T090000', 'Tweede'),
+      ...event('20261113T090000', 'Tweede'),
+    )
+    const all = expand(text, '2026-11-12', '2026-11-13')
+    expect(all.map((e) => e.title)).toEqual(['Eerste', 'Tweede'])
+  })
+})
+
+/**
+ * Een gepubliceerde Outlook/Office 365-agenda, nagebouwd met verzonnen
+ * afspraken: Windows-zonenaam met VTIMEZONE vanaf 1601, UNTIL in UTC, WKST,
+ * INTERVAL=2, BYDAY-lijsten, EXDATE-lijsten en RECURRENCE-ID's van meerdere
+ * reeksen door elkaar, zoals Exchange ze achter de hoofdevents zet.
+ */
+describe('Office 365-feed', () => {
+  const WIN = 'TZID=W. Europe Standard Time'
+  const outlook = (lines: string[]) =>
+    [
+      'BEGIN:VCALENDAR',
+      'METHOD:PUBLISH',
+      'PRODID:Microsoft Exchange Server 2010',
+      'VERSION:2.0',
+      'X-WR-CALNAME:Calendar',
+      'BEGIN:VTIMEZONE',
+      'TZID:W. Europe Standard Time',
+      'BEGIN:STANDARD',
+      'DTSTART:16010101T030000',
+      'TZOFFSETFROM:+0200',
+      'TZOFFSETTO:+0100',
+      'RRULE:FREQ=YEARLY;INTERVAL=1;BYDAY=-1SU;BYMONTH=10',
+      'END:STANDARD',
+      'BEGIN:DAYLIGHT',
+      'DTSTART:16010101T020000',
+      'TZOFFSETFROM:+0100',
+      'TZOFFSETTO:+0200',
+      'RRULE:FREQ=YEARLY;INTERVAL=1;BYDAY=-1SU;BYMONTH=3',
+      'END:DAYLIGHT',
+      'END:VTIMEZONE',
+      ...lines,
+      'END:VCALENDAR',
+    ].join('\r\n')
+  const vevent = (props: string[]) => [
+    'BEGIN:VEVENT',
+    ...props,
+    'CLASS:PUBLIC',
+    'PRIORITY:5',
+    'DTSTAMP:20261112T160000Z',
+    'TRANSP:OPAQUE',
+    'X-MICROSOFT-CDO-BUSYSTATUS:BUSY',
+    'X-MICROSOFT-CDO-INSTTYPE:1',
+    'END:VEVENT',
+  ]
+  const text = outlook([
+    // Elke werkdag 09:00, met een rij overgeslagen dagen.
+    ...vevent([
+      'RRULE:FREQ=WEEKLY;UNTIL=20261228T080000Z;INTERVAL=1;BYDAY=MO,TU,WE,TH,FR;WKST=SU',
+      `EXDATE;${WIN}:20261019T090000,20261020T090000,20261021T090000`,
+      'UID:040000008200E00074C5B7101A82E008000000000000000000000000000000000000000000000000000001',
+      'SUMMARY:Inbox bijwerken',
+      `DTSTART;${WIN}:20261012T090000`,
+      `DTEND;${WIN}:20261012T100000`,
+      'STATUS:CONFIRMED',
+      'LOCATION:',
+      'X-MICROSOFT-CDO-ALLDAYEVENT:FALSE',
+    ]),
+    // Om de week op donderdag 10:30; één keer overgeslagen, twee keer aangepast.
+    ...vevent([
+      'RRULE:FREQ=WEEKLY;UNTIL=20261224T093000Z;INTERVAL=2;BYDAY=TH;WKST=MO',
+      `EXDATE;${WIN}:20261029T103000`,
+      'UID:040000008200E00074C5B7101A82E008000000000000000000000000000000000000000000000000000002',
+      'SUMMARY:Kennissessie',
+      `DTSTART;${WIN}:20261015T103000`,
+      `DTEND;${WIN}:20261015T113000`,
+      'STATUS:CONFIRMED',
+      'LOCATION:Zaal Noord',
+      'X-MICROSOFT-CDO-ALLDAYEVENT:FALSE',
+    ]),
+    // Elke donderdag 10:30: dezelfde kloktijd als de reeks hierboven.
+    ...vevent([
+      'RRULE:FREQ=WEEKLY;UNTIL=20270128T093000Z;INTERVAL=1;BYDAY=TH;WKST=SU',
+      'UID:040000008200E00074C5B7101A82E008000000000000000000000000000000000000000000000000000003',
+      'SUMMARY:Afstemming planning',
+      `DTSTART;${WIN}:20261015T103000`,
+      `DTEND;${WIN}:20261015T110000`,
+      'STATUS:CONFIRMED',
+      'LOCATION:Online vergadering',
+      'X-MICROSOFT-CDO-ALLDAYEVENT:FALSE',
+    ]),
+    // Elke vrijdag 09:00; op 13 november afgezegd.
+    ...vevent([
+      'RRULE:FREQ=WEEKLY;UNTIL=20261225T080000Z;INTERVAL=1;BYDAY=FR;WKST=SU',
+      'UID:040000008200E00074C5B7101A82E008000000000000000000000000000000000000000000000000000004',
+      'SUMMARY:Een-op-een',
+      `DTSTART;${WIN}:20261016T090000`,
+      `DTEND;${WIN}:20261016T093000`,
+      'STATUS:CONFIRMED',
+      'X-MICROSOFT-CDO-ALLDAYEVENT:FALSE',
+    ]),
+    // Een hele dag zoals Outlook hem schrijft.
+    ...vevent([
+      'UID:040000008200E00074C5B7101A82E008000000000000000000000000000000000000000000000000000005',
+      'SUMMARY:Studiedag',
+      'DTSTART;VALUE=DATE:20261112',
+      'DTEND;VALUE=DATE:20261113',
+      'STATUS:CONFIRMED',
+      'X-MICROSOFT-CDO-ALLDAYEVENT:TRUE',
+    ]),
+    // De uitzonderingen achter alle hoofdevents, zoals Exchange ze schrijft.
+    ...vevent([
+      'UID:040000008200E00074C5B7101A82E008000000000000000000000000000000000000000000000000000002',
+      `RECURRENCE-ID;${WIN}:20261112T103000`,
+      'SUMMARY:Kennissessie (gast: organizer@example.com)',
+      `DTSTART;${WIN}:20261112T103000`,
+      `DTEND;${WIN}:20261112T113000`,
+      'STATUS:CONFIRMED',
+      'SEQUENCE:4',
+      'LOCATION:Zaal Zuid',
+    ]),
+    ...vevent([
+      'UID:040000008200E00074C5B7101A82E008000000000000000000000000000000000000000000000000000002',
+      `RECURRENCE-ID;${WIN}:20261126T103000`,
+      'SUMMARY:Kennissessie',
+      `DTSTART;${WIN}:20261126T140000`,
+      `DTEND;${WIN}:20261126T150000`,
+      'STATUS:CONFIRMED',
+      'SEQUENCE:6',
+    ]),
+    ...vevent([
+      'UID:040000008200E00074C5B7101A82E008000000000000000000000000000000000000000000000000000004',
+      `RECURRENCE-ID;${WIN}:20261113T090000`,
+      'SUMMARY:Een-op-een',
+      `DTSTART;${WIN}:20261113T090000`,
+      `DTEND;${WIN}:20261113T093000`,
+      'STATUS:CANCELLED',
+    ]),
+  ])
+  // Gesorteerd zoals de service het doet: op begin, dan id.
+  const sorted = (from: string, to: string) =>
+    expand(text, from, to).sort(
+      (a, b) => a.start.localeCompare(b.start) || a.id.localeCompare(b.id),
+    )
+  const day = (date: string) =>
+    sorted(date, date).map((e) => [e.startTime, e.endTime, e.title, e.location])
+
+  it('toont op een dag elk voorkomen precies één keer', () => {
+    expect(day('2026-11-12')).toEqual([
+      [null, null, 'Studiedag', null],
+      ['09:00', '10:00', 'Inbox bijwerken', null],
+      ['10:30', '11:30', 'Kennissessie (gast: organizer@example.com)', 'Zaal Zuid'],
+      ['10:30', '11:00', 'Afstemming planning', 'Online vergadering'],
+    ])
+  })
+
+  it('laat een uitzondering van een andere reeks geen voorkomen wegnemen', () => {
+    // De afgezegde vrijdag hoort bij de een-op-een, niet bij de dagelijkse reeks.
+    expect(day('2026-11-13')).toEqual([['09:00', '10:00', 'Inbox bijwerken', null]])
+    // De verplaatste kennissessie neemt de vaste donderdag niet mee.
+    expect(day('2026-11-26')).toEqual([
+      ['09:00', '10:00', 'Inbox bijwerken', null],
+      ['10:30', '11:00', 'Afstemming planning', 'Online vergadering'],
+      ['14:00', '15:00', 'Kennissessie', null],
+    ])
+  })
+
+  it('respecteert INTERVAL, EXDATE en UNTIL over de wintertijd heen', () => {
+    const all = sorted('2026-10-12', '2027-01-31')
+    expect(new Set(all.map((e) => e.id)).size).toBe(all.length)
+    const sessions = all.filter((e) => e.title.startsWith('Kennissessie'))
+    expect(sessions.map((e) => [e.startDate, e.startTime])).toEqual([
+      ['2026-10-15', '10:30'],
+      ['2026-11-12', '10:30'],
+      ['2026-11-26', '14:00'],
+      ['2026-12-10', '10:30'],
+      ['2026-12-24', '10:30'],
+    ])
+    const daily = all.filter((e) => e.title === 'Inbox bijwerken')
+    expect(daily.map((e) => e.startDate)).not.toContain('2026-10-20')
+    expect(daily.at(-1)?.startDate).toBe('2026-12-28')
+    expect(new Set(daily.map((e) => e.startTime))).toEqual(new Set(['09:00']))
+  })
 })
 
 describe('wallToInstant', () => {
