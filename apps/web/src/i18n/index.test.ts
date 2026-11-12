@@ -1,9 +1,15 @@
+import { AREA_COLORS, AREA_ICONS } from '@dingen/core'
 import { describe, expect, it } from 'vitest'
 import { en } from './en.js'
 import { DEFAULT_LOCALE, getLocale, LOCALES, setLocale, t } from './index.js'
 import { nl } from './nl.js'
 
 describe('i18n', () => {
+  it('every area icon and colour has a label', () => {
+    for (const id of AREA_ICONS) expect(en, id).toHaveProperty([`areaIcon.${id}`])
+    for (const id of AREA_COLORS) expect(en, id).toHaveProperty([`areaColor.${id}`])
+  })
+
   it('every locale has exactly the English keys', () => {
     expect(Object.keys(nl).sort()).toEqual(Object.keys(en).sort())
     for (const locale of Object.values(LOCALES)) {
