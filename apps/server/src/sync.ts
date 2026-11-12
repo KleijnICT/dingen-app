@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 import {
+  type AgentGrant,
   applyChange,
   type Change,
   Change as ChangeSchema,
@@ -7,11 +8,20 @@ import {
   type EntityType,
   entitySchemas,
   isDeleted,
+  type MemberId,
   recordKey,
   validateChangeFields,
 } from '@dingen/core'
 import { and, asc, eq, gt, max } from 'drizzle-orm'
 import { z } from 'zod'
+import {
+  type Access,
+  AgentScopeError,
+  canRead,
+  checkWrite,
+  type Lookup,
+  type MemberGrants,
+} from './agents/access.js'
 import type { Db } from './db.js'
 import { changes, entities } from './schema.js'
 
@@ -112,6 +122,15 @@ export class SyncValidationError extends Error {
 
 const PULL_LIMIT = 500
 
+export interface PushOptions {
+  /** Who pushes, and with which grants; default the owner. */
+  access?: Access
+  /** Resolves assignees for the check on `assigneeId` (agents only). */
+  members?: MemberGrants
+  /** Defaults to now; the demo writes changes in the past. */
+  receivedAt?: string
+}
+
 export class SyncService {
   constructor(private readonly db: Db) {}
 
@@ -119,11 +138,17 @@ export class SyncService {
    * Verwerkt een batch wijzigingen atomair: óf alles wordt toegepast, óf niets.
    * Al bekende wijzigingen (zelfde id) worden stil overgeslagen.
    */
-  push(userId: string, incoming: Change[]): PushResult {
-    const receivedAt = new Date().toISOString()
+  push(userId: string, incoming: Change[], options: PushOptions = {}): PushResult {
+    const receivedAt = options.receivedAt ?? new Date().toISOString()
+    const access = options.access ?? null
+    const actor: MemberId = access?.actor ?? `user:${userId}`
+    const members: MemberGrants = options.members ?? (() => undefined)
     return this.db.transaction((tx) => {
       const touched = new Map<string, EntityRecord>()
       const problems: { changeId: string; issues: string[] }[] = []
+      const refused: string[] = []
+      const lookup: Lookup = (type, id) =>
+        touched.get(recordKey(type, id)) ?? this.loadRecord(tx, userId, type, id)
       let applied = 0
       let duplicates = 0
       let seq = this.currentSeq(userId)
@@ -149,8 +174,15 @@ export class SyncService {
         }
 
         const record = applyChange(existing, change)
+        if (access?.grants) {
+          const problem = checkWrite(access, change, existing, record, lookup, members)
+          if (problem) {
+            refused.push(problem)
+            continue
+          }
+        }
         touched.set(key, record)
-        seq = this.store(tx, userId, change, record, receivedAt)
+        seq = this.store(tx, userId, change, record, receivedAt, actor)
         applied += 1
       }
 
@@ -158,6 +190,7 @@ export class SyncService {
       if (problems.length > 0) {
         throw new SyncValidationError(problems)
       }
+      if (refused.length > 0) throw new AgentScopeError([...new Set(refused)].join('; '))
       return { seq, applied, duplicates }
     })
   }
@@ -168,7 +201,11 @@ export class SyncService {
    * met een deterministisch id: dezelfde import nog eens doen verandert niets.
    * Het samengevoegde resultaat wordt gevalideerd; bij een fout rolt alles terug.
    */
-  importRecords(userId: string, records: ImportRecord[]): ImportResult {
+  importRecords(
+    userId: string,
+    records: ImportRecord[],
+    actor: MemberId = `user:${userId}`,
+  ): ImportResult {
     const receivedAt = new Date().toISOString()
     return this.db.transaction((tx) => {
       const counts = emptyCounts()
@@ -188,7 +225,7 @@ export class SyncService {
           const next = applyChange(record, change)
           if (JSON.stringify(next) === JSON.stringify(record)) continue
           record = next
-          seq = this.store(tx, userId, change, next, receivedAt, false)
+          seq = this.store(tx, userId, change, next, receivedAt, actor, false)
         }
 
         const bucket: ImportCounts = counts[incoming.entityType] ?? emptyBucket()
@@ -217,7 +254,16 @@ export class SyncService {
     })
   }
 
-  pull(userId: string, since: number, limit = PULL_LIMIT): PullResult {
+  /**
+   * Changes after `since`. With restricted `grants` only the changes of
+   * entities the agent can read now; the cursor still covers the whole page.
+   */
+  pull(
+    userId: string,
+    since: number,
+    limit = PULL_LIMIT,
+    grants: AgentGrant[] | null = null,
+  ): PullResult {
     const rows = this.db
       .select()
       .from(changes)
@@ -228,35 +274,67 @@ export class SyncService {
     const hasMore = rows.length > limit
     const page = hasMore ? rows.slice(0, limit) : rows
     const last = page.at(-1)
+    const readable = this.readableFilter(userId, grants)
     return {
-      changes: page.map((r) => ({
-        id: r.id,
-        entityType: r.entityType as EntityType,
-        entityId: r.entityId,
-        fields: r.fields,
-        ts: r.ts,
-        clientId: r.clientId,
-      })),
+      changes: page
+        .filter((r) => readable(r.entityType as EntityType, r.entityId))
+        .map((r) => ({
+          id: r.id,
+          entityType: r.entityType as EntityType,
+          entityId: r.entityId,
+          fields: r.fields,
+          ts: r.ts,
+          clientId: r.clientId,
+        })),
       seq: last ? last.seq : since,
       hasMore,
     }
   }
 
-  /** Alle niet-verwijderde entiteiten plus de cursor om vanaf verder te pullen. */
-  snapshot(userId: string): Snapshot {
+  /**
+   * Alle niet-verwijderde entiteiten plus de cursor om vanaf verder te pullen.
+   * With restricted `grants` only what the agent can read.
+   */
+  snapshot(userId: string, grants: AgentGrant[] | null = null): Snapshot {
     const rows = this.db
       .select()
       .from(entities)
       .where(and(eq(entities.userId, userId), eq(entities.deleted, false)))
       .all()
-    return {
-      entities: rows.map((r) => ({
-        entityType: r.entityType as EntityType,
-        id: r.id,
-        data: r.data,
-        fieldTs: r.fieldTs,
-      })),
-      seq: this.currentSeq(userId),
+    const records: EntityRecord[] = rows.map((r) => ({
+      entityType: r.entityType as EntityType,
+      id: r.id,
+      data: r.data,
+      fieldTs: r.fieldTs,
+    }))
+    const seq = this.currentSeq(userId)
+    if (!restricted(grants)) return { entities: records, seq }
+    const byKey = new Map(records.map((r) => [recordKey(r.entityType, r.id), r]))
+    const lookup: Lookup = (type, id) => byKey.get(recordKey(type, id))
+    return { entities: records.filter((r) => canRead(grants, r, lookup)), seq }
+  }
+
+  /** All records of the user (deleted ones too), for access checks outside a push. */
+  lookupFor(userId: string): Lookup {
+    const rows = this.db.select().from(entities).where(eq(entities.userId, userId)).all()
+    const byKey = new Map<string, EntityRecord>(
+      rows.map((r) => [
+        recordKey(r.entityType as EntityType, r.id),
+        { entityType: r.entityType as EntityType, id: r.id, data: r.data, fieldTs: r.fieldTs },
+      ]),
+    )
+    return (type, id) => byKey.get(recordKey(type, id))
+  }
+
+  private readableFilter(
+    userId: string,
+    grants: AgentGrant[] | null,
+  ): (type: EntityType, id: string) => boolean {
+    if (!restricted(grants)) return () => true
+    const lookup = this.lookupFor(userId)
+    return (type, id) => {
+      const record = lookup(type, id)
+      return record !== undefined && canRead(grants, record, lookup)
     }
   }
 
@@ -267,6 +345,7 @@ export class SyncService {
     change: Change,
     record: EntityRecord,
     receivedAt: string,
+    actor: MemberId,
     writeEntity = true,
   ): number {
     const inserted = tx
@@ -280,6 +359,7 @@ export class SyncService {
         fields: change.fields,
         ts: change.ts,
         receivedAt,
+        actor,
       })
       .returning({ seq: changes.seq })
       .get()
@@ -345,4 +425,9 @@ export class SyncService {
     if (!row) return undefined
     return { entityType, id, data: row.data, fieldTs: row.fieldTs }
   }
+}
+
+/** Grants that limit what can be read: anything but the owner or an `all` grant. */
+function restricted(grants: AgentGrant[] | null): grants is AgentGrant[] {
+  return grants !== null && !grants.some((g) => g.scope === 'all')
 }

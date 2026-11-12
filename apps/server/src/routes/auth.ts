@@ -13,8 +13,6 @@ const Credentials = z.object({
 
 const Registration = Credentials.extend({ invite: z.string().min(1).max(200).optional() })
 
-const TokenBody = z.object({ name: z.string().trim().min(1).max(100) })
-
 type Ctx = Context<AppEnv>
 
 function isSecure(c: Ctx): boolean {
@@ -123,25 +121,9 @@ export function authRoutes(options: { demo?: boolean } = {}) {
     return c.json({ ok: true })
   })
 
-  app.get('/me', requireAuth, (c) => c.json({ user: c.get('user'), source: c.get('authSource') }))
-
-  app.get('/tokens', requireAuth, (c) =>
-    c.json({ tokens: c.get('auth').listTokens(c.get('userId')) }),
+  app.get('/me', requireAuth, (c) =>
+    c.json({ user: c.get('user'), source: c.get('authSource'), member: c.get('actor') }),
   )
-
-  app.post('/tokens', requireAuth, async (c) => {
-    if (c.get('authSource') !== 'session') return c.json({ error: 'session_required' }, 403)
-    const parsed = TokenBody.safeParse(await c.req.json().catch(() => null))
-    if (!parsed.success) return c.json({ error: 'invalid_body', issues: parsed.error.issues }, 400)
-    const { token, info } = c.get('auth').createToken(c.get('userId'), parsed.data.name)
-    return c.json({ token, info }, 201)
-  })
-
-  app.delete('/tokens/:id', requireAuth, (c) => {
-    if (c.get('authSource') !== 'session') return c.json({ error: 'session_required' }, 403)
-    const deleted = c.get('auth').deleteToken(c.get('userId'), c.req.param('id'))
-    return deleted ? c.json({ ok: true }) : c.json({ error: 'not_found' }, 404)
-  })
 
   return app
 }

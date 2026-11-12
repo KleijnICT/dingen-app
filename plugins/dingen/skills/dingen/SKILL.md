@@ -71,6 +71,37 @@ week" is usually after completion, "pay rent on the 1st" on a schedule.
 8. **Report back briefly** after changes: what was created or changed, where,
    and with which date, so the user does not need to open the app to check.
 
+## You are an agent with a scope
+
+The token you connect with belongs to an **agent**: a member of the user's
+Dingen with its own name and access. `overview` says who you are (`me`) and
+lists the `members` (the user and their agents). Your access is a set of
+scopes, each with a level:
+
+- **Scopes**: everything, the Inbox (tasks without project or area), an area
+  (with its projects) or a project.
+- **Levels**: read; edit (create, change, complete and move tasks and
+  checklist items); manage (also projects, headings and areas).
+
+You only see what is in your scope, so an empty list does not mean the user
+has nothing there. When a tool says something is outside this agent's scope,
+tell the user plainly and suggest they widen the agent's access in Settings →
+Agents; do not look for a way around it. Never move something to a place you
+cannot reach.
+
+## Assigning
+
+Tasks can be assigned to a member: the user or an agent. Use it for handing
+work over, not as a label.
+
+- `create_task` and `update_task` take `assignee`: `"me"` (you), a member id
+  from `overview`, or `null` to unassign. A member can only be assigned a task
+  they can see.
+- `list_tasks` with `assigned_to: "me"` (or a member id) shows what is
+  assigned; combine it with `list: "today"` for "what's on my plate today".
+- Task output carries `assigneeId`. Assign tasks to the user only when they
+  ask or agree, and take a task (`"me"`) when you start working on it.
+
 ## Reviews
 
 Dingen has three built-in reviews; you can guide the user through one. The
@@ -108,7 +139,8 @@ How to guide one:
 
 ## Tool notes
 
-- `list_tasks` filters combine: a list, a project, an area or a tag.
+- `list_tasks` filters combine: a list, a project, an area, a tag or
+  `assigned_to`.
 - `create_task` accepts `when` as `inbox`, `anytime`, `someday`, `today`,
   `tomorrow` or `YYYY-MM-DD`, plus `evening`, `deadline`, `heading`,
   `checklist`, `repeat`, `time` (`HH:MM`) and `reminder` (`HH:MM`, or

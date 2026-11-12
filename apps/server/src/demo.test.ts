@@ -12,13 +12,14 @@ import {
 } from '@dingen/core'
 import { eq } from 'drizzle-orm'
 import { afterEach, describe, expect, it } from 'vitest'
+import { AgentService } from './agents/service.js'
 import { createApp } from './app.js'
 import { openDatabase } from './db.js'
 import { DEMO_ACCOUNTS } from './demo/accounts.js'
 import { buildDemoSet } from './demo/dataset.js'
 import { resetToDemo } from './demo/seed.js'
 import { todayIn } from './demo/time.js'
-import { users } from './schema.js'
+import { changes, users } from './schema.js'
 import { SyncService } from './sync.js'
 
 const timezone = 'Europe/Amsterdam'
@@ -176,6 +177,43 @@ describe('demo reset', () => {
     // Running it again gives the same accounts, not doubles.
     await resetToDemo(db, { timezone, now })
     expect(db.select().from(users).all()).toHaveLength(DEMO_ACCOUNTS.length)
+  })
+})
+
+describe('demo agents', () => {
+  it('gives Sam two agents with recent activity and assigned tasks', async () => {
+    const { db } = freshDb()
+    await resetToDemo(db, { timezone, now })
+    const sam = db.select().from(users).where(eq(users.email, 'sam@example.com')).get()
+    const samId = sam?.id as string
+    const list = new AgentService(db).list(samId)
+    expect(list.map((a) => [a.name, a.icon])).toEqual([
+      ['Research assistant', 'bot'],
+      ['Bookkeeper', 'receipt'],
+    ])
+    const [research, books] = list
+    const actors = db
+      .select({ actor: changes.actor, ts: changes.ts, fields: changes.fields })
+      .from(changes)
+      .where(eq(changes.userId, samId))
+      .all()
+    for (const agent of [research, books]) {
+      const own = actors.filter((c) => c.actor === `agent:${agent?.id}`)
+      expect(own.length).toBeGreaterThanOrEqual(3)
+      // Added, updated and completed something.
+      expect(own.some((c) => 'title' in c.fields)).toBe(true)
+      expect(own.some((c) => c.fields.status === 'completed')).toBe(true)
+      expect(own.some((c) => 'notes' in c.fields && !('title' in c.fields))).toBe(true)
+      // Spread over the last days, never in the future.
+      for (const c of own) expect(Number(c.ts.split(':')[0])).toBeLessThanOrEqual(now.getTime())
+    }
+    expect(actors.some((c) => c.actor === `user:${samId}` && 'assigneeId' in c.fields)).toBe(true)
+
+    const ws = listsOf(new SyncService(db), samId)
+    const assignees = new Set(ws.tasks.map((t) => t.assigneeId).filter(Boolean))
+    expect(assignees).toEqual(
+      new Set([`user:${samId}`, `agent:${research?.id}`, `agent:${books?.id}`]),
+    )
   })
 })
 

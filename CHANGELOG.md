@@ -1,5 +1,26 @@
 # Changelog
 
+## Unreleased
+
+- Agents: API tokens became agents, members of your Dingen with a name, icon
+  and colour. Each agent has one token (rotate or revoke it) and scopes with a
+  level: Everything, the Inbox, an area or a project, each Read, Edit or
+  Manage. The MCP and the API only show an agent what is in its scope and
+  refuse writes outside it (`403 agent_scope`); moving something out of the
+  scope is refused too. The sync API, export and import need the scope
+  Everything. Existing tokens became agents with Everything and Manage, so
+  connections keep working.
+- Every change records who made it (you or which agent).
+- Assigning: tasks can be assigned to you or an agent that can see them. The
+  MCP takes `assignee` (`me`, a member id or null) in `create_task` and
+  `update_task`, filters `list_tasks` with `assigned_to`, returns
+  `assigneeId` and lists the members in `overview`.
+- API: `GET /api/members`, `/api/agents` (create, change, new token, revoke)
+  and `GET /api/access`; `/api/auth/me` reports the `member`. The
+  `/api/auth/tokens` endpoints are gone.
+- Demo: Sam has a Research assistant and a Bookkeeper with a few days of
+  work and assigned tasks.
+
 ## 1.0.0-alpha.2
 
 Invitation-only registration and safer updates. A pre-release; `:latest`
