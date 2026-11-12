@@ -1,10 +1,13 @@
 import type { CalendarEvent, CalendarEventsResponse } from '@dingen/core'
 import { describe, expect, it } from 'vitest'
 import {
+  CALENDAR_REFRESH_MS,
+  CALENDAR_RETRY_MS,
   cacheKey,
   daysWithEvents,
   type KeyValueStorage,
   mergeResponse,
+  nextRefreshMs,
   rangeFor,
   readCache,
   writeCache,
@@ -101,6 +104,23 @@ describe('mergeResponse', () => {
     )
     // c is verwijderd (niet meer in calendars), b faalt tijdelijk.
     expect(merged.events.map((e) => e.id)).toEqual(['nieuw-a', 'oud-b'])
+  })
+
+  it('vraagt een falende agenda na een minuut opnieuw in plaats van na een kwartier', () => {
+    // Na een herstart van de server faalt de eerste keer ophalen soms; zonder
+    // cache op dit apparaat bleef de agenda dan een kwartier leeg.
+    const failedOnce = response({ calendars: [{ id: 'b', name: 'B', color: null }], failed: ['b'] })
+    const empty = mergeResponse({ calendars: [], events: [] }, failedOnce)
+    expect(empty.events).toEqual([])
+    expect(nextRefreshMs(failedOnce)).toBe(CALENDAR_RETRY_MS)
+    expect(CALENDAR_RETRY_MS).toBeLessThan(CALENDAR_REFRESH_MS)
+
+    const recovered = response({
+      calendars: [{ id: 'b', name: 'B', color: null }],
+      events: [ev('b1', 'b', '2026-11-12')],
+    })
+    expect(mergeResponse(empty, recovered).events.map((e) => e.id)).toEqual(['b1'])
+    expect(nextRefreshMs(recovered)).toBe(CALENDAR_REFRESH_MS)
   })
 })
 

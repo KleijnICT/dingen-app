@@ -17,6 +17,12 @@ import { api } from './api.js'
 
 /** Zelfde termijn als de cache op de server. */
 export const CALENDAR_REFRESH_MS = 15 * 60_000
+/**
+ * Opnieuw vragen als de server een agenda nu niet kon leveren. Hij probeert
+ * het zelf na een minuut opnieuw; zonder deze kortere termijn bleef zo'n agenda
+ * (na een herstart, op een apparaat zonder cache) tot een kwartier leeg.
+ */
+export const CALENDAR_RETRY_MS = 70_000
 
 export interface CalendarData {
   calendars: CalendarInfo[]
@@ -76,6 +82,11 @@ export function mergeResponse(previous: CalendarData, res: CalendarEventsRespons
   }
 }
 
+/** Wanneer het venster opnieuw opgehaald moet worden: eerder als er een agenda faalde. */
+export function nextRefreshMs(res: Pick<CalendarEventsResponse, 'failed'>): number {
+  return res.failed.length > 0 ? CALENDAR_RETRY_MS : CALENDAR_REFRESH_MS
+}
+
 export function rangeFor(today: string): { from: string; to: string } {
   return { from: today, to: addDays(today, CALENDAR_HORIZON_DAYS) }
 }
@@ -91,6 +102,7 @@ function browserStorage(): KeyValueStorage | null {
 let state: CalendarData = EMPTY
 let owner: string | null = null
 let current: { userId: string; today: string } | null = null
+let retryTimer: ReturnType<typeof setTimeout> | null = null
 const listeners = new Set<() => void>()
 
 function setState(next: CalendarData): void {
@@ -114,6 +126,15 @@ export async function refreshCalendar(): Promise<void> {
     const next = mergeResponse(state, res)
     writeCache(browserStorage(), userId, next)
     setState(next)
+    if (retryTimer) clearTimeout(retryTimer)
+    retryTimer = null
+    const delay = nextRefreshMs(res)
+    if (delay < CALENDAR_REFRESH_MS) {
+      retryTimer = setTimeout(() => {
+        retryTimer = null
+        void refreshCalendar()
+      }, delay)
+    }
   } catch {
     // Stil falen: offline of server weg; het laatst bekende blijft zichtbaar.
   }
@@ -138,6 +159,8 @@ export function useCalendarFeed(userId: string, today: string): void {
     window.addEventListener('online', onFocus)
     return () => {
       clearInterval(timer)
+      if (retryTimer) clearTimeout(retryTimer)
+      retryTimer = null
       window.removeEventListener('focus', onFocus)
       window.removeEventListener('online', onFocus)
     }
