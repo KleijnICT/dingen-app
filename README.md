@@ -22,7 +22,8 @@ built-in MCP server.
 - **Checklists and notes** on every task.
 - **Offline-first web app:** every browser keeps a local replica and syncs when
   it is back online.
-- **Multi-user accounts** with API tokens.
+- **Multi-user accounts**, and **agents** as members: each with its own token,
+  scope and level, assignable tasks, and their changes on record.
 - **MCP server** built in (`/mcp`, Streamable HTTP) and as a stdio command.
 - **Imports** from TickTick (backup CSV), Todoist (CSV export) and a generic CSV.
 - **Calendars (read-only):** subscribe to ICS feeds; appointments appear in
@@ -161,7 +162,9 @@ the account already has data).
 
 ## Connecting Claude (MCP)
 
-Sign in, open **Settings** (bottom left) → **Connections** and create an API token (it starts with `dgn_`).
+Sign in, open **Settings** (bottom left) → **Agents** and create an agent: a
+name, an icon and a colour, and what it may reach (see [Agents](#agents)). Dingen
+shows its token once (it starts with `dgn_`); that token is what you give Claude.
 
 **Claude Code plugin** (recommended): connects the MCP server and adds a skill
 that teaches Claude how Dingen works (capture to the Inbox, when-dates
@@ -172,7 +175,7 @@ versus deadlines, repeating on a schedule or after completion).
 ```
 
 Claude Code asks for your Dingen URL (for example `https://dingen.example.com`)
-and the API token when you enable the plugin; the token is kept in Claude
+and the agent's token when you enable the plugin; the token is kept in Claude
 Code's secure credential store. On older Claude Code versions, run
 `/plugin marketplace add KleijnICT/dingen-app` and then
 `/plugin install dingen@dingen`.
@@ -222,8 +225,47 @@ be started in one and finished in the other. Project and area output includes
 `reviewedAt` and the signals (no next action, deadline soon, long quiet, not
 reviewed lately).
 
-API tokens only work for the API and MCP; the `/mcp` endpoint never accepts a
+Agent tokens only work for the API and MCP; the `/mcp` endpoint never accepts a
 browser session.
+
+### Agents
+
+An agent is a member of your Dingen, like a person would be: it has a name, an
+icon and a colour, it can be assigned tasks, and the Logbook shows what it
+did. Every agent has one token and its own access, made of scopes with a level
+each:
+
+| Scope      | Reaches                                                              |
+| ---------- | -------------------------------------------------------------------- |
+| Everything | All your areas, projects and tasks (never more than you)             |
+| Inbox      | Tasks without project and area (also loose tasks in Today, Upcoming) |
+| An area    | The area, its projects and their tasks                               |
+| A project  | That project, its headings and tasks                                 |
+
+| Level  | May                                                                      |
+| ------ | ------------------------------------------------------------------------ |
+| Read   | See what is in its scope                                                 |
+| Edit   | Also create, change, complete and move tasks and checklist items         |
+| Manage | Also create, change and delete projects, headings and areas in its scope |
+
+The highest level over all scopes that reach something counts. An agent
+never sees what is outside its scope: no tasks, and no titles of areas or
+projects (tag names are always visible). Moving something to a place outside
+the scope is refused. Only you create agents and change their access; an
+agent with Manage cannot.
+
+**Rotate** gives an agent a new token and stops the old one; **Revoke** stops
+the agent for good, while its past changes stay attributed to it. Tokens from
+before agents existed became agents with the same name, scope Everything and
+level Manage, so existing connections keep working.
+
+Agents with a narrower scope than Everything use the MCP; the sync API
+(`/api/sync`), export, import, calendars and invitations need the scope
+Everything and answer `403 agent_scope` otherwise. The API: `GET /api/members`,
+`GET`/`POST /api/agents`, `PATCH`/`DELETE /api/agents/:id`,
+`POST /api/agents/:id/token` (new token) and
+`GET /api/access?type=area|project&id=…` (who reaches it, at which level).
+Managing agents needs a browser session.
 
 ## Importing
 
@@ -231,7 +273,7 @@ All importers work the same way: `dingen-import <source> <file>` prints a dry
 run, `--apply` writes it to a running Dingen server, and running it again does
 not create duplicates. The examples below run inside the container; copy the
 file in first with `docker compose cp`. Use an API token (`--token` or
-`DINGEN_TOKEN`) and `--url`.
+`DINGEN_TOKEN`) of an agent with scope Everything and level Manage, and `--url`.
 
 ### TickTick
 
@@ -293,7 +335,7 @@ An example file is in [examples/import-example.csv](examples/import-example.csv)
 - Web only; native apps for Android and macOS are planned in separate
   repositories.
 - No shared projects or teams.
-- MCP over HTTP needs an API token; OAuth for claude.ai connectors is not
+- MCP over HTTP needs an agent token; OAuth for claude.ai connectors is not
   supported yet.
 
 ## Development
