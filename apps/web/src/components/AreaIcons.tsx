@@ -1,8 +1,9 @@
-import { AREA_COLORS, type AreaColorId } from '@dingen/core'
+import { AREA_COLORS, type AreaColorId, type AreaIconId } from '@dingen/core'
 import {
   Archive,
   Baby,
   Bike,
+  Bitcoin,
   BookOpen,
   Bot,
   Briefcase,
@@ -18,6 +19,7 @@ import {
   Dumbbell,
   Flag,
   Folder,
+  Gamepad2,
   Gift,
   Globe,
   GraduationCap,
@@ -51,7 +53,7 @@ import {
 import { AreaIcon as DefaultAreaIcon } from './Icons.js'
 
 /** Drawing per icon id from `AREA_ICONS` in core. */
-export const AREA_ICON_COMPONENTS: Record<string, LucideIcon> = {
+export const AREA_ICON_COMPONENTS: Record<AreaIconId, LucideIcon> = {
   home: House,
   briefcase: Briefcase,
   building: Building,
@@ -67,6 +69,7 @@ export const AREA_ICON_COMPONENTS: Record<string, LucideIcon> = {
   laptop: Laptop,
   wallet: Wallet,
   'piggy-bank': PiggyBank,
+  bitcoin: Bitcoin,
   landmark: Landmark,
   receipt: Receipt,
   'book-open': BookOpen,
@@ -75,6 +78,7 @@ export const AREA_ICON_COMPONENTS: Record<string, LucideIcon> = {
   palette: Palette,
   camera: Camera,
   music: Guitar,
+  gamepad: Gamepad2,
   plane: Plane,
   car: Car,
   bike: Bike,
@@ -120,7 +124,7 @@ interface Props {
 
 /** An area's icon in its colour; unknown icons render as the default one. */
 export function AreaGlyph({ icon, color, size = 18, className }: Props) {
-  const Icon = icon === null ? undefined : AREA_ICON_COMPONENTS[icon]
+  const Icon = icon === null ? undefined : AREA_ICON_COMPONENTS[icon as AreaIconId]
   return (
     <span className={className} style={{ color: areaColorVar(color), display: 'inline-flex' }}>
       {Icon ? (
