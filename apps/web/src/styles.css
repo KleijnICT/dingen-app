@@ -2304,3 +2304,21 @@ a.button {
 .invite-status.invite-open {
   color: var(--ok);
 }
+
+/* --- Members (plan 19): people as initials in a circle, agents as icon in a rounded square --- */
+.member-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--muted);
+  background: var(--hover, rgba(127, 127, 127, 0.14));
+  border-radius: 50%;
+  user-select: none;
+}
+.member-avatar.agent {
+  border-radius: 28%;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+}
