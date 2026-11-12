@@ -11,6 +11,10 @@
   Everything. Existing tokens became agents with Everything and Manage, so
   connections keep working.
 - Every change records who made it (you or which agent).
+- Settings → Agents (was Connections): create agents, pick icon and colour,
+  give scopes with a level, show the token once, rotate or revoke. A project
+  or area has a Members panel in its `…` menu, with avatars next to the title
+  when an agent can reach it.
 - Assigning: tasks can be assigned to you or an agent that can see them. The
   MCP takes `assignee` (`me`, a member id or null) in `create_task` and
   `update_task`, filters `list_tasks` with `assigned_to`, returns
@@ -26,6 +30,7 @@
   Changes to the same item by the same member within five minutes are one
   line. API: `GET /api/activity`; MCP: `get_activity`. An agent only sees
   activity on what it can read.
+- Area icons: Bitcoin and a gamepad.
 - Demo: Sam has a Research assistant and a Bookkeeper with a few days of
   work and assigned tasks.
 
