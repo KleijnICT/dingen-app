@@ -1,11 +1,20 @@
 import { type Task, views } from '@dingen/core'
-import { CalendarClock, CirclePlus, FolderInput, type LucideIcon, TextSearch } from 'lucide-react'
+import {
+  CalendarClock,
+  CirclePlus,
+  FolderInput,
+  type LucideIcon,
+  TextSearch,
+  UserRoundPlus,
+} from 'lucide-react'
 import { createContext, type ReactNode, useContext, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useAgents } from '../agents.js'
 import { useT } from '../i18n/index.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { commitTask, type MoveTarget, moveTask } from '../taskActions.js'
 import { AreaGlyph } from './AreaIcons.js'
+import { AssigneeList } from './Assignee.js'
 import { ProgressCircle } from './Icons.js'
 import { useDismiss } from './Menu.js'
 import { ScheduleField } from './ScheduleField.js'
@@ -59,7 +68,9 @@ interface TaskToolbarProps {
 export function TaskToolbar({ onNew, extra, selected }: TaskToolbarProps) {
   const t = useT()
   const { openSearch } = useContext(ShellActions)
-  const [popup, setPopup] = useState<'when' | 'move' | null>(null)
+  const [popup, setPopup] = useState<'when' | 'move' | 'assign' | null>(null)
+  // Assigning only shows once there is an agent to assign to.
+  const hasAgents = useAgents().length > 0
   const root = useRef<HTMLDivElement>(null)
   useDismiss(popup !== null, () => setPopup(null), root)
   const shown = selected?.status === 'open' ? popup : null
@@ -83,13 +94,28 @@ export function TaskToolbar({ onNew, extra, selected }: TaskToolbarProps) {
           expanded={shown === 'move'}
           onClick={() => setPopup((p) => (p === 'move' ? null : 'move'))}
         />
+        {hasAgents && (
+          <ToolbarButton
+            icon={UserRoundPlus}
+            label={t('assign.toolbar')}
+            disabled={selected?.status !== 'open'}
+            expanded={shown === 'assign'}
+            onClick={() => setPopup((p) => (p === 'assign' ? null : 'assign'))}
+          />
+        )}
         <ToolbarButton icon={TextSearch} label={t('toolbar.search')} onClick={openSearch} />
         {shown && selected && (
-          <div className="popover toolbar-popover" role="dialog" aria-label={t(`toolbar.${shown}`)}>
+          <div
+            className="popover toolbar-popover"
+            role="dialog"
+            aria-label={shown === 'assign' ? t('assign.toolbar') : t(`toolbar.${shown}`)}
+          >
             {shown === 'when' ? (
               <WhenPopup task={selected} onDone={() => setPopup(null)} />
-            ) : (
+            ) : shown === 'move' ? (
               <MovePopup task={selected} onDone={() => setPopup(null)} />
+            ) : (
+              <AssigneeList task={selected} onDone={() => setPopup(null)} />
             )}
           </div>
         )}

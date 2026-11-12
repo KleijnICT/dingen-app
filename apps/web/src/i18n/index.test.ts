@@ -22,7 +22,7 @@ describe('i18n', () => {
   it('starts in English regardless of the browser language', () => {
     expect(DEFAULT_LOCALE).toBe('en')
     expect(getLocale()).toBe('en')
-    expect(t('account.tokens.reveal', { name: 'Claude' })).toContain('Token for Claude')
+    expect(t('agents.token.reveal', { name: 'Claude' })).toContain('Token for Claude')
   })
 
   it('switches to Dutch on request and back', () => {

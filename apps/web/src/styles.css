@@ -2322,3 +2322,250 @@ a.button {
   border-radius: 28%;
   background: color-mix(in srgb, currentColor 14%, transparent);
 }
+
+/* --- agents-web (plan 19): Settings → Agents, members panel, assigning --- */
+.agent-list,
+.agent-grants,
+.members-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.agent-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+.agent-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 0;
+  background: none;
+  color: var(--fg);
+  font-weight: 400;
+  text-align: left;
+}
+button.agent-main .muted {
+  font-size: 0.85em;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.agent-scopes {
+  white-space: nowrap;
+}
+.agent-main:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.agent-item .more-menu .menu {
+  /* Opens upwards: the last agent sits at the bottom of the scrolling settings body. */
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+.agent-token-actions {
+  justify-content: flex-start;
+}
+.agent-command {
+  font-size: 0.8em;
+  word-break: break-all;
+  user-select: all;
+}
+.agent-editor h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.settings-form .agent-name input {
+  flex: 1;
+  max-width: 320px;
+  min-width: 0;
+}
+.agent-look,
+.agent-access {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin: 0;
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.agent-look legend,
+.agent-access legend {
+  padding: 0 4px;
+  font-weight: 600;
+}
+.agent-look-preview {
+  display: flex;
+}
+.agent-look .color-row {
+  margin-top: 0;
+  flex-wrap: wrap;
+}
+.agent-grant {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+}
+.agent-grants li.muted {
+  padding: 4px 0;
+}
+.agent-grant-icon {
+  display: inline-flex;
+  width: 18px;
+  justify-content: center;
+  color: var(--muted);
+}
+.agent-grant-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.agent-grant-remove {
+  display: grid;
+  place-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: none;
+  color: var(--muted);
+  border-radius: 7px;
+}
+.agent-grant-remove:hover {
+  background: var(--hover);
+  color: var(--error);
+}
+.agent-add-scope {
+  align-self: flex-start;
+  max-width: 100%;
+}
+.agent-levels {
+  margin: 0;
+  font-size: 0.85em;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.agent-levels div {
+  display: flex;
+  gap: 6px;
+}
+.agent-levels dt {
+  font-weight: 600;
+}
+.agent-levels dd {
+  margin: 0;
+}
+.agent-editor-foot {
+  justify-content: flex-end;
+  gap: 16px;
+}
+
+/* Members panel in the … menu of a project or area */
+.members-panel {
+  width: min(320px, calc(100vw - 56px));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.members-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+}
+.members-name {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.members-panel .members-name > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.members-panel .members-name .muted {
+  font-size: 0.8em;
+}
+.members-level {
+  font-size: 0.85em;
+}
+.members-panel select {
+  font: inherit;
+  font-size: 0.85em;
+  color: var(--fg);
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--bg);
+  min-width: 0;
+}
+.members-add {
+  display: flex;
+  gap: 6px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+.members-add select:first-child {
+  flex: 1;
+}
+.members-add button {
+  padding: 4px 10px;
+  font-size: 0.85em;
+}
+.members-hint {
+  font-size: 0.85em;
+  white-space: normal;
+}
+.member-stack {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+}
+.member-stack .member-avatar {
+  box-shadow: 0 0 0 2px var(--bg);
+}
+.member-stack .member-avatar + .member-avatar {
+  margin-left: -5px;
+}
+.member-stack .member-avatar.agent {
+  background: color-mix(in srgb, currentColor 14%, var(--bg));
+}
+
+/* Assigning */
+.assign-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.assign-hint {
+  padding: 6px 8px;
+  font-size: 0.85em;
+}
+/* On a phone the title's … menu (with the Members panel) anchors to the header's right edge. */
+@media (max-width: 600px) {
+  .project-header {
+    position: relative;
+  }
+  .project-header > .more-menu {
+    position: static;
+  }
+  .project-header > .more-menu .menu {
+    left: auto;
+    right: 0;
+  }
+}

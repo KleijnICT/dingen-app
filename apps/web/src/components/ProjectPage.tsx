@@ -10,6 +10,7 @@ import { AreaGlyph } from './AreaIcons.js'
 import { DeadlineBadge, DeadlineField } from './DeadlineField.js'
 import { ProgressCircle } from './Icons.js'
 import { InlineInput } from './InlineInput.js'
+import { MemberAvatars, MembersPanel, useAccess } from './MembersPanel.js'
 import { MoreMenu } from './Menu.js'
 import { TagEditor } from './TagEditor.js'
 import { TagFilter } from './TagFilter.js'
@@ -28,6 +29,7 @@ export function ProjectPage({ project, focusSignal }: Props) {
   const engine = useEngine()
   const t = useT()
   const ws = useWorkspace()
+  const access = useAccess('project', project.id)
   const [showCompleted, setShowCompleted] = useState(false)
   const [tagFilter, setTagFilter] = useState<string | null>(null)
   const done = project.status !== 'open'
@@ -133,6 +135,7 @@ export function ProjectPage({ project, focusSignal }: Props) {
           autoFocus={project.title === ''}
           onCommit={(title) => engine.mutate('project', project.id, { title })}
         />
+        <MemberAvatars entries={access.entries} />
         <MoreMenu
           label={t('menu.projectActions')}
           items={[
@@ -203,6 +206,11 @@ export function ProjectPage({ project, focusSignal }: Props) {
                   ))}
                 </div>
               ),
+            },
+            {
+              label: t('members.title'),
+              onSelect: () => {},
+              panel: () => <MembersPanel type="project" id={project.id} access={access} />,
             },
             {
               label: t('project.delete'),

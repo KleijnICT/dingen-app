@@ -5,6 +5,7 @@ import { formatDate, useT } from '../i18n/index.js'
 import { containerOf, describeWhen } from '../lists.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { commitTask, deleteTask, moveTask } from '../taskActions.js'
+import { AssigneeBadge, AssigneeField } from './Assignee.js'
 import { Checklist } from './Checklist.js'
 import { DeadlineBadge, DeadlineField } from './DeadlineField.js'
 import { CheckIcon, ChecklistIcon, MoonIcon, NotesIcon, RepeatIcon } from './Icons.js'
@@ -115,6 +116,7 @@ export function TaskRow({
             </span>
           )}
           {task.templateId && <RepeatIcon className="meta-icon" />}
+          {task.assigneeId && <AssigneeBadge assigneeId={task.assigneeId} />}
           {!done && task.deadline && <DeadlineBadge deadline={task.deadline} today={ws.today} />}
           {showWhen && task.when.kind === 'date' && (
             <span className="meta-when">{describeWhen(task.when, ws.today)}</span>
@@ -244,6 +246,7 @@ function TaskEditor({ task, onClose, onToggle }: EditorProps) {
           tagIds={task.tagIds}
           onChange={(tagIds) => commitTask(engine, ws, task, { tagIds })}
         />
+        <AssigneeField task={task} />
       </div>
       <div className="editor-line">
         <select

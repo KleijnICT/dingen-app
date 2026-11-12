@@ -9,6 +9,8 @@ import { AreaGlyph, areaColorVar } from './AreaIcons.js'
  */
 
 let cache: Promise<Member[]> | null = null
+let current: Member[] | null = null
+const listeners = new Set<() => void>()
 
 /** All members of the signed-in user (`GET /api/members`), fetched once per page load. */
 export function loadMembers(refresh = false): Promise<Member[]> {
@@ -20,23 +22,26 @@ export function loadMembers(refresh = false): Promise<Member[]> {
         cache = null
         return []
       })
+    void cache.then((members) => {
+      current = members
+      for (const l of listeners) l()
+    })
   }
   return cache
 }
 
-/** The members, and a lookup by id. Re-render after `loadMembers(true)` by remounting. */
+/** The members, and a lookup by id; follows `loadMembers(true)`. */
 export function useMembers(): {
   members: Member[]
   byId: (id: string | null) => Member | undefined
 } {
-  const [members, setMembers] = useState<Member[]>([])
+  const [members, setMembers] = useState<Member[]>(current ?? [])
   useEffect(() => {
-    let alive = true
-    void loadMembers().then((m) => {
-      if (alive) setMembers(m)
-    })
+    const update = () => setMembers(current ?? [])
+    listeners.add(update)
+    void loadMembers().then(update)
     return () => {
-      alive = false
+      listeners.delete(update)
     }
   }, [])
   return { members, byId: (id) => (id ? members.find((m) => m.id === id) : undefined) }
