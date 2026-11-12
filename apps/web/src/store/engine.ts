@@ -60,8 +60,11 @@ export class SyncEngine {
   private outboxOrder = 0
   private pushTimer: ReturnType<typeof setTimeout> | undefined
   private pollTimer: ReturnType<typeof setInterval> | undefined
-  private syncing = false
-  private syncAgain = false
+  /** The sync run in progress, and the one queued after it (at most one). */
+  private running: Promise<void> | null = null
+  private queued: Promise<void> | null = null
+  /** Outbox writes that have not finished yet. */
+  private writes: Promise<void> = Promise.resolve()
   private stopped = false
   private readonly entityCache = new Map<EntityType, { version: number; items: Entity[] }>()
 
@@ -152,21 +155,37 @@ export class SyncEngine {
     this.bump()
     this.outboxOrder += 1
     const order = this.outboxOrder
-    void this.db.transaction('rw', this.db.entities, this.db.outbox, async () => {
+    const write = this.db.transaction('rw', this.db.entities, this.db.outbox, async () => {
       await this.db.entities.put({ key, ...record })
       await this.db.outbox.put({ id: change.id, order, change })
     })
+    // push() waits for this, so a sync right after a change includes it.
+    this.writes = Promise.all([this.writes, write.catch(() => {})]).then(() => {})
     this.schedulePush()
   }
 
-  /** Push de outbox en haal daarna nieuwe wijzigingen op. Veilig om vaak aan te roepen. */
-  async sync(): Promise<void> {
-    if (this.stopped) return
-    if (this.syncing) {
-      this.syncAgain = true
-      return
+  /**
+   * Push the outbox, then pull new changes. Safe to call often. While a run is
+   * in progress, calls share one follow-up run, and the returned promise only
+   * resolves once that run is done, so `await sync()` always includes changes
+   * made before the call.
+   */
+  sync(): Promise<void> {
+    if (this.stopped) return Promise.resolve()
+    if (this.running) {
+      this.queued ??= this.running.then(() => {
+        this.queued = null
+        return this.sync()
+      })
+      return this.queued
     }
-    this.syncing = true
+    this.running = this.run().finally(() => {
+      this.running = null
+    })
+    return this.running
+  }
+
+  private async run(): Promise<void> {
     this.setStatus('syncing')
     try {
       await this.push()
@@ -183,12 +202,6 @@ export class SyncEngine {
       } else {
         this.setStatus('offline')
       }
-    } finally {
-      this.syncing = false
-      if (this.syncAgain) {
-        this.syncAgain = false
-        void this.sync()
-      }
     }
   }
 
@@ -198,6 +211,7 @@ export class SyncEngine {
   }
 
   private async push(): Promise<void> {
+    await this.writes
     const items = await this.db.outbox.orderBy('order').toArray()
     if (items.length === 0) return
     const res = await this.request('/api/sync/push', {

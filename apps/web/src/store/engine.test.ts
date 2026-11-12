@@ -17,9 +17,12 @@ class FakeServer {
   known = new Set<string>()
   offline = false
   requests = 0
+  /** Delay before each response, to hold a sync run in flight. */
+  delayMs = 0
 
   fetch: typeof fetch = async (input, init) => {
     this.requests += 1
+    if (this.delayMs) await new Promise((r) => setTimeout(r, this.delayMs))
     if (this.offline) throw new TypeError('Failed to fetch')
     const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
     const json = (body: unknown, status = 200) =>
@@ -105,6 +108,24 @@ describe('SyncEngine', () => {
     expect(fromB).toEqual(fromA)
     a.stop()
     b.stop()
+  })
+
+  it('await sync() during a running sync waits for a run that includes new changes', async () => {
+    const server = new FakeServer()
+    const a = engineFor(server)
+    await a.start()
+    const task = newTask({ title: 'Taak' })
+    a.create('task', task)
+    await a.sync()
+
+    server.delayMs = 30
+    const first = a.sync()
+    a.mutate('task', task.id, { notes: 'Bij de AH' })
+    await a.sync()
+    await first
+    const onServer = server.entities.get(recordKey('task', task.id))?.data as Task | undefined
+    expect(onServer?.notes).toBe('Bij de AH')
+    a.stop()
   })
 
   it('bewaart de outbox als de server onbereikbaar is en pusht later alsnog', async () => {
