@@ -70,3 +70,38 @@ export interface ActivityItem {
 }
 
 export const ACTIVITY_KINDS = ['added', 'completed', 'reopened', 'updated', 'deleted'] as const
+
+/** Where an entity lives, for access checks. */
+export type Place =
+  | { kind: 'inbox' }
+  | { kind: 'area'; areaId: string }
+  | { kind: 'project'; projectId: string; areaId: string | null }
+
+const rank = (level: AgentLevel) => AGENT_LEVELS.indexOf(level)
+
+/**
+ * The highest level any grant gives on `place`, or null for no access.
+ * `all` reaches everything; an area grant reaches the area and its projects;
+ * a project grant reaches that project; `inbox` reaches tasks without project
+ * and area. `grants === null` means the owner (no limits).
+ */
+export function levelFor(grants: readonly AgentGrant[] | null, place: Place): AgentLevel | null {
+  if (grants === null) return 'manage'
+  let best: AgentLevel | null = null
+  for (const g of grants) {
+    const reaches =
+      g.scope === 'all' ||
+      (g.scope === 'inbox' && place.kind === 'inbox') ||
+      (g.scope === 'area' &&
+        ((place.kind === 'area' && place.areaId === g.id) ||
+          (place.kind === 'project' && place.areaId === g.id))) ||
+      (g.scope === 'project' && place.kind === 'project' && place.projectId === g.id)
+    if (reaches && (best === null || rank(g.level) > rank(best))) best = g.level
+  }
+  return best
+}
+
+/** True when `level` is at least `needed`. */
+export function allows(level: AgentLevel | null, needed: AgentLevel): boolean {
+  return level !== null && rank(level) >= rank(needed)
+}
