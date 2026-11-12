@@ -87,4 +87,4 @@ jobs:
       - name: Deploy to dev
         env:
           WEBHOOK: ${{ secrets.DEPLOY_WEBHOOK_DEV }}
-        run: .github/scripts/deploy.sh "$WEBHOOK" https://dev.doe.dingen.app/api/health "${{ steps.v.outputs.short }}"
+        run: .github/scripts/deploy.sh "$WEBHOOK" https://deploy.dingen.app/health/dev "${{ steps.v.outputs.short }}"
