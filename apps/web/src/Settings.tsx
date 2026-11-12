@@ -1,25 +1,26 @@
 import { APP_NAME, type EntityType } from '@dingen/core'
 import {
   ArrowDownUp,
+  Bot,
   CalendarDays,
   Info,
-  Plug,
   Settings as SettingsIcon,
   Ticket,
   UserRound,
   X,
 } from 'lucide-react'
-import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
-import { ApiError, type ApiTokenInfo, api, errorText, type User } from './api.js'
+import { useEffect, useRef, useState } from 'react'
+import { ApiError, api, errorText, type User } from './api.js'
+import { AgentSettings } from './components/AgentSettings.js'
 import { CalendarSettings } from './components/CalendarSettings.js'
 import { InvitationSettings } from './components/InvitationSettings.js'
 import { ReminderSettings } from './components/ReminderSettings.js'
-import { formatDate, LOCALES, type Locale, setLocale, useLocale, useT } from './i18n/index.js'
+import { LOCALES, type Locale, setLocale, useLocale, useT } from './i18n/index.js'
 
 const TABS = [
   { id: 'general', icon: SettingsIcon },
   { id: 'account', icon: UserRound },
-  { id: 'connections', icon: Plug },
+  { id: 'agents', icon: Bot },
   { id: 'calendars', icon: CalendarDays },
   { id: 'data', icon: ArrowDownUp },
   // --- uitnodigingen: alleen voor de beheerder ---
@@ -94,7 +95,7 @@ export function Settings({ user, onSignedOut, onClose }: Props) {
         <div className="settings-body" role="tabpanel">
           {tab === 'general' && <General />}
           {tab === 'account' && <Account user={user} onSignedOut={onSignedOut} />}
-          {tab === 'connections' && <Connections />}
+          {tab === 'agents' && <AgentSettings />}
           {tab === 'calendars' && <CalendarSettings />}
           {tab === 'data' && <DataTab />}
           {tab === 'invitations' && user.isAdmin && <InvitationSettings />}
@@ -139,105 +140,6 @@ function Account({ user, onSignedOut }: { user: User; onSignedOut: () => void })
           {t('account.signOut')}
         </button>
       </div>
-    </div>
-  )
-}
-
-function Connections() {
-  const t = useT()
-  const [tokens, setTokens] = useState<ApiTokenInfo[]>([])
-  const [name, setName] = useState('')
-  const [fresh, setFresh] = useState<{ name: string; token: string } | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  const load = useCallback(async () => {
-    try {
-      const { tokens } = await api.get<{ tokens: ApiTokenInfo[] }>('/api/auth/tokens')
-      setTokens(tokens)
-    } catch (err) {
-      setError(errorText(err))
-    }
-  }, [])
-
-  useEffect(() => {
-    void load()
-  }, [load])
-
-  async function createToken(e: FormEvent) {
-    e.preventDefault()
-    setError(null)
-    try {
-      const { token, info } = await api.post<{ token: string; info: ApiTokenInfo }>(
-        '/api/auth/tokens',
-        { name },
-      )
-      setFresh({ name: info.name, token })
-      setName('')
-      await load()
-    } catch (err) {
-      setError(errorText(err))
-    }
-  }
-
-  async function revoke(id: string) {
-    setError(null)
-    try {
-      await api.delete(`/api/auth/tokens/${id}`)
-      await load()
-    } catch (err) {
-      setError(errorText(err))
-    }
-  }
-
-  return (
-    <div className="settings-form">
-      <p className="muted">{t('account.tokens.intro')}</p>
-      <form className="row" onSubmit={createToken}>
-        <input
-          type="text"
-          placeholder={t('account.tokens.namePlaceholder')}
-          aria-label={t('account.tokens.namePlaceholder')}
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          maxLength={100}
-        />
-        <button type="submit">{t('account.tokens.create')}</button>
-      </form>
-      {fresh && (
-        <div className="token-reveal">
-          <p>{t('account.tokens.reveal', { name: fresh.name })}</p>
-          <code>{fresh.token}</code>
-          <button type="button" className="link" onClick={() => setFresh(null)}>
-            {t('account.tokens.hide')}
-          </button>
-        </div>
-      )}
-      {error && <p className="error">{error}</p>}
-      <ul className="tokens">
-        {tokens.length === 0 && <li className="muted">{t('account.tokens.none')}</li>}
-        {tokens.map((tok) => (
-          <li key={tok.id} className="row">
-            <span>
-              <strong>{tok.name}</strong> <code>{tok.prefix}…</code>
-              <span className="muted">
-                {' '}
-                {tok.lastUsedAt
-                  ? t('account.tokens.lastUsed', {
-                      date: formatDate(new Date(tok.lastUsedAt), {
-                        dateStyle: 'medium',
-                        timeStyle: 'short',
-                      }),
-                    })
-                  : t('account.tokens.unused')}
-              </span>
-            </span>
-            <button type="button" className="link danger" onClick={() => revoke(tok.id)}>
-              {t('account.tokens.revoke')}
-            </button>
-          </li>
-        ))}
-      </ul>
     </div>
   )
 }
