@@ -19,6 +19,9 @@ export const en = {
   'auth.error.email_taken': 'An account with this email address already exists.',
   'auth.error.registration_closed': 'Registration is closed on this server.',
   'auth.error.too_many_attempts': 'Too many attempts. Try again in fifteen minutes.',
+  'auth.demo.title': 'Demo accounts',
+  'auth.demo.signInAs': 'Sign in as {name}',
+  'auth.demo.resets': 'This is a demo server. All data resets on every deployment.',
   'auth.error.invalid_body': 'Check the email address and use a password of at least 8 characters.',
 
   // Lists

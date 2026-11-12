@@ -33,6 +33,8 @@ export interface AppDeps {
   timezone?: string
   /** Ophalen van agenda-feeds; tests geven een nep-versie mee. */
   fetchFeed?: FetchFeed
+  /** Demo mode (DINGEN_DEMO): passwordless sign-in as one of the demo accounts. */
+  demo?: boolean
   /** Web push; zonder wordt er een gemaakt met de sleutels uit de database. */
   push?: PushService
 }
@@ -71,7 +73,7 @@ export function createApp(deps: AppDeps) {
     return c.json(body)
   })
 
-  app.route('/api/auth', authRoutes())
+  app.route('/api/auth', authRoutes({ demo: deps.demo ?? false }))
   app.use('/api/sync/*', requireAuth)
   app.route('/api/sync', syncRoutes())
   app.use('/api/export', requireAuth)

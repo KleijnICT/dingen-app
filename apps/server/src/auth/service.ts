@@ -153,6 +153,18 @@ export class AuthService {
     return { id: row.id, email: row.email, createdAt: row.createdAt, isAdmin: row.isAdmin }
   }
 
+  /** The account with this email address, or null. */
+  findByEmail(emailInput: string): User | null {
+    const row = this.db
+      .select()
+      .from(users)
+      .where(eq(users.email, normalizeEmail(emailInput)))
+      .get()
+    return row
+      ? { id: row.id, email: row.email, createdAt: row.createdAt, isAdmin: row.isAdmin }
+      : null
+  }
+
   /** Maakt een sessie en geeft het geheime cookie-token terug (alleen de hash wordt bewaard). */
   createSession(userId: string): { token: string; expiresAt: string } {
     const token = randomBytes(32).toString('base64url')

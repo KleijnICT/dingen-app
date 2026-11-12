@@ -64,6 +64,14 @@ export interface AuthStatus {
   /** Can someone register without an invitation right now? */
   registrationOpen: boolean
   registration?: RegistrationMode
+  /** Demo mode (DINGEN_DEMO): demo accounts can sign in without a password. */
+  demo?: boolean
+}
+
+export interface DemoAccount {
+  email: string
+  name: string
+  description: string
 }
 
 export interface ApiTokenInfo {

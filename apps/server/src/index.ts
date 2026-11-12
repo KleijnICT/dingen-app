@@ -7,6 +7,7 @@ import { createApp, defaultPush } from './app.js'
 import { backupBeforeMigrations } from './backup.js'
 import { loadConfig } from './config.js'
 import { migrationsFolder, openDatabase } from './db.js'
+import { resetToDemo } from './demo/seed.js'
 import { ReminderPlanner } from './push/planner.js'
 import { staticHeaders } from './static.js'
 
@@ -36,6 +37,16 @@ try {
 }
 
 const { db, sqliteVersion } = openDatabase(config.databasePath)
+
+if (config.demo) {
+  console.warn('DEMO MODE (DINGEN_DEMO): wiping all accounts and data and writing the demo set.')
+  const seeded = await resetToDemo(db, { timezone: config.timezone })
+  for (const user of seeded.users) {
+    console.warn(`Demo account ${user.email}: ${user.entities} entities`)
+  }
+  console.warn('Demo mode: passwordless sign-in is on. Data resets on every restart.')
+}
+
 const push = defaultPush(db)
 const app = createApp({
   push,
@@ -45,6 +56,7 @@ const app = createApp({
   sqliteVersion,
   registration: config.registration,
   timezone: config.timezone,
+  demo: config.demo,
 })
 
 // Onbekende API-paden krijgen JSON, nooit de SPA-fallback.
