@@ -18,6 +18,7 @@ import {
   newTask,
   orderBetween,
   type Project,
+  parseMemberId,
   type Reminder,
   Repeat,
   type Snapshot,
@@ -85,7 +86,33 @@ const ReminderInput = z
     "'HH:MM' on the task's date, or 'YYYY-MM-DD HH:MM' on or before it; null removes it. Setting `time` without `reminder` also sets a reminder at that time.",
   )
 
+const AssigneeInput = z
+  .string()
+  .nullable()
+  .describe(
+    "Member id (from the members in `overview`), 'me' for whoever calls, or null to unassign. Only members who can see the task.",
+  )
+const AssignedToInput = z
+  .string()
+  .describe("Only tasks assigned to this member: 'me' or a member id")
+
 class ToolError extends Error {}
+
+/** A member id from tool input: 'me', an id from the member list, or null. */
+async function resolveAssignee(client: DingenClient, input: string | null): Promise<string | null> {
+  if (input === null) return null
+  const ref = input.trim()
+  if (ref.toLowerCase() === 'me') return client.me()
+  const members = await client.members()
+  const byName = members.filter((m) => m.name.toLowerCase() === ref.toLowerCase())
+  if (!parseMemberId(ref)) {
+    if (byName.length === 1) return (byName[0] as { id: string }).id
+    throw new ToolError(`No member "${input}"; use 'me' or a member id from overview`)
+  }
+  if (members.length > 0 && !members.some((m) => m.id === ref))
+    throw new ToolError(`No member ${ref}`)
+  return ref
+}
 
 export function createMcpServer(client: DingenClient): McpServer {
   const server = new McpServer({ name: 'dingen', version: '0.1.0' })
@@ -111,8 +138,10 @@ export function createMcpServer(client: DingenClient): McpServer {
       inputSchema: {},
     },
     () =>
-      run((ws) => ({
+      run(async (ws) => ({
         today: ws.today,
+        me: await client.me().catch(() => null),
+        members: (await client.members()).map((m) => ({ id: m.id, kind: m.kind, name: m.name })),
         counts: {
           inbox: views.inbox(available(ws)).length,
           today: views.today(available(ws), ws.today).length,
@@ -126,7 +155,11 @@ export function createMcpServer(client: DingenClient): McpServer {
           projects: views.projectsOf(ws.projects, a.id).map((p) => projectRow(ws, p)),
           looseTasks: views.areaTasks(ws.tasks, a.id).filter(views.isOpen).length,
         })),
-        looseProjects: views.projectsOf(ws.projects, null).map((p) => projectRow(ws, p)),
+        // Projects without an area, or in an area this connection cannot see.
+        looseProjects: ws.projects
+          .filter((p) => views.isOpen(p) && !(p.areaId && ws.areas.some((a) => a.id === p.areaId)))
+          .sort(views.byOrder)
+          .map((p) => projectRow(ws, p)),
         tags: ws.tags
           .filter((t) => !t.deleted)
           .sort(views.byOrder)
@@ -143,17 +176,18 @@ export function createMcpServer(client: DingenClient): McpServer {
     {
       title: 'List tasks',
       description:
-        'Open tasks of a list (inbox, today, upcoming, anytime, someday, logbook), a project, an area or a tag. Combine filters to narrow down.',
+        "Open tasks of a list (inbox, today, upcoming, anytime, someday, logbook), a project, an area, a tag or an assignee. Combine filters to narrow down, e.g. list 'today' with assigned_to 'me'.",
       inputSchema: {
         list: ListName.optional(),
         project: Ref.optional(),
         area: Ref.optional(),
         tag: Ref.optional(),
+        assigned_to: AssignedToInput.optional(),
         includeCompleted: z.boolean().default(false),
       },
     },
     (input) =>
-      run((ws) => {
+      run(async (ws) => {
         let tasks: Task[]
         if (input.list) tasks = listTasks(ws, input.list)
         else tasks = available(ws).filter((t) => input.includeCompleted || views.isOpen(t))
@@ -174,6 +208,10 @@ export function createMcpServer(client: DingenClient): McpServer {
         if (input.tag) {
           const tag = findTag(ws, input.tag)
           tasks = tasks.filter((t) => t.tagIds.includes(tag.id))
+        }
+        if (input.assigned_to !== undefined) {
+          const who = await resolveAssignee(client, input.assigned_to)
+          tasks = tasks.filter((t) => t.assigneeId === who)
         }
         if (!input.list) tasks = tasks.sort(views.byOrder)
         return tasks.map((t) => taskRow(ws, t))
@@ -236,10 +274,13 @@ export function createMcpServer(client: DingenClient): McpServer {
         repeat: RepeatInput.optional(),
         time: TimeInput.nullable().optional(),
         reminder: ReminderInput.nullable().optional(),
+        assignee: AssigneeInput.optional(),
       },
     },
     (input) =>
-      run((ws) => {
+      run(async (ws) => {
+        const assigneeId =
+          input.assignee === undefined ? null : await resolveAssignee(client, input.assignee)
         if (input.project && input.area)
           throw new ToolError('A task has a project or an area, not both')
         const project = input.project ? findProject(ws, input.project) : null
@@ -272,6 +313,7 @@ export function createMcpServer(client: DingenClient): McpServer {
           areaId: area?.id ?? null,
           tagIds,
           order: orderBetween(siblings.at(-1)?.order ?? null, null),
+          assigneeId,
         })
         Object.assign(task, scheduleInput(task, input, ws.today))
         client.create('task', task)
@@ -294,7 +336,7 @@ export function createMcpServer(client: DingenClient): McpServer {
     {
       title: 'Update a task',
       description:
-        'Changes fields of a task. Omitted fields stay as they are. `project`, `area` or `heading` move the task; `tags` replaces all tags; `checklist` replaces the checklist; `repeat: null` stops repeating.',
+        'Changes fields of a task. Omitted fields stay as they are. `project`, `area` or `heading` move the task; `tags` replaces all tags; `checklist` replaces the checklist; `repeat: null` stops repeating; `assignee` assigns it (null unassigns).',
       inputSchema: {
         id: z.string(),
         title: z.string().min(1).optional(),
@@ -311,12 +353,17 @@ export function createMcpServer(client: DingenClient): McpServer {
         repeat: RepeatInput.nullable().optional(),
         time: TimeInput.nullable().optional(),
         reminder: ReminderInput.nullable().optional(),
+        assignee: AssigneeInput.optional(),
       },
     },
     (input) =>
-      run((ws) => {
+      run(async (ws) => {
         const task = findTask(ws, input.id)
         const fields: Record<string, unknown> = {}
+        if (input.assignee !== undefined) {
+          const assigneeId = await resolveAssignee(client, input.assignee)
+          if (assigneeId !== task.assigneeId) fields.assigneeId = assigneeId
+        }
         if (input.title !== undefined) fields.title = input.title
         if (input.notes !== undefined) fields.notes = input.notes
         if (input.when !== undefined) {
@@ -854,6 +901,7 @@ function taskRow(ws: Snapshot, t: Task) {
     ...(checklist.total > 0 ? { checklist: `${checklist.done}/${checklist.total}` } : {}),
     ...(template?.repeat ? { repeats: describeRepeat(template.repeat) } : {}),
     ...(t.completedAt ? { completedAt: t.completedAt } : {}),
+    ...(t.assigneeId ? { assigneeId: t.assigneeId } : {}),
   }
 }
 
@@ -872,6 +920,7 @@ function taskDetail(ws: Snapshot, t: Task) {
       done: i.done,
     })),
     repeat: template?.repeat ?? null,
+    assigneeId: t.assigneeId,
     createdAt: t.createdAt,
   }
 }

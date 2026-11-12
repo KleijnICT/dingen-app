@@ -84,8 +84,8 @@ describe('beheerder', () => {
     const admin = await register('beheer@example.com')
     const { body } = await call(
       'POST',
-      '/api/auth/tokens',
-      { name: 'proef' },
+      '/api/agents',
+      { name: 'proef', icon: 'bot', color: 'gray', grants: [{ scope: 'all', level: 'manage' }] },
       { cookie: admin.cookie },
     )
     const bearer = { authorization: `Bearer ${body.token}` }

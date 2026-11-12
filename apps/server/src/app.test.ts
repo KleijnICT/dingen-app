@@ -39,10 +39,15 @@ describe('mcp', () => {
     const cookie = reg.headers.get('set-cookie') ?? ''
     const withCookie = await app.request('/mcp', { method: 'POST', headers: { cookie } })
     expect(withCookie.status).toBe(401)
-    const tokenRes = await app.request('/api/auth/tokens', {
+    const tokenRes = await app.request('/api/agents', {
       method: 'POST',
       headers: { 'content-type': 'application/json', cookie },
-      body: JSON.stringify({ name: 'claude' }),
+      body: JSON.stringify({
+        name: 'claude',
+        icon: 'bot',
+        color: 'gray',
+        grants: [{ scope: 'all', level: 'manage' }],
+      }),
     })
     const { token } = (await tokenRes.json()) as { token: string }
 

@@ -1,14 +1,18 @@
-import type { Change } from '@dingen/core'
+import type { Change, Member } from '@dingen/core'
 import { createMcpServer, DingenClient, type SyncTransport } from '@dingen/mcp'
 import { StreamableHTTPTransport } from '@hono/mcp'
 import { Hono } from 'hono'
+import type { Access } from '../agents/access.js'
+import type { AgentService } from '../agents/service.js'
+import { accessOf } from '../auth/middleware.js'
 import type { AppEnv } from '../env.js'
 import type { SyncService } from '../sync.js'
 
 /**
  * MCP over Streamable HTTP, in the server itself: Claude Code connects to
- * /mcp with an API token and gets the same tools as `dingen-mcp` over stdio.
- * Stateless: every request gets a fresh replica from the sync service.
+ * /mcp with an agent token and gets the same tools as `dingen-mcp` over stdio.
+ * Stateless: every request gets a fresh replica from the sync service, with
+ * only what the agent can read; its writes are checked against its grants.
  */
 export function mcpRoutes(timezone: string) {
   const app = new Hono<AppEnv>()
@@ -18,13 +22,12 @@ export function mcpRoutes(timezone: string) {
     if (!c.get('user') || c.get('authSource') !== 'token') {
       return c.json({ error: 'unauthorized' }, 401)
     }
-    const client = new DingenClient(new ServiceTransport(c.get('sync'), c.get('userId')), {
-      today: () => todayIn(timezone),
-    })
+    const transport = new ServiceTransport(c.get('sync'), c.get('agents'), accessOf(c))
+    const client = new DingenClient(transport, { today: () => todayIn(timezone) })
     const server = createMcpServer(client)
-    const transport = new StreamableHTTPTransport()
-    await server.connect(transport)
-    const res = await transport.handleRequest(c)
+    const http = new StreamableHTTPTransport()
+    await server.connect(http)
+    const res = await http.handleRequest(c)
     return res ?? c.body(null, 204)
   })
 
@@ -34,19 +37,31 @@ export function mcpRoutes(timezone: string) {
 class ServiceTransport implements SyncTransport {
   constructor(
     private readonly sync: SyncService,
-    private readonly userId: string,
+    private readonly agents: AgentService,
+    private readonly access: Access,
   ) {}
 
   async snapshot() {
-    return this.sync.snapshot(this.userId)
+    return this.sync.snapshot(this.access.userId, this.access.grants)
   }
 
   async pull(since: number) {
-    return this.sync.pull(this.userId, since)
+    return this.sync.pull(this.access.userId, since, undefined, this.access.grants)
   }
 
   async push(changes: Change[]) {
-    return this.sync.push(this.userId, changes)
+    return this.sync.push(this.access.userId, changes, {
+      access: this.access,
+      members: this.agents.memberGrants(this.access.userId),
+    })
+  }
+
+  async whoami() {
+    return this.access.actor
+  }
+
+  async members(): Promise<Member[]> {
+    return this.agents.members(this.access.userId)
   }
 }
 

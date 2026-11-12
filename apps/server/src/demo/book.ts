@@ -110,10 +110,29 @@ export class Book {
     return { kind: input }
   }
 
+  /**
+   * Field timestamps follow the story: everything when the entity was created,
+   * status and completion when it was closed, `reviewedAt` when it was reviewed.
+   * So the change log (and the Logbook's activity) reads like real use.
+   */
   private put<T extends EntityType>(type: T, entity: EntityOf<T>): EntityOf<T> {
     const data = entitySchemas[type].strict().parse(entity) as Record<string, unknown>
+    const at = (iso: unknown): string => {
+      const wall = typeof iso === 'string' ? Date.parse(iso) : Number.NaN
+      return Number.isNaN(wall) ? this.ts : formatTimestamp(wall, 0, 'DEMO')
+    }
+    const created = at(data.createdAt)
+    const closed = data.completedAt ? at(data.completedAt) : created
     const fieldTs: Record<string, string> = {}
-    for (const key of Object.keys(data)) if (key !== 'id') fieldTs[key] = this.ts
+    for (const key of Object.keys(data)) {
+      if (key === 'id') continue
+      fieldTs[key] =
+        key === 'status' || key === 'completedAt'
+          ? closed
+          : key === 'reviewedAt' && data.reviewedAt
+            ? at(data.reviewedAt)
+            : created
+    }
     this.records.push({ entityType: type, id: entity.id, data, fieldTs })
     return entity
   }
