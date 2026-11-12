@@ -2322,3 +2322,103 @@ a.button {
   border-radius: 28%;
   background: color-mix(in srgb, currentColor 14%, transparent);
 }
+
+/* --- agents-activity (plan 19): the Logbook as activity overview --- */
+.activity-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin-top: 8px;
+}
+.activity-filters .view-switch {
+  margin: 0;
+  flex-wrap: wrap;
+}
+.activity-selects {
+  display: flex;
+  gap: 6px;
+}
+.activity-selects .move-select {
+  font-size: 0.85em;
+  padding: 3px 6px;
+}
+.activity-lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.activity-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+.activity-line:hover {
+  background: var(--hover);
+}
+.activity-line .member-avatar {
+  margin-top: 1px;
+}
+.activity-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.activity-title {
+  align-self: flex-start;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.activity-title:hover {
+  text-decoration: underline;
+}
+.activity-title.gone {
+  color: var(--muted);
+  cursor: default;
+}
+.activity-meta {
+  color: var(--muted);
+  font-size: 0.85em;
+  overflow-wrap: anywhere;
+}
+.activity-container {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.activity-container:hover {
+  color: var(--fg);
+  text-decoration: underline;
+}
+.activity-time {
+  flex: none;
+  color: var(--muted);
+  font-size: 0.8em;
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+.activity-more {
+  text-align: center;
+  font-size: 0.85em;
+  padding: 18px 0 8px;
+}

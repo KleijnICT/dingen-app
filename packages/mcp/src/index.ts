@@ -1,4 +1,12 @@
-export { type ClientOptions, DingenClient, HttpTransport, type SyncTransport } from './client.js'
+export {
+  type ActivityBody,
+  type ActivityFilter,
+  activityQuery,
+  type ClientOptions,
+  DingenClient,
+  HttpTransport,
+  type SyncTransport,
+} from './client.js'
 export {
   describePlan,
   importTickTick,

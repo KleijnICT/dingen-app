@@ -34,6 +34,7 @@ import {
 } from '@dingen/core'
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
+import { registerActivityTool } from './activity-tool.js'
 import type { DingenClient } from './client.js'
 import { areaRow, registerReviewTools } from './review-tools.js'
 
@@ -580,6 +581,7 @@ export function createMcpServer(client: DingenClient): McpServer {
       }),
   )
 
+  registerActivityTool(server, client)
   registerReviewTools(server, client, {
     run,
     fail: (message) => {

@@ -12,7 +12,7 @@ import { ProgressCircle } from './Icons.js'
 import { requestSelect } from './useTaskList.js'
 
 /** Where a task lives: its project, its area, or the list that shows it. */
-function pathOf(task: Task, ws: Workspace): string {
+export function pathOf(task: Task, ws: Workspace): string {
   if (task.projectId) return projectPath(task.projectId)
   if (task.areaId) return areaPath(task.areaId)
   const list = LISTS.find((l) => listTasks(l.id, ws).some((x) => x.id === task.id))

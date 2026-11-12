@@ -16,6 +16,7 @@ import type { User } from './api.js'
 import { useCalendarFeed } from './calendar.js'
 import { AreaPage } from './components/AreaPage.js'
 import { ListPage } from './components/ListPage.js'
+import { LogbookPage } from './components/LogbookPage.js'
 import { ProjectPage } from './components/ProjectPage.js'
 import { ReviewPage } from './components/ReviewPage.js'
 import { Search } from './components/Search.js'
@@ -107,7 +108,9 @@ export function Shell({ user, onSignedOut }: Props) {
   }, [])
 
   let page: React.ReactNode = null
-  if (list) page = <ListPage key={list.id} list={list} focusSignal={focusSignal} />
+  if (list?.id === 'logbook') {
+    page = <LogbookPage key={list.id} list={list} user={user} focusSignal={focusSignal} />
+  } else if (list) page = <ListPage key={list.id} list={list} focusSignal={focusSignal} />
   else if (project) {
     page = <ProjectPage key={project.id} project={project} focusSignal={focusSignal} />
   } else if (area) page = <AreaPage key={area.id} area={area} focusSignal={focusSignal} />

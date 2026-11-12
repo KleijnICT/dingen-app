@@ -1,6 +1,7 @@
 import type { HealthStatus } from '@dingen/core'
 import { APP_NAME } from '@dingen/core'
 import { Hono } from 'hono'
+import { ActivityService } from './activity/service.js'
 import { InvitationService } from './auth/invitations.js'
 import { authenticate, requireAuth } from './auth/middleware.js'
 import { AuthService } from './auth/service.js'
@@ -10,6 +11,7 @@ import type { Db } from './db.js'
 import type { AppEnv } from './env.js'
 import { PushService, webPushSender } from './push/service.js'
 import { loadVapidKeys } from './push/vapid.js'
+import { activityRoutes } from './routes/activity.js'
 import { authRoutes } from './routes/auth.js'
 import { calendarRoutes } from './routes/calendars.js'
 import { dataRoutes } from './routes/data.js'
@@ -59,7 +61,8 @@ export function createApp(deps: AppDeps) {
     await next()
   })
   app.use('/mcp', authenticate)
-  app.route('/mcp', mcpRoutes(deps.timezone ?? 'Europe/Amsterdam'))
+  const activity = new ActivityService(deps.db)
+  app.route('/mcp', mcpRoutes(deps.timezone ?? 'Europe/Amsterdam', deps.db, activity))
 
   app.get('/api/health', (c) => {
     const body: HealthStatus = {
@@ -79,6 +82,10 @@ export function createApp(deps: AppDeps) {
   app.use('/api/export', requireAuth)
   app.use('/api/import', requireAuth)
   app.route('/api', dataRoutes(deps.db, deps.version))
+
+  // --- activity (Logbook) ---
+  app.use('/api/activity', requireAuth)
+  app.route('/api/activity', activityRoutes(deps.db, activity))
 
   const calendars = new CalendarService(deps.db, { fetchFeed: deps.fetchFeed })
   app.use('/api/calendars', requireAuth)

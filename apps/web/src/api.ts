@@ -1,3 +1,4 @@
+import type { ActivityItem } from '@dingen/core'
 import { t } from './i18n/index.js'
 
 /** Thin layer over fetch for the same-origin API (cookie session). */
@@ -102,4 +103,32 @@ export function errorText(err: unknown): string {
     return t('app.unknownError', { code: err.code })
   }
   return t('app.noConnection')
+}
+
+// --- activity (Logbook, plan 19) ---
+
+/** Filters of `GET /api/activity`; instants are ISO strings. */
+export interface ActivityFilter {
+  kinds?: ActivityItem['kind'][] | undefined
+  actor?: string | undefined
+  since?: string | undefined
+  before?: number | undefined
+  limit?: number | undefined
+}
+
+export interface ActivityPage {
+  items: ActivityItem[]
+  nextBefore: number | null
+}
+
+/** One page of Logbook lines, newest first. */
+export function fetchActivity(filter: ActivityFilter): Promise<ActivityPage> {
+  const params = new URLSearchParams()
+  if (filter.kinds?.length) params.set('kinds', filter.kinds.join(','))
+  if (filter.actor) params.set('actor', filter.actor)
+  if (filter.since) params.set('since', filter.since)
+  if (filter.before !== undefined) params.set('before', String(filter.before))
+  if (filter.limit !== undefined) params.set('limit', String(filter.limit))
+  const q = params.toString()
+  return api.get<ActivityPage>(`/api/activity${q ? `?${q}` : ''}`)
 }

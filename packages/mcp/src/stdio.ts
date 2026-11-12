@@ -12,6 +12,9 @@ if (!url || !token) {
   process.exit(2)
 }
 const timezone = process.env.DINGEN_TIMEZONE ?? Intl.DateTimeFormat().resolvedOptions().timeZone
-const client = new DingenClient(new HttpTransport(url, token), { today: () => todayIn(timezone) })
+const client = new DingenClient(new HttpTransport(url, token), {
+  today: () => todayIn(timezone),
+  timezone,
+})
 const server = createMcpServer(client)
 await server.connect(new StdioServerTransport())
