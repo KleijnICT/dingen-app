@@ -57,21 +57,35 @@ export function parseFeed(text: string): ParsedFeed {
     }
   }
 
-  const byUid = new Map<string, { master: IcalComponent | null; exceptions: IcalComponent[] }>()
+  // Meestal één hoofdevent per UID; sommige exports herhalen een UID zonder
+  // RECURRENCE-ID. Die houden we allemaal; de uitzonderingen horen bij de laatste.
+  const byUid = new Map<string, { masters: IcalComponent[]; exceptions: IcalComponent[] }>()
   for (const vevent of root.getAllSubcomponents('vevent')) {
     const uid = String(vevent.getFirstPropertyValue('uid') ?? '')
-    const entry = byUid.get(uid) ?? { master: null, exceptions: [] }
+    const entry = byUid.get(uid) ?? { masters: [], exceptions: [] }
     if (vevent.hasProperty('recurrence-id')) entry.exceptions.push(vevent)
-    else entry.master = vevent
+    else entry.masters.push(vevent)
     byUid.set(uid, entry)
   }
 
   const events: IcalEvent[] = []
-  for (const { master, exceptions } of byUid.values()) {
+  for (const { masters, exceptions } of byUid.values()) {
+    for (const extra of masters.slice(0, -1)) {
+      try {
+        events.push(new ICAL.Event(extra, { exceptions: [] }))
+      } catch {
+        // Zie hieronder.
+      }
+    }
+    const master = masters.at(-1)
     try {
       if (master) {
-        const event = new ICAL.Event(master)
-        for (const exception of exceptions) event.relateException(exception)
+        // Geef de uitzonderingen zelf mee. Zonder `exceptions` koppelt ical.js
+        // élke RECURRENCE-ID uit de hele feed aan dit event, ongeacht de UID
+        // (Outlook-feeds zitten er vol mee): dan verschijnen afspraken van een
+        // andere reeks dubbel en verdwijnen voorkomens die op dezelfde kloktijd
+        // vallen als een uitzondering van een andere reeks.
+        const event = new ICAL.Event(master, { strictExceptions: true, exceptions })
         events.push(event)
       } else {
         for (const exception of exceptions) events.push(new ICAL.Event(exception))
@@ -98,7 +112,10 @@ export function expandEvents(feed: ParsedFeed, options: ExpandOptions): Calendar
       // Zie parseFeed: overslaan wat we niet kunnen lezen.
     }
   }
-  return out
+  // Een id is uniek per voorkomen (clients gebruiken hem als sleutel): een
+  // dubbele, zoals een feed met twee keer dezelfde afspraak, tonen we één keer.
+  const seen = new Set<string>()
+  return out.filter((e) => !seen.has(e.id) && seen.add(e.id))
 }
 
 interface Window {
