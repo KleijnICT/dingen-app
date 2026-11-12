@@ -1,6 +1,7 @@
 import type { HealthStatus } from '@dingen/core'
 import { APP_NAME } from '@dingen/core'
 import { type Context, Hono, type Next } from 'hono'
+import { createMiddleware } from 'hono/factory'
 import { ActivityService } from './activity/service.js'
 import { AgentService } from './agents/service.js'
 import { InvitationService } from './auth/invitations.js'
@@ -92,8 +93,12 @@ export function createApp(deps: AppDeps) {
   app.route('/api/activity', activityRoutes(activity))
 
   const calendars = new CalendarService(deps.db, { fetchFeed: deps.fetchFeed })
-  app.use('/api/calendars', requireAllScope('read'))
-  app.use('/api/calendars/*', requireAllScope('read'))
+  // Reading calendars needs Everything (read); adding, changing or removing one needs Everything (manage).
+  const calendarScope = createMiddleware<AppEnv>((c, next) =>
+    requireAllScope(c.req.method === 'GET' ? 'read' : 'manage')(c, next),
+  )
+  app.use('/api/calendars', calendarScope)
+  app.use('/api/calendars/*', calendarScope)
   app.route('/api/calendars', calendarRoutes(calendars, deps.timezone ?? 'Europe/Amsterdam'))
 
   // --- herinneringen ---

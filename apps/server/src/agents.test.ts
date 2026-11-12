@@ -270,6 +270,20 @@ describe('sync and account endpoints', () => {
     expect(push.status).toBe(403)
     expect((await push.json()).error).toBe('agent_scope')
   })
+
+  it('calendars: reading needs Everything (read), changing needs Everything (manage)', async () => {
+    const reader = await makeAgent('Calendar reader', [{ scope: 'all', level: 'edit' }])
+    const bearer = { authorization: `Bearer ${reader.token}` }
+    expect((await app.request('/api/calendars', { headers: bearer })).status).toBe(200)
+    const add = await app.request(
+      '/api/calendars',
+      json('POST', { name: 'x', url: 'https://example.com/a.ics' }, bearer),
+    )
+    expect(add.status).toBe(403)
+    expect(
+      (await app.request('/api/calendars/nope', { method: 'DELETE', headers: bearer })).status,
+    ).toBe(403)
+  })
 })
 
 describe('agents API', () => {

@@ -31,6 +31,14 @@
   line. API: `GET /api/activity`; MCP: `get_activity`. An agent only sees
   activity on what it can read.
 - Area icons: Bitcoin and a gamepad.
+- Calendars: a changed or cancelled occurrence of a repeating appointment
+  (common in Office 365 / Exchange feeds) no longer shows up under every other
+  repeating appointment, so Today no longer lists the same appointment many
+  times, and occurrences that clashed with another series' change are back.
+  A calendar that failed to load is retried after about a minute instead of
+  15, and Settings no longer says there are no calendars while loading.
+  Agents need Everything (read) to see calendars and Everything (manage) to
+  add, change or remove one.
 - Demo: Sam has a Research assistant and a Bookkeeper with a few days of
   work and assigned tasks.
 
