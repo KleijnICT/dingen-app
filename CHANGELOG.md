@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased
+## 1.0.0-alpha.2
+
+Invitation-only registration and safer updates. A pre-release; `:latest`
+points to it.
 
 - Invitations: `DINGEN_REGISTRATION=invite` lets people register only with
   an invitation link. The first account is the administrator (on existing
@@ -11,6 +14,12 @@
 - Backup before migrations: when an update brings database migrations,
   Dingen first copies the database to `DATA_DIR/backups` (ten most recent
   kept). If the copy fails it does not migrate and stops.
+- Settings: the seven tabs now fit the window on every width.
+- Releases: images built from `main` (pre-releases included) get the
+  `latest` tag. Maintainers can let CI roll out every build to a Docker host
+  through a stack webhook (`DEPLOY_WEBHOOK_DEV`, `DEPLOY_WEBHOOK_PROD`); the
+  run waits until `/api/health` reports the new build. Without the secrets the
+  step is skipped.
 
 ## 1.0.0-alpha.1
 

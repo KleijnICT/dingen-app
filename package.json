@@ -1,7 +1,7 @@
 {
   "name": "dingen",
   "private": true,
-  "version": "1.0.0-alpha.1",
+  "version": "1.0.0-alpha.2",
   "description": "GTD task manager. Open source, self-hosted or hosted.",
   "license": "GPL-3.0-only",
   "packageManager": "pnpm@12.18.0",
