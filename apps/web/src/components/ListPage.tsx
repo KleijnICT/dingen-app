@@ -31,9 +31,11 @@ import { useOnSignal, useTaskList } from './useTaskList.js'
 interface Props {
   list: ListDef
   focusSignal: number
+  /** Replaces the title header (the Logbook puts its filters there). */
+  header?: React.ReactNode
 }
 
-export function ListPage({ list, focusSignal }: Props) {
+export function ListPage({ list, focusSignal, header }: Props) {
   const engine = useEngine()
   const t = useT()
   const ws = useWorkspace()
@@ -236,24 +238,26 @@ export function ListPage({ list, focusSignal }: Props) {
 
   return (
     <section className={`list-page ${list.id}`}>
-      <header className="list-header">
-        <h1>{t(list.titleKey)}</h1>
-        {list.id === 'today' && <p className="muted">{describeLongDate(ws.today)}</p>}
-        {list.id === 'today' && (
-          <fieldset className="view-switch" aria-label={t('today.view')}>
-            {(['manual', 'grouped'] as const).map((view) => (
-              <button
-                type="button"
-                key={view}
-                className={`chip small ${todayView === view ? 'active' : ''}`}
-                onClick={() => setTodayView(view)}
-              >
-                {t(`today.view.${view}`)}
-              </button>
-            ))}
-          </fieldset>
-        )}
-      </header>
+      {header ?? (
+        <header className="list-header">
+          <h1>{t(list.titleKey)}</h1>
+          {list.id === 'today' && <p className="muted">{describeLongDate(ws.today)}</p>}
+          {list.id === 'today' && (
+            <fieldset className="view-switch" aria-label={t('today.view')}>
+              {(['manual', 'grouped'] as const).map((view) => (
+                <button
+                  type="button"
+                  key={view}
+                  className={`chip small ${todayView === view ? 'active' : ''}`}
+                  onClick={() => setTodayView(view)}
+                >
+                  {t(`today.view.${view}`)}
+                </button>
+              ))}
+            </fieldset>
+          )}
+        </header>
+      )}
       {list.id === 'today' && <ReviewBanner />}
       <TagFilter present={present} active={tagFilter} onChange={setTagFilter} />
       {shown.length === 0 && projects.length === 0 && (

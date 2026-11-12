@@ -1,4 +1,5 @@
 import {
+  type ActivityItem,
   type Area,
   applyChange,
   buildSnapshot,
@@ -40,15 +41,45 @@ export interface PullBody {
   hasMore: boolean
 }
 
+/** Filters of `GET /api/activity`; instants are ISO strings. */
+export interface ActivityFilter {
+  kinds?: ActivityItem['kind'][] | undefined
+  actor?: string | undefined
+  since?: string | undefined
+  until?: string | undefined
+  before?: number | undefined
+  limit?: number | undefined
+}
+
+export interface ActivityBody {
+  items: ActivityItem[]
+  nextBefore: number | null
+}
+
 /** Where the changes go: the Dingen server over HTTP, or the sync service in-process. */
 export interface SyncTransport {
   snapshot(): Promise<SnapshotBody>
   pull(since: number): Promise<PullBody>
   push(changes: Change[]): Promise<unknown>
+  /** The activity log (Logbook); absent on transports that have none. */
+  activity?(filter: ActivityFilter): Promise<ActivityBody>
   /** The member id of whoever this transport acts as (`agent:<id>` for a token). */
   whoami?(): Promise<string>
   /** The owner and their agents, for assigning. */
   members?(): Promise<Member[]>
+}
+
+/** `?kinds=…&actor=…` for the activity API. */
+export function activityQuery(filter: ActivityFilter): string {
+  const params = new URLSearchParams()
+  if (filter.kinds && filter.kinds.length > 0) params.set('kinds', filter.kinds.join(','))
+  if (filter.actor) params.set('actor', filter.actor)
+  if (filter.since) params.set('since', filter.since)
+  if (filter.until) params.set('until', filter.until)
+  if (filter.before !== undefined) params.set('before', String(filter.before))
+  if (filter.limit !== undefined) params.set('limit', String(filter.limit))
+  const q = params.toString()
+  return q ? `?${q}` : ''
 }
 
 export class HttpTransport implements SyncTransport {
@@ -95,6 +126,12 @@ export class HttpTransport implements SyncTransport {
     return res.json()
   }
 
+  async activity(filter: ActivityFilter): Promise<ActivityBody> {
+    return (
+      await this.request(`/api/activity${activityQuery(filter)}`)
+    ).json() as Promise<ActivityBody>
+  }
+
   async whoami(): Promise<string> {
     const body = (await (await this.request('/api/auth/me')).json()) as { member?: string }
     if (!body.member) throw new Error('This Dingen server does not know members yet')
@@ -111,6 +148,8 @@ export interface ClientOptions {
   clientId?: string
   /** The calendar day "now", in the user's timezone. */
   today?: () => string
+  /** The user's timezone, for times in readable output. Default: the system's. */
+  timezone?: string
 }
 
 export class DingenClient implements Writer {
@@ -118,6 +157,7 @@ export class DingenClient implements Writer {
   private readonly clock: Clock
   private readonly clientId: string
   private readonly todayFn: () => string
+  readonly timezone: string
   private cursor = 0
   private loaded = false
   private pending: Change[] = []
@@ -130,6 +170,13 @@ export class DingenClient implements Writer {
     this.clientId = options.clientId ?? newClientId()
     this.clock = createClock(this.clientId)
     this.todayFn = options.today ?? (() => toCalendarDate())
+    this.timezone = options.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone
+  }
+
+  /** The activity log, without touching the replica (an agent with a narrow scope has no sync). */
+  async activity(filter: ActivityFilter): Promise<ActivityBody> {
+    if (!this.transport.activity) throw new Error('This server has no activity log')
+    return this.transport.activity(filter)
   }
 
   get today(): string {

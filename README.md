@@ -14,6 +14,9 @@ built-in MCP server.
 
 - **Structure:** Inbox, Today (with This Evening), Upcoming,
   Anytime, Someday, Logbook; areas, projects, headings and nested tags.
+- **Logbook as activity:** everything that was added, completed, changed or
+  deleted, by you or by an agent, newest first and per day; filter on kind,
+  who and period. "Completed" keeps the list of completed items.
 - **Dates:** a "when" date for planning and a separate deadline.
 - **Times and reminders:** a time of day on a task and a reminder, delivered
   as a notification on every device where you turn it on (web push).
@@ -216,6 +219,15 @@ The MCP server offers tools to get an overview, list, search, create, update,
 complete, reopen, cancel and delete tasks, and to create areas, projects,
 headings and tags. Renaming or deleting areas, projects and tags is left to
 the app.
+
+`get_activity` reads the Logbook: what was added, completed, reopened,
+changed or deleted, by whom and when, newest first. It filters on `kinds`,
+`who` (`owner`, `me`, an agent's name or a member id) and a period (`since`,
+`until`: `today`, `yesterday`, a date or a date-time), and pages with
+`before`. An agent only sees activity on what it can read. The same data is
+`GET /api/activity?kinds=…&actor=…&since=…&until=…&before=…&limit=…`, which
+returns `{ items, nextBefore }`; changes to the same item by the same member
+within five minutes are one line, and notes only say that they changed.
 
 For the daily, weekly and monthly review there are `get_review` (what is due,
 the steps and the items of the current step with their signals),

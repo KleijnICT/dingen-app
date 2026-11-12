@@ -1,7 +1,8 @@
 import type { Change, Member } from '@dingen/core'
-import { createMcpServer, DingenClient, type SyncTransport } from '@dingen/mcp'
+import { type ActivityFilter, createMcpServer, DingenClient, type SyncTransport } from '@dingen/mcp'
 import { StreamableHTTPTransport } from '@hono/mcp'
 import { Hono } from 'hono'
+import type { ActivityKind, ActivityService } from '../activity/service.js'
 import type { Access } from '../agents/access.js'
 import type { AgentService } from '../agents/service.js'
 import { accessOf } from '../auth/middleware.js'
@@ -14,7 +15,7 @@ import type { SyncService } from '../sync.js'
  * Stateless: every request gets a fresh replica from the sync service, with
  * only what the agent can read; its writes are checked against its grants.
  */
-export function mcpRoutes(timezone: string) {
+export function mcpRoutes(timezone: string, activity: ActivityService) {
   const app = new Hono<AppEnv>()
 
   app.all('/', async (c) => {
@@ -22,8 +23,8 @@ export function mcpRoutes(timezone: string) {
     if (!c.get('user') || c.get('authSource') !== 'token') {
       return c.json({ error: 'unauthorized' }, 401)
     }
-    const transport = new ServiceTransport(c.get('sync'), c.get('agents'), accessOf(c))
-    const client = new DingenClient(transport, { today: () => todayIn(timezone) })
+    const transport = new ServiceTransport(c.get('sync'), c.get('agents'), accessOf(c), activity)
+    const client = new DingenClient(transport, { today: () => todayIn(timezone), timezone })
     const server = createMcpServer(client)
     const http = new StreamableHTTPTransport()
     await server.connect(http)
@@ -39,7 +40,23 @@ class ServiceTransport implements SyncTransport {
     private readonly sync: SyncService,
     private readonly agents: AgentService,
     private readonly access: Access,
+    private readonly activityService: ActivityService,
   ) {}
+
+  async activity(filter: ActivityFilter) {
+    return this.activityService.list(
+      this.access.userId,
+      {
+        kinds: filter.kinds as ActivityKind[] | undefined,
+        actor: filter.actor as Access['actor'] | undefined,
+        since: filter.since,
+        until: filter.until,
+        before: filter.before,
+        limit: filter.limit,
+      },
+      this.access.grants,
+    )
+  }
 
   async snapshot() {
     return this.sync.snapshot(this.access.userId, this.access.grants)

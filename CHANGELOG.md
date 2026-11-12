@@ -18,6 +18,14 @@
 - API: `GET /api/members`, `/api/agents` (create, change, new token, revoke)
   and `GET /api/access`; `/api/auth/me` reports the `member`. The
   `/api/auth/tokens` endpoints are gone.
+- Logbook as activity: everything that was added, completed, reopened,
+  changed or deleted, by you or by an agent, newest first and per day, with
+  the member's avatar and what changed ("changed When from Today to Friday";
+  notes only say that they changed). Filters for kind, who and period; more
+  loads as you scroll. The list of completed items is the "Completed" filter.
+  Changes to the same item by the same member within five minutes are one
+  line. API: `GET /api/activity`; MCP: `get_activity`. An agent only sees
+  activity on what it can read.
 - Demo: Sam has a Research assistant and a Bookkeeper with a few days of
   work and assigned tasks.
 

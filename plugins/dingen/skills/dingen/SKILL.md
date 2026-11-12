@@ -18,7 +18,8 @@ structure: the user trusts the app because every task is filed the same way.
 - **Upcoming**: tasks with a when-date or deadline in the future.
 - **Anytime**: tasks without a date that can be done now.
 - **Someday**: ideas without commitment. No dates.
-- **Logbook**: completed and canceled tasks.
+- **Logbook**: what happened, by the user and by agents; `get_activity`
+  reads it ("what did the research agent do yesterday?").
 - **Areas**: ongoing responsibilities without an end (Work, Home, Health).
 - **Projects**: an outcome with an end, made of several tasks, optionally
   grouped under **headings**. A project lives in an area or on its own.

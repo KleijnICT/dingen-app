@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto'
 import { ulid } from '@dingen/core'
+import { and, eq } from 'drizzle-orm'
 import { AgentService } from '../agents/service.js'
 import { hashPassword } from '../auth/password.js'
 import type { Db } from '../db.js'
@@ -81,7 +82,14 @@ export async function resetToDemo(db: Db, options: DemoSeedOptions): Promise<Dem
   const result = {
     users: created.map((u) => {
       const records = set[u.email] ?? []
-      if (records.length > 0) sync.importRecords(u.id, records)
+      if (records.length > 0) {
+        sync.importRecords(u.id, records)
+        // The Logbook times lines by arrival: the base set arrived when the account was made.
+        db.update(changes)
+          .set({ receivedAt: new Date(now.getTime() - 90 * 86_400_000).toISOString() })
+          .where(and(eq(changes.userId, u.id), eq(changes.clientId, 'import')))
+          .run()
+      }
       return { ...u, entities: records.length }
     }),
   }
