@@ -1,7 +1,7 @@
 # Roadmap
 
 Where Dingen is heading. Phases, not dates: each phase starts when the
-previous one is done. Plans per part are in `docs/` (in Dutch).
+previous one is done.
 
 ## 1. Feature complete
 

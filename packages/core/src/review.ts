@@ -4,8 +4,7 @@ import type { Area, CalendarDate, Project, Review, ReviewKind, Task } from './en
 import * as views from './views.js'
 
 /**
- * The reviews (docs/10-review-plan.md) as pure functions: when a review is
- * due, its steps, what each step shows, and the signals on a project or area.
+ * The reviews as pure functions: when a review is due, its steps, what each step shows, and the signals on a project or area.
  * Web, server and MCP share them, so a review means the same everywhere.
  */
 

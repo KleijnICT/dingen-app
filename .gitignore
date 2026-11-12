@@ -8,3 +8,6 @@ data/
 .env
 .DS_Store
 *.tsbuildinfo
+
+# Internal plans live in the private repo KleijnICT/dingen-app-docs
+docs/

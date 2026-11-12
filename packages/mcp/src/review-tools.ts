@@ -24,7 +24,7 @@ import { z } from 'zod'
 import type { DingenClient } from './client.js'
 
 /**
- * The review tools (docs/10-review-plan.md, step 10c). All meaning comes from
+ * The review tools. All meaning comes from
  * `@dingen/core/review`: the same steps, items and signals as the app, and the
  * progress lives in the synced `review` entity and in `reviewedAt`, so a
  * review started with Claude can be finished in the app and the other way round.

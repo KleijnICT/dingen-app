@@ -286,7 +286,7 @@ For anything else, make a spreadsheet with these English column names (only
 node packages/mcp/dist/import/cli.js csv tasks.csv --url http://localhost:8080
 ```
 
-An example file is in [docs/voorbeeld-import.csv](docs/voorbeeld-import.csv).
+An example file is in [examples/import-example.csv](examples/import-example.csv).
 
 ## Known limitations
 
@@ -316,8 +316,8 @@ The repository is a pnpm monorepo:
 - `apps/server`: Hono server with SQLite (Drizzle)
 - `apps/web`: React web app with a local replica (Dexie)
 
-Design decisions and plans per part are in `docs/` (in Dutch). See
-[CONTRIBUTING.md](CONTRIBUTING.md) and [CHANGELOG.md](CHANGELOG.md).
+See [ROADMAP.md](ROADMAP.md), [CONTRIBUTING.md](CONTRIBUTING.md) and
+[CHANGELOG.md](CHANGELOG.md).
 
 ## License
 

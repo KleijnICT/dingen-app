@@ -86,7 +86,7 @@ describe('generic csv import', () => {
 
   it('parses the example file from the docs without warnings', () => {
     const example = readFileSync(
-      new URL('../../../../docs/voorbeeld-import.csv', import.meta.url),
+      new URL('../../../../examples/import-example.csv', import.meta.url),
       'utf8',
     )
     const p = planCsvImport(example, { today: TODAY })

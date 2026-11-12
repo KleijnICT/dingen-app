@@ -25,7 +25,7 @@ points to it.
 
 First alpha on the way to 1.0: reviews, calendars, reminders, export and
 import, more imports and an installable web app. Not feature complete yet
-(see `docs/11-roadmap-plan.md`); expect changes before 1.0.0. This is a
+(see `ROADMAP.md`); expect changes before 1.0.0. This is a
 pre-release; `:latest` points to it as well.
 
 - MCP: reviews with Claude. New tools `get_review`, `start_review`,
