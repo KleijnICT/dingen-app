@@ -18,6 +18,9 @@ export const nl: Messages = {
   'auth.error.email_taken': 'Er bestaat al een account met dit e-mailadres.',
   'auth.error.registration_closed': 'Registratie is gesloten op deze server.',
   'auth.error.too_many_attempts': 'Te veel pogingen. Probeer het over een kwartier opnieuw.',
+  'auth.demo.title': 'Demo-accounts',
+  'auth.demo.signInAs': 'Inloggen als {name}',
+  'auth.demo.resets': 'Dit is een demoserver. Alle gegevens worden bij elke uitrol teruggezet.',
   'auth.error.invalid_body':
     'Controleer het e-mailadres en kies een wachtwoord van minstens 8 tekens.',
 

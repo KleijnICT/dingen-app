@@ -3,6 +3,7 @@ import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
 import { z } from 'zod'
 import { requireAuth, SESSION_COOKIE } from '../auth/middleware.js'
 import { AuthError } from '../auth/service.js'
+import { DEMO_ACCOUNTS, demoAccount } from '../demo/accounts.js'
 import type { AppEnv } from '../env.js'
 
 const Credentials = z.object({
@@ -51,8 +52,9 @@ function handleAuthError(c: Ctx, err: unknown) {
   throw err
 }
 
-export function authRoutes() {
+export function authRoutes(options: { demo?: boolean } = {}) {
   const app = new Hono<AppEnv>()
+  const demo = options.demo ?? false
 
   app.get('/status', (c) => {
     const auth = c.get('auth')
@@ -60,7 +62,24 @@ export function authRoutes() {
       hasUsers: auth.hasUsers(),
       registrationOpen: auth.registrationOpen(),
       registration: auth.registrationMode(),
+      ...(demo ? { demo: true } : {}),
     })
+  })
+
+  // Demo mode only: the demo accounts, and signing in as one without a password.
+  app.get('/demo', (c) => {
+    if (!demo) return c.json({ error: 'not_found' }, 404)
+    const auth = c.get('auth')
+    return c.json({ accounts: DEMO_ACCOUNTS.filter((a) => auth.findByEmail(a.email)) })
+  })
+
+  app.post('/demo/:email', (c) => {
+    if (!demo) return c.json({ error: 'not_found' }, 404)
+    const account = demoAccount(c.req.param('email'))
+    const user = account ? c.get('auth').findByEmail(account.email) : null
+    if (!user) return c.json({ error: 'not_found' }, 404)
+    startSession(c, user.id)
+    return c.json({ user })
   })
 
   // Controleert een uitnodigingslink voordat iemand het formulier invult.

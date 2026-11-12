@@ -161,6 +161,39 @@ button.link {
   padding: 4px 0;
   font-weight: 500;
 }
+/* Demo mode: one quiet button per demo account under the sign-in form. */
+.demo-accounts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.demo-accounts h2 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+button.demo-account {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--line);
+}
+button.demo-account:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+button.demo-account .muted {
+  font-weight: 400;
+  font-size: 0.9em;
+}
+.demo-accounts .small {
+  font-size: 0.85em;
+}
 button.link.danger {
   color: var(--error);
 }

@@ -309,6 +309,20 @@ pnpm check      # lint, build, typecheck and tests
 
 Build and run the image from source with `docker compose -f compose.dev.yml up --build`.
 
+### Demo mode
+
+`DINGEN_DEMO=1` is meant for development servers and screenshots only. **On
+every start it wipes the whole database**: all accounts, sessions, API tokens,
+invitations, calendars and tasks. It then writes a fixed set of demo data with
+dates relative to today, so every list is filled: Sam Rivera (a freelance web
+designer, the administrator), Morgan Rivera (a teacher) and an empty account.
+The sign-in screen shows a button per demo account that signs in without a
+password. Never set it on a server with data you want to keep.
+
+```sh
+DINGEN_DEMO=1 DATA_DIR=/tmp/dingen-demo pnpm --filter @dingen/server dev
+```
+
 The repository is a pnpm monorepo:
 
 - `packages/core`: data model, sync protocol, dates and repeat rules

@@ -1,6 +1,6 @@
 import { APP_NAME } from '@dingen/core'
 import { type FormEvent, useEffect, useState } from 'react'
-import { ApiError, type AuthStatus, api, errorText, type User } from './api.js'
+import { ApiError, type AuthStatus, api, type DemoAccount, errorText, type User } from './api.js'
 import { useT } from './i18n/index.js'
 import { inviteFromSearch, withoutInvite } from './invite.js'
 
@@ -28,6 +28,37 @@ export function AuthScreen({ status, onSignedIn }: Props) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [demoAccounts, setDemoAccounts] = useState<DemoAccount[]>([])
+
+  useEffect(() => {
+    if (!status.demo) return
+    let cancelled = false
+    api
+      .get<{ accounts: DemoAccount[] }>('/api/auth/demo')
+      .then(({ accounts }) => {
+        if (!cancelled) setDemoAccounts(accounts)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [status.demo])
+
+  async function signInAsDemo(account: DemoAccount) {
+    setBusy(true)
+    setError(null)
+    try {
+      const { user } = await api.post<{ user: User }>(
+        `/api/auth/demo/${encodeURIComponent(account.email)}`,
+        {},
+      )
+      onSignedIn(user)
+    } catch (err) {
+      setError(errorText(err))
+    } finally {
+      setBusy(false)
+    }
+  }
 
   useEffect(() => {
     if (!invite) return
@@ -118,6 +149,24 @@ export function AuthScreen({ status, onSignedIn }: Props) {
           >
             {mode === 'login' ? t('auth.toRegister') : t('auth.toSignIn')}
           </button>
+        )}
+        {demoAccounts.length > 0 && (
+          <section className="demo-accounts" aria-labelledby="demo-accounts-title">
+            <h2 id="demo-accounts-title">{t('auth.demo.title')}</h2>
+            {demoAccounts.map((account) => (
+              <button
+                key={account.email}
+                type="button"
+                className="demo-account"
+                disabled={busy}
+                onClick={() => signInAsDemo(account)}
+              >
+                <span>{t('auth.demo.signInAs', { name: account.name })}</span>
+                <span className="muted">{account.description}</span>
+              </button>
+            ))}
+            <p className="muted small">{t('auth.demo.resets')}</p>
+          </section>
         )}
       </form>
     </main>
