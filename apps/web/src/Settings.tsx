@@ -225,9 +225,17 @@ function PasswordForm({ hasPassword: initial }: { hasPassword: boolean }) {
   )
 }
 
+interface ImportCounts {
+  created: number
+  updated: number
+  unchanged: number
+  /** Already on the server in a space where you may not edit (older servers: absent). */
+  skipped?: number
+}
+
 interface ImportSummary {
-  counts: Record<EntityType, { created: number; updated: number; unchanged: number }>
-  total: { created: number; updated: number; unchanged: number }
+  counts: Record<EntityType, ImportCounts>
+  total: ImportCounts
 }
 
 const DATA_TYPES: EntityType[] = ['area', 'project', 'heading', 'task', 'checklistItem', 'tag']
@@ -321,7 +329,12 @@ function DataTab() {
         {error && <p className="error">{error}</p>}
         {result && (
           <div role="status">
-            <p>{t('data.import.done', result.total)}</p>
+            <p>{t('data.import.done', { ...result.total })}</p>
+            {(result.total.skipped ?? 0) > 0 && (
+              <p className="muted">
+                {t('data.import.skipped', { skipped: result.total.skipped ?? 0 })}
+              </p>
+            )}
             <table className="data-counts">
               <tbody>
                 {DATA_TYPES.map((type) => {
@@ -331,6 +344,7 @@ function DataTab() {
                       <th scope="row">{t(`data.type.${type}`)}</th>
                       <td>
                         {c.created} / {c.updated} / {c.unchanged}
+                        {(result.total.skipped ?? 0) > 0 && ` / ${c.skipped ?? 0}`}
                       </td>
                     </tr>
                   )

@@ -3,7 +3,7 @@ import { bodyLimit } from 'hono/body-limit'
 import type { Db } from '../db.js'
 import type { AppEnv } from '../env.js'
 import { buildExport, parseExport } from '../export.js'
-import { ownedSpacesOf, SpaceAccessError } from '../spaces/service.js'
+import { SpaceAccessError } from '../spaces/service.js'
 import { SyncValidationError } from '../sync.js'
 import { lowercaseTags } from '../tags/lowercase.js'
 
@@ -41,15 +41,19 @@ export function dataRoutes(db: Db, version: string) {
         return c.json({ error: 'account_not_empty' }, 409)
       }
       try {
-        const result = sync.importRecords(userId, parsed.records, c.get('actor'))
-        // An older file can hold tags that now share a (lowercase) name, with
-        // each other or with tags already here: merge them (plan 23).
-        lowercaseTags(db, ownedSpacesOf(db, userId))
-        const total = { created: 0, updated: 0, unchanged: 0 }
+        const result = sync.importRecords(userId, parsed.records, {
+          actor: c.get('actor'),
+          spaces: parsed.spaces,
+        })
+        // Tags are per space: imported tags that share a (lowercase) name with
+        // each other or with tags already in that space become one (plan 23).
+        if (result.spaces.length > 0) lowercaseTags(db, result.spaces)
+        const total = { created: 0, updated: 0, unchanged: 0, skipped: 0 }
         for (const counts of Object.values(result.counts)) {
           total.created += counts.created
           total.updated += counts.updated
           total.unchanged += counts.unchanged
+          total.skipped += counts.skipped
         }
         return c.json({ mode, counts: result.counts, total, seq: result.seq })
       } catch (err) {

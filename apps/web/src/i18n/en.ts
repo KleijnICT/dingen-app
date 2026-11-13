@@ -282,6 +282,8 @@ export const en = {
   'data.import.cancel': 'Cancel',
   'data.import.working': 'Importing…',
   'data.import.done': 'Import finished: {created} new, {updated} updated, {unchanged} unchanged.',
+  'data.import.skipped':
+    '{skipped} skipped: they are already here in a space where you cannot edit. The last number per kind counts them.',
   'data.import.failed': 'Import failed: {reason}',
   'data.import.notJson': 'this is not a JSON file',
   'data.import.invalid': 'the file is not a valid Dingen export ({issue})',

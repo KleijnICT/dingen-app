@@ -21,6 +21,7 @@ import {
   type SpaceCursor,
   SpaceCursorSchema,
   type SpacedRecord,
+  type SpaceKind,
   SYNC_PROTOCOL,
   validateChangeFields,
 } from '@dingen/core'
@@ -36,7 +37,7 @@ import {
   type MemberGrants,
 } from './agents/access.js'
 import type { Db } from './db.js'
-import { changes, entities, type SpaceLevel } from './schema.js'
+import { changes, entities, type SpaceLevel, spaceMembers, spaces } from './schema.js'
 import {
   after,
   arrivalAsChanges,
@@ -81,21 +82,40 @@ export interface ImportRecord {
   id: string
   data: Record<string, unknown>
   fieldTs: Record<string, string>
+  /** The space it was exported from (format version 2); absent in older files. */
+  spaceId?: string
+}
+
+/** A space listed in an export file (format version 2). */
+export interface ImportSpace {
+  id: string
+  kind: SpaceKind
 }
 
 export interface ImportCounts {
   created: number
   updated: number
   unchanged: number
+  /** Already on this server in a space where the user may not edit: left alone. */
+  skipped: number
+}
+
+export interface ImportOptions {
+  /** Who imports; default the user. */
+  actor?: ActorId
+  /** The spaces listed in the file (format version 2). */
+  spaces?: ImportSpace[]
 }
 
 export interface ImportResult {
   counts: Record<EntityType, ImportCounts>
   seq: number
+  /** The spaces the import wrote in. */
+  spaces: string[]
 }
 
 function emptyBucket(): ImportCounts {
-  return { created: 0, updated: 0, unchanged: 0 }
+  return { created: 0, updated: 0, unchanged: 0, skipped: 0 }
 }
 
 export function emptyCounts(): Record<EntityType, ImportCounts> {
@@ -199,9 +219,38 @@ class WriteContext {
       const container = typeof id === 'string' ? this.find(type, id) : undefined
       if (container) return { spaceId: container.spaceId, makerId: this.userId }
     }
+    return { spaceId: this.personalSpace(), makerId: this.userId }
+  }
+
+  /** The user's personal space; throws when there is none. */
+  personalSpace(): string {
     if (this.personal === undefined) this.personal = personalSpaceOf(this.tx, this.userId)
     if (!this.personal) throw new SpaceAccessError('This account has no personal space')
-    return { spaceId: this.personal, makerId: this.userId }
+    return this.personal
+  }
+
+  /**
+   * Where a new imported entity goes when its exported space gives no answer:
+   * the space of its container when the user may edit there, else the
+   * personal space.
+   */
+  importTarget(record: Pick<EntityRecord, 'entityType' | 'data'>): {
+    spaceId: string
+    makerId: string
+  } {
+    for (const [field, type] of containerRefs(record.entityType)) {
+      const id = record.data[field]
+      const container = typeof id === 'string' ? this.find(type, id) : undefined
+      if (container && this.canWrite(container.spaceId)) {
+        return { spaceId: container.spaceId, makerId: this.userId }
+      }
+    }
+    return { spaceId: this.personalSpace(), makerId: this.userId }
+  }
+
+  /** Drops the cached level for a space (after the user became a member). */
+  forget(spaceId: string): void {
+    this.levels.delete(spaceId)
   }
 
   /** May the user write in this space (edit or manage)? */
@@ -625,24 +674,90 @@ export class SyncService {
    * Elk record wordt één wijziging per verschillende veldtijdstempel in het log,
    * met een deterministisch id: dezelfde import nog eens doen verandert niets.
    * Het samengevoegde resultaat wordt gevalideerd; bij een fout rolt alles terug.
+   *
+   * Spaces (plan 23, part 5): an entity that is already here keeps its space,
+   * and is skipped when the user may not edit there or cannot see it. A new
+   * one goes to the space it was exported from when the user may edit there;
+   * an exported space unknown here becomes the user's personal space (for the
+   * personal one) or a new shared space with the same id, owned by the user,
+   * so a second import finds it again. Otherwise, and for files without
+   * spaces, it goes to the space of its container when the user may edit
+   * there, else to the personal space.
    */
   importRecords(
     userId: string,
     records: ImportRecord[],
-    actor: ActorId = `user:${userId}`,
+    options: ImportOptions = {},
   ): ImportResult {
     const receivedAt = new Date().toISOString()
+    const actor: ActorId = options.actor ?? `user:${userId}`
+    const kinds = new Map((options.spaces ?? []).map((s) => [s.id, s.kind]))
     return this.db.transaction((tx) => {
       const spaceIds = spacesOf(tx, userId)
       const ctx = new WriteContext(tx, userId, (type, id) => this.locate(tx, spaceIds, type, id))
       const counts = emptyCounts()
       const problems: { changeId: string; issues: string[] }[] = []
+      const touched = new Set<string>()
       let seq = this.currentSeq(userId)
 
+      // Entities of the file that exist outside the user's spaces (read once, when needed).
+      let elsewhere: Set<string> | undefined
+      const existsElsewhere = (type: EntityType, id: string): boolean => {
+        if (!elsewhere) {
+          const wanted = new Set(records.map((r) => recordKey(r.entityType, r.id)))
+          const mine = new Set(spaceIds)
+          elsewhere = new Set()
+          const rows = tx
+            .select({ entityType: entities.entityType, id: entities.id, spaceId: entities.spaceId })
+            .from(entities)
+            .all()
+          for (const row of rows) {
+            const key = recordKey(row.entityType as EntityType, row.id)
+            if (!mine.has(row.spaceId) && wanted.has(key)) elsewhere.add(key)
+          }
+        }
+        return elsewhere.has(recordKey(type, id))
+      }
+
+      // Exported space id → the space it maps to here, or null to fall back.
+      const mapped = new Map<string, string | null>()
+      const mapSpace = (exported: string): string | null => {
+        const known = mapped.get(exported)
+        if (known !== undefined) return known
+        let out: string | null = null
+        if (ctx.canWrite(exported)) {
+          out = exported
+        } else if (
+          !tx.select({ id: spaces.id }).from(spaces).where(eq(spaces.id, exported)).get()
+        ) {
+          const kind = kinds.get(exported)
+          if (kind === 'personal') out = ctx.personalSpace()
+          else if (kind === 'shared') {
+            out = this.createImportedSpace(tx, exported, userId, receivedAt)
+            ctx.forget(out)
+          }
+        }
+        mapped.set(exported, out)
+        return out
+      }
+
       for (const incoming of records) {
+        const bucket: ImportCounts = counts[incoming.entityType] ?? emptyBucket()
         const located = ctx.find(incoming.entityType, incoming.id)
+        const blocked = located
+          ? !ctx.canWrite(located.spaceId)
+          : existsElsewhere(incoming.entityType, incoming.id)
+        if (blocked) {
+          bucket.skipped += 1
+          continue
+        }
         const existing = located?.record
-        const target = ctx.target(located)
+        const preferred = located || !incoming.spaceId ? null : mapSpace(incoming.spaceId)
+        const target = located
+          ? ctx.target(located)
+          : preferred
+            ? { spaceId: preferred, makerId: userId }
+            : ctx.importTarget(incoming)
         let record = existing
         for (const change of recordToChanges(incoming)) {
           const known = tx
@@ -658,9 +773,9 @@ export class SyncService {
           }
           record = next
           seq = this.store(tx, userId, target, true, change, next, receivedAt, actor, false)
+          touched.add(target.spaceId)
         }
 
-        const bucket: ImportCounts = counts[incoming.entityType] ?? emptyBucket()
         if (record === existing) {
           bucket.unchanged += 1
           continue
@@ -683,8 +798,20 @@ export class SyncService {
       }
 
       if (problems.length > 0) throw new SyncValidationError(problems)
-      return { counts, seq }
+      return { counts, seq, spaces: [...touched] }
     })
+  }
+
+  /**
+   * A shared space from an export made elsewhere: made here with the same id,
+   * owned by the importer, who is its only member (manage).
+   */
+  private createImportedSpace(tx: Db, id: string, userId: string, createdAt: string): string {
+    tx.insert(spaces).values({ id, kind: 'shared', ownerId: userId, createdAt }).run()
+    tx.insert(spaceMembers)
+      .values({ spaceId: id, userId, level: 'manage', joinedAt: createdAt })
+      .run()
+    return id
   }
 
   /**

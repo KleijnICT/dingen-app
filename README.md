@@ -176,6 +176,20 @@ file twice changes nothing. The same is available over the API:
 `GET /api/export` and `POST /api/import?mode=merge|reject` (`reject` refuses when
 the account already has data).
 
+The file (format version 2) holds the spaces you own, your personal space and
+shared spaces you made, not spaces you are only a member of:
+`{ format: "dingen-export", version: 2, appVersion, exportedAt, spaces: [{ id, kind }],
+entities: { <type>: [{ id, spaceId, data, fieldTs }] } }`. On import an item that
+is already on the server keeps its space; when it is in a space where you may
+not edit (or cannot see), it is skipped. A new item goes back to its space when
+you may edit there; on another server your personal space takes the place of
+the exported one, and an exported shared space becomes a new shared space with
+the same id, owned by you, so importing again finds it. Otherwise an item goes
+to the space of its project, area, heading or task when you may edit there,
+else to your personal space; files of version 1 (no spaces) are placed that
+way too. Tags with the same name in one space become one tag. The answer is
+`{ mode, counts: { <type>: { created, updated, unchanged, skipped } }, total, seq }`.
+
 ## Connecting Claude (MCP)
 
 Sign in, open **Settings** (bottom left) → **Agents** and create an agent: a
