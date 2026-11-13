@@ -8,6 +8,7 @@ import {
   newProject,
   newTag,
   newTask,
+  normalizeTagTitle,
   ordersBetween,
   type Project,
   type Repeat,
@@ -191,18 +192,19 @@ export function planTickTickImport(rows: TickTickRow[], options: ImportOptions):
     if (listKind(r) === 'project') ensureProject(r.list, r.folder)
   }
 
-  // Tags by name (case-insensitive); parents and labels from the options.
+  // Tags by name (case-insensitive); parents and labels from the options. The
+  // titles become lowercase (plan 23), labels included.
   const tags = new Map<string, Tag>()
   const tagOrders = ordersBetween(null, null, 2000)
   const parentOf = new Map(
-    Object.entries(options.tagParents ?? {}).map(([k, v]) => [k.toLowerCase(), v]),
+    Object.entries(options.tagParents ?? {}).map(([k, v]) => [normalizeTagTitle(k), v]),
   )
   const labelOf = new Map(
-    Object.entries(options.tagLabels ?? {}).map(([k, v]) => [k.toLowerCase(), v]),
+    Object.entries(options.tagLabels ?? {}).map(([k, v]) => [normalizeTagTitle(k), v]),
   )
   const resolving = new Set<string>()
   const tagFor = (name: string): Tag => {
-    const key = name.toLowerCase()
+    const key = normalizeTagTitle(name)
     const existing = tags.get(key)
     if (existing) return existing
     const parentName = parentOf.get(key)

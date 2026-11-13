@@ -1,7 +1,8 @@
-import { newTag, orderBetween, type Tag, views } from '@dingen/core'
+import { type Tag, views } from '@dingen/core'
 import { type KeyboardEvent, useId, useState } from 'react'
 import { useT } from '../i18n/index.js'
 import { useEngine, useWorkspace } from '../store/context.js'
+import { tagForName } from '../tags.js'
 
 interface Props {
   tagIds: string[]
@@ -19,14 +20,10 @@ export function TagEditor({ tagIds, onChange }: Props) {
   const available = ws.tags.filter((tag) => !tagIds.includes(tag.id)).sort(views.byOrder)
 
   function add(title: string) {
-    const clean = title.trim()
-    if (!clean) return
-    let tag = ws.tags.find((x) => x.title.toLowerCase() === clean.toLowerCase())
-    if (!tag) {
-      const last = [...ws.tags].sort(views.byOrder).at(-1)
-      tag = newTag({ title: clean, order: orderBetween(last?.order ?? null, null) })
-      engine.create('tag', tag)
-    }
+    const found = tagForName(ws.tags, title)
+    if (!found) return
+    const { tag } = found
+    if (found.created) engine.create('tag', tag)
     if (!tagIds.includes(tag.id)) onChange([...tagIds, tag.id])
     setDraft('')
   }

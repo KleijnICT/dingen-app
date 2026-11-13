@@ -48,7 +48,7 @@ export function samAgents(
   }
   const vat = find('project', 'Q4 VAT return')
   const business = find('area', 'Business')
-  const errands = find('tag', 'Errands')
+  const errands = find('tag', 'errands')
 
   const research: DemoAgent = {
     id: ulid(),

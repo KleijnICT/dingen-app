@@ -8,6 +8,7 @@ import { migrationsFolder, openDatabase } from './db.js'
 import { resetToDemo } from './demo/seed.js'
 import { ReminderPlanner } from './push/planner.js'
 import { mountWeb } from './static.js'
+import { migrateLowercaseTags } from './tags/lowercase.js'
 
 const config = loadConfig()
 applyLogLevel(config.logLevel)
@@ -41,6 +42,22 @@ try {
 }
 
 const { db, sqliteVersion } = openDatabase(config.databasePath)
+
+// Data migrations that must go through the change log (so clients sync them)
+// run here, once, after the SQL migrations.
+try {
+  const tags = migrateLowercaseTags(db)
+  if (tags && tags.spaces > 0) {
+    console.log(
+      `Tags to lowercase: ${tags.renamed} renamed, ${tags.merged} merged, ${tags.retagged} tasks and projects re-tagged in ${tags.spaces} space(s)`,
+    )
+  }
+} catch (err) {
+  // Not recorded as done, so the next start tries again; the data stays as it was.
+  console.error(
+    `Could not convert tag names to lowercase; trying again at the next start. ${err instanceof Error ? err.message : String(err)}`,
+  )
+}
 
 if (config.demo) {
   console.warn('DEMO MODE (DINGEN_DEMO): wiping all accounts and data and writing the demo set.')

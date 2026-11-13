@@ -16,12 +16,14 @@ import {
   newProject,
   newTag,
   newTask,
+  normalizeTagTitle,
   orderBetween,
   type Project,
   parseMemberId,
   type Reminder,
   Repeat,
   type Snapshot,
+  sameTagTitle,
   scheduleFields,
   setRepeat,
   signals,
@@ -692,12 +694,17 @@ function findArea(ws: Snapshot, ref: string): Area {
   return byRef(views.openAreas(ws.areas), ref, 'area')
 }
 
+/** By id, or by name ignoring case and extra spaces (tag names are lowercase, plan 23). */
 function findTag(ws: Snapshot, ref: string): Tag {
-  return byRef(
-    ws.tags.filter((t) => !t.deleted),
-    ref,
+  const live = ws.tags.filter((t) => !t.deleted)
+  const byId = live.find((t) => t.id === ref)
+  if (byId) return byId
+  const match = byRef(
+    live.map((t) => ({ id: t.id, title: normalizeTagTitle(t.title) })),
+    normalizeTagTitle(ref),
     'tag',
   )
+  return live.find((t) => t.id === match.id) as Tag
 }
 
 function findHeading(ws: Snapshot, project: Project, ref: string): Heading {
@@ -729,9 +736,15 @@ function createTag(
   title: string,
   parentId: string | null,
 ): Tag {
+  const clean = normalizeTagTitle(title)
+  if (!clean) throw new ToolError('A tag needs a name')
+  const same = ws.tags.find(
+    (t) => !t.deleted && t.parentId === parentId && sameTagTitle(t.title, clean),
+  )
+  if (same) return same
   const last = [...ws.tags].sort(views.byOrder).at(-1)
   const tag = newTag({
-    title: title.trim(),
+    title: clean,
     parentId,
     order: orderBetween(last?.order ?? null, null),
   })

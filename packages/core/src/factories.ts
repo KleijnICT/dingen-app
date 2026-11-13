@@ -10,6 +10,7 @@ import type {
 } from './entities.js'
 import { ulid } from './ids.js'
 import { firstOrder } from './order.js'
+import { normalizeTagTitle } from './tags.js'
 
 /**
  * Makers met de standaardwaarden van Dingen. Clients gebruiken deze zodat een
@@ -94,6 +95,7 @@ export function newChecklistItem(
   }
 }
 
+/** A new tag; its title is normalized (lowercase, see `normalizeTagTitle`). */
 export function newTag(fields: Partial<Tag> & { title: string }): Tag {
   return {
     id: ulid(),
@@ -102,6 +104,7 @@ export function newTag(fields: Partial<Tag> & { title: string }): Tag {
     parentId: null,
     order: firstOrder(),
     ...fields,
+    title: normalizeTagTitle(fields.title),
   }
 }
 

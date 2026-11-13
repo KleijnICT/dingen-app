@@ -21,7 +21,7 @@ const MONTHLY_STEPS = ['monthLookBack', 'areasDeep', 'somedayDeep']
 function sam(ctx: DemoContext): ImportRecord[] {
   const b = new Book(ctx)
 
-  for (const title of ['Calls', 'Errands', 'Computer', 'Waiting', '15 min']) b.tag(title)
+  for (const title of ['calls', 'errands', 'computer', 'waiting', '15 min']) b.tag(title)
 
   const clients = b.area('Clients', 'briefcase', 'blue', 8)
   const business = b.area('Business', 'wallet', 'green', 8)
@@ -50,7 +50,7 @@ function sam(ctx: DemoContext): ImportRecord[] {
       'New website for Crumb & Co., the bakery on Mill Street: menu, opening hours and online cake orders.\n\nContact: Hannah Brooks, hannah@example.com',
   })
   const discovery = b.heading(bakery, 'Discovery')
-  b.task('Kick-off call with Hannah', { heading: discovery, done: 18, tags: ['Calls'] })
+  b.task('Kick-off call with Hannah', { heading: discovery, done: 18, tags: ['calls'] })
   b.task('Collect photos and brand assets', { heading: discovery, done: 12 })
   b.task('Sitemap and page list', { heading: discovery, done: 9 })
   const design = b.heading(bakery, 'Design')
@@ -59,7 +59,7 @@ function sam(ctx: DemoContext): ImportRecord[] {
   b.task('Homepage design', {
     heading: design,
     when: 0,
-    tags: ['Computer'],
+    tags: ['computer'],
     created: 4,
     checklist: [
       'x Hero with the seasonal cake',
@@ -68,7 +68,7 @@ function sam(ctx: DemoContext): ImportRecord[] {
       'Cake order call-to-action',
     ],
   })
-  b.task('Mobile layouts', { heading: design, when: 'anytime', tags: ['Computer'], created: 4 })
+  b.task('Mobile layouts', { heading: design, when: 'anytime', tags: ['computer'], created: 4 })
   b.task('Send designs to Hannah for feedback', {
     heading: design,
     when: 2,
@@ -79,7 +79,7 @@ function sam(ctx: DemoContext): ImportRecord[] {
   b.task("Hannah's feedback on the colour palette", {
     heading: design,
     when: 'anytime',
-    tags: ['Waiting'],
+    tags: ['waiting'],
     created: 3,
     notes: 'Sent two options on Monday. Follow up if nothing by Friday.',
   })
@@ -117,13 +117,13 @@ function sam(ctx: DemoContext): ImportRecord[] {
   b.task('Onboarding flow v2', {
     project: onboarding,
     when: 0,
-    tags: ['Computer'],
+    tags: ['computer'],
     created: 2,
   })
   b.task('Write microcopy for the empty states', {
     project: onboarding,
     when: 'anytime',
-    tags: ['Computer'],
+    tags: ['computer'],
     created: 6,
   })
   b.task('Usability test with five people', {
@@ -154,16 +154,16 @@ function sam(ctx: DemoContext): ImportRecord[] {
     reviewed: 8,
     deadline: 9,
   })
-  b.task('Export bank transactions', { project: vat, done: 3, tags: ['Computer'] })
+  b.task('Export bank transactions', { project: vat, done: 3, tags: ['computer'] })
   b.task('Match receipts to expenses', {
     project: vat,
     when: 0,
-    tags: ['Computer'],
+    tags: ['computer'],
     created: 3,
     checklist: ['x October', 'November', 'December'],
   })
   b.task('Check the mileage log', { project: vat, when: 'anytime', tags: ['15 min'], created: 3 })
-  b.task('Submit the return online', { project: vat, when: 7, tags: ['Computer'], created: 3 })
+  b.task('Submit the return online', { project: vat, when: 7, tags: ['computer'], created: 3 })
 
   const portfolio = b.project('Portfolio refresh', {
     area: business,
@@ -172,7 +172,7 @@ function sam(ctx: DemoContext): ImportRecord[] {
   })
   b.task('Pick the six best projects', { project: portfolio, when: 'anytime', created: 45 })
   b.task('Case study: Northwind rebrand', { project: portfolio, when: 'anytime', created: 45 })
-  b.task('New headshot', { project: portfolio, when: 'anytime', created: 45, tags: ['Errands'] })
+  b.task('New headshot', { project: portfolio, when: 'anytime', created: 45, tags: ['errands'] })
 
   const cards = b.project('New business cards', { area: business, done: 16, reviewed: 22 })
   b.task('Design the front and back', { project: cards, done: 24 })
@@ -183,7 +183,7 @@ function sam(ctx: DemoContext): ImportRecord[] {
   b.task('Call the accountant about pension contributions', {
     area: business,
     when: 'anytime',
-    tags: ['Calls'],
+    tags: ['calls'],
     created: 5,
   })
   b.task('Blog post on accessible colour palettes', {
@@ -201,7 +201,7 @@ function sam(ctx: DemoContext): ImportRecord[] {
       area: business,
       time: '09:00',
       reminder: [0, '09:00'],
-      tags: ['Computer'],
+      tags: ['computer'],
       notes: 'Hours from the time sheet; reminders for anything older than 30 days.',
     },
     [daysBetween(addMonths(invoiceDay, -1), ctx.today)],
@@ -220,7 +220,7 @@ function sam(ctx: DemoContext): ImportRecord[] {
   b.task('Buy plants', {
     project: garden,
     when: 12,
-    tags: ['Errands'],
+    tags: ['errands'],
     created: 8,
     checklist: ['Lavender', 'Rosemary', 'Thyme', 'Strawberries', 'Compost (4 bags)'],
   })
@@ -229,17 +229,17 @@ function sam(ctx: DemoContext): ImportRecord[] {
   b.task('Call the plumber about the dripping kitchen tap', {
     area: home,
     when: 0,
-    tags: ['Calls'],
+    tags: ['calls'],
     created: 2,
   })
   b.task('Book the boiler service', {
     area: home,
     when: 4,
     reminder: [0, '09:00'],
-    tags: ['Calls'],
+    tags: ['calls'],
     created: 6,
   })
-  b.task('Buy light bulbs for the hallway', { area: home, when: 'anytime', tags: ['Errands'] })
+  b.task('Buy light bulbs for the hallway', { area: home, when: 'anytime', tags: ['errands'] })
   b.task('Take out the recycling', { area: home, when: 0, evening: true, tags: ['15 min'] })
   b.task('Learn to bake sourdough', { area: home, when: 'someday', created: 35 })
   b.task('Renew the car insurance', { area: home, done: 20 })
@@ -259,7 +259,7 @@ function sam(ctx: DemoContext): ImportRecord[] {
   )
 
   // --- Health ---
-  b.task('Book a dentist check-up', { area: health, when: 'anytime', tags: ['Calls'], created: 9 })
+  b.task('Book a dentist check-up', { area: health, when: 'anytime', tags: ['calls'], created: 9 })
   b.task('Yoga class', { area: health, when: 1, time: '07:30', reminder: [0, '07:00'] })
   b.task('Stretch for fifteen minutes', {
     area: health,
@@ -289,10 +289,10 @@ function sam(ctx: DemoContext): ImportRecord[] {
   b.task('Send the invitations (secretly)', {
     heading: guests,
     when: 0,
-    tags: ['Computer'],
+    tags: ['computer'],
     created: 9,
   })
-  b.task('Chase RSVPs', { heading: guests, when: 8, tags: ['Waiting'], created: 9 })
+  b.task('Chase RSVPs', { heading: guests, when: 8, tags: ['waiting'], created: 9 })
   const venue = b.heading(party, 'Venue')
   b.task('Visit The Lantern Room', { heading: venue, done: 5 })
   b.task('Pay the venue deposit', { heading: venue, when: 1, deadline: 3, created: 5 })
@@ -300,7 +300,7 @@ function sam(ctx: DemoContext): ImportRecord[] {
   b.task('Order the cake from Crumb & Co.', {
     heading: cake,
     when: 3,
-    tags: ['Calls'],
+    tags: ['calls'],
     created: 5,
     notes: 'Lemon and elderflower, serves 30. Pick up on the day before noon.',
   })
@@ -311,7 +311,7 @@ function sam(ctx: DemoContext): ImportRecord[] {
     created: 9,
     checklist: ['x Alex', 'x Dee', 'Jordan', 'Grandma Rose', 'The book club'],
   })
-  b.task('Pick up the framed print', { heading: gift, when: 15, tags: ['Errands'], created: 9 })
+  b.task('Pick up the framed print', { heading: gift, when: 15, tags: ['errands'], created: 9 })
 
   const lisbon = b.project('Weekend in Lisbon', {
     area: family,
@@ -328,7 +328,7 @@ function sam(ctx: DemoContext): ImportRecord[] {
     created: 7,
     checklist: ['Passports', 'Chargers', 'Walking shoes', 'Camera', 'Euros for the tram'],
   })
-  b.task('Call Mum', { area: family, when: 0, evening: true, tags: ['Calls'] })
+  b.task('Call Mum', { area: family, when: 0, evening: true, tags: ['calls'] })
   b.task("Birthday present for Alex's little one", { area: family, done: 4 })
 
   // --- No area ---
@@ -355,8 +355,8 @@ function sam(ctx: DemoContext): ImportRecord[] {
 function morgan(ctx: DemoContext): ImportRecord[] {
   const b = new Book(ctx)
 
-  b.tag('Calls')
-  b.tag('Errands')
+  b.tag('calls')
+  b.tag('errands')
 
   const home = b.area('Home', 'home', 'orange', 5)
   const health = b.area('Health', 'heart-pulse', 'red', 5)
@@ -373,7 +373,7 @@ function morgan(ctx: DemoContext): ImportRecord[] {
     notes: '58 pupils, 5 staff. Leave 8:30, back by 15:30.',
   })
   b.task('Send consent forms home', { project: trip, done: 4 })
-  b.task('Book the coach', { project: trip, when: 0, tags: ['Calls'], created: 4 })
+  b.task('Book the coach', { project: trip, when: 0, tags: ['calls'], created: 4 })
   b.task('Collect consent forms', {
     project: trip,
     when: 5,
@@ -398,11 +398,11 @@ function morgan(ctx: DemoContext): ImportRecord[] {
   b.task('Call the plumber about the dripping kitchen tap', {
     area: home,
     when: 0,
-    tags: ['Calls'],
+    tags: ['calls'],
     created: 2,
   })
-  b.task('Book the boiler service', { area: home, when: 4, tags: ['Calls'], created: 6 })
-  b.task('Buy bin bags', { area: home, when: 'anytime', tags: ['Errands'] })
+  b.task('Book the boiler service', { area: home, when: 4, tags: ['calls'], created: 6 })
+  b.task('Buy bin bags', { area: home, when: 'anytime', tags: ['errands'] })
   b.task('Order new reading glasses', { area: health, done: 6 })
 
   b.task('Swim', { area: health, when: 2, time: '07:00', reminder: [0, '06:30'] })

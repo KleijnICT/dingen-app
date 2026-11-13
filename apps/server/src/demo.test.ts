@@ -128,7 +128,7 @@ describe('demo set', () => {
       'Friends & Family',
     ])
     expect(ws.tags.map((t) => t.title).sort()).toEqual(
-      ['15 min', 'Calls', 'Computer', 'Errands', 'Waiting'].sort(),
+      ['15 min', 'calls', 'computer', 'errands', 'waiting'].sort(),
     )
     expect(ws.headings.length).toBeGreaterThanOrEqual(7)
     expect(ws.checklist.length).toBeGreaterThanOrEqual(20)

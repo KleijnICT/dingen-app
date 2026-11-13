@@ -151,6 +151,31 @@ describe('mcp', () => {
     const found = await call('search', { query: 'planten' })
     expect(found.tasks).toHaveLength(1)
   })
+
+  it('makes tag names lowercase and finds them case-insensitively', async () => {
+    const tag = await call('create_tag', { title: '  Boodschappen   Doen ' })
+    expect(tag.title).toBe('boodschappen doen')
+    // The same name again (any case) is the same tag, also under a parent.
+    expect((await call('create_tag', { title: 'BOODSCHAPPEN doen' })).id).toBe(tag.id)
+    const child = await call('create_tag', { title: 'IJs', parent: 'Boodschappen Doen' })
+    expect(child).toMatchObject({ title: 'ijs', parent: 'boodschappen doen' })
+
+    const task = await call('create_task', {
+      title: 'Naar de markt',
+      tags: ['boodschappen DOEN', 'Markt 🧺'],
+      createTags: true,
+    })
+    expect(task.tags).toEqual(['boodschappen doen', 'markt 🧺'])
+    const updated = await call('update_task', {
+      id: task.id,
+      tags: ['Nieuw Label', 'MARKT 🧺'],
+      createTags: true,
+    })
+    expect(updated.tags).toEqual(['nieuw label', 'markt 🧺'])
+    const titles = (await call('overview')).tags.map((t: { title: string }) => t.title)
+    expect(titles.every((t: string) => t === t.toLocaleLowerCase('nl'))).toBe(true)
+    expect(titles.filter((t: string) => t === 'markt 🧺')).toHaveLength(1)
+  })
 })
 
 describe('mcp reviews', () => {

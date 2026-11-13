@@ -540,6 +540,7 @@ export const nl: Messages = {
   'activity.period.week': 'Afgelopen 7 dagen',
   'activity.period.month': 'Afgelopen 30 dagen',
   'activity.you': 'jou',
+  'activity.system': 'Dingen',
   'activity.line.added': 'Toegevoegd door {name}',
   'activity.line.completed': 'Afgevinkt door {name}',
   'activity.line.canceled': 'Geannuleerd door {name}',

@@ -1,4 +1,4 @@
-import { ACTIVITY_KINDS, type ActivityItem, addDays, type Member } from '@dingen/core'
+import { ACTIVITY_KINDS, type ActivityItem, addDays, type Member, SYSTEM_ACTOR } from '@dingen/core'
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import type { ActivityFilter, DingenClient } from './client.js'
@@ -192,6 +192,7 @@ export function formatActivity(items: ActivityItem[], options: FormatOptions): s
     minute: '2-digit',
   })
   const who = (id: string) => {
+    if (id === SYSTEM_ACTOR) return 'Dingen (automatic)'
     const m = options.members.find((x) => x.id === id)
     if (m?.kind === 'user') return 'you'
     return m?.name ?? id

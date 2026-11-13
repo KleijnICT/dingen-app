@@ -1,4 +1,4 @@
-import { type EntityType, entitySchemas, TIMESTAMP_PATTERN } from '@dingen/core'
+import { type EntityType, entitySchemas, normalizeTagTitle, TIMESTAMP_PATTERN } from '@dingen/core'
 import { and, eq, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Db } from './db.js'
@@ -120,7 +120,12 @@ export function parseExport(input: unknown): ParsedExport {
         if (field !== 'id' && !rec.fieldTs[field])
           issues.push(`${where}: tijdstempel voor ${field} ontbreekt`)
       }
-      records.push({ entityType: type, id: rec.id, data: rec.data, fieldTs: rec.fieldTs })
+      // Tag names are lowercase (plan 23); older files may have capitals.
+      const data =
+        type === 'tag' && typeof rec.data.title === 'string'
+          ? { ...rec.data, title: normalizeTagTitle(rec.data.title) }
+          : rec.data
+      records.push({ entityType: type, id: rec.id, data, fieldTs: rec.fieldTs })
     }
   }
   if (issues.length > 0) return { ok: false, issues: issues.slice(0, MAX_ISSUES) }

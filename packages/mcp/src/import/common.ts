@@ -7,13 +7,16 @@ import {
   firstOccurrence,
   type Heading,
   instanceOf,
+  isDeleted,
   newArea,
   newHeading,
   newProject,
   newTag,
+  normalizeTagTitle,
   ordersBetween,
   type Project,
   type Repeat,
+  sameTagTitle,
   type Tag,
   type Task,
 } from '@dingen/core'
@@ -107,8 +110,32 @@ export interface ImportResult {
   alreadyThere: number
 }
 
+/**
+ * Plan tags that the account already has under the same (lowercase) name and
+ * parent map to that tag, so an import never makes a second "werk". Returns
+ * plan tag id → the id to use; parents come before their children in a plan.
+ */
+function existingTagIds(client: DingenClient, tags: Tag[]): Map<string, string> {
+  const live = [...client.records.values()].filter((r) => r.entityType === 'tag' && !isDeleted(r))
+  const mapped = new Map<string, string>()
+  for (const tag of tags) {
+    if (client.records.has(`tag:${tag.id}`)) continue
+    const parentId = tag.parentId ? (mapped.get(tag.parentId) ?? tag.parentId) : null
+    const same = live.find(
+      (r) =>
+        (r.data.parentId ?? null) === parentId &&
+        typeof r.data.title === 'string' &&
+        sameTagTitle(r.data.title, tag.title),
+    )
+    if (same) mapped.set(tag.id, same.id)
+  }
+  return mapped
+}
+
 /** Writes the plan; entities whose id already exists in the replica are left alone. */
 export function writePlan(client: DingenClient, plan: ImportPlan): ImportResult {
+  const tagIds = existingTagIds(client, plan.tags)
+  const tagId = (id: string) => tagIds.get(id) ?? id
   const result: ImportResult = {
     created: { area: 0, project: 0, heading: 0, task: 0, checklistItem: 0, tag: 0, review: 0 },
     alreadyThere: 0,
@@ -124,8 +151,16 @@ export function writePlan(client: DingenClient, plan: ImportPlan): ImportResult 
   for (const a of plan.areas) put('area', a)
   for (const p of plan.projects) put('project', p)
   for (const h of plan.headings ?? []) put('heading', h)
-  for (const t of plan.tags) put('tag', t)
-  for (const t of plan.tasks) put('task', t)
+  for (const t of plan.tags) {
+    if (tagIds.has(t.id)) {
+      result.alreadyThere += 1
+      continue
+    }
+    put('tag', t.parentId ? { ...t, parentId: tagId(t.parentId) } : t)
+  }
+  for (const t of plan.tasks) {
+    put('task', tagIds.size > 0 ? { ...t, tagIds: [...new Set(t.tagIds.map(tagId))] } : t)
+  }
   for (const c of plan.checklist) put('checklistItem', c)
   return result
 }
@@ -217,8 +252,9 @@ export class PlanBuilder {
     return h
   }
 
+  /** Tags by lowercase name (plan 23); the key also makes the stable id. */
   tag(name: string): Tag {
-    const key = name.toLowerCase()
+    const key = normalizeTagTitle(name)
     let t = this.tags.get(key)
     if (!t) {
       t = newTag({

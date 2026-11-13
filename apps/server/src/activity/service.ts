@@ -1,4 +1,4 @@
-import type { ACTIVITY_KINDS, ActivityItem, AgentGrant, EntityType, MemberId } from '@dingen/core'
+import type { ACTIVITY_KINDS, ActivityItem, ActorId, AgentGrant, EntityType } from '@dingen/core'
 import type Database from 'better-sqlite3'
 import { canRead, type Lookup } from '../agents/access.js'
 import type { Db } from '../db.js'
@@ -19,7 +19,7 @@ export type ActivityKind = (typeof ACTIVITY_KINDS)[number]
 
 export interface ActivityQuery {
   kinds?: readonly ActivityKind[] | undefined
-  actor?: MemberId | undefined
+  actor?: ActorId | undefined
   /** ISO instants; `since` inclusive, `until` inclusive. */
   since?: string | undefined
   until?: string | undefined

@@ -1,4 +1,4 @@
-import type { ActivityItem, MemberId } from '@dingen/core'
+import { type ActivityItem, type ActorId, isActorId } from '@dingen/core'
 
 /**
  * Activity (plan 19, part D): turning the change log into Logbook lines.
@@ -49,7 +49,7 @@ export interface Subject {
 
 export interface Group {
   subject: Subject
-  actor: MemberId
+  actor: ActorId
   /** Newest first. */
   rows: LogRow[]
   /** Time of the newest row, ms. */
@@ -75,11 +75,9 @@ export function changeTimeMs(row: Pick<LogRow, 'receivedAt'>): number {
  * A missing actor is the user who pushed the change (rows from before plan 19
  * and sessions without one), else `ownerId`.
  */
-export function actorOf(row: LogRow, ownerId: string): MemberId {
+export function actorOf(row: LogRow, ownerId: string): ActorId {
   const a = row.actor
-  return a && (a.startsWith('user:') || a.startsWith('agent:'))
-    ? (a as MemberId)
-    : `user:${row.userId ?? ownerId}`
+  return a && isActorId(a) ? a : `user:${row.userId ?? ownerId}`
 }
 
 /** A row creates its entity when it carries `createdAt`: only a whole new entity sends that. */

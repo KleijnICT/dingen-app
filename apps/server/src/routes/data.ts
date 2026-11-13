@@ -3,8 +3,9 @@ import { bodyLimit } from 'hono/body-limit'
 import type { Db } from '../db.js'
 import type { AppEnv } from '../env.js'
 import { buildExport, parseExport } from '../export.js'
-import { SpaceAccessError } from '../spaces/service.js'
+import { ownedSpacesOf, SpaceAccessError } from '../spaces/service.js'
 import { SyncValidationError } from '../sync.js'
+import { lowercaseTags } from '../tags/lowercase.js'
 
 const MAX_IMPORT_BYTES = 50 * 1024 * 1024
 
@@ -41,6 +42,9 @@ export function dataRoutes(db: Db, version: string) {
       }
       try {
         const result = sync.importRecords(userId, parsed.records, c.get('actor'))
+        // An older file can hold tags that now share a (lowercase) name, with
+        // each other or with tags already here: merge them (plan 23).
+        lowercaseTags(db, ownedSpacesOf(db, userId))
         const total = { created: 0, updated: 0, unchanged: 0 }
         for (const counts of Object.values(result.counts)) {
           total.created += counts.created

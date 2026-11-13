@@ -169,14 +169,14 @@ describe('ticktick api import', () => {
     expect(result.skipped).toEqual({ closedLists: ['Oud project'], tasksInClosedLists: 2 })
   })
 
-  it('uses tag labels and parents, and keeps unused tags', () => {
+  it('uses tag labels (in lowercase) and parents, and keeps unused tags', () => {
     const tags = Object.fromEntries(result.tags.map((t) => [t.title, t]))
-    expect(Object.keys(tags).sort()).toEqual(['Ongebruikt', 'Personen', 'Robin', 'Waiting'])
-    expect(tags.Robin?.parentId).toBe(tags.Personen?.id)
-    expect(tags.Personen?.parentId).toBeNull()
-    expect(tags.Waiting?.parentId).toBeNull()
-    expect(byId('a1').tagIds).toEqual([tags.Robin?.id])
-    expect(tags.Robin?.id).toBe(stableId('tag:robin'))
+    expect(Object.keys(tags).sort()).toEqual(['ongebruikt', 'personen', 'robin', 'waiting'])
+    expect(tags.robin?.parentId).toBe(tags.personen?.id)
+    expect(tags.personen?.parentId).toBeNull()
+    expect(tags.waiting?.parentId).toBeNull()
+    expect(byId('a1').tagIds).toEqual([tags.robin?.id])
+    expect(tags.robin?.id).toBe(stableId('tag:robin'))
   })
 
   it('builds the checklist from items with desc as notes', () => {

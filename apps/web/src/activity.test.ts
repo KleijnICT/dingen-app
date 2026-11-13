@@ -1,6 +1,6 @@
 import type { ActivityItem } from '@dingen/core'
 import { describe, expect, it } from 'vitest'
-import { describeLine, groupByDay, kindsFor, mergeFresh } from './activity.js'
+import { actorName, describeLine, groupByDay, kindsFor, mergeFresh } from './activity.js'
 import type { Workspace } from './store/context.js'
 
 const item = (seq: number, at: string, over: Partial<ActivityItem> = {}): ActivityItem => ({
@@ -26,6 +26,18 @@ const ws = {
 const ctx = { ws, memberName: () => undefined }
 
 describe('activity lines', () => {
+  it('names the server itself as Dingen', () => {
+    const line = item(1, '2026-11-12T10:00:00Z', {
+      actor: 'system',
+      kind: 'updated',
+      fields: [{ field: 'tagIds', from: [], to: [] }],
+    })
+    const name = actorName(line.actor, 'user:U1', undefined)
+    expect(name).toBe('Dingen')
+    expect(describeLine(line, name, ctx)).toMatch(/^Dingen changed the tags/)
+    expect(actorName('user:U1', 'user:U1', undefined)).toBe('You')
+  })
+
   it('says what changed, with the value before and after', () => {
     const line = item(1, '2026-11-12T10:00:00Z', {
       kind: 'updated',
