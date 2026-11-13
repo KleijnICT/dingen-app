@@ -130,3 +130,40 @@ export function useCompletedOpen(key: string): boolean {
   const raw = useSyncExternalStore(subscribe, readCompletedOpen, () => '')
   return raw.split(',').includes(key)
 }
+
+/**
+ * Review banners on Today closed with the cross, per kind with the day they were closed
+ * (`weekly:2026-11-13,monthly:…`). A banner closed today comes back tomorrow.
+ */
+const BANNER_KEY = 'dingen.reviewBannerClosed'
+
+function readBannerClosed(): string {
+  try {
+    return localStorage.getItem(BANNER_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+/** Is the banner of `kind` closed for `today`, given the stored value? */
+export function bannerClosedOn(raw: string, kind: string, today: string): boolean {
+  return raw.split(',').includes(`${kind}:${today}`)
+}
+
+export function closeReviewBanner(kind: string, today: string): void {
+  // Only today's entries are worth keeping; older days are dropped.
+  const keep = readBannerClosed()
+    .split(',')
+    .filter((entry) => entry.endsWith(`:${today}`) && !entry.startsWith(`${kind}:`))
+  keep.push(`${kind}:${today}`)
+  try {
+    localStorage.setItem(BANNER_KEY, keep.join(','))
+  } catch {
+    // See setTodayView.
+  }
+  for (const l of listeners) l()
+}
+
+export function useReviewBannersClosed(): string {
+  return useSyncExternalStore(subscribe, readBannerClosed, () => '')
+}

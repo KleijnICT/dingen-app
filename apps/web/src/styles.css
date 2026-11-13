@@ -2350,6 +2350,23 @@ a.button {
 .review-banner-text {
   flex: 1;
 }
+.review-banner-close {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.review-banner-close:hover {
+  background: color-mix(in srgb, var(--area-indigo) 12%, transparent);
+  color: var(--fg);
+}
 @media (max-width: 720px) {
   .review-kind {
     flex-direction: column;

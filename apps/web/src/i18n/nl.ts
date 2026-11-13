@@ -322,6 +322,7 @@ export const nl: Messages = {
   'review.status.ready': 'Staat klaar',
   'review.status.next': 'Volgende: {date}',
   'review.status.last': 'laatst gedaan {date}',
+  'review.banner.close': 'Verbergen tot morgen',
   'review.start': 'Starten',
   'review.resume': 'Hervatten',
   'review.startAnyway': 'Nu starten',

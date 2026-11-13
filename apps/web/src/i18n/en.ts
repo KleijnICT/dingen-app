@@ -329,6 +329,7 @@ export const en = {
   'review.status.ready': 'Ready',
   'review.status.next': 'Next: {date}',
   'review.status.last': 'last done {date}',
+  'review.banner.close': 'Hide until tomorrow',
   'review.start': 'Start',
   'review.resume': 'Resume',
   'review.startAnyway': 'Start now',
