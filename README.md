@@ -77,6 +77,7 @@ The image is built for `linux/amd64` and `linux/arm64`.
 | `DATA_DIR`            | `/data`            | Directory for the SQLite database (`dingen.db`).                        |
 | `DINGEN_REGISTRATION` | `closed`           | Who may register after the first account: `closed`, `invite` or `open`. |
 | `DINGEN_TIMEZONE`     | `Europe/Amsterdam` | Time zone for "today" in the MCP, calendar appointments and reminders.  |
+| `DINGEN_BACKUPS`      | on                 | `off` turns the nightly backups off (backups before an update stay).    |
 
 ### Inviting people
 
@@ -149,23 +150,71 @@ docker compose up -d
 ```
 
 Database migrations run automatically at start-up. When an update brings new
-migrations, Dingen first copies the database to
-`/data/backups/dingen-<date>-<from>-<to>.db` (the ten most recent copies are
-kept). If that copy fails, Dingen does not migrate and stops with a message in
-the log.
+migrations (or a one-time data conversion), Dingen first makes a `pre-update`
+backup in `/data/backups` (see [Backups](#backups)). If that backup fails,
+Dingen does not migrate and stops with a message in the log.
+
+If a migration fails, Dingen puts that backup back itself (it is not serving
+yet, so nobody saw the half-done state), logs which step failed and which file
+it restored, and stops with a non-zero exit code:
+
+```
+Database migration 0008 → 0009 (0009_example) failed: …
+The database was restored to /data/backups/dingen-pre-update-2026-11-13T080000Z-0008.db; it is as it was before this update. Start the previous version of Dingen and report the problem.
+```
+
+Go back to the previous image tag (for example `ghcr.io/kleijnict/dingen:1.0.0-alpha.4`
+instead of `latest`) and start again; your data is as it was before the update.
 
 ## Backups
 
 All data lives in one SQLite file, `/data/dingen.db`, on the `dingen-data`
-volume. To copy it out safely while the container runs:
+volume. Dingen backs it up by itself to `/data/backups`, so a backup of the
+volume (Duplicati, restic, the Home Assistant backup) takes the backups along:
+
+- **Every night** from 03:00 in `DINGEN_TIMEZONE` (or at the first chance after
+  that when the server was off), a `daily` backup. Kept: the 7 newest, plus the
+  newest of each of the last 4 weeks and of the last 3 months. Set
+  `DINGEN_BACKUPS=off` to turn these off, for example when you already back up
+  `/data` elsewhere.
+- **Before an update** that migrates the database, a `pre-update` backup (the
+  10 newest are kept). Always, also with `DINGEN_BACKUPS=off`.
+- **Before a restore**, a `pre-restore` backup of what was there (10 kept).
+- **By hand** with `dingen backup`: `manual`, never removed automatically.
+
+Every backup is one complete SQLite file, made with SQLite's backup API, so it
+is consistent while Dingen runs. The name tells the kind, the moment (UTC) and
+the schema version: `dingen-daily-2026-11-13T020000Z-0008.db`.
+
+### The `dingen` command
+
+The image has a `dingen` command for backups (outside Docker:
+`node apps/server/dist/cli.js`, with the same `DATA_DIR`):
 
 ```sh
-docker compose exec -w /app/apps/server dingen node -e \
-  "new (require('better-sqlite3'))('/data/dingen.db').backup('/data/backup.db').then(()=>console.log('ok'))"
-docker compose cp dingen:/data/backup.db ./dingen-backup.db
+docker compose exec dingen dingen backup      # a backup now (also while running)
+docker compose exec dingen dingen backups     # list: file, kind, date, schema, size
+docker compose cp dingen:/data/backups/<file> ./   # copy one out
 ```
 
-To restore, stop the container and put a backup back as `/data/dingen.db`.
+### Restoring
+
+`dingen restore <file>` puts a backup back. It only runs with the server
+stopped (it checks the lock the server holds on `/data/dingen.lock`, which
+works across containers), first saves the current database as a `pre-restore`
+backup, and checks that the file is a Dingen database from this version or
+older. An older backup is migrated at the next start. With Docker Compose:
+
+```sh
+docker compose stop dingen
+docker compose run --rm dingen dingen restore dingen-daily-2026-11-13T020000Z-0008.db
+docker compose start dingen
+```
+
+`<file>` is a name from `dingen backups` or a path inside the container (copy
+a file in with `docker compose cp`). Devices that synced after the backup was
+made notice that the server went back in time and load a fresh copy; changes
+they had not sent yet are kept and sent again.
 
 You can also export from the app: **Settings → Data → Export all data** downloads
 one JSON file with your areas, projects, tasks, tags and checklists (no tokens or
@@ -438,6 +487,13 @@ highest `seq` it has seen there. `GET /api/health` reports the protocol as
   past it; merge it (highest per space) to skip pulling your own changes back.
 - `GET /api/sync/snapshot[?space=<id>]` answers `{ protocol, entities, spaces,
   cursor, seq }`, every entity with its `spaceId`.
+
+After a restore from a backup a client's cursor can lie beyond the server's
+log. The server recognises that (a cursor above the highest `seq` of the
+space, or in a range a restore recorded as lost) and answers that space in a
+pull with `entities` and `resync: true`: replace the space, keeping changes
+you have not sent yet. A protocol 1 pull (`since=`) gets 409 `{ error:
+"cursor_ahead", resync: true }`: load a new snapshot.
 
 Moving between spaces. A change may carry `spaceId` (it is not an entity
 field and never shows up in `data`):
