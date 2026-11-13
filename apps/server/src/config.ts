@@ -31,6 +31,8 @@ export interface Config {
   port: number
   dataDir: string
   databasePath: string
+  /** `DATA_DIR/backups`. */
+  backupDir: string
   webDist: string
   version: string
   /** Korte commit-hash van de build (DINGEN_COMMIT), of null. */
@@ -51,6 +53,11 @@ export interface Config {
   homeAssistant: HomeAssistantConfig | null
   /** `log_level` from options.json (Home Assistant), else LOG_LEVEL, else `info`. */
   logLevel: LogLevel
+  /**
+   * DINGEN_BACKUPS: nightly back-ups in `DATA_DIR/backups`, on unless `off`
+   * (or `0`, `false`, `no`). Back-ups before an update are always made.
+   */
+  backups: boolean
 }
 
 export interface LoadConfigOptions {
@@ -70,6 +77,7 @@ export function loadConfig(
     port: Number(env.PORT ?? 8080),
     dataDir,
     databasePath: path.join(dataDir, 'dingen.db'),
+    backupDir: path.join(dataDir, 'backups'),
     webDist: path.resolve(env.WEB_DIST ?? path.join(here, '../../web/dist')),
     version: env.DINGEN_VERSION || `${packageVersion()}-dev`,
     build: env.DINGEN_COMMIT || null,
@@ -90,6 +98,7 @@ export function loadConfig(
     logLevel: parseLogLevel(
       typeof haOptions?.log_level === 'string' ? haOptions.log_level : env.LOG_LEVEL,
     ),
+    backups: !['off', '0', 'false', 'no'].includes((env.DINGEN_BACKUPS ?? '').trim().toLowerCase()),
   }
 }
 

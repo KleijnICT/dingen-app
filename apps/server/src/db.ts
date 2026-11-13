@@ -22,7 +22,8 @@ export interface OpenedDatabase {
 /**
  * Opent (of maakt) de SQLite-database en voert openstaande migraties uit.
  * Gebruik ':memory:' voor tests. Draai bij een bestaande database eerst
- * `backupBeforeMigrations` (zie backup.ts).
+ * `backupBeforeMigrations` (zie backup.ts), of gebruik `prepareDatabase` (startup.ts).
+ * Faalt een migratie, dan is de verbinding gesloten voordat de fout komt.
  */
 export function openDatabase(
   filePath: string,
@@ -35,7 +36,13 @@ export function openDatabase(
   sqlite.pragma('journal_mode = WAL')
   sqlite.pragma('foreign_keys = ON')
   const db = drizzle(sqlite, { schema })
-  migrate(db, { migrationsFolder: options.migrationsFolder ?? migrationsFolder })
+  try {
+    migrate(db, { migrationsFolder: options.migrationsFolder ?? migrationsFolder })
+  } catch (err) {
+    // Closed, so the caller can put a back-up in its place (see startup.ts).
+    sqlite.close()
+    throw err
+  }
   const row = sqlite.prepare('select sqlite_version() as v').get() as { v: string }
   return {
     db,
