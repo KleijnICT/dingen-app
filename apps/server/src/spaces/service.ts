@@ -1,4 +1,4 @@
-import { ulid } from '@dingen/core'
+import { type SpaceInfo, ulid } from '@dingen/core'
 import { and, eq, inArray, type SQL } from 'drizzle-orm'
 import type { SQLiteColumn } from 'drizzle-orm/sqlite-core'
 import type { Db } from '../db.js'
@@ -45,6 +45,22 @@ export function spacesOf(db: Pick<Db, 'select'>, userId: string): string[] {
     .where(eq(spaceMembers.userId, userId))
     .all()
     .map((r) => r.id)
+}
+
+/**
+ * The spaces the user is a member of, with kind and level: the personal space
+ * first, then the others in order of id (ULIDs, so oldest first).
+ */
+export function memberSpaces(db: Pick<Db, 'select'>, userId: string): SpaceInfo[] {
+  return db
+    .select({ id: spaces.id, kind: spaces.kind, level: spaceMembers.level })
+    .from(spaceMembers)
+    .innerJoin(spaces, eq(spaces.id, spaceMembers.spaceId))
+    .where(eq(spaceMembers.userId, userId))
+    .all()
+    .sort((a, b) =>
+      a.kind !== b.kind ? (a.kind === 'personal' ? -1 : 1) : a.id < b.id ? -1 : a.id > b.id ? 1 : 0,
+    )
 }
 
 /** The ids of the spaces the user owns. */

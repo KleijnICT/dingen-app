@@ -271,7 +271,20 @@ describe('access goes through spaces', () => {
     expect(() => sync.push('C', [created('task', newTask({ title: 'x', order: 'a' }))])).toThrow(
       SpaceAccessError,
     )
-    expect(sync.snapshot('C')).toEqual({ entities: [], seq: 0 })
+    expect(sync.snapshot('C')).toEqual({
+      protocol: 2,
+      entities: [],
+      spaces: [],
+      cursor: {},
+      seq: 0,
+    })
+    expect(sync.pullSpaces('C', {})).toEqual({
+      protocol: 2,
+      spaces: [],
+      removed: [],
+      cursor: {},
+      hasMore: false,
+    })
   })
 })
 

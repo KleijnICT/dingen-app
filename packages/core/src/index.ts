@@ -13,6 +13,8 @@ export interface HealthStatus {
   build: string | null
   database: 'ok'
   sqliteVersion: string
+  /** The sync protocol this server speaks (see `SYNC_PROTOCOL`). */
+  syncProtocol: number
 }
 
 export * from './actions.js'
@@ -25,6 +27,7 @@ export * from './hlc.js'
 export * from './ids.js'
 export * from './members.js'
 export * from './order.js'
+export * from './protocol.js'
 // --- herinneringen ---
 export * from './reminders.js'
 export * from './repeat.js'

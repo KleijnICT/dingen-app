@@ -9,10 +9,18 @@ import {
   entitySchemas,
   isDeleted,
   type MemberId,
+  type PullResponse,
+  type PullSpace,
+  type PushResponse,
   recordKey,
+  type SnapshotResponse,
+  type SpaceCursor,
+  SpaceCursorSchema,
+  type SpacedRecord,
+  SYNC_PROTOCOL,
   validateChangeFields,
 } from '@dingen/core'
-import { and, asc, eq, gt, inArray, max } from 'drizzle-orm'
+import { and, asc, count, eq, gt, inArray, max } from 'drizzle-orm'
 import { z } from 'zod'
 import {
   type Access,
@@ -28,30 +36,28 @@ import {
   inSpacesOf,
   levelAllows,
   memberLevel,
+  memberSpaces,
   personalSpaceOf,
   SpaceAccessError,
   spacesOf,
 } from './spaces/service.js'
 
-export const PushBody = z.object({ changes: z.array(ChangeSchema).max(1000) })
+export const PushBody = z.object({
+  changes: z.array(ChangeSchema).max(1000),
+  /** Protocol 2: the client's cursor, so the answer can move it past its own changes. */
+  cursor: SpaceCursorSchema.optional(),
+})
 
-export interface PushResult {
-  /** Hoogste volgnummer na deze push; de client gebruikt dit als cursor. */
-  seq: number
-  applied: number
-  duplicates: number
-}
+export type PushResult = PushResponse
 
+/** Protocol 1 pull (`since=<seq>`): one cursor over all the user's spaces. */
 export interface PullResult {
   changes: Change[]
   seq: number
   hasMore: boolean
 }
 
-export interface Snapshot {
-  entities: EntityRecord[]
-  seq: number
-}
+export type Snapshot = SnapshotResponse
 
 /** Een record uit een exportbestand. */
 export interface ImportRecord {
@@ -185,6 +191,8 @@ export interface PushOptions {
   members?: MemberGrants
   /** Defaults to now; the demo writes changes in the past. */
   receivedAt?: string
+  /** The client's cursor per space (protocol 2); see `PushResponse.cursor`. */
+  cursor?: SpaceCursor | undefined
 }
 
 export class SyncService {
@@ -208,6 +216,8 @@ export class SyncService {
       let applied = 0
       let duplicates = 0
       let seq = this.currentSeq(userId)
+      /** Per space: how many changes this push wrote and the highest seq. */
+      const written = new Map<string, { count: number; seq: number }>()
 
       for (const change of incoming) {
         const known = tx
@@ -251,6 +261,8 @@ export class SyncService {
           receivedAt,
           actor,
         )
+        const inSpace = written.get(target.spaceId) ?? { count: 0, seq: 0 }
+        written.set(target.spaceId, { count: inSpace.count + 1, seq })
         applied += 1
       }
 
@@ -259,8 +271,34 @@ export class SyncService {
         throw new SyncValidationError(problems)
       }
       if (refused.length > 0) throw new AgentScopeError([...new Set(refused)].join('; '))
-      return { seq, applied, duplicates }
+      if (!options.cursor) return { seq, applied, duplicates }
+      return { seq, applied, duplicates, cursor: this.advance(tx, options.cursor, written) }
     })
+  }
+
+  /**
+   * The spaces where nothing but this push happened after the client's
+   * cursor, with the cursor moved past it. The push runs in one transaction,
+   * so nothing can come after it; anything between the cursor and the push
+   * (someone else's change) means the client still has to pull that space.
+   */
+  private advance(
+    tx: Db,
+    cursor: SpaceCursor,
+    written: Map<string, { count: number; seq: number }>,
+  ): SpaceCursor {
+    const out: SpaceCursor = {}
+    for (const [spaceId, mine] of written) {
+      const since = cursor[spaceId]
+      if (since === undefined) continue
+      const after = tx
+        .select({ n: count() })
+        .from(changes)
+        .where(and(eq(changes.spaceId, spaceId), gt(changes.seq, since)))
+        .get()
+      if ((after?.n ?? 0) === mine.count) out[spaceId] = mine.seq
+    }
+    return out
   }
 
   /**
@@ -331,8 +369,10 @@ export class SyncService {
   }
 
   /**
-   * Changes after `since`. With restricted `grants` only the changes of
-   * entities the agent can read now; the cursor still covers the whole page.
+   * Protocol 1: changes after `since` over all the user's spaces, in global
+   * order. Kept for clients from before protocol 2 (a cached web app, an
+   * older MCP plugin). With restricted `grants` only the changes of entities
+   * the agent can read now; the cursor still covers the whole page.
    */
   pull(
     userId: string,
@@ -352,42 +392,140 @@ export class SyncService {
     const last = page.at(-1)
     const readable = this.readableFilter(userId, grants)
     return {
-      changes: page
-        .filter((r) => readable(r.entityType as EntityType, r.entityId))
-        .map((r) => ({
-          id: r.id,
-          entityType: r.entityType as EntityType,
-          entityId: r.entityId,
-          fields: r.fields,
-          ts: r.ts,
-          clientId: r.clientId,
-        })),
+      changes: page.filter((r) => readable(r.entityType as EntityType, r.entityId)).map(toChange),
       seq: last ? last.seq : since,
       hasMore,
     }
   }
 
   /**
-   * Alle niet-verwijderde entiteiten plus de cursor om vanaf verder te pullen.
-   * With restricted `grants` only what the agent can read.
+   * Protocol 2: changes per space after the client's cursor for that space.
+   * A space missing from the cursor comes as a snapshot; a space in the cursor
+   * the user is no longer a member of is listed in `removed`. A number instead
+   * of a cursor (a stored protocol 1 cursor) counts for every space, without
+   * snapshots. At most `limit` changes per answer over all spaces.
    */
-  snapshot(userId: string, grants: AgentGrant[] | null = null): Snapshot {
-    const rows = this.db
+  pullSpaces(
+    userId: string,
+    cursor: SpaceCursor | number,
+    limit = PULL_LIMIT,
+    grants: AgentGrant[] | null = null,
+  ): PullResponse {
+    const mine = memberSpaces(this.db, userId)
+    const removed =
+      typeof cursor === 'number'
+        ? []
+        : Object.keys(cursor).filter((id) => !mine.some((s) => s.id === id))
+    const readable = this.readableFilter(userId, grants)
+    let budget = limit
+    const out: PullSpace[] = []
+    for (const space of mine) {
+      const since = typeof cursor === 'number' ? cursor : cursor[space.id]
+      if (since === undefined) {
+        const entities = this.liveEntities(userId, [space.id], grants).map(withoutSpace)
+        const seq = this.spaceSeqs([space.id])[space.id] ?? 0
+        out.push({ ...space, seq, changes: [], entities, hasMore: false })
+        continue
+      }
+      // The index (space_id, seq) gives the rows in order: no sort over all spaces.
+      const rows =
+        budget === 0
+          ? []
+          : this.db
+              .select()
+              .from(changes)
+              .where(and(eq(changes.spaceId, space.id), gt(changes.seq, since)))
+              .orderBy(asc(changes.seq))
+              .limit(budget + 1)
+              .all()
+      const hasMore = budget === 0 ? this.hasChangesAfter(space.id, since) : rows.length > budget
+      const page = rows.length > budget ? rows.slice(0, budget) : rows
+      budget -= page.length
+      out.push({
+        ...space,
+        seq: page.at(-1)?.seq ?? since,
+        changes: page.filter((r) => readable(r.entityType as EntityType, r.entityId)).map(toChange),
+        hasMore,
+      })
+    }
+    return {
+      protocol: SYNC_PROTOCOL,
+      spaces: out,
+      removed,
+      cursor: Object.fromEntries(out.map((s) => [s.id, s.seq])),
+      hasMore: out.some((s) => s.hasMore),
+    }
+  }
+
+  /**
+   * Alle niet-verwijderde entiteiten plus de cursor om vanaf verder te pullen:
+   * per space (protocol 2) and over all spaces (`seq`, protocol 1). With
+   * `spaceId` only that space (none when the user is not a member). With
+   * restricted `grants` only what the agent can read.
+   */
+  snapshot(
+    userId: string,
+    grants: AgentGrant[] | null = null,
+    spaceId: string | null = null,
+  ): Snapshot {
+    const all = memberSpaces(this.db, userId)
+    const mine = spaceId === null ? all : all.filter((s) => s.id === spaceId)
+    const ids = mine.map((s) => s.id)
+    const cursor = this.spaceSeqs(ids)
+    return {
+      protocol: SYNC_PROTOCOL,
+      entities: this.liveEntities(userId, ids, grants),
+      spaces: mine,
+      cursor,
+      seq: Math.max(0, ...Object.values(cursor)),
+    }
+  }
+
+  /** The live entities in these spaces; with restricted `grants` only what the agent can read. */
+  private liveEntities(
+    userId: string,
+    spaceIds: string[],
+    grants: AgentGrant[] | null,
+  ): SpacedRecord[] {
+    if (spaceIds.length === 0) return []
+    const records: SpacedRecord[] = this.db
       .select()
       .from(entities)
-      .where(and(inSpacesOf(this.db, entities.spaceId, userId), eq(entities.deleted, false)))
+      .where(and(inArray(entities.spaceId, spaceIds), eq(entities.deleted, false)))
       .all()
-    const records: EntityRecord[] = rows.map((r) => ({
-      entityType: r.entityType as EntityType,
-      id: r.id,
-      data: r.data,
-      fieldTs: r.fieldTs,
-    }))
-    const seq = this.currentSeq(userId)
-    if (!restricted(grants)) return { entities: records, seq }
-    const byKey = new Map(records.map((r) => [recordKey(r.entityType, r.id), r]))
-    const lookup: Lookup = (type, id) => byKey.get(recordKey(type, id))
-    return { entities: records.filter((r) => canRead(grants, r, lookup)), seq }
+      .map((r) => ({
+        entityType: r.entityType as EntityType,
+        id: r.id,
+        data: r.data,
+        fieldTs: r.fieldTs,
+        spaceId: r.spaceId,
+      }))
+    if (!restricted(grants)) return records
+    const lookup = this.lookupFor(userId)
+    return records.filter((r) => canRead(grants, r, lookup))
+  }
+
+  /** The highest seq per space (0 for a space without changes). */
+  private spaceSeqs(spaceIds: string[]): SpaceCursor {
+    const out: SpaceCursor = Object.fromEntries(spaceIds.map((id) => [id, 0]))
+    if (spaceIds.length === 0) return out
+    const rows = this.db
+      .select({ spaceId: changes.spaceId, seq: max(changes.seq) })
+      .from(changes)
+      .where(inArray(changes.spaceId, spaceIds))
+      .groupBy(changes.spaceId)
+      .all()
+    for (const row of rows) out[row.spaceId] = row.seq ?? 0
+    return out
+  }
+
+  private hasChangesAfter(spaceId: string, since: number): boolean {
+    return !!this.db
+      .select({ seq: changes.seq })
+      .from(changes)
+      .where(and(eq(changes.spaceId, spaceId), gt(changes.seq, since)))
+      .limit(1)
+      .get()
   }
 
   /** All records of the user (deleted ones too), for access checks outside a push. */
@@ -529,6 +667,21 @@ export class SyncService {
       spaceId: row.spaceId,
     }
   }
+}
+
+function toChange(r: typeof changes.$inferSelect): Change {
+  return {
+    id: r.id,
+    entityType: r.entityType as EntityType,
+    entityId: r.entityId,
+    fields: r.fields,
+    ts: r.ts,
+    clientId: r.clientId,
+  }
+}
+
+function withoutSpace({ spaceId: _space, ...record }: SpacedRecord): EntityRecord {
+  return record
 }
 
 /** Grants that limit what can be read: anything but the owner or an `all` grant. */

@@ -1,4 +1,4 @@
-import type { Change, Member } from '@dingen/core'
+import type { Change, Member, SpaceCursor } from '@dingen/core'
 import { type ActivityFilter, createMcpServer, DingenClient, type SyncTransport } from '@dingen/mcp'
 import { StreamableHTTPTransport } from '@hono/mcp'
 import { Hono } from 'hono'
@@ -77,10 +77,15 @@ class ServiceTransport implements SyncTransport {
     return this.sync.pull(this.access.userId, since, undefined, this.access.grants)
   }
 
-  async push(changes: Change[]) {
+  async pullSpaces(cursor: SpaceCursor) {
+    return this.sync.pullSpaces(this.access.userId, cursor, undefined, this.access.grants)
+  }
+
+  async push(changes: Change[], cursor?: SpaceCursor) {
     return this.sync.push(this.access.userId, changes, {
       access: this.access,
       members: this.agents.memberGrants(this.access.userId),
+      cursor,
     })
   }
 
