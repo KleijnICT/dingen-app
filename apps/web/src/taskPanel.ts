@@ -7,6 +7,15 @@
 /** Beside the list (wide), over the list with a scrim (medium), or the whole screen (phone). */
 export type PanelMode = 'side' | 'overlay' | 'full'
 
+/**
+ * What a click on a task row does. With a mouse it only selects, so the toolbar's When and
+ * Move can act on it; a double click opens the panel. On a touch screen a tap opens. When the
+ * panel is already open, a click shows the clicked task in it.
+ */
+export function rowClickAction(coarsePointer: boolean, panelOpen: boolean): 'open' | 'select' {
+  return coarsePointer || panelOpen ? 'open' : 'select'
+}
+
 export const SIDE_FROM = 1200
 export const OVERLAY_FROM = 720
 

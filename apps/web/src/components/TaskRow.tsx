@@ -18,8 +18,13 @@ export interface RowProps {
   showCaption: boolean
   /** Text under the title in place of the project or area (a heading name, for instance). */
   caption?: string
-  /** A click or tap: selects the task and opens it in the panel. */
+  /**
+   * A click: selects the task (with a mouse) or opens it in the panel (on a touch screen,
+   * or when the panel is already open, it then shows this task).
+   */
   onSelect: () => void
+  /** Double click: opens the task in the panel. */
+  onOpen: () => void
   onToggle: () => void
 }
 
@@ -43,6 +48,7 @@ export function TaskRow({
   showCaption,
   caption,
   onSelect,
+  onOpen,
   onToggle,
   drag,
 }: Props) {
@@ -80,6 +86,7 @@ export function TaskRow({
         aria-pressed={selected}
         aria-expanded={open}
         onClick={onSelect}
+        onDoubleClick={onOpen}
       >
         <span className="task-text">
           <span className="task-title">{task.title || <em>{t('task.untitled')}</em>}</span>

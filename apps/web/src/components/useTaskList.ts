@@ -3,7 +3,7 @@ import { createElement, type ReactNode, useCallback, useEffect, useRef, useState
 import { setTaskParam, useTaskParam } from '../router.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { deleteTask } from '../taskActions.js'
-import { listKeyAction } from '../taskPanel.js'
+import { listKeyAction, rowClickAction } from '../taskPanel.js'
 import { type PanelFocus, TaskPanel } from './TaskPanel.js'
 import type { RowProps } from './TaskRow.js'
 
@@ -173,7 +173,13 @@ export function useTaskList(tasks: Task[], toggle: (task: Task) => void): TaskLi
     selected: selectedId === task.id,
     showWhen: false,
     showCaption: false,
-    onSelect: () => open(task.id, 'panel'),
+    onSelect: () => {
+      const coarse = window.matchMedia?.('(pointer: coarse)').matches ?? false
+      if (rowClickAction(coarse, Boolean(openId)) === 'select') setSelectedId(task.id)
+      // Switching tasks with the panel open keeps focus in the list, like the arrow keys.
+      else open(task.id, openId ? null : 'panel')
+    },
+    onOpen: () => open(task.id, 'panel'),
     onToggle: () => toggle(task),
     ...extra,
   })

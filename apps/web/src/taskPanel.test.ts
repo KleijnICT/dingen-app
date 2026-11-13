@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { type KeyInput, listKeyAction, panelMode, taskParamOf, withTaskParam } from './taskPanel.js'
+import {
+  type KeyInput,
+  listKeyAction,
+  panelMode,
+  rowClickAction,
+  taskParamOf,
+  withTaskParam,
+} from './taskPanel.js'
 
 const base: KeyInput = {
   key: 'ArrowDown',
@@ -124,5 +131,17 @@ describe('task parameter', () => {
     expect(taskParamOf('?task=abc')).toBe('abc')
     expect(taskParamOf('?task=')).toBeNull()
     expect(taskParamOf('')).toBeNull()
+  })
+})
+
+describe('rowClickAction', () => {
+  it('selects with a mouse while the panel is closed', () => {
+    expect(rowClickAction(false, false)).toBe('select')
+  })
+  it('opens on a touch screen', () => {
+    expect(rowClickAction(true, false)).toBe('open')
+  })
+  it('shows the clicked task when the panel is already open', () => {
+    expect(rowClickAction(false, true)).toBe('open')
   })
 })
