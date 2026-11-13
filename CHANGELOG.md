@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 1.0.0-alpha.3
+
+Agents as members, the Logbook as activity and a calendar fix. A
+pre-release; `:latest` points to it. The update runs a database migration
+(with a backup first): existing API tokens become agents with full access.
 
 - Agents: API tokens became agents, members of your Dingen with a name, icon
   and colour. Each agent has one token (rotate or revoke it) and scopes with a
@@ -41,6 +45,7 @@
   add, change or remove one.
 - Demo: Sam has a Research assistant and a Bookkeeper with a few days of
   work and assigned tasks.
+- Roadmap: location reminders in the native apps.
 
 ## 1.0.0-alpha.2
 
