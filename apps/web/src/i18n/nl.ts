@@ -546,6 +546,8 @@ export const nl: Messages = {
   'activity.line.reopened': 'Heropend door {name}',
   'activity.line.deleted': 'Verwijderd door {name}',
   'activity.line.restored': 'Teruggezet door {name}',
+  'activity.line.movedPersonal': 'Naar de persoonlijke ruimte verplaatst door {name}',
+  'activity.line.movedShared': 'Naar een gedeelde ruimte verplaatst door {name}',
   'activity.line.changed': '{changes} gewijzigd door {name}',
   'activity.change.fromTo': '{field} van {from} naar {to}',
   'activity.and': '{a} en {b}',

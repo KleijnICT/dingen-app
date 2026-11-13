@@ -12,11 +12,12 @@ import {
   type PullResponse,
   type PushResponse,
   recordKey,
+  SPACE_FIELD,
   type SpaceCursor,
   ulid,
 } from '@dingen/core'
 import { withBase } from '../base.js'
-import { dbNameFor, LocalDb, type LocalRecord } from './db.js'
+import { dbNameFor, LocalDb, type LocalRecord, type StoredRecord } from './db.js'
 
 export type SyncStatus = 'idle' | 'syncing' | 'offline' | 'unauthorized'
 
@@ -38,6 +39,10 @@ export interface EngineOptions {
  * a space the user leaves is dropped. A replica from before protocol 2 keeps
  * its single cursor once: the server answers a numeric cursor for all spaces
  * and the engine stores the cursor per space from then on.
+ *
+ * Moving between spaces (plan 23, part 3): a pull lists per space what
+ * `arrived` (the whole record, now in that space) and what `left` (out of
+ * sight: dropped); a push answer says where new and moved entities landed.
  */
 export class SyncEngine {
   readonly records = new Map<string, LocalRecord>()
@@ -138,6 +143,29 @@ export class SyncEngine {
     this.mutate(entityType, id, fields)
   }
 
+  /**
+   * Moves an area, project or task (with its children) to another space. The
+   * record gets the new space at once; the children, and the tags and
+   * containers the server adjusts, follow with the next pull.
+   */
+  moveToSpace(entityType: EntityType, entityId: string, spaceId: string): void {
+    const key = recordKey(entityType, entityId)
+    const current = this.records.get(key)
+    if (!current) return
+    const change: Change = {
+      id: ulid(),
+      entityType,
+      entityId,
+      fields: { [SPACE_FIELD]: spaceId },
+      ts: this.clock.now(),
+      clientId: this.clientId,
+    }
+    const record = { ...current, spaceId }
+    this.records.set(key, record)
+    this.bump()
+    this.queue(key, record, change)
+  }
+
   /** Past velden aan: meteen lokaal zichtbaar, daarna in de outbox en gepusht. */
   mutate(entityType: EntityType, entityId: string, fields: Record<string, unknown>): void {
     const change: Change = {
@@ -149,9 +177,15 @@ export class SyncEngine {
       clientId: this.clientId,
     }
     const key = recordKey(entityType, entityId)
-    const record = applyChange(this.records.get(key), change)
+    // `applyChange` keeps the other properties of the record, `spaceId` too.
+    const record: LocalRecord = applyChange(this.records.get(key), change)
     this.records.set(key, record)
     this.bump()
+    this.queue(key, record, change)
+  }
+
+  /** Stores the record and the change in the outbox, and schedules a push. */
+  private queue(key: string, record: LocalRecord, change: Change): void {
     this.outboxOrder += 1
     const order = this.outboxOrder
     const write = this.db.transaction('rw', this.db.entities, this.db.outbox, async () => {
@@ -227,9 +261,26 @@ export class SyncEngine {
     await this.db.outbox.bulkDelete(items.map((i) => i.id))
     // Spaces where nothing but this push happened: no need to pull our own changes back.
     const body = (await res.json().catch(() => null)) as PushResponse | null
+    if (body?.placed) await this.place(body.placed)
     if (body?.cursor && typeof this.cursor !== 'number') {
       await this.setCursor(mergeCursor(this.cursor, body.cursor))
     }
+  }
+
+  /** Notes the space the server put new or moved entities in. */
+  private async place(placed: NonNullable<PushResponse['placed']>): Promise<void> {
+    const changed: StoredRecord[] = []
+    for (const { entityType, id, spaceId } of placed) {
+      const key = recordKey(entityType, id)
+      const rec = this.records.get(key)
+      if (!rec || rec.spaceId === spaceId) continue
+      const record = { ...rec, spaceId }
+      this.records.set(key, record)
+      changed.push({ key, ...record })
+    }
+    if (changed.length === 0) return
+    await this.db.entities.bulkPut(changed)
+    this.bump()
   }
 
   private async pull(): Promise<void> {
@@ -281,12 +332,29 @@ export class SyncEngine {
       for (const change of space.changes) {
         this.clock.receive(change.ts)
         const key = recordKey(change.entityType, change.entityId)
-        const record = {
-          ...applyChange(touched.get(key) ?? this.records.get(key), change),
-          spaceId: space.id,
-        }
+        const current = touched.get(key) ?? this.records.get(key)
+        // A change never moves a record: it stays in its space, a new one takes this one.
+        const record = { ...applyChange(current, change), spaceId: current?.spaceId ?? space.id }
         touched.set(key, record)
         this.records.set(key, record)
+      }
+    }
+    // Moves, after all changes: an arrival is the whole current record, in its new space.
+    for (const space of body.spaces) {
+      for (const rec of space.arrived ?? []) {
+        const key = recordKey(rec.entityType, rec.id)
+        const record = { ...rec, spaceId: space.id }
+        for (const ts of Object.values(rec.fieldTs)) this.clock.receive(ts)
+        touched.set(key, record)
+        this.records.set(key, record)
+      }
+    }
+    for (const space of body.spaces) {
+      for (const { entityType, id } of space.left ?? []) {
+        const key = recordKey(entityType, id)
+        touched.delete(key)
+        this.records.delete(key)
+        gone.push(key)
       }
     }
     if (gone.length === 0 && touched.size === 0) return

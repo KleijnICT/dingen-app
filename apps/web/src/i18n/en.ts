@@ -553,6 +553,8 @@ export const en = {
   'activity.line.reopened': '{name} reopened',
   'activity.line.deleted': '{name} deleted',
   'activity.line.restored': '{name} restored',
+  'activity.line.movedPersonal': '{name} moved this to the personal space',
+  'activity.line.movedShared': '{name} moved this to a shared space',
   'activity.line.changed': '{name} changed {changes}',
   'activity.change.fromTo': '{field} from {from} to {to}',
   'activity.and': '{a} and {b}',

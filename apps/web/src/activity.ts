@@ -10,10 +10,10 @@ import type { Workspace } from './store/context.js'
 export type KindFilter = 'all' | 'added' | 'completed' | 'updated' | 'deleted'
 export const KIND_FILTERS: KindFilter[] = ['all', 'added', 'completed', 'updated', 'deleted']
 
-/** `updated` includes reopening: both are a change to something that already existed. */
+/** `updated` includes reopening and moving: changes to something that already existed. */
 export function kindsFor(filter: KindFilter): ActivityItem['kind'][] | undefined {
   if (filter === 'all') return undefined
-  if (filter === 'updated') return ['updated', 'reopened']
+  if (filter === 'updated') return ['updated', 'reopened', 'moved']
   return [filter]
 }
 
@@ -89,6 +89,10 @@ export function describeLine(
       return t('activity.line.deleted', { name })
     case 'reopened':
       return t('activity.line.reopened', { name })
+    case 'moved': {
+      const personal = item.fields.some((f) => f.field === 'space' && f.to === 'personal')
+      return t(personal ? 'activity.line.movedPersonal' : 'activity.line.movedShared', { name })
+    }
     case 'completed': {
       const canceled = item.fields.some((f) => f.field === 'status' && f.to === 'canceled')
       return t(canceled ? 'activity.line.canceled' : 'activity.line.completed', { name })

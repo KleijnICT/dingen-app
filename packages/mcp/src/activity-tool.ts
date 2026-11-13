@@ -208,9 +208,16 @@ export function formatActivity(items: ActivityItem[], options: FormatOptions): s
     }
     const where = item.container ? ` (${item.container.type} "${item.container.title}")` : ''
     const what = `${item.entityType} "${item.title || 'untitled'}" [${item.entityId}]${where}`
-    lines.push(`  ${timeFmt.format(date)}  ${who(item.actor)} ${verb(item, options)} ${what}`)
+    const to = item.kind === 'moved' ? ` to ${spaceName(item)}` : ''
+    lines.push(`  ${timeFmt.format(date)}  ${who(item.actor)} ${verb(item, options)} ${what}${to}`)
   }
   return lines.join('\n')
+}
+
+/** Where a `moved` line went: the kind of the space (spaces have no names yet). */
+function spaceName(item: ActivityItem): string {
+  const to = item.fields.find((f) => f.field === 'space')?.to
+  return to === 'personal' ? 'the personal space' : 'a shared space'
 }
 
 function verb(item: ActivityItem, options: FormatOptions): string {
@@ -221,6 +228,8 @@ function verb(item: ActivityItem, options: FormatOptions): string {
       return 'deleted'
     case 'reopened':
       return 'reopened'
+    case 'moved':
+      return 'moved'
     case 'completed':
       return item.fields.some((f) => f.field === 'status' && f.to === 'canceled')
         ? 'canceled'
