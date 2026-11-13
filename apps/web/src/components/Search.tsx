@@ -4,12 +4,11 @@ import { TextSearch as SearchIcon } from 'lucide-react'
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react'
 import { useT } from '../i18n/index.js'
 import { containerOf, LISTS, listTasks } from '../lists.js'
-import { areaPath, navigate, projectPath } from '../router.js'
+import { areaPath, navigate, projectPath, taskPath } from '../router.js'
 import { type SearchHit, searchWorkspace } from '../search.js'
 import { useWorkspace, type Workspace } from '../store/context.js'
 import { AreaGlyph } from './AreaIcons.js'
 import { ProgressCircle } from './Icons.js'
-import { requestSelect } from './useTaskList.js'
 
 /** Where a task lives: its project, its area, or the list that shows it. */
 export function pathOf(task: Task, ws: Workspace): string {
@@ -37,8 +36,7 @@ export function Search({ onClose }: { onClose: () => void }) {
     if (hit.kind === 'area') navigate(areaPath(hit.item.id))
     else if (hit.kind === 'project') navigate(projectPath(hit.item.id))
     else {
-      requestSelect(hit.item.id)
-      navigate(pathOf(hit.item, ws))
+      navigate(taskPath(pathOf(hit.item, ws), hit.item.id))
     }
   }
 

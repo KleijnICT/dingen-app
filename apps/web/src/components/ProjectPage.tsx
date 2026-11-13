@@ -287,6 +287,7 @@ export function ProjectPage({ project, focusSignal }: Props) {
         }
         selected={taskList.selected}
       />
+      {taskList.panel}
     </section>
   )
 }

@@ -21,6 +21,7 @@ import { ProjectPage } from './components/ProjectPage.js'
 import { ReviewPage } from './components/ReviewPage.js'
 import { Search } from './components/Search.js'
 import { Sidebar } from './components/Sidebar.js'
+import { PanelSlot } from './components/TaskPanel.js'
 import { ShellActions, ToolbarSlot } from './components/Toolbar.js'
 import { UpdateNotice } from './components/UpdateNotice.js'
 import { type DragData, handleDragEnd } from './dnd.js'
@@ -50,6 +51,7 @@ export function Shell({ user, onSignedOut }: Props) {
   const [settingsOpen, setSettingsOpen] = useState(route.kind === 'account')
   const [searchOpen, setSearchOpen] = useState(false)
   const [toolbar, setToolbar] = useState<HTMLDivElement | null>(null)
+  const [panelSlot, setPanelSlot] = useState<HTMLDivElement | null>(null)
   const actions = useMemo(() => ({ openSearch: () => setSearchOpen(true) }), [])
   const closeSettings = useCallback(() => setSettingsOpen(false), [])
   const closeSearch = useCallback(() => setSearchOpen(false), [])
@@ -135,8 +137,13 @@ export function Shell({ user, onSignedOut }: Props) {
               onOpenSettings={() => setSettingsOpen(true)}
             />
             <main className="content-pane">
-              <div className="content">
-                <ToolbarSlot.Provider value={toolbar}>{page}</ToolbarSlot.Provider>
+              <div className="content-body">
+                <div className="content">
+                  <ToolbarSlot.Provider value={toolbar}>
+                    <PanelSlot.Provider value={panelSlot}>{page}</PanelSlot.Provider>
+                  </ToolbarSlot.Provider>
+                </div>
+                <div className="panel-slot" ref={setPanelSlot} />
               </div>
               <div className="toolbar" ref={setToolbar} />
             </main>

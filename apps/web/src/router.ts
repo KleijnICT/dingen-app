@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import { stripBase, withBase } from './base.js'
+import { taskParamOf, withTaskParam } from './taskPanel.js'
 
 /**
  * Routing in a few lines: the path in the address bar, no library. App paths (`/today`) never
@@ -8,10 +9,16 @@ import { stripBase, withBase } from './base.js'
 
 const listeners = new Set<() => void>()
 
+/** Goes to an app path; it may carry a query (`/today?task=abc`). */
 export function navigate(path: string): void {
   const url = withBase(path)
-  if (window.location.pathname === url) return
+  const { pathname, search = '' } = window.location
+  if (pathname + search === url) return
   window.history.pushState(null, '', url)
+  notify()
+}
+
+function notify(): void {
   for (const l of listeners) l()
 }
 
@@ -27,6 +34,24 @@ function subscribe(listener: () => void): () => void {
 export function usePath(): string {
   return useSyncExternalStore(subscribe, currentPath)
 }
+
+/** The task open in the panel, from `?task=` in the address bar. */
+export function useTaskParam(): string | null {
+  return useSyncExternalStore(subscribe, () => taskParamOf(window.location.search))
+}
+
+/** Opens (an id) or closes (null) the task panel in the address bar, without a history entry. */
+export function setTaskParam(id: string | null): void {
+  const { pathname, search, hash } = window.location
+  const next = withTaskParam(search, id)
+  if (next === search) return
+  window.history.replaceState(window.history.state, '', pathname + next + hash)
+  notify()
+}
+
+/** An app path that opens `taskId` in the panel. */
+export const taskPath = (path: string, taskId: string): string =>
+  `${path}${withTaskParam('', taskId)}`
 
 /** The app path of the address bar, without the base. */
 export function currentPath(): string {

@@ -53,6 +53,9 @@ export const en = {
   'task.markOpen': 'Mark as open',
   'task.delete': 'Delete',
   'task.done': 'Done',
+  'panel.label': 'Task details',
+  'panel.close': 'Close',
+  'panel.back': 'Back',
 
   // When
   'when.label': 'When',

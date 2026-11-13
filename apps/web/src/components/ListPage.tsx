@@ -265,6 +265,7 @@ export function ListPage({ list, focusSignal, header }: Props) {
       )}
       {body}
       <TaskToolbar onNew={canAdd ? addNew : undefined} selected={taskList.selected} />
+      {taskList.panel}
     </section>
   )
 }

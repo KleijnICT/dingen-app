@@ -102,6 +102,7 @@ function TasksStep(props: { tasks: Task[]; emptyKey: MessageKey; showWhen: boole
         group('tasks', shown, { showWhen: props.showWhen, showCaption: true })
       )}
       <TaskToolbar selected={taskList.selected} />
+      {taskList.panel}
     </>
   )
 }
@@ -210,6 +211,7 @@ function LookBackStep(props: { tasks: Task[]; projects: Project[]; perArea: Area
         </div>
       )}
       <TaskToolbar selected={taskList.selected} />
+      {taskList.panel}
     </>
   )
 }
@@ -234,6 +236,7 @@ function DueSoonStep(props: { tasks: Task[]; projects: Project[] }) {
       )}
       {shown.length > 0 && group('dated', shown, { showWhen: true, showCaption: true })}
       <TaskToolbar selected={taskList.selected} />
+      {taskList.panel}
     </>
   )
 }
@@ -424,6 +427,7 @@ function ProjectCard({ project }: { project: Project }) {
         group(`project:${project.id}`, shown, { showWhen: true })
       )}
       <TaskToolbar onNew={addTask} selected={taskList.selected} />
+      {taskList.panel}
     </>
   )
 }
@@ -499,6 +503,7 @@ function AreaCard({ item, deep }: { item: AreaItem; deep: boolean }) {
         )}
       </div>
       <TaskToolbar onNew={addTask} selected={taskList.selected} />
+      {taskList.panel}
     </>
   )
 }
@@ -590,6 +595,7 @@ function SomedayScanStep(props: { tasks: Task[]; projects: Project[] }) {
         </div>
       )}
       <TaskToolbar selected={taskList.selected} />
+      {taskList.panel}
     </>
   )
 }
@@ -652,6 +658,7 @@ function SomedayDeepStep(props: { review: Review; projects: Project[]; groups: A
         )
       })}
       <TaskToolbar selected={taskList.selected} />
+      {taskList.panel}
     </>
   )
 }

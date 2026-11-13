@@ -150,6 +150,7 @@ export function AreaPage({ area, focusSignal }: Props) {
         extra={<ToolbarButton icon={FolderPlus} label={t('nav.newProject')} onClick={addProject} />}
         selected={taskList.selected}
       />
+      {taskList.panel}
     </section>
   )
 }
