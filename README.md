@@ -122,6 +122,19 @@ dingen.example.com {
 }
 ```
 
+### Home Assistant
+
+Dingen also runs as a Home Assistant app (add-on), on Home Assistant OS or
+Supervised: add the repository
+[KleijnICT/dingen-app-ha-addon](https://github.com/KleijnICT/dingen-app-ha-addon)
+and install Dingen. It opens in the Home Assistant sidebar and signs you in
+with your Home Assistant user; every Home Assistant user gets their own lists.
+Port 8080 can be given a host port for the installed web app, reminders and
+MCP. The app uses this same image: when it finds `/data/options.json` (or
+`DINGEN_HA=1`) it also listens on port 8099 for Home Assistant ingress and only
+accepts the Supervisor there (`DINGEN_INGRESS_TRUSTED`, default
+`172.30.32.2`). Each release shows up as an update in Home Assistant.
+
 ### Development builds
 
 Every push to the `develop` branch publishes `ghcr.io/kleijnict/dingen:develop`

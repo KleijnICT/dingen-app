@@ -1,7 +1,10 @@
 # Roadmap
 
 Where Dingen is heading. Phases, not dates: each phase starts when the
-previous one is done.
+previous one is done, with an exception now and then.
+
+Done ahead of its phase: the Home Assistant app (phase 3), with Dingen in the
+Home Assistant sidebar.
 
 ## 1. Feature complete
 
@@ -22,7 +25,7 @@ previous one is done.
 
 ## 3. Home Assistant
 
-- A Home Assistant add-on with Dingen in the sidebar
+- A Home Assistant app (add-on) with Dingen in the sidebar (available)
 - An integration: lists as to-do entities, sensors and actions for
   automations
 
