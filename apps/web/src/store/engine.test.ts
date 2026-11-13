@@ -6,6 +6,7 @@ import {
   type EntityRecord,
   newArea,
   newTask,
+  type Placed,
   type PullSpace,
   parseCursorParam,
   recordKey,
@@ -36,6 +37,11 @@ class FakeServer {
   pageSize = 500
   /** Delay before each response, to hold a sync run in flight. */
   delayMs = 0
+  /** Moves for the next pull, per space (`arrived`, `left`), and the next push answer's `placed`. */
+  moves = new Map<string, Pick<PullSpace, 'arrived' | 'left'>>()
+  placed: Placed[] | undefined
+  /** Pushed changes, as sent. */
+  pushed: Change[] = []
 
   /** Writes a change as the server would store it; a new entity goes to `spaceId`. */
   write(change: Change, spaceId = PERSONAL): void {
@@ -75,6 +81,7 @@ class FakeServer {
         cursor?: SpaceCursor
       }
       const written = new Map<string, { count: number; seq: number }>()
+      this.pushed.push(...changes)
       for (const change of changes) {
         if (this.known.has(change.id)) continue
         this.write(change)
@@ -90,7 +97,13 @@ class FakeServer {
         const after = this.log.filter((l) => l.spaceId === space && l.seq > since).length
         if (after === mine.count) advanced[space] = mine.seq
       }
-      const body = { seq: this.log.length, applied: changes.length, duplicates: 0 }
+      const body = {
+        seq: this.log.length,
+        applied: changes.length,
+        duplicates: 0,
+        ...(this.placed ? { placed: this.placed } : {}),
+      }
+      this.placed = undefined
       return json(cursor ? { ...body, cursor: advanced } : body)
     }
     if (url.startsWith('/api/sync/pull')) {
@@ -118,10 +131,13 @@ class FakeServer {
         const page = after.slice(0, budget)
         budget -= page.length
         this.pulled.push(...page.map((l) => l.change))
+        const moves = this.moves.get(space.id)
+        this.moves.delete(space.id)
         return {
           ...space,
           seq: page.at(-1)?.seq ?? since,
           changes: page.map((l) => l.change),
+          ...moves,
           hasMore: after.length > page.length,
         }
       })
@@ -433,6 +449,82 @@ describe('SyncEngine with a cursor per space', () => {
     await a.sync()
     expect(titles(a)).toEqual(['Drie', 'Een', 'Twee'])
     expect(server.urls.filter((u) => u.startsWith('/api/sync/pull'))).toHaveLength(4)
+    a.stop()
+  })
+})
+
+describe('SyncEngine and moving between spaces', () => {
+  /** What the server holds for this task after an edit, as an arrival carries it. */
+  function arrival(server: FakeServer, id: string, fields: Record<string, unknown>) {
+    server.write(editBy('task', id, fields))
+    const rec = server.entities.get(recordKey('task', id)) as EntityRecord
+    return { ...rec, data: { ...rec.data }, fieldTs: { ...rec.fieldTs } }
+  }
+
+  async function stored(dbName: string, key: string) {
+    const db = new LocalDb(dbName)
+    const rec = await db.entities.get(key)
+    db.close()
+    return rec
+  }
+
+  it('puts an arrived record in its new space, and drops one that left', async () => {
+    const server = new FakeServer()
+    server.spaces.push({ id: 'SHARED', kind: 'shared', level: 'edit' })
+    const task = newTask({ title: 'Verhuist' })
+    server.write(createdBy('task', task))
+    const dbName = `test-move-${Date.now()}`
+    const a = engineFor(server, dbName)
+    await a.start()
+    const key = recordKey('task', task.id)
+    expect(a.records.get(key)?.spaceId).toBe(PERSONAL)
+
+    // Moved to the shared space (with a new title on the way): the whole record arrives there.
+    server.moves.set('SHARED', { arrived: [arrival(server, task.id, { title: 'Verhuisd' })] })
+    await a.sync()
+    expect(titles(a)).toEqual(['Verhuisd'])
+    expect(a.records.get(key)?.spaceId).toBe('SHARED')
+    expect((await stored(dbName, key))?.spaceId).toBe('SHARED')
+
+    // A later change in the old space's stream does not move it back.
+    server.write(editBy('task', task.id, { notes: 'laat' }))
+    await a.sync()
+    expect(a.records.get(key)?.spaceId).toBe('SHARED')
+
+    // Then out of sight: gone, also in IndexedDB.
+    server.moves.set('SHARED', { left: [{ entityType: 'task', id: task.id }] })
+    await a.sync()
+    expect(titles(a)).toEqual([])
+    a.stop()
+    expect(await stored(dbName, key)).toBeUndefined()
+  })
+
+  it('asks for a move with spaceId and notes where the push answer says things landed', async () => {
+    const server = new FakeServer()
+    server.spaces.push({ id: 'SHARED', kind: 'shared', level: 'edit' })
+    const a = engineFor(server)
+    await a.start()
+    const task = newTask({ title: 'Mee' })
+    a.create('task', task)
+    await a.sync()
+    const key = recordKey('task', task.id)
+    expect(a.records.get(key)?.spaceId).toBeUndefined()
+
+    a.moveToSpace('task', task.id, 'SHARED')
+    expect(a.records.get(key)?.spaceId).toBe('SHARED')
+    // spaceId is no entity field: it stays out of the data.
+    expect(a.records.get(key)?.data.spaceId).toBeUndefined()
+    server.placed = [{ entityType: 'task', id: task.id, spaceId: 'SHARED' }]
+    await a.sync()
+    expect(server.pushed.at(-1)?.fields).toEqual({ spaceId: 'SHARED' })
+    expect(a.records.get(key)?.spaceId).toBe('SHARED')
+
+    // A new entity the server put in another space (its container's) is noted too.
+    const next = newTask({ title: 'Nieuw' })
+    a.create('task', next)
+    server.placed = [{ entityType: 'task', id: next.id, spaceId: 'SHARED' }]
+    await a.sync()
+    expect(a.records.get(recordKey('task', next.id))?.spaceId).toBe('SHARED')
     a.stop()
   })
 })

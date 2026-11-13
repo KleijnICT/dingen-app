@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { Change } from './entities.js'
+import type { Change, EntityType } from './entities.js'
 import type { EntityRecord } from './sync.js'
 
 /**
@@ -12,8 +12,22 @@ import type { EntityRecord } from './sync.js'
  *
  * `seq` stays one counter for the whole server; a cursor per space is the
  * highest `seq` of that space the client has seen.
+ *
+ * Moving between spaces (plan 23, part 3) is part of protocol 2: a change
+ * with the field `spaceId` (see `SPACE_FIELD`) puts a new entity in that
+ * space, or moves an existing one there with its children. A pull reports a
+ * move per space as `arrived` (the whole entity, now in this space) and `left`
+ * (gone out of your sight: drop it); protocol 1 pulls get a deletion instead.
  */
 export const SYNC_PROTOCOL = 2
+
+/**
+ * The change field that names the space for an entity: on a new entity the
+ * space it goes into (default: the space of its project, area, heading or
+ * task, else the personal space); on an existing area, project or task a move
+ * to that space. It is not an entity field: it never shows up in `data`.
+ */
+export const SPACE_FIELD = 'spaceId'
 
 /** The highest `seq` seen per space id. */
 export type SpaceCursor = Record<string, number>
@@ -64,8 +78,33 @@ export interface PullSpace extends SpaceInfo {
    * `changes` is then empty.
    */
   entities?: EntityRecord[]
+  /**
+   * Entities that moved into this space (or into your reach) within this
+   * answer's range of changes: the whole current record. Put it as it is
+   * (replacing what you had, also in another space) and note this space as
+   * its space. Apply after `changes`.
+   */
+  arrived?: EntityRecord[]
+  /**
+   * Entities that moved out of this space to where you cannot see them (a
+   * space you are not in, or outside an agent's grants): drop them, as if
+   * deleted. Apply after `changes`. An entity that moved to another space of
+   * yours is not listed here; it comes as `arrived` in that space.
+   */
+  left?: EntityKey[]
   /** This space has more changes than fitted in this answer. */
   hasMore: boolean
+}
+
+/** An entity by type and id. */
+export interface EntityKey {
+  entityType: EntityType
+  id: string
+}
+
+/** Where a pushed entity is now: the answer to a push that created or moved it. */
+export interface Placed extends EntityKey {
+  spaceId: string
 }
 
 /** `GET /api/sync/pull?cursor=…` (protocol 2). */
@@ -102,6 +141,13 @@ export interface PushResponse {
    * so the client need not pull its own changes back. Merge with the maximum.
    */
   cursor?: SpaceCursor
+  /**
+   * The space of every entity this push created or moved (with the children
+   * that moved along, and tags made in the target space for moved tasks and
+   * projects). Absent when there are none. A space where a move happened is
+   * never in `cursor`: pull it to get what the server changed along with it.
+   */
+  placed?: Placed[]
 }
 
 /** Merges cursors, keeping the highest `seq` per space. */

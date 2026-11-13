@@ -73,17 +73,28 @@ export interface ActivityItem {
   seq: number
   at: string
   actor: ActorId
-  kind: 'added' | 'completed' | 'reopened' | 'updated' | 'deleted'
+  kind: 'added' | 'completed' | 'reopened' | 'updated' | 'deleted' | 'moved'
   entityType: string
   entityId: string
   title: string
   /** The project or area the entity sits in, when there is one. */
   container: { type: 'project' | 'area'; id: string; title: string } | null
-  /** For `updated`: the fields that changed. Notes only say that they changed. */
+  /**
+   * For `updated`: the fields that changed. Notes only say that they changed.
+   * For `moved` (to another space, plan 23): one field `space` whose `to` is
+   * the kind of the space it moved to (`personal` or `shared`).
+   */
   fields: { field: string; from: unknown; to: unknown }[]
 }
 
-export const ACTIVITY_KINDS = ['added', 'completed', 'reopened', 'updated', 'deleted'] as const
+export const ACTIVITY_KINDS = [
+  'added',
+  'completed',
+  'reopened',
+  'updated',
+  'deleted',
+  'moved',
+] as const
 
 /** Where an entity lives, for access checks. */
 export type Place =

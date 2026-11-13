@@ -57,9 +57,19 @@ describe('activity lines', () => {
     expect(describeLine(canceled, 'You', ctx)).toBe('You canceled')
   })
 
-  it('maps the Changed filter to updated and reopened', () => {
+  it('says where a move between spaces went', () => {
+    const moved = (to: string) =>
+      item(4, '2026-11-12T10:00:00Z', {
+        kind: 'moved',
+        fields: [{ field: 'space', from: null, to }],
+      })
+    expect(describeLine(moved('shared'), 'You', ctx)).toBe('You moved this to a shared space')
+    expect(describeLine(moved('personal'), 'You', ctx)).toBe('You moved this to the personal space')
+  })
+
+  it('maps the Changed filter to updated, reopened and moved', () => {
     expect(kindsFor('all')).toBeUndefined()
-    expect(kindsFor('updated')).toEqual(['updated', 'reopened'])
+    expect(kindsFor('updated')).toEqual(['updated', 'reopened', 'moved'])
   })
 
   it('groups per local day, keeping the order', () => {

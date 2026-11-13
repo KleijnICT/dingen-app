@@ -39,6 +39,8 @@ export interface LogRow {
   actor: string | null
   /** The user who pushed the change; missing in rows built by hand (tests). */
   userId?: string
+  /** The client that made the change; `server` for rows written along with a move. */
+  clientId?: string
 }
 
 /** The entity a row counts for in the Logbook (a checklist item counts for its task). */
@@ -157,6 +159,10 @@ export function describe(group: Group): Described | null {
     const status = after.get('status')
     if (status === 'open') return { kind: 'reopened', changed: [] }
     return { kind: 'completed', changed: [{ field: 'status', to: status }] }
+  }
+  // Moved to another space (plan 23): `to` is the space id; the service makes it the kind.
+  if (typeof after.get('spaceId') === 'string') {
+    return { kind: 'moved', changed: [{ field: 'space', to: after.get('spaceId') }] }
   }
 
   const changed: { field: string; to: unknown }[] = []

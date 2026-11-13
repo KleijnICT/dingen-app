@@ -425,6 +425,33 @@ highest `seq` it has seen there. `GET /api/health` reports the protocol as
 - `GET /api/sync/snapshot[?space=<id>]` answers `{ protocol, entities, spaces,
   cursor, seq }`, every entity with its `spaceId`.
 
+Moving between spaces. A change may carry `spaceId` (it is not an entity
+field and never shows up in `data`):
+
+- On a new entity it names the space it goes into. Without it, a new entity
+  goes into the space of its project, area, heading or task, else into your
+  personal space. A container in another space than the one named is refused
+  (400).
+- On an existing area, project or task it moves it there, with the same id
+  and its history. Its children move along: an area with its projects and
+  loose tasks, a project with its headings and tasks, a task with its
+  checklist items and repeat instances. References to containers that stay
+  behind become null (a task moved on its own is a loose task there), and
+  tags become the target space's tag with the same name (compared in lower
+  case), made there when missing. A move needs edit in both spaces (else 403
+  `space_access`); an agent also needs edit on everything (else 403
+  `agent_scope`). Headings, checklist items, tags and reviews do not move on
+  their own (400).
+- The push answer adds `placed: [{ entityType, id, spaceId }]` for every
+  entity it created or moved (children and new tags included). A space where
+  a move happened is never in the answer's `cursor`: pull it.
+- A pull reports a move per space: `arrived` lists entities that are now in
+  that space and within your reach, as whole records (put them as they are,
+  with that space); `left` lists `{ entityType, id }` that went out of your
+  sight (drop them). Apply both after `changes`. Moving between two of your
+  spaces is an arrival only. Protocol 1 pulls get a deletion for `left` and
+  the whole record as changes for `arrived`.
+
 Protocol 1 still works for clients from 1.0.0-alpha.4 and older (a cached web
 app, the MCP plugin): `GET /api/sync/pull?since=<seq>` answers
 `{ changes, seq, hasMore }` over all your spaces. A stored protocol 1 cursor

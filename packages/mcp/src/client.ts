@@ -291,6 +291,23 @@ export class DingenClient implements Writer {
         }
         for (const change of space.changes) this.applyRemote(change, space.id)
       }
+      // Moves, after all changes: an arrival is the whole current record in its new space,
+      // a leave means the entity is out of sight.
+      for (const space of body.spaces) {
+        for (const record of space.arrived ?? []) {
+          const key = recordKey(record.entityType, record.id)
+          this.records.set(key, record)
+          this.spaceOf.set(key, space.id)
+          for (const ts of Object.values(record.fieldTs)) this.clock.receive(ts)
+        }
+      }
+      for (const space of body.spaces) {
+        for (const { entityType, id } of space.left ?? []) {
+          const key = recordKey(entityType, id)
+          this.records.delete(key)
+          this.spaceOf.delete(key)
+        }
+      }
       this.spaceCursor = body.cursor
       hasMore = body.hasMore
     }
@@ -300,7 +317,13 @@ export class DingenClient implements Writer {
     this.clock.receive(change.ts)
     const key = recordKey(change.entityType, change.entityId)
     this.records.set(key, applyChange(this.records.get(key), change))
-    if (spaceId) this.spaceOf.set(key, spaceId)
+    // A change never moves a record: only a new one takes the space it came in.
+    if (spaceId && !this.spaceOf.has(key)) this.spaceOf.set(key, spaceId)
+  }
+
+  /** The space of a record as far as the server told us; undefined means the personal space. */
+  spaceIdOf(entityType: EntityType, id: string): string | undefined {
+    return this.spaceOf.get(recordKey(entityType, id))
   }
 
   /** Forgets every record of a space (a space we left, or one about to be replaced by a snapshot). */
@@ -321,6 +344,10 @@ export class DingenClient implements Writer {
       for (let i = 0; i < all.length; i += 500) {
         const cursor = this.spaceCursor ?? undefined
         const body = (await this.transport.push(all.slice(i, i + 500), cursor)) as PushResponse
+        // Where new and moved entities landed (their children moved along too).
+        for (const { entityType, id, spaceId } of body?.placed ?? []) {
+          this.spaceOf.set(recordKey(entityType, id), spaceId)
+        }
         // Spaces where only our own changes happened: no need to pull them back.
         if (this.spaceCursor && body?.cursor) {
           this.spaceCursor = mergeCursor(this.spaceCursor, body.cursor)

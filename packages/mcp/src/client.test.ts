@@ -4,6 +4,7 @@ import {
   createClock,
   type EntityRecord,
   newTask,
+  type Placed,
   type PullResponse,
   type PullSpace,
   recordKey,
@@ -31,6 +32,9 @@ class SpaceTransport implements SyncTransport {
   spaces: SpaceInfo[] = [{ id: PERSONAL, kind: 'personal', level: 'manage' }]
   pulled: Change[] = []
   cursors: SpaceCursor[] = []
+  /** Moves for the next pull per space, and the next push answer's `placed`. */
+  moves = new Map<string, Pick<PullSpace, 'arrived' | 'left'>>()
+  placed: Placed[] | undefined
 
   write(change: Change, spaceId = PERSONAL) {
     const key = recordKey(change.entityType, change.entityId)
@@ -76,10 +80,13 @@ class SpaceTransport implements SyncTransport {
       }
       const page = this.log.filter((l) => l.spaceId === space.id && l.seq > since)
       this.pulled.push(...page.map((l) => l.change))
+      const moves = this.moves.get(space.id)
+      this.moves.delete(space.id)
       return {
         ...space,
         seq: page.at(-1)?.seq ?? since,
         changes: page.map((l) => l.change),
+        ...moves,
         hasMore: false,
       }
     })
@@ -103,7 +110,15 @@ class SpaceTransport implements SyncTransport {
       const after = this.log.filter((l) => l.spaceId === space && l.seq > since)
       if (after.every((l) => mine.includes(l))) advanced[space] = this.seqOf(space)
     }
-    return { seq: this.log.length, applied: changes.length, duplicates: 0, cursor: advanced }
+    const placed = this.placed
+    this.placed = undefined
+    return {
+      seq: this.log.length,
+      applied: changes.length,
+      duplicates: 0,
+      cursor: advanced,
+      ...(placed ? { placed } : {}),
+    }
   }
 }
 
@@ -135,6 +150,40 @@ describe('DingenClient with a cursor per space', () => {
     await client.refresh()
     expect(transport.cursors.at(-1)).toEqual({ [PERSONAL]: 3, S: 2 })
     expect(titles(client)).toEqual(['Own', 'Own 2'])
+  })
+
+  it('applies moves: an arrival takes its new space, a leave drops it, a push answer places', async () => {
+    const transport = new SpaceTransport()
+    transport.spaces.push({ id: 'S', kind: 'shared', level: 'edit' })
+    const task = newTask({ title: 'Moving' })
+    transport.write(createdBy(task))
+    const client = new DingenClient(transport)
+    await client.refresh()
+    expect(client.spaceIdOf('task', task.id)).toBe(PERSONAL)
+
+    // Moved to S by someone else: the whole record arrives there; an older edit in the
+    // personal stream of the same answer does not keep it there.
+    transport.write({ ...createdBy(task), fields: { notes: 'edited first' } })
+    const record = transport.records.get(recordKey('task', task.id)) as EntityRecord
+    transport.moves.set('S', {
+      arrived: [{ ...record, data: { ...record.data, title: 'Moved' } }],
+    })
+    await client.refresh()
+    expect(titles(client)).toEqual(['Moved'])
+    expect(client.spaceIdOf('task', task.id)).toBe('S')
+
+    // Out of sight now: dropped.
+    transport.moves.set('S', { left: [{ entityType: 'task', id: task.id }] })
+    await client.refresh()
+    expect(titles(client)).toEqual([])
+    expect(client.spaceIdOf('task', task.id)).toBeUndefined()
+
+    // Our own push: the answer says where a new task landed.
+    const mine = newTask({ title: 'Mine' })
+    client.create('task', mine)
+    transport.placed = [{ entityType: 'task', id: mine.id, spaceId: 'S' }]
+    await client.flush()
+    expect(client.spaceIdOf('task', mine.id)).toBe('S')
   })
 
   it('sends its cursor with a push and does not pull its own changes back', async () => {

@@ -4,8 +4,9 @@ import Dexie, { type EntityTable } from 'dexie'
 /**
  * A record in the replica with the space it lives in, as far as the server
  * told us. No `spaceId` means the personal space: records stored before
- * protocol 2, and new ones the server has not echoed back (they go to the
- * personal space until moving between spaces exists).
+ * protocol 2, and new ones the server has not answered for yet (its push
+ * answer says where they landed: the space of their container, or the
+ * personal space).
  */
 export interface LocalRecord extends EntityRecord {
   spaceId?: string
