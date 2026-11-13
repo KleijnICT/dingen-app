@@ -400,6 +400,38 @@ The repository is a pnpm monorepo:
 See [ROADMAP.md](ROADMAP.md), [CONTRIBUTING.md](CONTRIBUTING.md) and
 [CHANGELOG.md](CHANGELOG.md).
 
+### Sync API
+
+Clients keep a local replica and sync it with three calls under `/api/sync`
+(a session or a token with the scope Everything). Every piece of data lives in
+a space: for now each account has one, its personal space. The server numbers
+every change with one rising `seq`; a client keeps a cursor per space, the
+highest `seq` it has seen there. `GET /api/health` reports the protocol as
+`syncProtocol` (now `2`).
+
+- `GET /api/sync/pull?cursor=<URL-encoded JSON {"<spaceId>": seq}>` answers
+  `{ protocol, spaces, removed, cursor, hasMore }`. Each entry in `spaces` is
+  a space of the user (`id`, `kind`, `level`) with its new `seq`, its
+  `changes` after the cursor (oldest first) and `hasMore`. A space missing from
+  the cursor (the first pull sends `{}`, or a space shared with you later)
+  comes with `entities`, all its live entities, instead of changes: replace
+  what you had for it. `removed` lists spaces from your cursor you are no
+  longer a member of: drop their data. `cursor` is the full new cursor; pull
+  again while `hasMore` (at most 500 changes per answer).
+- `POST /api/sync/push` with `{ changes, cursor? }` answers
+  `{ seq, applied, duplicates, cursor? }`. With your cursor, the answer's
+  `cursor` holds the spaces where nothing but this push happened since, moved
+  past it; merge it (highest per space) to skip pulling your own changes back.
+- `GET /api/sync/snapshot[?space=<id>]` answers `{ protocol, entities, spaces,
+  cursor, seq }`, every entity with its `spaceId`.
+
+Protocol 1 still works for clients from 1.0.0-alpha.4 and older (a cached web
+app, the MCP plugin): `GET /api/sync/pull?since=<seq>` answers
+`{ changes, seq, hasMore }` over all your spaces. A stored protocol 1 cursor
+moves over with `pull?cursor=<seq>` (a bare number counts for every space).
+The `since` form will be removed once released clients no longer use it,
+at the earliest with 1.0.
+
 ## License
 
 [GPL-3.0](LICENSE)
