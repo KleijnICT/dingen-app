@@ -12,7 +12,7 @@ import {
   recordKey,
   validateChangeFields,
 } from '@dingen/core'
-import { and, asc, eq, gt, max } from 'drizzle-orm'
+import { and, asc, eq, gt, inArray, max } from 'drizzle-orm'
 import { z } from 'zod'
 import {
   type Access,
@@ -30,6 +30,7 @@ import {
   memberLevel,
   personalSpaceOf,
   SpaceAccessError,
+  spacesOf,
 } from './spaces/service.js'
 
 export const PushBody = z.object({ changes: z.array(ChangeSchema).max(1000) })
@@ -199,7 +200,8 @@ export class SyncService {
     const actor: MemberId = access?.actor ?? `user:${userId}`
     const members: MemberGrants = options.members ?? (() => undefined)
     return this.db.transaction((tx) => {
-      const ctx = new WriteContext(tx, userId, (type, id) => this.locate(tx, userId, type, id))
+      const spaceIds = spacesOf(tx, userId)
+      const ctx = new WriteContext(tx, userId, (type, id) => this.locate(tx, spaceIds, type, id))
       const problems: { changeId: string; issues: string[] }[] = []
       const refused: string[] = []
       const lookup: Lookup = (type, id) => ctx.find(type, id)?.record
@@ -274,7 +276,8 @@ export class SyncService {
   ): ImportResult {
     const receivedAt = new Date().toISOString()
     return this.db.transaction((tx) => {
-      const ctx = new WriteContext(tx, userId, (type, id) => this.locate(tx, userId, type, id))
+      const spaceIds = spacesOf(tx, userId)
+      const ctx = new WriteContext(tx, userId, (type, id) => this.locate(tx, spaceIds, type, id))
       const counts = emptyCounts()
       const problems: { changeId: string; issues: string[] }[] = []
       let seq = this.currentSeq(userId)
@@ -501,14 +504,19 @@ export class SyncService {
     return row?.seq ?? 0
   }
 
-  /** The stored entity with this type and id in one of the user's spaces. */
-  private locate(db: Db, userId: string, entityType: EntityType, id: string): Located | undefined {
+  /** The stored entity with this type and id in one of these spaces (the user's). */
+  private locate(
+    db: Db,
+    spaceIds: string[],
+    entityType: EntityType,
+    id: string,
+  ): Located | undefined {
     const row = db
       .select()
       .from(entities)
       .where(
         and(
-          inSpacesOf(db, entities.spaceId, userId),
+          inArray(entities.spaceId, spaceIds),
           eq(entities.entityType, entityType),
           eq(entities.id, id),
         ),

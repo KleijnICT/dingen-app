@@ -2,7 +2,7 @@ import type { ACTIVITY_KINDS, ActivityItem, AgentGrant, EntityType, MemberId } f
 import type Database from 'better-sqlite3'
 import { canRead, type Lookup } from '../agents/access.js'
 import type { Db } from '../db.js'
-import { IN_SPACES_OF_USER_SQL } from '../spaces/service.js'
+import { spacesClause, spacesOf } from '../spaces/service.js'
 import {
   ACTIVITY_ENTITY_TYPES,
   type Described,
@@ -70,27 +70,26 @@ const TYPES_SQL = ACTIVITY_ENTITY_TYPES.map((t) => `'${t}'`).join(', ')
  */
 export class ActivityService {
   private readonly sqlite: Database.Database
-  private readonly scan: Database.Statement
-  private readonly entity: Database.Statement
 
-  constructor(db: Db) {
+  constructor(private readonly db: Db) {
     // Raw statements: the scan reads in chunks and parses JSON itself.
-    const sqlite = (db as Db & { $client: Database.Database }).$client
-    this.sqlite = sqlite
-    this.scan = sqlite.prepare(
-      `select seq, entity_type as entityType, entity_id as entityId, fields, ts,
-              received_at as receivedAt, actor, user_id as userId
-         from changes
-        where ${IN_SPACES_OF_USER_SQL} and seq < ? and entity_type in (${TYPES_SQL})
-        order by seq desc
-        limit ?`,
-    )
-    this.entity = sqlite.prepare(
-      `select data, deleted from entities where ${IN_SPACES_OF_USER_SQL} and entity_type = ? and id = ?`,
-    )
+    this.sqlite = (db as Db & { $client: Database.Database }).$client
   }
 
   list(userId: string, query: ActivityQuery = {}, grants: readonly AgentGrant[] | null = null) {
+    const spaceIds = spacesOf(this.db, userId)
+    const scan = this.sqlite.prepare(
+      `select seq, entity_type as entityType, entity_id as entityId, fields, ts,
+              received_at as receivedAt, actor, user_id as userId
+         from changes
+        where ${spacesClause(spaceIds)} and seq < ? and entity_type in (${TYPES_SQL})
+        order by seq desc
+        limit ?`,
+    )
+    const entity = this.sqlite.prepare(
+      `select data, deleted from entities
+        where ${spacesClause(spaceIds)} and entity_type = ? and id = ?`,
+    )
     const limit = Math.min(MAX_LIMIT, Math.max(1, query.limit ?? DEFAULT_LIMIT))
     const sinceMs = query.since ? Date.parse(query.since) : null
     const untilMs = query.until ? Date.parse(query.until) : null
@@ -99,7 +98,7 @@ export class ActivityService {
     const load = (type: string, id: string): EntityRow | null => {
       const key = `${type}:${id}`
       if (cache.has(key)) return cache.get(key) ?? null
-      const row = this.entity.get(userId, type, id) as { data: string; deleted: number } | undefined
+      const row = entity.get(...spaceIds, type, id) as { data: string; deleted: number } | undefined
       const value = row ? { data: JSON.parse(row.data), deleted: !!row.deleted } : null
       cache.set(key, value)
       return value
@@ -128,7 +127,7 @@ export class ActivityService {
     }
 
     scan: while (!done) {
-      const rows = this.scan.all(userId, cursor, CHUNK) as (Omit<LogRow, 'fields'> & {
+      const rows = scan.all(...spaceIds, cursor, CHUNK) as (Omit<LogRow, 'fields'> & {
         fields: string
       })[]
       if (rows.length === 0) break
@@ -151,7 +150,7 @@ export class ActivityService {
             accept(open)
             nextBefore = row.seq + 1
           }
-          return this.build(userId, candidates, nextBefore, load, grants)
+          return this.build(spaceIds, candidates, nextBefore, load, grants)
         }
         const subject = this.subjectOf(row, load)
         if (!subject) continue
@@ -159,13 +158,13 @@ export class ActivityService {
         if (closed && accept(closed) && candidates.length >= limit) {
           nextBefore = (closed.rows.at(-1) as LogRow).seq
           folder.finish()
-          return this.build(userId, candidates, nextBefore, load, grants)
+          return this.build(spaceIds, candidates, nextBefore, load, grants)
         }
       }
       if (rows.length < CHUNK) break
     }
     accept(folder.finish())
-    return this.build(userId, candidates, null, load, grants)
+    return this.build(spaceIds, candidates, null, load, grants)
   }
 
   /** The entity a row counts for, or null when it is not activity (a repeat template). */
@@ -227,13 +226,13 @@ export class ActivityService {
 
   /** Fills in titles, containers and the `from` values, and drops lines that changed nothing. */
   private build(
-    userId: string,
+    spaceIds: string[],
     candidates: Candidate[],
     nextBefore: number | null,
     load: (type: string, id: string) => EntityRow | null,
     grants: readonly AgentGrant[] | null,
   ): ActivityPage {
-    const previous = this.previousValues(userId, candidates)
+    const previous = this.previousValues(spaceIds, candidates)
     const items: ActivityItem[] = []
     candidates.forEach((c, i) => {
       const { group, described } = c
@@ -278,7 +277,10 @@ export class ActivityService {
    * line's first change. One walk back through the log, limited to the entities
    * on the page; it ends when every field has been found.
    */
-  private previousValues(userId: string, candidates: Candidate[]): (Map<string, unknown> | null)[] {
+  private previousValues(
+    spaceIds: string[],
+    candidates: Candidate[],
+  ): (Map<string, unknown> | null)[] {
     interface Need {
       index: number
       type: string
@@ -315,14 +317,14 @@ export class ActivityService {
       `select seq, entity_type as entityType, entity_id as entityId, fields, ts,
               received_at as receivedAt, actor, user_id as userId
          from changes
-        where ${IN_SPACES_OF_USER_SQL} and seq < ? and entity_id in (${ids.map(() => '?').join(', ')})
+        where ${spacesClause(spaceIds)} and seq < ? and entity_id in (${ids.map(() => '?').join(', ')})
         order by seq desc
         limit ?`,
     )
     let cursor = start
     let pending = needs.length
     while (pending > 0) {
-      const rows = stmt.all(userId, cursor, ...ids, CHUNK) as (Omit<LogRow, 'fields'> & {
+      const rows = stmt.all(...spaceIds, cursor, ...ids, CHUNK) as (Omit<LogRow, 'fields'> & {
         fields: string
       })[]
       for (const raw of rows) {

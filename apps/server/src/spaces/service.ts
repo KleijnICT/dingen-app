@@ -38,7 +38,7 @@ export function personalSpaceOf(db: Queryable, userId: string): string | null {
 }
 
 /** The ids of all spaces the user is a member of (any level). */
-export function spacesOf(db: Queryable, userId: string): string[] {
+export function spacesOf(db: Pick<Db, 'select'>, userId: string): string[] {
   return db
     .select({ id: spaceMembers.spaceId })
     .from(spaceMembers)
@@ -75,22 +75,23 @@ export function levelAllows(level: SpaceLevel | null, needed: SpaceLevel): boole
 }
 
 /**
- * Condition "`column` is one of the user's spaces", as a subquery, so a read
- * stays a single statement: `where(inSpacesOf(db, entities.spaceId, userId))`.
+ * Condition "`column` is one of the user's spaces":
+ * `where(inSpacesOf(db, entities.spaceId, userId))`. The spaces are looked up
+ * first and go in as a list, not as a subquery: with one space (now always)
+ * SQLite reads `(space_id, seq)` in order, where a subquery would make it
+ * sort every row after the cursor. No spaces: matches nothing.
  */
 export function inSpacesOf(db: Pick<Db, 'select'>, column: SQLiteColumn, userId: string): SQL {
-  return inArray(
-    column,
-    db
-      .select({ id: spaceMembers.spaceId })
-      .from(spaceMembers)
-      .where(eq(spaceMembers.userId, userId)),
-  )
+  return inArray(column, spacesOf(db, userId))
 }
 
-/** The same condition for raw SQL: bind the user id once. */
-export const IN_SPACES_OF_USER_SQL =
-  'space_id in (select space_id from space_members where user_id = ?)'
+/**
+ * The same condition for raw SQL, for the given space ids: the clause and
+ * the values to bind in its place.
+ */
+export function spacesClause(spaceIds: readonly string[]): string {
+  return spaceIds.length === 0 ? '0' : `space_id in (${spaceIds.map(() => '?').join(', ')})`
+}
 
 /** A write into a space where the user lacks the level for it. */
 export class SpaceAccessError extends Error {
