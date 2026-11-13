@@ -351,8 +351,17 @@ button.link.danger {
   min-width: 0;
   background: var(--bg);
 }
+.content-body {
+  position: relative;
+  overflow: hidden;
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  min-width: 0;
+}
 .content {
   flex: 1;
+  min-width: 0;
   min-height: 0;
   overflow-y: auto;
   padding: 36px clamp(16px, 6vw, 72px) 40px;
@@ -471,19 +480,140 @@ button.link.danger {
   color: var(--error);
 }
 
-/* --- Editor --- */
-.task.editing {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
-  padding: 10px 12px 10px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
-  margin: 4px 0;
+/* --- Task panel: beside the list (side), over it (overlay) or the whole screen (full) --- */
+.panel-slot:empty {
+  display: none;
 }
-.task.editing:hover {
+.panel-slot {
+  display: flex;
+  flex: none;
+}
+.task-panel-host {
+  display: flex;
+}
+.task-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   background: var(--surface);
+  animation: panel-in 200ms ease-out;
+}
+.task-panel:focus {
+  outline: none;
+}
+.task-panel-host.closing .task-panel {
+  animation: panel-out 200ms ease-in forwards;
+}
+.task-panel.side {
+  width: 420px;
+  border-left: 1px solid var(--line);
+}
+.task-panel-host.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+.panel-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.16);
+  pointer-events: auto;
+  animation: scrim-in 200ms ease-out;
+}
+.task-panel-host.closing .panel-scrim {
+  animation: scrim-out 200ms ease-in forwards;
+}
+.task-panel.overlay {
+  position: relative;
+  width: min(420px, 100%);
+  height: 100%;
+  border-left: 1px solid var(--line);
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.14);
+  pointer-events: auto;
+}
+.task-panel-host.full {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+.task-panel.full {
+  flex: 1;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.panel-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 8px 0 12px;
+}
+.panel-close,
+.panel-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px;
+  border-radius: 7px;
+  background: none;
+  color: var(--muted);
+}
+.panel-back {
+  padding-left: 0;
+  color: var(--accent);
+  font-weight: 500;
+}
+.panel-close:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+.panel-close:focus-visible,
+.panel-back:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.panel-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px 18px 24px;
+}
+@keyframes panel-in {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes panel-out {
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes scrim-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes scrim-out {
+  to {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .task-panel,
+  .panel-scrim,
+  .task-panel-host.closing .task-panel,
+  .task-panel-host.closing .panel-scrim {
+    animation: none;
+  }
+}
+
+/* --- Editor --- */
+.task-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 .editor-row {
   display: flex;

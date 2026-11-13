@@ -65,7 +65,7 @@ function SortableTaskRow({ task, group, siblings, frozen, ...row }: SortableProp
   const { setNodeRef, listeners, transform, transition, isDragging } = useSortable({
     id: task.id,
     data,
-    disabled: frozen || row.open,
+    disabled: frozen,
   })
   return (
     <TaskRow

@@ -15,12 +15,11 @@ import {
 import { type ActivityFilter, fetchActivity, type User } from '../api.js'
 import { formatDate, useT } from '../i18n/index.js'
 import { describeDate, type ListDef } from '../lists.js'
-import { areaPath, navigate, projectPath } from '../router.js'
+import { areaPath, navigate, projectPath, taskPath } from '../router.js'
 import { useWorkspace } from '../store/context.js'
 import { ListPage } from './ListPage.js'
 import { MemberAvatar, useMembers } from './MemberAvatar.js'
 import { pathOf } from './Search.js'
-import { requestSelect } from './useTaskList.js'
 
 const PAGE = 50
 /** Pages fetched in a row when a narrow filter keeps coming back empty. */
@@ -307,8 +306,7 @@ function EntityTitle({ item }: { item: ActivityItem }) {
     const task = ws.tasks.find((x) => x.id === item.entityId)
     if (task) {
       open = () => {
-        requestSelect(task.id)
-        navigate(pathOf(task, ws))
+        navigate(taskPath(pathOf(task, ws), task.id))
       }
     }
   } else if (item.entityType === 'project' && ws.projectById.has(item.entityId)) {
