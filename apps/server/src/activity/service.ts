@@ -78,7 +78,7 @@ export class ActivityService {
 
   list(userId: string, query: ActivityQuery = {}, grants: readonly AgentGrant[] | null = null) {
     const spaceIds = spacesOf(this.db, userId)
-    const scan = this.sqlite.prepare(
+    const scanLog = this.sqlite.prepare(
       `select seq, entity_type as entityType, entity_id as entityId, fields, ts,
               received_at as receivedAt, actor, user_id as userId
          from changes
@@ -127,7 +127,7 @@ export class ActivityService {
     }
 
     scan: while (!done) {
-      const rows = scan.all(...spaceIds, cursor, CHUNK) as (Omit<LogRow, 'fields'> & {
+      const rows = scanLog.all(...spaceIds, cursor, CHUNK) as (Omit<LogRow, 'fields'> & {
         fields: string
       })[]
       if (rows.length === 0) break
