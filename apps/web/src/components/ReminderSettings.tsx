@@ -35,7 +35,11 @@ export function ReminderSettings() {
         <span>{t('reminder.settings.title')}</span>
         <p className="muted">
           {t(
-            support === 'insecure' ? 'reminder.settings.insecure' : 'reminder.settings.unsupported',
+            support === 'proxied'
+              ? 'reminder.settings.proxied'
+              : support === 'insecure'
+                ? 'reminder.settings.insecure'
+                : 'reminder.settings.unsupported',
           )}
         </p>
       </div>

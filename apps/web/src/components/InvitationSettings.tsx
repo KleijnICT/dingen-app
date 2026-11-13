@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { type AuthStatus, api, errorText, type RegistrationMode } from '../api.js'
+import { currentBase } from '../base.js'
 import { formatDate, useT } from '../i18n/index.js'
 import { inviteLink } from '../invite.js'
 
@@ -55,7 +56,7 @@ export function InvitationSettings() {
     setBusy(true)
     try {
       const { token } = await api.post<{ token: string }>('/api/invitations')
-      setFresh(inviteLink(window.location.origin, token))
+      setFresh(inviteLink(window.location.origin + currentBase(), token))
       await load()
     } catch (err) {
       setError(errorText(err))

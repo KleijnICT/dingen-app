@@ -1,15 +1,13 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { serve } from '@hono/node-server'
-import { serveStatic } from '@hono/node-server/serve-static'
-import type { Context } from 'hono'
 import { createApp, defaultPush } from './app.js'
 import { backupBeforeMigrations } from './backup.js'
 import { loadConfig } from './config.js'
 import { migrationsFolder, openDatabase } from './db.js'
 import { resetToDemo } from './demo/seed.js'
 import { ReminderPlanner } from './push/planner.js'
-import { staticHeaders } from './static.js'
+import { mountWeb } from './static.js'
 
 const config = loadConfig()
 
@@ -62,16 +60,8 @@ const app = createApp({
 // Onbekende API-paden krijgen JSON, nooit de SPA-fallback.
 app.all('/api/*', (c) => c.json({ error: 'not_found' }, 404))
 
-if (fs.existsSync(config.webDist)) {
-  // serveStatic werkt met paden relatief aan de huidige werkmap.
-  const root = path.relative(process.cwd(), config.webDist) || '.'
-  const setHeaders = (_file: string, c: Context) => {
-    for (const [name, value] of Object.entries(staticHeaders(new URL(c.req.url).pathname))) {
-      c.header(name, value)
-    }
-  }
-  app.use('/*', serveStatic({ root, onFound: setHeaders }))
-  app.get('/*', serveStatic({ root, path: 'index.html', onFound: setHeaders }))
+if (fs.existsSync(path.join(config.webDist, 'index.html'))) {
+  mountWeb(app, config.webDist)
 } else {
   console.warn(`Web build not found at ${config.webDist}; serving the API only.`)
 }

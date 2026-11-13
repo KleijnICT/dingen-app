@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { ApiError, api, errorText, type User } from './api.js'
+import { withBase } from './base.js'
 import { AgentSettings } from './components/AgentSettings.js'
 import { CalendarSettings } from './components/CalendarSettings.js'
 import { InvitationSettings } from './components/InvitationSettings.js'
@@ -198,7 +199,7 @@ function DataTab() {
       <section>
         <h2>{t('data.export.title')}</h2>
         <p className="muted">{t('data.export.intro')}</p>
-        <a className="button" href="/api/export" download>
+        <a className="button" href={withBase('/api/export')} download>
           {t('data.export.button')}
         </a>
       </section>

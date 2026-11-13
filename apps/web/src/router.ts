@@ -1,12 +1,17 @@
 import { useSyncExternalStore } from 'react'
+import { stripBase, withBase } from './base.js'
 
-/** Routing in a few lines: the path in the address bar, no library. */
+/**
+ * Routing in a few lines: the path in the address bar, no library. App paths (`/today`) never
+ * carry the base path; navigate and usePath add and strip it (base.ts).
+ */
 
 const listeners = new Set<() => void>()
 
 export function navigate(path: string): void {
-  if (window.location.pathname === path) return
-  window.history.pushState(null, '', path)
+  const url = withBase(path)
+  if (window.location.pathname === url) return
+  window.history.pushState(null, '', url)
   for (const l of listeners) l()
 }
 
@@ -20,8 +25,16 @@ function subscribe(listener: () => void): () => void {
 }
 
 export function usePath(): string {
-  return useSyncExternalStore(subscribe, () => window.location.pathname)
+  return useSyncExternalStore(subscribe, currentPath)
 }
+
+/** The app path of the address bar, without the base. */
+export function currentPath(): string {
+  return stripBase(window.location.pathname)
+}
+
+/** The href for a link to an app path (for open-in-new-tab; clicks go through navigate). */
+export const appHref = (path: string): string => withBase(path)
 
 export type Route =
   | { kind: 'list'; path: string }

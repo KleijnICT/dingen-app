@@ -1,4 +1,5 @@
 import { api } from './api.js'
+import { readBase } from './base.js'
 
 /**
  * Web push on this device (browser). Push needs a service worker, and both
@@ -6,7 +7,8 @@ import { api } from './api.js'
  * works as before; the settings explain why reminders are unavailable.
  */
 
-export type PushSupport = 'ok' | 'insecure' | 'unsupported'
+/** `proxied`: under a path prefix (Home Assistant ingress), where there is no service worker. */
+export type PushSupport = 'ok' | 'insecure' | 'unsupported' | 'proxied'
 
 export function pushSupport(
   w: {
@@ -14,9 +16,11 @@ export function pushSupport(
     navigator?: object
     PushManager?: unknown
     Notification?: unknown
+    __DINGEN_BASE__?: unknown
   } = typeof window === 'undefined' ? {} : window,
   production = import.meta.env.PROD,
 ): PushSupport {
+  if (readBase(w.__DINGEN_BASE__)) return 'proxied'
   if (!w.isSecureContext) return 'insecure'
   // The service worker is only registered in a production build (see pwa.ts).
   if (!production || !w.navigator || !('serviceWorker' in w.navigator)) return 'unsupported'

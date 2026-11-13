@@ -22,6 +22,14 @@ describe('pushSupport', () => {
     expect(pushSupport({ ...full, PushManager: undefined }, true)).toBe('unsupported')
     expect(pushSupport(full, false)).toBe('unsupported')
   })
+
+  it('is off under a path prefix (ingress), also over HTTP', () => {
+    expect(pushSupport({ ...full, __DINGEN_BASE__: '/api/hassio_ingress/tok' }, true)).toBe(
+      'proxied',
+    )
+    expect(pushSupport({ __DINGEN_BASE__: '/api/hassio_ingress/tok' }, true)).toBe('proxied')
+    expect(pushSupport({ ...full, __DINGEN_BASE__: '' }, true)).toBe('ok')
+  })
 })
 
 describe('keyBytes', () => {

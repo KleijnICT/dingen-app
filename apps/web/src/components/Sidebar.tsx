@@ -13,7 +13,7 @@ import {
   useSidebarWidth,
 } from '../prefs.js'
 import { showReviewDot } from '../reviewFlow.js'
-import { areaPath, navigate, projectPath } from '../router.js'
+import { appHref, areaPath, navigate, projectPath } from '../router.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import type { SyncStatus } from '../store/engine.js'
 import { AreaGlyph } from './AreaIcons.js'
@@ -290,7 +290,7 @@ function NavLink({ href, className, active, title, drop, drag, children }: NavLi
         droppable.setNodeRef(el)
         draggable.setNodeRef(el)
       }}
-      href={href}
+      href={appHref(href)}
       className={`nav-item ${className} ${active ? 'active' : ''} ${
         droppable.isOver ? 'drop-over' : ''
       } ${draggable.isDragging ? 'dragging' : ''}`}

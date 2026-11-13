@@ -1,7 +1,9 @@
 import type { ActivityItem } from '@dingen/core'
+import { withBase } from './base.js'
 import { t } from './i18n/index.js'
 
-/** Thin layer over fetch for the same-origin API (cookie session). */
+/** Thin layer over fetch for the same-origin API (cookie session). Paths are app paths
+ * (`/api/...`); the base path (ingress) is added here. */
 
 export class ApiError extends Error {
   constructor(
@@ -14,7 +16,7 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const res = await fetch(path, {
+  const res = await fetch(withBase(path), {
     ...init,
     headers: {
       accept: 'application/json',
