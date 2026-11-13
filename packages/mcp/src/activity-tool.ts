@@ -2,7 +2,6 @@ import { ACTIVITY_KINDS, type ActivityItem, addDays, type Member } from '@dingen
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import type { ActivityFilter, DingenClient } from './client.js'
-import { todayIn } from './time.js'
 
 /**
  * `get_activity` (plan 19): who did what, from the Logbook. It reads the
@@ -41,7 +40,7 @@ export function registerActivityTool(server: McpServer, client: DingenClient): v
       try {
         // Older servers have no member list; names then fall back to ids.
         const members = await client.members().catch(() => [])
-        const today = todayIn(client.timezone)
+        const today = client.today
         const filter: ActivityFilter = {
           kinds: input.kinds,
           actor: input.who ? await resolveWho(input.who, members, () => client.me()) : undefined,
