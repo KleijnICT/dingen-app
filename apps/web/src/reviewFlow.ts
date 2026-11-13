@@ -27,10 +27,15 @@ export function parseReviewKind(value: string | undefined): ReviewKind | null {
 /**
  * The sidebar dot: a weekly or monthly review is ready (or running). The daily
  * review is left out on purpose; it equals a non-empty Inbox, and the sidebar
- * already counts that.
+ * already counts that. `anchor` is the date the account was created; a review
+ * kind never done counts from there (see `nextReviewDate` in the core).
  */
-export function showReviewDot(reviews: Review[], today: string): boolean {
-  return dueReviews(reviews, today).some((k) => k !== 'daily')
+export function showReviewDot(
+  reviews: Review[],
+  today: string,
+  anchor: string | null = null,
+): boolean {
+  return dueReviews(reviews, today, anchor).some((k) => k !== 'daily')
 }
 
 export interface BannerItem {
@@ -39,8 +44,12 @@ export interface BannerItem {
 }
 
 /** The bars on Today: one per weekly or monthly review that is ready. */
-export function reviewBanners(reviews: Review[], today: string): BannerItem[] {
-  return dueReviews(reviews, today)
+export function reviewBanners(
+  reviews: Review[],
+  today: string,
+  anchor: string | null = null,
+): BannerItem[] {
+  return dueReviews(reviews, today, anchor)
     .filter((k) => k !== 'daily')
     .map((kind) => ({ kind, running: runningReview(reviews, kind) !== null }))
 }

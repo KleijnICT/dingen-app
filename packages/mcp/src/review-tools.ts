@@ -84,7 +84,7 @@ export function registerReviewTools(
     {
       title: 'Get the reviews',
       description:
-        'Which reviews are due today, and for each running review its steps (done or not) and the current step. With `kind`, also the items of the current step (or of `step`) with their signals and whether each was reviewed in this review. Read this before and after every review action; it is the same progress the app shows.',
+        'Which reviews are due today (a weekly or monthly review never done counts from the day the account was created, so a new account has none due yet), and for each running review its steps (done or not) and the current step. With `kind`, also the items of the current step (or of `step`) with their signals and whether each was reviewed in this review. Read this before and after every review action; it is the same progress the app shows.',
       inputSchema: {
         kind: ReviewKind.optional().describe(KIND_DESCRIPTION),
         step: z
@@ -94,15 +94,16 @@ export function registerReviewTools(
       },
     },
     ({ kind, step }) =>
-      run((ws) => {
+      run(async (ws) => {
         const all = reviews()
+        const anchor = await client.reviewAnchor()
         const kinds = ReviewKind.options.filter((k) => kind === undefined || k === kind)
         return {
           today: ws.today,
-          due: dueReviews(all, ws.today),
+          due: dueReviews(all, ws.today, anchor),
           reviews: kinds.map((k) => {
             const review = runningReview(all, k)
-            const base = { kind: k, nextDue: nextReviewDate(all, k) ?? ws.today }
+            const base = { kind: k, nextDue: nextReviewDate(all, k, anchor) ?? ws.today }
             if (review === null) {
               if (step !== undefined) fail(`No ${k} review is running; call start_review first`)
               return { ...base, running: null }

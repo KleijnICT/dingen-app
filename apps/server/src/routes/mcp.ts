@@ -23,7 +23,13 @@ export function mcpRoutes(timezone: string, activity: ActivityService) {
     if (!c.get('user') || c.get('authSource') !== 'token') {
       return c.json({ error: 'unauthorized' }, 401)
     }
-    const transport = new ServiceTransport(c.get('sync'), c.get('agents'), accessOf(c), activity)
+    const transport = new ServiceTransport(
+      c.get('sync'),
+      c.get('agents'),
+      accessOf(c),
+      activity,
+      c.get('user')?.createdAt ?? null,
+    )
     const client = new DingenClient(transport, { today: () => todayIn(timezone), timezone })
     const server = createMcpServer(client)
     const http = new StreamableHTTPTransport()
@@ -41,7 +47,12 @@ class ServiceTransport implements SyncTransport {
     private readonly agents: AgentService,
     private readonly access: Access,
     private readonly activityService: ActivityService,
+    private readonly createdAt: string | null,
   ) {}
+
+  async accountCreatedAt() {
+    return this.createdAt
+  }
 
   async activity(filter: ActivityFilter) {
     return this.activityService.list(

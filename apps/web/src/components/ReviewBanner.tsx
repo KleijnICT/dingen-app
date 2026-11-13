@@ -2,7 +2,7 @@ import { ListRestart } from 'lucide-react'
 import { useT } from '../i18n/index.js'
 import { reviewBanners } from '../reviewFlow.js'
 import { useEngine, useWorkspace } from '../store/context.js'
-import { startReview, useReviews } from './useReviews.js'
+import { startReview, useReviewAnchor, useReviews } from './useReviews.js'
 
 /** On Today: "Weekly Review is ready" (or monthly), with a button to start or resume it. */
 export function ReviewBanner() {
@@ -10,7 +10,7 @@ export function ReviewBanner() {
   const engine = useEngine()
   const ws = useWorkspace()
   const reviews = useReviews()
-  const banners = reviewBanners(reviews, ws.today)
+  const banners = reviewBanners(reviews, ws.today, useReviewAnchor())
   if (banners.length === 0) return null
   return (
     <div className="review-banners">
