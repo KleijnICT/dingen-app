@@ -38,7 +38,8 @@ previous one is done.
 
 In this order: Android; iOS, iPadOS and macOS; Linux; a terminal app for
 macOS and Linux; Windows. Native per platform, open source, working with any
-Dingen server, with push notifications through a relay.
+Dingen server, with push notifications through a relay. Location reminders:
+a notification when you arrive at or leave a place.
 
 ## Later
 
