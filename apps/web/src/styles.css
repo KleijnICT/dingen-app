@@ -898,14 +898,40 @@ button.link.danger {
 .heading-input:focus {
   outline: none;
 }
-.page-actions {
+/* Completed tasks of a project or area: their own folding section at the bottom. */
+.completed-section {
+  margin-top: 26px;
+}
+.completed-toggle {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px 18px;
-  padding: 18px 10px 0;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+}
+.completed-toggle:hover {
+  background: var(--hover);
+  color: var(--fg);
+}
+.completed-chevron {
+  flex: none;
+  transition: transform 0.12s;
+}
+.completed-toggle.closed .completed-chevron {
+  transform: rotate(-90deg);
+}
+.completed-count {
+  font-variant-numeric: tabular-nums;
 }
 .tasks.completed {
-  margin-top: 8px;
+  margin-top: 4px;
   opacity: 0.8;
 }
 

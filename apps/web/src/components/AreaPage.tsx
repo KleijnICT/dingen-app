@@ -2,11 +2,12 @@ import { type Area, newProject, newTask, orderBetween, type Task, views } from '
 import { FolderPlus } from 'lucide-react'
 import { useState } from 'react'
 import { useT } from '../i18n/index.js'
-import { completedDate } from '../lists.js'
 import { navigate, projectPath } from '../router.js'
+import { completedSection } from '../sections.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { deleteArea, useLinger } from '../taskActions.js'
 import { AreaAppearance } from './AreaAppearance.js'
+import { CompletedSection } from './CompletedSection.js'
 import { InlineInput } from './InlineInput.js'
 import { MemberAvatars, MembersPanel, useAccess } from './MembersPanel.js'
 import { MoreMenu } from './Menu.js'
@@ -28,25 +29,16 @@ export function AreaPage({ area, focusSignal }: Props) {
   const ws = useWorkspace()
   const access = useAccess('area', area.id)
   const [tagFilter, setTagFilter] = useState<string | null>(null)
-  const [showCompleted, setShowCompleted] = useState(false)
 
   const all = views.areaTasks(ws.tasks, area.id)
   const open = all.filter((task) => task.status === 'open')
-  const completed = all.filter((task) => task.status !== 'open')
   const { shown, toggle } = useLinger(open, ws, engine)
-  const lingering = new Set(shown.map((task) => task.id))
-  const completedToday = completed
-    .filter((task) => completedDate(task) === ws.today && !lingering.has(task.id))
-    .sort(views.byCompletedDesc)
-  const completedEarlier = completed
-    .filter((task) => completedDate(task) !== ws.today)
-    .sort(views.byCompletedDesc)
-  const completedShown = showCompleted ? [...completedToday, ...completedEarlier] : completedToday
+  const completed = completedSection(all, shown)
   const present = new Set(open.flatMap((task) => task.tagIds))
   const filtered = tagFilter ? shown.filter((task) => task.tagIds.includes(tagFilter)) : shown
   const projects = views.projectsOf(ws.projects, area.id)
 
-  const taskList = useTaskList([...shown, ...completedShown], toggle)
+  const taskList = useTaskList([...shown, ...completed], toggle)
 
   function addNew() {
     const task = newTask({
@@ -117,15 +109,6 @@ export function AreaPage({ area, focusSignal }: Props) {
         tasks={filtered}
         rowProps={rowProps}
       />
-      {completedShown.length > 0 && (
-        <TaskGroup
-          className="completed"
-          group={{ key: `area:${area.id}:completed`, target: null }}
-          tasks={completedShown}
-          rowProps={rowProps}
-          frozen
-        />
-      )}
       {projects.length > 0 && (
         <div className="group">
           <h2 className="group-title">{t('list.projects')}</h2>
@@ -136,15 +119,7 @@ export function AreaPage({ area, focusSignal }: Props) {
           </ul>
         </div>
       )}
-      {completedEarlier.length > 0 && (
-        <div className="page-actions">
-          <button type="button" className="link" onClick={() => setShowCompleted((c) => !c)}>
-            {showCompleted
-              ? t('project.hideCompleted')
-              : t('project.showCompleted', { n: completedEarlier.length })}
-          </button>
-        </div>
-      )}
+      <CompletedSection sectionKey={`area:${area.id}`} tasks={completed} rowProps={rowProps} />
       <TaskToolbar
         onNew={addNew}
         extra={<ToolbarButton icon={FolderPlus} label={t('nav.newProject')} onClick={addProject} />}
