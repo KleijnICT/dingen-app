@@ -1,4 +1,4 @@
-import { parseCursorParam } from '@dingen/core'
+import { CURSOR_AHEAD, CursorAheadError, parseCursorParam } from '@dingen/core'
 import { Hono } from 'hono'
 import { z } from 'zod'
 import { AgentScopeError } from '../agents/access.js'
@@ -19,7 +19,8 @@ const PullQuery = z.object({
  * - 2: `GET /pull?cursor=<url-encoded JSON {"<spaceId>": seq}>` answers per
  *   space (`PullResponse`). A bare number as cursor moves a protocol 1 cursor.
  * - 1: `GET /pull?since=<seq>` answers `{ changes, seq, hasMore }` over all
- *   spaces, for clients from before protocol 2. It can go once no released
+ *   spaces, for clients from before protocol 2. A `since` ahead of the server
+ *   (restored from a back-up) gets 409 `cursor_ahead`: take a fresh snapshot. It can go once no released
  *   client sends it (web app and MCP plugin from 1.0.0-alpha.4 and older).
  */
 export function syncRoutes() {
@@ -64,9 +65,17 @@ export function syncRoutes() {
     if (!parsed.success) {
       return c.json({ error: 'invalid_query', issues: parsed.error.issues }, 400)
     }
-    return c.json(
-      c.get('sync').pull(c.get('userId'), parsed.data.since, undefined, c.get('grants')),
-    )
+    try {
+      return c.json(
+        c.get('sync').pull(c.get('userId'), parsed.data.since, undefined, c.get('grants')),
+      )
+    } catch (err) {
+      // The server was restored from a backup: the client must load a fresh snapshot.
+      if (err instanceof CursorAheadError) {
+        return c.json({ error: CURSOR_AHEAD, resync: true, message: err.message }, 409)
+      }
+      throw err
+    }
   })
 
   // `?space=<id>`: only that space (404 when the user is not a member of it).

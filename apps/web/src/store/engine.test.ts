@@ -53,6 +53,16 @@ class FakeServer {
     this.entities.set(key, applyChange(this.entities.get(key), change))
   }
 
+  /** Back to the first `count` log entries, as a restored backup. */
+  restoreTo(count: number): void {
+    const log = this.log.slice(0, count)
+    this.log = []
+    this.entities.clear()
+    this.spaceOf.clear()
+    this.known.clear()
+    for (const entry of log) this.write(entry.change, entry.spaceId)
+  }
+
   private seqOf(spaceId: string): number {
     return this.log.filter((l) => l.spaceId === spaceId).at(-1)?.seq ?? 0
   }
@@ -118,13 +128,18 @@ class FakeServer {
       let budget = this.pageSize
       const out: PullSpace[] = this.spaces.map((space) => {
         const since = typeof cursor === 'number' ? cursor : cursor[space.id]
-        if (since === undefined) {
+        // A cursor beyond the log (the server was restored): the space again, marked resync.
+        const ahead =
+          since !== undefined &&
+          since > (typeof cursor === 'number' ? this.log.length : this.seqOf(space.id))
+        if (since === undefined || ahead) {
           return {
             ...space,
             seq: this.seqOf(space.id),
             changes: [],
             entities: this.live(space.id),
             hasMore: false,
+            ...(ahead ? { resync: true as const } : {}),
           }
         }
         const after = this.log.filter((l) => l.spaceId === space.id && l.seq > since)
@@ -374,6 +389,42 @@ describe('SyncEngine with a cursor per space', () => {
     expect(titles(again)).toEqual(['Eigen taak'])
     again.stop()
     expect(Object.keys((await storedMeta(dbName)).cursors as SpaceCursor)).toEqual([PERSONAL])
+  })
+
+  it('loads a space again when the server was restored and its cursor is ahead', async () => {
+    const server = new FakeServer()
+    const dbName = `test-restore-${Date.now()}`
+    const a = engineFor(server, dbName)
+    await a.start()
+    const first = newTask({ title: 'Een' })
+    a.create('task', first)
+    await a.sync()
+    a.create('task', newTask({ title: 'Twee' }))
+    a.create('task', newTask({ title: 'Drie' }))
+    await settle()
+    await a.sync()
+    expect(titles(a)).toEqual(['Drie', 'Een', 'Twee'])
+
+    server.restoreTo(1)
+    // A change made while the pull is under way stays in the outbox and stays visible.
+    server.delayMs = 30
+    const run = a.sync()
+    await new Promise((r) => setTimeout(r, 5))
+    a.mutate('task', first.id, { title: 'Een, lokaal' })
+    await run
+    expect(titles(a)).toEqual(['Een, lokaal'])
+    server.delayMs = 0
+    await settle()
+    await a.sync()
+    expect(server.entities.get(recordKey('task', first.id))?.data.title).toBe('Een, lokaal')
+    expect(titles(a)).toEqual(['Een, lokaal'])
+    a.stop()
+
+    // The replaced space is gone from IndexedDB too.
+    const again = engineFor(server, dbName)
+    await again.start()
+    expect(titles(again)).toEqual(['Een, lokaal'])
+    again.stop()
   })
 
   it('moves a stored protocol 1 cursor over to a cursor per space', async () => {

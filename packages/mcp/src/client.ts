@@ -6,6 +6,8 @@ import {
   type Change,
   type ChecklistItem,
   type Clock,
+  CURSOR_AHEAD,
+  CursorAheadError,
   createClock,
   type Entity,
   type EntityRecord,
@@ -88,6 +90,11 @@ export interface SyncTransport {
   accountCreatedAt?(): Promise<string | null>
 }
 
+/** The server says a protocol 1 cursor is ahead of it (restored from a backup). */
+function isCursorAhead(err: unknown): boolean {
+  return err instanceof CursorAheadError || (err as { code?: unknown })?.code === CURSOR_AHEAD
+}
+
 /** `?kinds=…&actor=…` for the activity API. */
 export function activityQuery(filter: ActivityFilter): string {
   const params = new URLSearchParams()
@@ -118,6 +125,13 @@ export class HttpTransport implements SyncTransport {
       },
     })
     if (res.status === 401) throw new Error('Dingen rejected the token (401)')
+    if (res.status === 409) {
+      const body = (await res
+        .clone()
+        .json()
+        .catch(() => ({}))) as { error?: string }
+      if (body.error === CURSOR_AHEAD) throw new CursorAheadError()
+    }
     if (res.status === 403) {
       const body = (await res.json().catch(() => ({}))) as { error?: string; message?: string }
       if (body.error === 'agent_scope')
@@ -244,8 +258,24 @@ export class DingenClient implements Writer {
     return this.transport.members ? this.transport.members() : []
   }
 
-  /** Loads the replica the first time, then catches up with new changes. */
+  /**
+   * Loads the replica the first time, then catches up with new changes. When
+   * the server says our cursor is ahead of it (restored from a backup), the
+   * replica is loaded again; changes not yet flushed stay pending and are
+   * applied on top.
+   */
   async refresh(): Promise<void> {
+    if (this.loaded && !this.spaceCursor) {
+      try {
+        await this.pullSince()
+        return
+      } catch (err) {
+        if (!isCursorAhead(err)) throw err
+        this.records.clear()
+        this.spaceOf.clear()
+        this.loaded = false
+      }
+    }
     if (!this.loaded) {
       const body = await this.transport.snapshot()
       for (const rec of body.entities) {
@@ -258,12 +288,16 @@ export class DingenClient implements Writer {
       this.cursor = body.seq
       this.spaceCursor = body.cursor && this.transport.pullSpaces ? body.cursor : null
       this.loaded = true
+      this.reapplyPending()
       return
     }
     if (this.spaceCursor && this.transport.pullSpaces) {
       await this.pullSpaces(this.transport.pullSpaces.bind(this.transport))
-      return
     }
+  }
+
+  /** Protocol 1: changes after one cursor over everything. */
+  private async pullSince(): Promise<void> {
     let hasMore = true
     while (hasMore) {
       const body = await this.transport.pull(this.cursor)
@@ -279,8 +313,11 @@ export class DingenClient implements Writer {
     while (hasMore && this.spaceCursor) {
       const body = await pull(this.spaceCursor)
       for (const spaceId of body.removed) this.dropSpace(spaceId)
+      let replaced = false
       for (const space of body.spaces) {
         if (space.entities) {
+          // A new space, or `resync`: the server was restored and our cursor was ahead.
+          replaced = true
           this.dropSpace(space.id)
           for (const record of space.entities) {
             const key = recordKey(record.entityType, record.id)
@@ -308,8 +345,17 @@ export class DingenClient implements Writer {
           this.spaceOf.delete(key)
         }
       }
+      if (replaced) this.reapplyPending()
       this.spaceCursor = body.cursor
       hasMore = body.hasMore
+    }
+  }
+
+  /** Changes not flushed yet stay visible over a freshly loaded replica. */
+  private reapplyPending(): void {
+    for (const change of this.pending) {
+      const key = recordKey(change.entityType, change.entityId)
+      this.records.set(key, applyChange(this.records.get(key), change))
     }
   }
 

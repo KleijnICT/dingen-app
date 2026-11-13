@@ -1,6 +1,7 @@
 import {
   applyChange,
   type Change,
+  CursorAheadError,
   createClock,
   type EntityRecord,
   newTask,
@@ -44,6 +45,15 @@ class SpaceTransport implements SyncTransport {
     this.records.set(key, applyChange(this.records.get(key), change))
   }
 
+  /** Back to the first `count` log entries, as a restored backup. */
+  restoreTo(count: number) {
+    const log = this.log.slice(0, count)
+    this.log = []
+    this.records.clear()
+    this.spaceOf.clear()
+    for (const entry of log) this.write(entry.change, entry.spaceId)
+  }
+
   private seqOf(space: string) {
     return this.log.filter((l) => l.spaceId === space).at(-1)?.seq ?? 0
   }
@@ -69,13 +79,16 @@ class SpaceTransport implements SyncTransport {
     this.cursors.push(cursor)
     const out: PullSpace[] = this.spaces.map((space) => {
       const since = cursor[space.id]
-      if (since === undefined) {
+      // A cursor beyond the log (the server was restored): the space again, marked resync.
+      const ahead = since !== undefined && since > this.seqOf(space.id)
+      if (since === undefined || ahead) {
         return {
           ...space,
           seq: this.seqOf(space.id),
           changes: [],
           entities: this.live(space.id),
           hasMore: false,
+          ...(ahead ? { resync: true as const } : {}),
         }
       }
       const page = this.log.filter((l) => l.spaceId === space.id && l.seq > since)
@@ -198,6 +211,53 @@ describe('DingenClient with a cursor per space', () => {
     expect(titles(client)).toEqual(['Mine'])
   })
 
+  it('loads a space again after a restore, keeping changes not flushed yet', async () => {
+    const transport = new SpaceTransport()
+    const kept = newTask({ title: 'Kept' })
+    transport.write(createdBy(kept))
+    transport.write(createdBy(newTask({ title: 'Lost' })))
+    const client = new DingenClient(transport)
+    await client.refresh()
+    expect(titles(client)).toEqual(['Kept', 'Lost'])
+
+    transport.restoreTo(1)
+    client.mutate('task', kept.id, { title: 'Kept, edited' })
+    await client.refresh()
+    expect(titles(client)).toEqual(['Kept, edited'])
+    await client.flush()
+    expect(transport.records.get(recordKey('task', kept.id))?.data.title).toBe('Kept, edited')
+    await client.refresh()
+    expect(titles(client)).toEqual(['Kept, edited'])
+  })
+
+  it('protocol 1: reloads the snapshot when the server says the cursor is ahead', async () => {
+    let log: Change[] = [createdBy(newTask({ title: 'One' })), createdBy(newTask({ title: 'Two' }))]
+    let snapshots = 0
+    const transport: SyncTransport = {
+      snapshot: async () => {
+        snapshots += 1
+        const records = new Map<string, EntityRecord>()
+        for (const c of log) {
+          const key = recordKey(c.entityType, c.entityId)
+          records.set(key, applyChange(records.get(key), c))
+        }
+        return { entities: [...records.values()], seq: log.length }
+      },
+      pull: async (since) => {
+        if (since > log.length) throw new CursorAheadError()
+        return { changes: log.slice(since), seq: log.length, hasMore: false }
+      },
+      push: async () => ({ seq: 0 }),
+    }
+    const client = new DingenClient(transport)
+    await client.refresh()
+    expect(titles(client)).toEqual(['One', 'Two'])
+    log = log.slice(0, 1)
+    await client.refresh()
+    expect(snapshots).toBe(2)
+    expect(titles(client)).toEqual(['One'])
+  })
+
   it('falls back to protocol 1 when the server sends no cursor per space', async () => {
     const log: Change[] = []
     const seen: number[] = []
@@ -222,6 +282,13 @@ describe('DingenClient with a cursor per space', () => {
 })
 
 describe('HttpTransport', () => {
+  it('turns 409 cursor_ahead into CursorAheadError', async () => {
+    const transport = new HttpTransport('https://dingen.example', 'tok', async () =>
+      Response.json({ error: 'cursor_ahead', resync: true }, { status: 409 }),
+    )
+    await expect(transport.pull(99)).rejects.toBeInstanceOf(CursorAheadError)
+  })
+
   it('sends the cursor per space as URL-encoded JSON and with a push', async () => {
     const calls: { url: string; body?: string }[] = []
     const transport = new HttpTransport('https://dingen.example/', 'tok', async (input, init) => {
