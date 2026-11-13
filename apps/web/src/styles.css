@@ -547,11 +547,11 @@ button.link.danger {
   flex: none;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 8px 8px 0 12px;
 }
 .panel-close,
 .panel-back {
+  flex: none;
   display: inline-flex;
   align-items: center;
   gap: 2px;
@@ -578,7 +578,10 @@ button.link.danger {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 4px 18px 24px;
+  padding: 14px 14px 32px 18px;
+}
+.task-panel.full .panel-body {
+  padding-top: 4px;
 }
 @keyframes panel-in {
   from {
@@ -609,38 +612,6 @@ button.link.danger {
   }
 }
 
-/* --- Editor --- */
-.task-editor {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.editor-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.editor-title {
-  flex: 1;
-  border: 0;
-  background: none;
-  padding: 6px 0;
-  font-weight: 500;
-}
-.editor-title:focus,
-.editor-notes:focus {
-  outline: none;
-}
-.editor-notes {
-  border: 0;
-  background: none;
-  resize: vertical;
-  min-height: 56px;
-  padding: 0 0 0 30px;
-  font: inherit;
-  line-height: 1.45;
-  color: var(--fg);
-}
 .when-picker {
   border: 0;
   margin: 0;
@@ -665,11 +636,6 @@ button.link.danger {
 }
 .chip.date {
   padding: 3px 10px;
-}
-.editor-foot {
-  display: flex;
-  justify-content: space-between;
-  padding-left: 30px;
 }
 
 /* --- Narrow screens --- */
@@ -918,18 +884,8 @@ button.link.danger {
 }
 
 /* --- Editor extras --- */
-.editor-line {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 14px;
-  padding-left: 30px;
-}
-.move-select,
-.heading-picker {
-  font: inherit;
-}
 .move-select {
+  font: inherit;
   color: var(--fg);
   padding: 5px 8px;
   border: 1px solid var(--line);
@@ -937,14 +893,6 @@ button.link.danger {
   background: var(--bg);
   font-size: 0.9em;
   max-width: 100%;
-}
-.heading-picker {
-  border: 0;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
 }
 
 /* --- Project and area pages --- */
@@ -1252,8 +1200,22 @@ button.link.danger {
 .checklist-item:focus-within .checklist-remove {
   opacity: 1;
 }
-.checklist-add {
-  padding-left: 30px;
+.checklist-new {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 4px 2px 34px;
+}
+.checklist + .checklist-new {
+  margin-top: -10px;
+}
+.checklist-new-icon {
+  flex: none;
+  width: 16px;
+  color: var(--muted);
+}
+.checklist-new .checklist-input::placeholder {
+  color: var(--muted);
 }
 
 .area-appearance {
@@ -1409,9 +1371,6 @@ button.link.danger {
   font-weight: 400;
   text-align: left;
 }
-.move-item.nested {
-  padding-left: 30px;
-}
 .move-item:hover {
   background: var(--hover);
 }
@@ -1424,7 +1383,12 @@ button.link.danger {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.move-heading-icon {
+  flex: none;
+  color: var(--muted);
+}
 .move-none {
+  flex: none;
   width: 15px;
   height: 15px;
   border-radius: 4px;
@@ -2819,4 +2783,200 @@ button.agent-main .muted {
   text-align: center;
   font-size: 0.85em;
   padding: 18px 0 8px;
+}
+
+/* --- Editor (in the task panel) --- */
+.task-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.editor-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.editor-check {
+  margin-top: 4px;
+}
+.task-editor.done .check {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.editor-head .more-menu {
+  margin-top: 1px;
+}
+.editor-head .panel-close {
+  margin-top: -2px;
+}
+.editor-title {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  padding: 2px 0;
+  resize: none;
+  overflow: hidden;
+  font-size: 1.12em;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.task-editor.done .editor-title {
+  color: var(--muted);
+}
+.editor-title:focus,
+.editor-notes:focus {
+  outline: none;
+}
+.editor-notes {
+  border: 0;
+  background: none;
+  resize: none;
+  overflow: hidden;
+  min-height: 2.9em;
+  padding: 0 0 0 30px;
+  font: inherit;
+  line-height: 1.45;
+  color: var(--fg);
+}
+.panel-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+.panel-section-label {
+  margin: 0 0 2px 30px;
+  padding: 0;
+  font-size: 0.72em;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.panel-field {
+  position: relative;
+  display: grid;
+  grid-template-columns: 108px minmax(0, 1fr);
+  align-items: start;
+  gap: 8px;
+  padding-left: 30px;
+}
+.panel-field-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 30px;
+  color: var(--muted);
+  font-size: 0.88em;
+}
+.panel-field-icon {
+  flex: none;
+}
+.panel-field-value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  min-width: 0;
+}
+/* The fields bring their own icon and label; the row already shows both. */
+.panel-field .meta-icon,
+.panel-field .deadline-label {
+  display: none;
+}
+.panel-field .schedule-field {
+  padding-left: 0;
+  gap: 6px 10px;
+}
+.panel-field .schedule-reminder {
+  flex-wrap: wrap;
+}
+.panel-field .repeat-editor {
+  min-width: 0;
+  margin-top: 2px;
+}
+.panel-field .tag-editor {
+  width: 100%;
+}
+.panel-field .tag-input {
+  padding: 5px 2px;
+}
+.panel-popover-anchor {
+  min-width: 0;
+  max-width: 100%;
+}
+.field-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 100%;
+  min-height: 30px;
+  margin-left: -8px;
+  padding: 4px 8px;
+  border-radius: 7px;
+  background: none;
+  color: var(--fg);
+  font-weight: 400;
+  text-align: left;
+}
+.field-button:hover,
+.field-button[aria-expanded="true"] {
+  background: var(--hover);
+}
+.field-button:focus-visible,
+.panel-add-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.field-button-icon {
+  flex: none;
+  display: inline-flex;
+}
+.field-button-text {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+.field-button-sep {
+  color: var(--muted);
+}
+.panel-popover {
+  position: absolute;
+  top: calc(100% + 2px);
+  right: 0;
+  left: 30px;
+  max-height: min(380px, 60vh);
+  overflow-y: auto;
+  padding: 8px;
+}
+.panel-popover .when-picker {
+  padding-left: 0;
+}
+.panel-add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin: 10px 0 0;
+  padding: 0 0 0 30px;
+  border: 0;
+}
+.panel-add legend {
+  float: left;
+  margin: 0 8px 0 0;
+}
+.panel-add-button {
+  display: grid;
+  place-content: center;
+  width: 32px;
+  height: 30px;
+  padding: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--muted);
+}
+.panel-add-button:hover {
+  background: var(--hover);
+  color: var(--fg);
 }

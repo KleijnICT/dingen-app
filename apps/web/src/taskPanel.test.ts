@@ -1,9 +1,12 @@
+import { newTask } from '@dingen/core'
 import { describe, expect, it } from 'vitest'
 import {
+  fieldLayout,
   type KeyInput,
   listKeyAction,
   panelMode,
   rowClickAction,
+  stillAdded,
   taskParamOf,
   withTaskParam,
 } from './taskPanel.js'
@@ -143,5 +146,64 @@ describe('rowClickAction', () => {
   })
   it('shows the clicked task when the panel is already open', () => {
     expect(rowClickAction(false, true)).toBe('open')
+  })
+})
+
+describe('fieldLayout', () => {
+  const plain = newTask({ title: 'Plain', when: { kind: 'anytime' } })
+  const dated = newTask({ title: 'Dated', when: { kind: 'date', date: '2026-11-13' } })
+
+  it('offers every applicable empty field and shows none', () => {
+    expect(fieldLayout(dated, [], true)).toEqual({
+      shown: [],
+      addable: ['time', 'deadline', 'repeat', 'assignee'],
+    })
+  })
+
+  it('offers a time only for a task with a date', () => {
+    expect(fieldLayout(plain, [], true).addable).toEqual(['deadline', 'repeat', 'assignee'])
+    expect(fieldLayout(plain, ['time'], true).shown).toEqual([])
+  })
+
+  it('offers assigning only when there is someone to assign to', () => {
+    expect(fieldLayout(plain, [], false).addable).toEqual(['deadline', 'repeat'])
+    expect(fieldLayout({ ...plain, assigneeId: 'agent:a' }, [], false).shown).toEqual(['assignee'])
+  })
+
+  it('shows fields with a value and keeps them out of the Add row', () => {
+    const full = {
+      ...dated,
+      time: '09:00',
+      deadline: '2026-11-20',
+      templateId: 'tpl',
+      assigneeId: 'me',
+    }
+    expect(fieldLayout(full, [], true)).toEqual({
+      shown: ['time', 'deadline', 'repeat', 'assignee'],
+      addable: [],
+    })
+    // A reminder alone counts as a time and reminder.
+    expect(
+      fieldLayout({ ...dated, reminder: { daysBefore: 0, time: '09:00' } }, [], true).shown,
+    ).toEqual(['time'])
+  })
+
+  it('shows a just added field before it has a value', () => {
+    expect(fieldLayout(plain, ['deadline'], true)).toEqual({
+      shown: ['deadline'],
+      addable: ['repeat', 'assignee'],
+    })
+  })
+
+  it('does not start repeating a completed task', () => {
+    const done = { ...plain, status: 'completed' as const }
+    expect(fieldLayout(done, [], false).addable).toEqual(['deadline'])
+    expect(fieldLayout({ ...done, templateId: 'tpl' }, [], false).shown).toEqual(['repeat'])
+  })
+
+  it('forgets an added field once it has a value, so clearing it hides it again', () => {
+    const withDeadline = { ...plain, deadline: '2026-11-20' }
+    expect(stillAdded(withDeadline, ['deadline', 'repeat'])).toEqual(['repeat'])
+    expect(fieldLayout(plain, stillAdded(withDeadline, ['deadline']), true).shown).toEqual([])
   })
 })

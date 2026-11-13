@@ -227,6 +227,55 @@ export function setRepeat(w: Writer, ws: Snapshot, task: Task, rule: Repeat): vo
   })
 }
 
+/**
+ * A copy of `task` that sorts right below it in every list: the same title,
+ * notes, planning, deadline, tags and place (project or area and heading), its
+ * checklist with every item open again. The copy is a plain open task: it does
+ * not repeat and is not assigned to anyone.
+ */
+export function duplicateOf(ws: Snapshot, task: Task): { task: Task; checklist: ChecklistItem[] } {
+  const nextOrder = (key: (t: Task) => string | null, from: string): string | null => {
+    let next: string | null = null
+    for (const other of ws.tasks) {
+      const k = key(other)
+      if (k !== null && k > from && (next === null || k < next)) next = k
+    }
+    return next
+  }
+  const copy: Task = {
+    ...task,
+    id: ulid(),
+    createdAt: new Date().toISOString(),
+    deleted: false,
+    status: 'open',
+    completedAt: null,
+    repeat: null,
+    templateId: null,
+    assigneeId: null,
+    tagIds: [...task.tagIds],
+    order: orderBetween(
+      task.order,
+      nextOrder((t) => t.order, task.order),
+    ),
+    todayOrder:
+      task.todayOrder === null
+        ? null
+        : orderBetween(task.todayOrder, nextOrder(views.todayKey, task.todayOrder)),
+  }
+  const checklist = (ws.checklistByTask.get(task.id) ?? []).map((item) =>
+    newChecklistItem({ title: item.title, order: item.order, taskId: copy.id }),
+  )
+  return { task: copy, checklist }
+}
+
+/** Writes the copy of `task` (see `duplicateOf`) and returns it. */
+export function duplicateTask(w: Writer, ws: Snapshot, task: Task): Task {
+  const { task: copy, checklist } = duplicateOf(ws, task)
+  w.create('task', copy)
+  for (const item of checklist) w.create('checklistItem', item)
+  return copy
+}
+
 /** Ends the repetition; the current instance stays as an ordinary task. */
 export function stopRepeat(w: Writer, ws: Snapshot, task: Task): void {
   const template = task.templateId ? ws.templateById.get(task.templateId) : undefined

@@ -6,6 +6,7 @@ export {
   deleteArea,
   deleteProject,
   deleteTask,
+  duplicateTask,
   type MoveTarget,
   mirrorChecklist,
   moveFields,

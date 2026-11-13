@@ -1,6 +1,7 @@
 import { type ChecklistItem, newChecklistItem, orderBetween, type Task } from '@dingen/core'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { Plus } from 'lucide-react'
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react'
 import type { DragData } from '../dnd.js'
 import { useT } from '../i18n/index.js'
@@ -12,16 +13,48 @@ interface Props {
   task: Task
 }
 
-/** The checklist inside a task editor: tick, title, remove; Enter adds the next item. */
+/**
+ * The checklist inside a task editor: tick, title, remove, and a field for the next item at
+ * the bottom. Enter in an item adds one below it; in the last item it goes to the new field.
+ */
 export function Checklist({ task }: Props) {
   const engine = useEngine()
   const ws = useWorkspace()
   const t = useT()
   const items = ws.checklistByTask.get(task.id) ?? []
   const [focusId, setFocusId] = useState<string | null>(null)
+  const [draft, setDraft] = useState('')
+  const newRef = useRef<HTMLInputElement>(null)
 
-  function add(after?: ChecklistItem) {
-    const index = after ? items.indexOf(after) : items.length - 1
+  function append(title: string) {
+    const clean = title.trim()
+    if (!clean) return
+    const item = newChecklistItem({
+      title: clean,
+      taskId: task.id,
+      order: orderBetween(items.at(-1)?.order ?? null, null),
+    })
+    engine.create('checklistItem', item)
+    mirrorChecklist(engine, ws, task, [...items, item])
+    setDraft('')
+  }
+
+  function onNewKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      e.stopPropagation()
+      append(draft)
+    } else if (e.key === 'Escape' && draft !== '') {
+      e.preventDefault()
+      setDraft('')
+    } else if (e.key === 'Backspace' && draft === '' && items.length > 0) {
+      e.preventDefault()
+      setFocusId(items.at(-1)?.id ?? null)
+    }
+  }
+
+  function add(after: ChecklistItem) {
+    const index = items.indexOf(after)
     const before = items[index]
     const next = items[index + 1]
     const item = newChecklistItem({
@@ -74,17 +107,25 @@ export function Checklist({ task }: Props) {
               onFocused={() => setFocusId(null)}
               onToggle={() => toggle(item)}
               onRename={(title) => rename(item, title)}
-              onEnter={() => add(item)}
+              onEnter={() => (item === items.at(-1) ? newRef.current?.focus() : add(item))}
               onBackspaceEmpty={() => remove(item, true)}
               onRemove={() => remove(item)}
             />
           ))}
         </ul>
       )}
-      <div className="checklist-add">
-        <button type="button" className="link" onClick={() => add()}>
-          + {t('checklist.add')}
-        </button>
+      <div className="checklist-new">
+        <Plus size={14} className="checklist-new-icon" aria-hidden="true" />
+        <input
+          ref={newRef}
+          className="checklist-input"
+          value={draft}
+          placeholder={t('checklist.add')}
+          aria-label={t('checklist.add')}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={onNewKeyDown}
+          onBlur={() => append(draft)}
+        />
       </div>
     </>
   )
