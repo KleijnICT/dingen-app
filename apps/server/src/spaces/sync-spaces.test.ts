@@ -346,6 +346,7 @@ describe('sync per space (HTTP)', () => {
       applied: 1,
       duplicates: 0,
       cursor: { [personal]: 1 },
+      placed: [{ entityType: 'task', id: task.id, spaceId: personal }],
     })
 
     const p2 = (await (

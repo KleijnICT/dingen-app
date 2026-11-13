@@ -1,7 +1,10 @@
 import type { ACTIVITY_KINDS, ActivityItem, AgentGrant, EntityType, MemberId } from '@dingen/core'
 import type Database from 'better-sqlite3'
+import { eq } from 'drizzle-orm'
 import { canRead, type Lookup } from '../agents/access.js'
 import type { Db } from '../db.js'
+import { spaces } from '../schema.js'
+import { SERVER_CLIENT_ID } from '../spaces/move.js'
 import { spacesClause, spacesOf } from '../spaces/service.js'
 import {
   ACTIVITY_ENTITY_TYPES,
@@ -80,7 +83,7 @@ export class ActivityService {
     const spaceIds = spacesOf(this.db, userId)
     const scanLog = this.sqlite.prepare(
       `select seq, entity_type as entityType, entity_id as entityId, fields, ts,
-              received_at as receivedAt, actor, user_id as userId
+              received_at as receivedAt, actor, user_id as userId, client_id as clientId
          from changes
         where ${spacesClause(spaceIds)} and seq < ? and entity_type in (${TYPES_SQL})
         order by seq desc
@@ -118,6 +121,8 @@ export class ActivityService {
       if (!described) return false
       const at = group.latestMs
       if (kinds && !kinds.has(described.kind)) return false
+      // Moved out of the user's spaces: gone for them, history included.
+      if (!load(group.subject.type, group.subject.id)) return false
       if (query.actor && group.actor !== query.actor) return false
       if (sinceMs !== null && at < sinceMs) return false
       if (untilMs !== null && at > untilMs) return false
@@ -135,6 +140,8 @@ export class ActivityService {
         cursor = raw.seq
         scanned += 1
         const row: LogRow = { ...raw, fields: JSON.parse(raw.fields) }
+        // What the server wrote along with a move (the other side, children, tags) is no line.
+        if (row.clientId === SERVER_CLIENT_ID) continue
         // `at` is `receivedAt`, which grows with seq: nothing older can be in the period.
         if (sinceMs !== null && Date.parse(row.receivedAt) < sinceMs) {
           done = true
@@ -165,6 +172,15 @@ export class ActivityService {
     }
     accept(folder.finish())
     return this.build(spaceIds, candidates, null, load, grants)
+  }
+
+  /** `personal` or `shared` for a space id; spaces have no names yet. */
+  private spaceKind(spaceId: unknown): string | null {
+    if (typeof spaceId !== 'string') return null
+    return (
+      this.db.select({ kind: spaces.kind }).from(spaces).where(eq(spaces.id, spaceId)).get()
+        ?.kind ?? null
+    )
   }
 
   /** The entity a row counts for, or null when it is not activity (a repeat template). */
@@ -251,6 +267,9 @@ export class ActivityService {
             !sameValue(f.from, f.to),
         )
       if (described.kind === 'updated' && fields.length === 0) return
+      if (described.kind === 'moved') {
+        for (const f of fields) if (f.field === 'space') f.to = this.spaceKind(f.to)
+      }
       const title = load(group.subject.type, group.subject.id)?.data.title
       // An agent only sees the project or area around an entity when it can read that too.
       let container = this.container(group.subject, load)
