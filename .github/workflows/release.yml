@@ -111,3 +111,13 @@ jobs:
         env:
           WEBHOOK: ${{ secrets.DEPLOY_WEBHOOK_PROD }}
         run: .github/scripts/deploy.sh "$WEBHOOK" https://doe.dingen.app/api/health "${{ needs.version.outputs.short }}"
+
+  ha-addon:
+    runs-on: ubuntu-latest
+    needs: [version, image]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update the Home Assistant app
+        env:
+          DEPLOY_KEY: ${{ secrets.HA_ADDON_DEPLOY_KEY }}
+        run: .github/scripts/ha-addon.sh "${{ needs.version.outputs.version }}"
