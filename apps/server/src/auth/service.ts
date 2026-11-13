@@ -5,6 +5,7 @@ import { sha256 } from '../agents/service.js'
 import type { RegistrationMode } from '../config.js'
 import type { Db } from '../db.js'
 import { invitations, sessions, users } from '../schema.js'
+import { createPersonalSpace } from '../spaces/service.js'
 import { checkInvitation, type InvitationProblem } from './invitations.js'
 import { hashPassword, hasUsablePassword, NO_PASSWORD, verifyPassword } from './password.js'
 
@@ -137,6 +138,7 @@ export class AuthService {
       tx.insert(users)
         .values({ id: user.id, email, createdAt: now, isAdmin: first, passwordHash })
         .run()
+      createPersonalSpace(tx, user.id, now)
       if (invitationId) {
         tx.update(invitations)
           .set({ usedBy: user.id, usedAt: now })
@@ -218,6 +220,7 @@ export class AuthService {
         haUserId: identity.id,
       }
       tx.insert(users).values(row).run()
+      createPersonalSpace(tx, row.id, row.createdAt)
       return toUser(row)
     })
   }

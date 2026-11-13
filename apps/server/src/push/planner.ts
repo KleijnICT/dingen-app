@@ -2,7 +2,8 @@ import { reminderMoment, Task } from '@dingen/core'
 import { and, eq, inArray, lt, sql } from 'drizzle-orm'
 import { wallToInstant } from '../calendar/ics.js'
 import type { Db } from '../db.js'
-import { entities, pushSubscriptions, reminderDeliveries } from '../schema.js'
+import { entities, pushSubscriptions, reminderDeliveries, spaceMembers } from '../schema.js'
+import { inSpacesOf } from '../spaces/service.js'
 import type { PushPayload, PushService } from './service.js'
 
 /** Hoe vaak de planner kijkt. */
@@ -69,13 +70,15 @@ export class ReminderPlanner {
       .map((r) => r.userId)
     if (users.length === 0) return []
     const rows = this.db
-      .select({ userId: entities.userId, data: entities.data })
+      .select({ userId: spaceMembers.userId, data: entities.data })
       .from(entities)
+      // Every member of the task's space with a subscription (now: the owner of the personal space).
+      .innerJoin(spaceMembers, eq(spaceMembers.spaceId, entities.spaceId))
       .where(
         and(
           eq(entities.entityType, 'task'),
           eq(entities.deleted, false),
-          inArray(entities.userId, users),
+          inArray(spaceMembers.userId, users),
           sql`json_extract(${entities.data}, '$.reminder') is not null`,
           sql`json_extract(${entities.data}, '$.status') = 'open'`,
         ),
@@ -136,7 +139,7 @@ export class ReminderPlanner {
         .from(entities)
         .where(
           and(
-            eq(entities.userId, userId),
+            inSpacesOf(this.db, entities.spaceId, userId),
             inArray(entities.entityType, ['project', 'area']),
             eq(entities.id, containerId),
           ),

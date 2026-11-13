@@ -3,6 +3,7 @@ import { bodyLimit } from 'hono/body-limit'
 import type { Db } from '../db.js'
 import type { AppEnv } from '../env.js'
 import { buildExport, parseExport } from '../export.js'
+import { SpaceAccessError } from '../spaces/service.js'
 import { SyncValidationError } from '../sync.js'
 
 const MAX_IMPORT_BYTES = 50 * 1024 * 1024
@@ -48,6 +49,9 @@ export function dataRoutes(db: Db, version: string) {
         }
         return c.json({ mode, counts: result.counts, total, seq: result.seq })
       } catch (err) {
+        if (err instanceof SpaceAccessError) {
+          return c.json({ error: 'space_access', message: err.message }, 403)
+        }
         if (err instanceof SyncValidationError) {
           return c.json(
             { error: 'invalid_export', issues: err.problems.flatMap((p) => p.issues).slice(0, 20) },

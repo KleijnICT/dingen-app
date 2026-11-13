@@ -15,8 +15,11 @@ import {
   pushSubscriptions,
   reminderDeliveries,
   sessions,
+  spaceMembers,
+  spaces,
   users,
 } from '../schema.js'
+import { createPersonalSpace } from '../spaces/service.js'
 import { SyncService } from '../sync.js'
 import { DEMO_ACCOUNTS } from './accounts.js'
 import { samAgents } from './agents.js'
@@ -60,19 +63,23 @@ export async function resetToDemo(db: Db, options: DemoSeedOptions): Promise<Dem
     tx.delete(invitations).run()
     tx.delete(entities).run()
     tx.delete(changes).run()
+    tx.delete(spaceMembers).run()
+    tx.delete(spaces).run()
     tx.delete(users).run()
 
     return DEMO_ACCOUNTS.map((account, i) => {
       const id = ulid()
+      const createdAt = new Date(now.getTime() - 90 * 86_400_000).toISOString()
       tx.insert(users)
         .values({
           id,
           email: account.email,
           passwordHash: hashes[i] as string,
-          createdAt: new Date(now.getTime() - 90 * 86_400_000).toISOString(),
+          createdAt,
           isAdmin: i === 0,
         })
         .run()
+      createPersonalSpace(tx, id, createdAt)
       return { email: account.email, id }
     })
   })

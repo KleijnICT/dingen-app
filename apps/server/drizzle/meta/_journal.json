@@ -57,6 +57,13 @@
       "when": 1794566904599,
       "tag": "0007_ha_users",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1794579442281,
+      "tag": "0008_spaces",
+      "breakpoints": true
     }
   ]
 }

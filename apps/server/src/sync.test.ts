@@ -2,10 +2,17 @@ import { type Change, createClock, newProject, newReview, newTask, ulid } from '
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { createApp } from './app.js'
 import { openDatabase } from './db.js'
+import { createPersonalSpace } from './spaces/service.js'
 import { SyncService, SyncValidationError } from './sync.js'
 
 const database = openDatabase(':memory:')
-const app = createApp({ db: database.db, version: 'test', sqliteVersion: database.sqliteVersion })
+// Open: the service tests below already made accounts, so the HTTP one is not the first.
+const app = createApp({
+  db: database.db,
+  version: 'test',
+  sqliteVersion: database.sqliteVersion,
+  registrationOpen: true,
+})
 const service = new SyncService(database.db)
 const clock = createClock('TEST')
 
@@ -32,6 +39,16 @@ beforeAll(async () => {
 })
 
 afterAll(() => database.close())
+
+// Accounts for the service tests, each with its personal space (as registration makes them).
+for (const id of ['alice', 'bob', 'carol', 'dave']) {
+  database.sqlite
+    .prepare(
+      "insert into users (id, email, password_hash, created_at) values (?, ?, 'x', '2026-01-01')",
+    )
+    .run(id, `${id}@example.com`)
+  createPersonalSpace(database.db, id, '2026-01-01')
+}
 
 beforeEach(() => {
   database.sqlite.exec('delete from changes; delete from entities;')
