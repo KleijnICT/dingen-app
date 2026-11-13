@@ -24,6 +24,7 @@ import {
   ulid,
   type Writer,
 } from '@dingen/core'
+import { todayIn } from './time.js'
 
 /**
  * A sync client without a UI: the same protocol as the browser (snapshot,
@@ -67,6 +68,8 @@ export interface SyncTransport {
   whoami?(): Promise<string>
   /** The owner and their agents, for assigning. */
   members?(): Promise<Member[]>
+  /** When the account was created (ISO instant); the anchor for reviews never done. */
+  accountCreatedAt?(): Promise<string | null>
 }
 
 /** `?kinds=…&actor=…` for the activity API. */
@@ -142,6 +145,13 @@ export class HttpTransport implements SyncTransport {
     const body = (await (await this.request('/api/members')).json()) as { members: Member[] }
     return body.members
   }
+
+  async accountCreatedAt(): Promise<string | null> {
+    const body = (await (await this.request('/api/auth/me')).json()) as {
+      user?: { createdAt?: string }
+    }
+    return body.user?.createdAt ?? null
+  }
 }
 
 export interface ClientOptions {
@@ -162,6 +172,7 @@ export class DingenClient implements Writer {
   private loaded = false
   private pending: Change[] = []
   private self: string | undefined
+  private anchor: string | null | undefined
 
   constructor(
     private readonly transport: SyncTransport,
@@ -188,6 +199,18 @@ export class DingenClient implements Writer {
     if (!this.transport.whoami) throw new Error('This connection does not know who "me" is')
     this.self ??= await this.transport.whoami()
     return this.self
+  }
+
+  /**
+   * The calendar day (in this client's timezone) the account was created: a
+   * weekly or monthly review never done counts from there. Null when the
+   * transport cannot tell; reviews never done are then due at once.
+   */
+  async reviewAnchor(): Promise<string | null> {
+    if (this.anchor !== undefined) return this.anchor
+    const createdAt = await this.transport.accountCreatedAt?.().catch(() => null)
+    this.anchor = createdAt ? todayIn(this.timezone, new Date(createdAt)) : null
+    return this.anchor
   }
 
   /** The owner and their agents; empty when the transport cannot tell. */

@@ -147,6 +147,48 @@ describe('dueReviews', () => {
     ]
     expect(dueReviews(reviews, TODAY)).toContain('weekly')
   })
+})
+
+describe('dueReviews with an account anchor', () => {
+  const CREATED = '2026-11-11'
+
+  it('a new account has no weekly or monthly review ready yet; daily is', () => {
+    expect(dueReviews([], CREATED, CREATED)).toEqual(['daily'])
+    expect(nextReviewDate([], 'daily', CREATED)).toBeNull()
+    expect(nextReviewDate([], 'weekly', CREATED)).toBe('2026-11-18')
+    expect(nextReviewDate([], 'monthly', CREATED)).toBe('2026-12-11')
+  })
+
+  it('the first weekly review is ready 7 days after the account was created', () => {
+    expect(dueReviews([], '2026-11-17', CREATED)).not.toContain('weekly')
+    expect(dueReviews([], '2026-11-18', CREATED)).toEqual(['daily', 'weekly'])
+  })
+
+  it('the first monthly review is ready a month after the account was created', () => {
+    expect(dueReviews([], '2026-12-10', CREATED)).not.toContain('monthly')
+    expect(dueReviews([], '2026-12-11', CREATED)).toContain('monthly')
+    expect(nextReviewDate([], 'monthly', '2027-01-31')).toBe('2027-02-28')
+  })
+
+  it('after a completed review the anchor no longer matters', () => {
+    const reviews = [done('weekly', '2026-11-13')]
+    expect(nextReviewDate(reviews, 'weekly', CREATED)).toBe('2026-11-20')
+    expect(dueReviews(reviews, '2026-11-19', CREATED)).not.toContain('weekly')
+    expect(dueReviews(reviews, '2026-11-20', CREATED)).toContain('weekly')
+    // Monthly was never done: still counted from the anchor.
+    expect(nextReviewDate(reviews, 'monthly', CREATED)).toBe('2026-12-11')
+  })
+
+  it('a running review is ready even before the anchor says so', () => {
+    const reviews = [newReview({ kind: 'monthly', startedAt: at(CREATED) })]
+    expect(dueReviews(reviews, CREATED, CREATED)).toContain('monthly')
+  })
+
+  it('without an anchor (undefined or null) a never-done review is due at once, as before', () => {
+    expect(dueReviews([], CREATED)).toEqual(['daily', 'weekly', 'monthly'])
+    expect(dueReviews([], CREATED, null)).toEqual(['daily', 'weekly', 'monthly'])
+    expect(nextReviewDate([], 'monthly', null)).toBeNull()
+  })
 
   it('with two running reviews the earliest start wins', () => {
     const late = newReview({ kind: 'weekly', startedAt: at('2026-11-11') })

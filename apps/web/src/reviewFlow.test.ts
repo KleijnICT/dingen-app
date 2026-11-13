@@ -34,8 +34,15 @@ describe('review dot and banners', () => {
     ])
   })
 
-  it('is due at once when there never was a review', () => {
+  it('is due at once when there never was a review and no anchor is known', () => {
     expect(reviewBanners([], today).map((b) => b.kind)).toEqual(['weekly', 'monthly'])
+  })
+
+  it('shows nothing for a new account until its first week has passed', () => {
+    expect(showReviewDot([], today, today)).toBe(false)
+    expect(reviewBanners([], today, today)).toEqual([])
+    expect(reviewBanners([], '2026-11-18', today)).toEqual([{ kind: 'weekly', running: false }])
+    expect(reviewBanners([], '2026-12-11', today).map((b) => b.kind)).toEqual(['weekly', 'monthly'])
   })
 })
 

@@ -282,3 +282,55 @@ describe('mcp reviews', () => {
     expect(resumed).toMatchObject({ resumed: true, id: review.id, currentStep: null })
   })
 })
+
+describe('mcp reviews for a new account', () => {
+  class AnchoredTransport extends MemoryTransport {
+    async accountCreatedAt() {
+      return `${TODAY}T10:00:00.000Z`
+    }
+  }
+  let today = TODAY
+  const claude = new Client({ name: 'test-anchor', version: '0' })
+
+  async function rcall(name: string, args: Record<string, unknown> = {}) {
+    const res = await claude.callTool({ name, arguments: args })
+    const text = (res.content as { type: string; text: string }[])[0]?.text ?? ''
+    if (res.isError) throw new Error(text)
+    return JSON.parse(text)
+  }
+
+  beforeAll(async () => {
+    const client = new DingenClient(new AnchoredTransport(), {
+      today: () => today,
+      timezone: 'UTC',
+    })
+    const server = createMcpServer(client)
+    const [a, b] = InMemoryTransport.createLinkedPair()
+    await server.connect(a)
+    await claude.connect(b)
+  })
+
+  it('has no weekly or monthly review due on the day the account was created', async () => {
+    const r = await rcall('get_review')
+    expect(r.due).toEqual(['daily'])
+    expect(r.reviews.map((x: { nextDue: string }) => x.nextDue)).toEqual([
+      TODAY,
+      addDays(TODAY, 7),
+      '2026-12-09',
+    ])
+  })
+
+  it('makes the weekly review due a week later, the monthly a month later', async () => {
+    today = addDays(TODAY, 7)
+    expect((await rcall('get_review')).due).toEqual(['daily', 'weekly'])
+    today = '2026-12-09'
+    expect((await rcall('get_review')).due).toEqual(['daily', 'weekly', 'monthly'])
+  })
+
+  it('still lets a review start before it is due', async () => {
+    today = TODAY
+    const started = await rcall('start_review', { kind: 'monthly' })
+    expect(started.resumed).toBe(false)
+    expect((await rcall('get_review')).due).toEqual(['daily', 'monthly'])
+  })
+})

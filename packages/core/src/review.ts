@@ -54,26 +54,48 @@ export function lastCompletedReview(reviews: Review[], kind: ReviewKind): Review
 }
 
 /**
- * The date from which a review of this kind is due; null when there never was
- * one (then it is due at once). Daily: the day after the last one; weekly:
- * 7 days after; monthly: the same day next month (31 Jan → 28 Feb).
+ * The date from which a review of this kind is due. Daily: the day after the
+ * last one; weekly: 7 days after; monthly: the same day next month
+ * (31 Jan → 28 Feb).
+ *
+ * When no review of this kind was ever completed:
+ * - daily: null, due at once (it only asks for an empty Inbox);
+ * - weekly and monthly with an `anchor` (the calendar date the account was
+ *   created): counted from the anchor as if a review was done that day, so a
+ *   new account's first weekly review is ready a week in and its first
+ *   monthly review a month in;
+ * - weekly and monthly without an anchor: null, due at once (the behaviour
+ *   from before anchors, for callers that do not know the account).
  */
-export function nextReviewDate(reviews: Review[], kind: ReviewKind): CalendarDate | null {
+export function nextReviewDate(
+  reviews: Review[],
+  kind: ReviewKind,
+  anchor?: CalendarDate | null,
+): CalendarDate | null {
   const last = lastCompletedReview(reviews, kind)
-  if (last === null || last.completedAt === null) return null
-  const done = dateOf(last.completedAt)
-  if (kind === 'daily') return addDays(done, 1)
-  if (kind === 'weekly') return addDays(done, REVIEW_THRESHOLDS.weeklyDays)
-  return addMonths(done, 1)
+  let from: CalendarDate
+  if (last?.completedAt) from = dateOf(last.completedAt)
+  else if (kind !== 'daily' && anchor) from = anchor
+  else return null
+  if (kind === 'daily') return addDays(from, 1)
+  if (kind === 'weekly') return addDays(from, REVIEW_THRESHOLDS.weeklyDays)
+  return addMonths(from, 1)
 }
 
 const KINDS: ReviewKind[] = ['daily', 'weekly', 'monthly']
 
-/** Kinds that are ready today: due by their rhythm, or still running. */
-export function dueReviews(reviews: Review[], today: CalendarDate): ReviewKind[] {
+/**
+ * Kinds that are ready today: due by their rhythm, or still running. `anchor`
+ * is the calendar date the account was created (see `nextReviewDate`).
+ */
+export function dueReviews(
+  reviews: Review[],
+  today: CalendarDate,
+  anchor?: CalendarDate | null,
+): ReviewKind[] {
   return KINDS.filter((kind) => {
     if (runningReview(reviews, kind) !== null) return true
-    const next = nextReviewDate(reviews, kind)
+    const next = nextReviewDate(reviews, kind, anchor)
     return next === null || next <= today
   })
 }

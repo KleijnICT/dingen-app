@@ -1,4 +1,4 @@
-import { toCalendarDate } from '@dingen/core'
+import { dateOf, toCalendarDate } from '@dingen/core'
 import {
   type CollisionDetection,
   DndContext,
@@ -23,6 +23,7 @@ import { Search } from './components/Search.js'
 import { Sidebar } from './components/Sidebar.js'
 import { ShellActions, ToolbarSlot } from './components/Toolbar.js'
 import { UpdateNotice } from './components/UpdateNotice.js'
+import { ReviewAnchorContext } from './components/useReviews.js'
 import { type DragData, handleDragEnd } from './dnd.js'
 import { LISTS } from './lists.js'
 import { useSidebarWidth } from './prefs.js'
@@ -44,6 +45,8 @@ export function Shell({ user, onSignedOut }: Props) {
   const [focusSignal, setFocusSignal] = useState(0)
   const ws = useBuildWorkspace(today)
   useCalendarFeed(user.id, today)
+  // A weekly or monthly review never done counts from the day the account was made.
+  const reviewAnchor = useMemo(() => dateOf(user.createdAt), [user.createdAt])
   const sidebarWidth = useSidebarWidth()
   const route = parseRoute(path)
   const [dragging, setDragging] = useState<DragData | null>(null)
@@ -120,35 +123,42 @@ export function Shell({ user, onSignedOut }: Props) {
 
   return (
     <WorkspaceContext.Provider value={ws}>
-      <ShellActions.Provider value={actions}>
-        <DndContext
-          sensors={sensors}
-          collisionDetection={collision}
-          onDragStart={onDragStart}
-          onDragEnd={onDragEnd}
-          onDragCancel={() => setDragging(null)}
-        >
-          <div className="app" style={{ '--sidebar-width': `${sidebarWidth}px` } as CSSProperties}>
-            <Sidebar
-              path={path}
-              status={engine.status}
-              onOpenSettings={() => setSettingsOpen(true)}
-            />
-            <main className="content-pane">
-              <div className="content">
-                <ToolbarSlot.Provider value={toolbar}>{page}</ToolbarSlot.Provider>
-              </div>
-              <div className="toolbar" ref={setToolbar} />
-            </main>
-          </div>
-          <DragOverlay dropAnimation={null}>
-            {dragging && <div className="drag-ghost">{ghostTitle(dragging)}</div>}
-          </DragOverlay>
-        </DndContext>
-        {settingsOpen && <Settings user={user} onSignedOut={onSignedOut} onClose={closeSettings} />}
-        {searchOpen && <Search onClose={closeSearch} />}
-        <UpdateNotice />
-      </ShellActions.Provider>
+      <ReviewAnchorContext.Provider value={reviewAnchor}>
+        <ShellActions.Provider value={actions}>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={collision}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+            onDragCancel={() => setDragging(null)}
+          >
+            <div
+              className="app"
+              style={{ '--sidebar-width': `${sidebarWidth}px` } as CSSProperties}
+            >
+              <Sidebar
+                path={path}
+                status={engine.status}
+                onOpenSettings={() => setSettingsOpen(true)}
+              />
+              <main className="content-pane">
+                <div className="content">
+                  <ToolbarSlot.Provider value={toolbar}>{page}</ToolbarSlot.Provider>
+                </div>
+                <div className="toolbar" ref={setToolbar} />
+              </main>
+            </div>
+            <DragOverlay dropAnimation={null}>
+              {dragging && <div className="drag-ghost">{ghostTitle(dragging)}</div>}
+            </DragOverlay>
+          </DndContext>
+          {settingsOpen && (
+            <Settings user={user} onSignedOut={onSignedOut} onClose={closeSettings} />
+          )}
+          {searchOpen && <Search onClose={closeSearch} />}
+          <UpdateNotice />
+        </ShellActions.Provider>
+      </ReviewAnchorContext.Provider>
     </WorkspaceContext.Provider>
   )
 }

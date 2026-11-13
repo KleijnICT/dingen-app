@@ -28,7 +28,7 @@ import {
   TodayIcon,
 } from './Icons.js'
 import { useDismiss } from './Menu.js'
-import { useReviews } from './useReviews.js'
+import { useReviewAnchor, useReviews } from './useReviews.js'
 
 const APP_VERSION_LABEL = `Dingen ${__DINGEN_VERSION__}${__DINGEN_BUILD__ ? ` · ${__DINGEN_BUILD__}` : ''}`
 
@@ -51,7 +51,7 @@ export function Sidebar({ path, status, onOpenSettings }: Props) {
   const t = useT()
   const engine = useEngine()
   const ws = useWorkspace()
-  const reviewDot = showReviewDot(useReviews(), ws.today)
+  const reviewDot = showReviewDot(useReviews(), ws.today, useReviewAnchor())
   const [adding, setAdding] = useState(false)
   const statusText = t(`sync.${status}`)
   const collapsed = useCollapsedAreas()

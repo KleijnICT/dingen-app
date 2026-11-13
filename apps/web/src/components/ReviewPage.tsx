@@ -23,7 +23,7 @@ import {
 import { navigate } from '../router.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { ReviewStepView } from './ReviewSteps.js'
-import { startReview, useReviews } from './useReviews.js'
+import { startReview, useReviewAnchor, useReviews } from './useReviews.js'
 
 interface Props {
   /** The review to show; null shows the overview. */
@@ -42,6 +42,7 @@ function ReviewOverview({ reviews }: { reviews: Review[] }) {
   const t = useT()
   const engine = useEngine()
   const ws = useWorkspace()
+  const anchor = useReviewAnchor()
 
   return (
     <section className="list-page review-page">
@@ -52,7 +53,7 @@ function ReviewOverview({ reviews }: { reviews: Review[] }) {
       <ul className="review-kinds">
         {REVIEW_KINDS.map((kind) => {
           const running = runningReview(reviews, kind)
-          const next = nextReviewDate(reviews, kind)
+          const next = nextReviewDate(reviews, kind, anchor)
           const last = lastCompletedReview(reviews, kind)
           const ready = running !== null || next === null || next <= ws.today
           let status: string
