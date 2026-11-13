@@ -4,16 +4,19 @@ import {
   type Clock,
   createClock,
   type Entity,
-  type EntityRecord,
   type EntityType,
   entitySchemas,
   isDeleted,
+  mergeCursor,
   clientId as newClientId,
+  type PullResponse,
+  type PushResponse,
   recordKey,
+  type SpaceCursor,
   ulid,
 } from '@dingen/core'
 import { withBase } from '../base.js'
-import { dbNameFor, LocalDb } from './db.js'
+import { dbNameFor, LocalDb, type LocalRecord } from './db.js'
 
 export type SyncStatus = 'idle' | 'syncing' | 'offline' | 'unauthorized'
 
@@ -26,23 +29,18 @@ export interface EngineOptions {
   pushDelayMs?: number
 }
 
-interface PullBody {
-  changes: Change[]
-  seq: number
-  hasMore: boolean
-}
-
-interface SnapshotBody {
-  entities: EntityRecord[]
-  seq: number
-}
-
 /**
  * De sync-engine van de browser: lokale replica, outbox, push en pull.
  * Zelfde protocol als straks de native clients, bewust zonder slimmigheden.
+ *
+ * Sync protocol 2: a cursor per space. A first pull with an empty cursor gets
+ * every space as a snapshot; a space shared later arrives the same way, and
+ * a space the user leaves is dropped. A replica from before protocol 2 keeps
+ * its single cursor once: the server answers a numeric cursor for all spaces
+ * and the engine stores the cursor per space from then on.
  */
 export class SyncEngine {
-  readonly records = new Map<string, EntityRecord>()
+  readonly records = new Map<string, LocalRecord>()
   /** Loopt op bij elke verandering; React gebruikt dit als snapshot. */
   version = 0
   status: SyncStatus = 'idle'
@@ -57,7 +55,8 @@ export class SyncEngine {
   private readonly listeners = new Set<() => void>()
   private clock: Clock = createClock('init')
   private clientId = ''
-  private cursor = 0
+  /** Per space, or a protocol 1 number still to move over (until the first pull). */
+  private cursor: SpaceCursor | number = {}
   private outboxOrder = 0
   private pushTimer: ReturnType<typeof setTimeout> | undefined
   private pollTimer: ReturnType<typeof setInterval> | undefined
@@ -81,19 +80,18 @@ export class SyncEngine {
     const storedClient = meta.find((m) => m.key === 'clientId')?.value
     this.clientId = typeof storedClient === 'string' ? storedClient : newClientId()
     if (!storedClient) await this.db.meta.put({ key: 'clientId', value: this.clientId })
-    const storedCursor = meta.find((m) => m.key === 'cursor')?.value
-    this.cursor = typeof storedCursor === 'number' ? storedCursor : 0
     this.clock = createClock(this.clientId)
 
-    for (const rec of await this.db.entities.toArray()) {
-      this.records.set(rec.key, {
-        entityType: rec.entityType,
-        id: rec.id,
-        data: rec.data,
-        fieldTs: rec.fieldTs,
-      })
+    for (const { key, ...rec } of await this.db.entities.toArray()) {
+      this.records.set(key, rec)
       for (const ts of Object.values(rec.fieldTs)) this.clock.receive(ts)
     }
+    const cursors = meta.find((m) => m.key === 'cursors')?.value
+    const legacy = meta.find((m) => m.key === 'cursor')?.value
+    if (cursors && typeof cursors === 'object') this.cursor = cursors
+    else if (typeof legacy === 'number' && (legacy > 0 || this.records.size > 0)) {
+      this.cursor = legacy
+    } else this.cursor = {}
     const last = await this.db.outbox.orderBy('order').last()
     this.outboxOrder = last?.order ?? 0
     this.bump()
@@ -190,11 +188,7 @@ export class SyncEngine {
     this.setStatus('syncing')
     try {
       await this.push()
-      if (this.cursor === 0 && this.records.size === 0) {
-        await this.snapshot()
-      } else {
-        await this.pull()
-      }
+      await this.pull()
       this.setStatus('idle')
     } catch (err) {
       if (err instanceof UnauthorizedError) {
@@ -215,10 +209,12 @@ export class SyncEngine {
     await this.writes
     const items = await this.db.outbox.orderBy('order').toArray()
     if (items.length === 0) return
+    const changes = items.map((i) => i.change)
+    const cursor = typeof this.cursor === 'number' ? undefined : this.cursor
     const res = await this.request('/api/sync/push', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ changes: items.map((i) => i.change) }),
+      body: JSON.stringify(cursor ? { changes, cursor } : { changes }),
     })
     if (res.status === 400) {
       // Een afgekeurde wijziging zou een bug zijn; laat hem niet de hele outbox blokkeren.
@@ -229,54 +225,86 @@ export class SyncEngine {
     }
     if (!res.ok) throw new Error(`push ${res.status}`)
     await this.db.outbox.bulkDelete(items.map((i) => i.id))
+    // Spaces where nothing but this push happened: no need to pull our own changes back.
+    const body = (await res.json().catch(() => null)) as PushResponse | null
+    if (body?.cursor && typeof this.cursor !== 'number') {
+      await this.setCursor(mergeCursor(this.cursor, body.cursor))
+    }
   }
 
   private async pull(): Promise<void> {
-    let since = this.cursor
+    let cursor = this.cursor
     let hasMore = true
     while (hasMore) {
-      const res = await this.request(`/api/sync/pull?since=${since}`)
+      const param = encodeURIComponent(JSON.stringify(cursor))
+      const res = await this.request(`/api/sync/pull?cursor=${param}`)
       if (!res.ok) throw new Error(`pull ${res.status}`)
-      const body = (await res.json()) as PullBody
-      await this.applyRemote(body.changes)
-      since = body.seq
+      const body = (await res.json()) as PullResponse
+      await this.applyPull(body)
+      cursor = body.cursor
       hasMore = body.hasMore
     }
-    await this.setCursor(since)
+    await this.setCursor(cursor)
   }
 
-  private async snapshot(): Promise<void> {
-    const res = await this.request('/api/sync/snapshot')
-    if (!res.ok) throw new Error(`snapshot ${res.status}`)
-    const body = (await res.json()) as SnapshotBody
-    const stored = body.entities.map((rec) => {
-      const key = recordKey(rec.entityType, rec.id)
-      this.records.set(key, rec)
-      for (const ts of Object.values(rec.fieldTs)) this.clock.receive(ts)
-      return { key, ...rec }
-    })
-    await this.db.entities.bulkPut(stored)
-    await this.setCursor(body.seq)
-    this.bump()
-  }
-
-  private async applyRemote(changes: Change[]): Promise<void> {
-    if (changes.length === 0) return
-    const touched = new Map<string, EntityRecord>()
-    for (const change of changes) {
-      this.clock.receive(change.ts)
-      const key = recordKey(change.entityType, change.entityId)
-      const record = applyChange(touched.get(key) ?? this.records.get(key), change)
-      touched.set(key, record)
-      this.records.set(key, record)
+  /** One pull answer: drop spaces we left, replace spaces new to us, apply changes. */
+  private async applyPull(body: PullResponse): Promise<void> {
+    const personal = body.spaces.find((s) => s.kind === 'personal')?.id
+    const spaceOf = (rec: LocalRecord) => rec.spaceId ?? personal
+    const fresh = body.spaces.filter((s) => s.entities)
+    const dropped = new Set([...body.removed, ...fresh.map((s) => s.id)])
+    const gone: string[] = []
+    if (dropped.size > 0) {
+      // Keep what is still in the outbox: it was pushed before this pull, or will be.
+      const pending = new Set(
+        (await this.db.outbox.toArray()).map((i) =>
+          recordKey(i.change.entityType, i.change.entityId),
+        ),
+      )
+      for (const [key, rec] of this.records) {
+        const space = spaceOf(rec)
+        if (space && dropped.has(space) && !pending.has(key)) gone.push(key)
+      }
     }
-    await this.db.entities.bulkPut([...touched].map(([key, rec]) => ({ key, ...rec })))
+    const touched = new Map<string, LocalRecord>()
+    for (const key of gone) this.records.delete(key)
+    for (const space of fresh) {
+      for (const rec of space.entities ?? []) {
+        const key = recordKey(rec.entityType, rec.id)
+        const record = { ...rec, spaceId: space.id }
+        for (const ts of Object.values(rec.fieldTs)) this.clock.receive(ts)
+        touched.set(key, record)
+        this.records.set(key, record)
+      }
+    }
+    for (const space of body.spaces) {
+      for (const change of space.changes) {
+        this.clock.receive(change.ts)
+        const key = recordKey(change.entityType, change.entityId)
+        const record = {
+          ...applyChange(touched.get(key) ?? this.records.get(key), change),
+          spaceId: space.id,
+        }
+        touched.set(key, record)
+        this.records.set(key, record)
+      }
+    }
+    if (gone.length === 0 && touched.size === 0) return
+    const stillGone = gone.filter((key) => !touched.has(key))
+    await this.db.transaction('rw', this.db.entities, async () => {
+      if (stillGone.length > 0) await this.db.entities.bulkDelete(stillGone)
+      await this.db.entities.bulkPut([...touched].map(([key, rec]) => ({ key, ...rec })))
+    })
     this.bump()
   }
 
-  private async setCursor(seq: number): Promise<void> {
-    this.cursor = seq
-    await this.db.meta.put({ key: 'cursor', value: seq })
+  private async setCursor(cursor: SpaceCursor | number): Promise<void> {
+    this.cursor = cursor
+    if (typeof cursor === 'number') return
+    await this.db.transaction('rw', this.db.meta, async () => {
+      await this.db.meta.put({ key: 'cursors', value: cursor })
+      await this.db.meta.delete('cursor')
+    })
   }
 
   private async request(path: string, init?: RequestInit): Promise<Response> {

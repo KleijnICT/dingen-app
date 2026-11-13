@@ -1,5 +1,5 @@
 import type { HealthStatus } from '@dingen/core'
-import { APP_NAME } from '@dingen/core'
+import { APP_NAME, SYNC_PROTOCOL } from '@dingen/core'
 import { type Context, Hono, type Next } from 'hono'
 import { createMiddleware } from 'hono/factory'
 import { ActivityService } from './activity/service.js'
@@ -83,6 +83,7 @@ export function createApp(deps: AppDeps) {
       build: deps.build ?? null,
       database: 'ok',
       sqliteVersion: deps.sqliteVersion,
+      syncProtocol: SYNC_PROTOCOL,
     }
     return c.json(body)
   })

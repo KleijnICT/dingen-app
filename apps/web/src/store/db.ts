@@ -1,8 +1,18 @@
-import type { Change, EntityRecord } from '@dingen/core'
+import type { Change, EntityRecord, SpaceCursor } from '@dingen/core'
 import Dexie, { type EntityTable } from 'dexie'
 
+/**
+ * A record in the replica with the space it lives in, as far as the server
+ * told us. No `spaceId` means the personal space: records stored before
+ * protocol 2, and new ones the server has not echoed back (they go to the
+ * personal space until moving between spaces exists).
+ */
+export interface LocalRecord extends EntityRecord {
+  spaceId?: string
+}
+
 /** Een entiteit in de lokale replica; `key` is `entityType:id`. */
-export interface StoredRecord extends EntityRecord {
+export interface StoredRecord extends LocalRecord {
   key: string
 }
 
@@ -13,10 +23,14 @@ export interface OutboxItem {
   change: Change
 }
 
-export interface MetaItem {
-  key: 'clientId' | 'cursor'
-  value: string | number
-}
+/**
+ * `cursors` is the sync cursor per space (protocol 2). `cursor` is the single
+ * cursor of protocol 1: read once to move over, then removed.
+ */
+export type MetaItem =
+  | { key: 'clientId'; value: string }
+  | { key: 'cursor'; value: number }
+  | { key: 'cursors'; value: SpaceCursor }
 
 /** IndexedDB via Dexie: één database per gebruiker, zodat accounts in dezelfde browser gescheiden blijven. */
 export class LocalDb extends Dexie {

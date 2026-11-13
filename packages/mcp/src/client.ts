@@ -14,10 +14,15 @@ import {
   type Heading,
   isDeleted,
   type Member,
+  mergeCursor,
   clientId as newClientId,
   type Project,
+  type PullResponse,
+  type PushResponse,
   recordKey,
   type Snapshot,
+  type SpaceCursor,
+  type SpaceInfo,
   type Tag,
   type Task,
   toCalendarDate,
@@ -31,11 +36,18 @@ import { todayIn } from './time.js'
  * pull, push, HLC clock), so Claude is just another device.
  */
 
+/**
+ * `GET /api/sync/snapshot`. Protocol 2 servers add `cursor` and `spaces` and
+ * put `spaceId` on every entity; protocol 1 servers send only `seq`.
+ */
 export interface SnapshotBody {
-  entities: EntityRecord[]
+  entities: (EntityRecord & { spaceId?: string })[]
   seq: number
+  cursor?: SpaceCursor
+  spaces?: SpaceInfo[]
 }
 
+/** Protocol 1 pull (`since=<seq>`). */
 export interface PullBody {
   changes: Change[]
   seq: number
@@ -60,8 +72,12 @@ export interface ActivityBody {
 /** Where the changes go: the Dingen server over HTTP, or the sync service in-process. */
 export interface SyncTransport {
   snapshot(): Promise<SnapshotBody>
+  /** Protocol 1: one cursor over everything; used when the server sends no `cursor`. */
   pull(since: number): Promise<PullBody>
-  push(changes: Change[]): Promise<unknown>
+  /** Protocol 2: a cursor per space. Absent on transports that only speak protocol 1. */
+  pullSpaces?(cursor: SpaceCursor): Promise<PullResponse>
+  /** `cursor` (protocol 2) lets the answer move the cursor past these changes. */
+  push(changes: Change[], cursor?: SpaceCursor): Promise<unknown>
   /** The activity log (Logbook); absent on transports that have none. */
   activity?(filter: ActivityFilter): Promise<ActivityBody>
   /** The member id of whoever this transport acts as (`agent:<id>` for a token). */
@@ -120,11 +136,16 @@ export class HttpTransport implements SyncTransport {
     return (await this.request(`/api/sync/pull?since=${since}`)).json() as Promise<PullBody>
   }
 
-  async push(changes: Change[]): Promise<unknown> {
+  async pullSpaces(cursor: SpaceCursor): Promise<PullResponse> {
+    const param = encodeURIComponent(JSON.stringify(cursor))
+    return (await this.request(`/api/sync/pull?cursor=${param}`)).json() as Promise<PullResponse>
+  }
+
+  async push(changes: Change[], cursor?: SpaceCursor): Promise<unknown> {
     const res = await this.request('/api/sync/push', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ changes }),
+      body: JSON.stringify(cursor ? { changes, cursor } : { changes }),
     })
     return res.json()
   }
@@ -168,7 +189,12 @@ export class DingenClient implements Writer {
   private readonly clientId: string
   private readonly todayFn: () => string
   readonly timezone: string
+  /** Protocol 1 cursor, for servers that send no cursor per space. */
   private cursor = 0
+  /** Protocol 2 cursor per space; null while speaking protocol 1. */
+  private spaceCursor: SpaceCursor | null = null
+  /** The space of every record the server told us about; absent means the personal space. */
+  private readonly spaceOf = new Map<string, string>()
   private loaded = false
   private pending: Change[] = []
   private self: string | undefined
@@ -223,23 +249,66 @@ export class DingenClient implements Writer {
     if (!this.loaded) {
       const body = await this.transport.snapshot()
       for (const rec of body.entities) {
-        this.records.set(recordKey(rec.entityType, rec.id), rec)
-        for (const ts of Object.values(rec.fieldTs)) this.clock.receive(ts)
+        const { spaceId, ...record } = rec
+        const key = recordKey(record.entityType, record.id)
+        this.records.set(key, record)
+        if (spaceId) this.spaceOf.set(key, spaceId)
+        for (const ts of Object.values(record.fieldTs)) this.clock.receive(ts)
       }
       this.cursor = body.seq
+      this.spaceCursor = body.cursor && this.transport.pullSpaces ? body.cursor : null
       this.loaded = true
+      return
+    }
+    if (this.spaceCursor && this.transport.pullSpaces) {
+      await this.pullSpaces(this.transport.pullSpaces.bind(this.transport))
       return
     }
     let hasMore = true
     while (hasMore) {
       const body = await this.transport.pull(this.cursor)
-      for (const change of body.changes) {
-        this.clock.receive(change.ts)
-        const key = recordKey(change.entityType, change.entityId)
-        this.records.set(key, applyChange(this.records.get(key), change))
-      }
+      for (const change of body.changes) this.applyRemote(change)
       this.cursor = body.seq
       hasMore = body.hasMore
+    }
+  }
+
+  /** Protocol 2: changes per space, snapshots of new spaces, dropping spaces we left. */
+  private async pullSpaces(pull: (cursor: SpaceCursor) => Promise<PullResponse>): Promise<void> {
+    let hasMore = true
+    while (hasMore && this.spaceCursor) {
+      const body = await pull(this.spaceCursor)
+      for (const spaceId of body.removed) this.dropSpace(spaceId)
+      for (const space of body.spaces) {
+        if (space.entities) {
+          this.dropSpace(space.id)
+          for (const record of space.entities) {
+            const key = recordKey(record.entityType, record.id)
+            this.records.set(key, record)
+            this.spaceOf.set(key, space.id)
+            for (const ts of Object.values(record.fieldTs)) this.clock.receive(ts)
+          }
+        }
+        for (const change of space.changes) this.applyRemote(change, space.id)
+      }
+      this.spaceCursor = body.cursor
+      hasMore = body.hasMore
+    }
+  }
+
+  private applyRemote(change: Change, spaceId?: string): void {
+    this.clock.receive(change.ts)
+    const key = recordKey(change.entityType, change.entityId)
+    this.records.set(key, applyChange(this.records.get(key), change))
+    if (spaceId) this.spaceOf.set(key, spaceId)
+  }
+
+  /** Forgets every record of a space (a space we left, or one about to be replaced by a snapshot). */
+  private dropSpace(spaceId: string): void {
+    for (const [key, space] of this.spaceOf) {
+      if (space !== spaceId) continue
+      this.records.delete(key)
+      this.spaceOf.delete(key)
     }
   }
 
@@ -250,11 +319,18 @@ export class DingenClient implements Writer {
     this.pending = []
     try {
       for (let i = 0; i < all.length; i += 500) {
-        await this.transport.push(all.slice(i, i + 500))
+        const cursor = this.spaceCursor ?? undefined
+        const body = (await this.transport.push(all.slice(i, i + 500), cursor)) as PushResponse
+        // Spaces where only our own changes happened: no need to pull them back.
+        if (this.spaceCursor && body?.cursor) {
+          this.spaceCursor = mergeCursor(this.spaceCursor, body.cursor)
+        }
       }
     } catch (err) {
       // The server refused: drop the local edits by loading a fresh replica next time.
       this.records.clear()
+      this.spaceOf.clear()
+      this.spaceCursor = null
       this.loaded = false
       throw err
     }

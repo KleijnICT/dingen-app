@@ -2,68 +2,174 @@ import 'fake-indexeddb/auto'
 import {
   applyChange,
   type Change,
+  createClock,
   type EntityRecord,
+  newArea,
   newTask,
+  type PullSpace,
+  parseCursorParam,
   recordKey,
+  type SpaceCursor,
+  type SpaceInfo,
   type Task,
+  ulid,
 } from '@dingen/core'
 import { describe, expect, it } from 'vitest'
+import { LocalDb } from './db.js'
 import { SyncEngine } from './engine.js'
 
-/** Nagebootste server met dezelfde semantiek als SyncService, zonder database. */
+const PERSONAL = 'SPACEPERSONAL'
+
+/** Nagebootste server met dezelfde semantiek als SyncService (protocol 2), zonder database. */
 class FakeServer {
-  log: { seq: number; change: Change }[] = []
+  log: { seq: number; spaceId: string; change: Change }[] = []
   entities = new Map<string, EntityRecord>()
+  spaceOf = new Map<string, string>()
+  spaces: SpaceInfo[] = [{ id: PERSONAL, kind: 'personal', level: 'manage' }]
   known = new Set<string>()
   offline = false
   requests = 0
+  urls: string[] = []
+  /** Changes delivered by pulls, to see what a client pulls back. */
+  pulled: Change[] = []
+  /** Changes per pull answer, over all spaces. */
+  pageSize = 500
   /** Delay before each response, to hold a sync run in flight. */
   delayMs = 0
+
+  /** Writes a change as the server would store it; a new entity goes to `spaceId`. */
+  write(change: Change, spaceId = PERSONAL): void {
+    const key = recordKey(change.entityType, change.entityId)
+    const space = this.spaceOf.get(key) ?? spaceId
+    this.known.add(change.id)
+    this.log.push({ seq: this.log.length + 1, spaceId: space, change })
+    this.spaceOf.set(key, space)
+    this.entities.set(key, applyChange(this.entities.get(key), change))
+  }
+
+  private seqOf(spaceId: string): number {
+    return this.log.filter((l) => l.spaceId === spaceId).at(-1)?.seq ?? 0
+  }
+
+  private live(spaceId: string): EntityRecord[] {
+    return [...this.entities]
+      .filter(([key, rec]) => this.spaceOf.get(key) === spaceId && rec.data.deleted !== true)
+      .map(([, rec]) => rec)
+  }
 
   fetch: typeof fetch = async (input, init) => {
     this.requests += 1
     if (this.delayMs) await new Promise((r) => setTimeout(r, this.delayMs))
     if (this.offline) throw new TypeError('Failed to fetch')
     const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
+    this.urls.push(url)
     const json = (body: unknown, status = 200) =>
       new Response(JSON.stringify(body), {
         status,
         headers: { 'content-type': 'application/json' },
       })
+    const params = new URL(url, 'http://x').searchParams
     if (url.startsWith('/api/sync/push')) {
-      const { changes } = JSON.parse(String(init?.body)) as { changes: Change[] }
+      const { changes, cursor } = JSON.parse(String(init?.body)) as {
+        changes: Change[]
+        cursor?: SpaceCursor
+      }
+      const written = new Map<string, { count: number; seq: number }>()
       for (const change of changes) {
         if (this.known.has(change.id)) continue
-        this.known.add(change.id)
-        this.log.push({ seq: this.log.length + 1, change })
-        const key = recordKey(change.entityType, change.entityId)
-        this.entities.set(key, applyChange(this.entities.get(key), change))
+        this.write(change)
+        const last = this.log.at(-1)
+        if (!last) continue
+        const mine = written.get(last.spaceId) ?? { count: 0, seq: 0 }
+        written.set(last.spaceId, { count: mine.count + 1, seq: last.seq })
       }
-      return json({ seq: this.log.length, applied: changes.length, duplicates: 0 })
+      const advanced: SpaceCursor = {}
+      for (const [space, mine] of written) {
+        const since = cursor?.[space]
+        if (since === undefined) continue
+        const after = this.log.filter((l) => l.spaceId === space && l.seq > since).length
+        if (after === mine.count) advanced[space] = mine.seq
+      }
+      const body = { seq: this.log.length, applied: changes.length, duplicates: 0 }
+      return json(cursor ? { ...body, cursor: advanced } : body)
     }
     if (url.startsWith('/api/sync/pull')) {
-      const since = Number(new URL(url, 'http://x').searchParams.get('since') ?? 0)
-      const changes = this.log.filter((l) => l.seq > since).map((l) => l.change)
-      return json({ changes, seq: this.log.length, hasMore: false })
-    }
-    if (url.startsWith('/api/sync/snapshot')) {
-      return json({ entities: [...this.entities.values()], seq: this.log.length })
+      const raw = params.get('cursor')
+      if (raw === null) {
+        const since = Number(params.get('since') ?? 0)
+        const changes = this.log.filter((l) => l.seq > since).map((l) => l.change)
+        return json({ changes, seq: this.log.length, hasMore: false })
+      }
+      const cursor = parseCursorParam(raw)
+      if (cursor === null) return json({ error: 'invalid_cursor' }, 400)
+      let budget = this.pageSize
+      const out: PullSpace[] = this.spaces.map((space) => {
+        const since = typeof cursor === 'number' ? cursor : cursor[space.id]
+        if (since === undefined) {
+          return {
+            ...space,
+            seq: this.seqOf(space.id),
+            changes: [],
+            entities: this.live(space.id),
+            hasMore: false,
+          }
+        }
+        const after = this.log.filter((l) => l.spaceId === space.id && l.seq > since)
+        const page = after.slice(0, budget)
+        budget -= page.length
+        this.pulled.push(...page.map((l) => l.change))
+        return {
+          ...space,
+          seq: page.at(-1)?.seq ?? since,
+          changes: page.map((l) => l.change),
+          hasMore: after.length > page.length,
+        }
+      })
+      return json({
+        protocol: 2,
+        spaces: out,
+        removed:
+          typeof cursor === 'number'
+            ? []
+            : Object.keys(cursor).filter((id) => !this.spaces.some((s) => s.id === id)),
+        cursor: Object.fromEntries(out.map((s) => [s.id, s.seq])),
+        hasMore: out.some((s) => s.hasMore),
+      })
     }
     return json({ error: 'not_found' }, 404)
   }
 }
 
+/** Another client, with its own clock. */
+const other = createClock('OTHER')
+
+function createdBy(entityType: 'task' | 'area', entity: { id: string }): Change {
+  const { id, ...fields } = entity
+  return { id: ulid(), entityType, entityId: id, fields, ts: other.now(), clientId: 'OTHER' }
+}
+
+function editBy(entityType: 'task' | 'area', id: string, fields: Record<string, unknown>): Change {
+  return { id: ulid(), entityType, entityId: id, fields, ts: other.now(), clientId: 'OTHER' }
+}
+
 let n = 0
-function engineFor(server: FakeServer, name = `dev${++n}`) {
-  return new SyncEngine({
-    userId: 'u1',
-    dbName: `test-${name}-${Date.now()}-${Math.random()}`,
-    fetchFn: server.fetch,
-    pushDelayMs: 0,
-  })
+function engineFor(server: FakeServer, dbName = `test-dev${++n}-${Date.now()}-${Math.random()}`) {
+  return new SyncEngine({ userId: 'u1', dbName, fetchFn: server.fetch, pushDelayMs: 0 })
 }
 
 const settle = () => new Promise((r) => setTimeout(r, 20))
+const titles = (engine: SyncEngine) =>
+  engine
+    .entities('task')
+    .map((t) => (t as Task).title)
+    .sort()
+
+async function storedMeta(dbName: string) {
+  const db = new LocalDb(dbName)
+  const meta = await db.meta.toArray()
+  db.close()
+  return Object.fromEntries(meta.map((m) => [m.key, m.value]))
+}
 
 describe('SyncEngine', () => {
   it('maakt een taak lokaal, pusht hem en een tweede apparaat ziet hem', async () => {
@@ -150,7 +256,7 @@ describe('SyncEngine', () => {
   it('overleeft een herstart: data en cursor komen uit IndexedDB', async () => {
     const server = new FakeServer()
     const dbName = `test-restart-${Date.now()}`
-    const a = new SyncEngine({ userId: 'u1', dbName, fetchFn: server.fetch, pushDelayMs: 0 })
+    const a = engineFor(server, dbName)
     await a.start()
     a.create('task', newTask({ title: 'Blijft' }))
     await settle()
@@ -158,11 +264,14 @@ describe('SyncEngine', () => {
     a.stop()
 
     const requestsBefore = server.requests
-    const again = new SyncEngine({ userId: 'u1', dbName, fetchFn: server.fetch, pushDelayMs: 0 })
+    const again = engineFor(server, dbName)
     await again.start()
-    expect(again.entities('task').map((t) => (t as Task).title)).toEqual(['Blijft'])
+    expect(titles(again)).toEqual(['Blijft'])
     // Geen snapshot meer nodig: alleen een pull sinds de cursor.
     expect(server.requests - requestsBefore).toBe(1)
+    expect(server.urls.at(-1)).toBe(
+      `/api/sync/pull?cursor=${encodeURIComponent(JSON.stringify({ [PERSONAL]: 1 }))}`,
+    )
     again.stop()
   })
 
@@ -180,6 +289,150 @@ describe('SyncEngine', () => {
     await a.start()
     expect(a.status).toBe('unauthorized')
     expect(called).toBe(true)
+    a.stop()
+  })
+})
+
+describe('SyncEngine with a cursor per space', () => {
+  it('starts with an empty cursor and gets every space as a snapshot', async () => {
+    const server = new FakeServer()
+    server.write(createdBy('task', newTask({ title: 'Eigen taak' })))
+    server.spaces.push({ id: 'SHARED', kind: 'shared', level: 'edit' })
+    server.write(createdBy('task', newTask({ title: 'Gedeelde taak' })), 'SHARED')
+
+    const dbName = `test-fresh-${Date.now()}`
+    const a = engineFor(server, dbName)
+    await a.start()
+    expect(server.urls[0]).toBe(`/api/sync/pull?cursor=${encodeURIComponent('{}')}`)
+    expect(titles(a)).toEqual(['Eigen taak', 'Gedeelde taak'])
+    expect(server.pulled).toHaveLength(0)
+    a.stop()
+    expect((await storedMeta(dbName)).cursors).toEqual({ [PERSONAL]: 1, SHARED: 2 })
+  })
+
+  it('takes in a space shared later as a snapshot, and its changes after that', async () => {
+    const server = new FakeServer()
+    const a = engineFor(server)
+    await a.start()
+    a.create('task', newTask({ title: 'Eigen taak' }))
+    await a.sync()
+
+    // Someone shares a space that already has history.
+    const shared = newTask({ title: 'Gedeeld' })
+    server.write(createdBy('task', shared), 'SHARED')
+    server.write(editBy('task', shared.id, { notes: 'oud' }), 'SHARED')
+    server.spaces.push({ id: 'SHARED', kind: 'shared', level: 'edit' })
+    await a.sync()
+    expect(titles(a)).toEqual(['Eigen taak', 'Gedeeld'])
+    expect(a.records.get(recordKey('task', shared.id))?.spaceId).toBe('SHARED')
+    // History came as the snapshot, not as changes.
+    expect(server.pulled.filter((c) => c.entityId === shared.id)).toHaveLength(0)
+
+    server.write(editBy('task', shared.id, { title: 'Gedeeld, nieuw' }))
+    await a.sync()
+    expect(titles(a)).toEqual(['Eigen taak', 'Gedeeld, nieuw'])
+    a.stop()
+  })
+
+  it('drops the data of a space the user left and keeps the rest', async () => {
+    const server = new FakeServer()
+    server.spaces.push({ id: 'SHARED', kind: 'shared', level: 'read' })
+    server.write(createdBy('task', newTask({ title: 'Gedeeld' })), 'SHARED')
+    server.write(createdBy('area', newArea({ title: 'Gedeeld gebied' })), 'SHARED')
+    const dbName = `test-leave-${Date.now()}`
+    const a = engineFor(server, dbName)
+    await a.start()
+    a.create('task', newTask({ title: 'Eigen taak' }))
+    await a.sync()
+    expect(titles(a)).toEqual(['Eigen taak', 'Gedeeld'])
+
+    server.spaces = server.spaces.filter((s) => s.id !== 'SHARED')
+    await a.sync()
+    expect(titles(a)).toEqual(['Eigen taak'])
+    expect(a.entities('area')).toEqual([])
+    a.stop()
+
+    // Gone from IndexedDB too, and from the cursor.
+    const again = engineFor(server, dbName)
+    await again.start()
+    expect(titles(again)).toEqual(['Eigen taak'])
+    again.stop()
+    expect(Object.keys((await storedMeta(dbName)).cursors as SpaceCursor)).toEqual([PERSONAL])
+  })
+
+  it('moves a stored protocol 1 cursor over to a cursor per space', async () => {
+    const server = new FakeServer()
+    const known = newTask({ title: 'Al bekend' })
+    server.write(createdBy('task', known))
+    server.write(createdBy('task', newTask({ title: 'Ook bekend' })))
+
+    // A replica as the web app before protocol 2 left it: records without a space, one cursor.
+    const dbName = `test-legacy-${Date.now()}`
+    const old = new LocalDb(dbName)
+    await old.entities.bulkPut([...server.entities].map(([key, rec]) => ({ key, ...rec })))
+    await old.meta.bulkPut([
+      { key: 'clientId', value: 'OLDCLIENT' },
+      { key: 'cursor', value: 2 },
+    ])
+    old.close()
+
+    server.write(editBy('task', known.id, { title: 'Hernoemd' }))
+    server.write(createdBy('task', newTask({ title: 'Nieuw' })))
+
+    const a = engineFor(server, dbName)
+    await a.start()
+    expect(server.urls[0]).toBe(`/api/sync/pull?cursor=${encodeURIComponent('2')}`)
+    expect(titles(a)).toEqual(['Hernoemd', 'Nieuw', 'Ook bekend'])
+    // Only what came after the old cursor was pulled.
+    expect(server.pulled).toHaveLength(2)
+    a.stop()
+    const meta = await storedMeta(dbName)
+    expect(meta.cursors).toEqual({ [PERSONAL]: 4 })
+    expect(meta.cursor).toBeUndefined()
+    expect(meta.clientId).toBe('OLDCLIENT')
+
+    // From now on the cursor per space, and records without a space count as personal.
+    server.spaces.push({ id: 'SHARED', kind: 'shared', level: 'edit' })
+    const again = engineFor(server, dbName)
+    await again.start()
+    expect(server.urls.at(-1)).toBe(
+      `/api/sync/pull?cursor=${encodeURIComponent(JSON.stringify({ [PERSONAL]: 4 }))}`,
+    )
+    server.spaces = server.spaces.filter((s) => s.id !== 'SHARED')
+    await again.sync()
+    expect(titles(again)).toEqual(['Hernoemd', 'Nieuw', 'Ook bekend'])
+    again.stop()
+  })
+
+  it('does not pull its own pushed changes back, unless someone else wrote in between', async () => {
+    const server = new FakeServer()
+    const a = engineFor(server)
+    await a.start()
+    a.create('task', newTask({ title: 'Mijn taak' }))
+    await a.sync()
+    expect(server.pulled).toHaveLength(0)
+
+    server.write(createdBy('task', newTask({ title: 'Van elders' })))
+    a.create('task', newTask({ title: 'Nog een' }))
+    await a.sync()
+    // The cursor could not skip "Van elders", so both came with the pull.
+    expect(server.pulled.map((c) => c.fields.title)).toEqual(['Van elders', 'Nog een'])
+    expect(titles(a)).toEqual(['Mijn taak', 'Nog een', 'Van elders'])
+    a.stop()
+  })
+
+  it('pages through changes over several spaces', async () => {
+    const server = new FakeServer()
+    server.spaces.push({ id: 'SHARED', kind: 'shared', level: 'edit' })
+    const a = engineFor(server)
+    await a.start()
+    server.pageSize = 1
+    server.write(createdBy('task', newTask({ title: 'Een' })))
+    server.write(createdBy('task', newTask({ title: 'Twee' })), 'SHARED')
+    server.write(createdBy('task', newTask({ title: 'Drie' })))
+    await a.sync()
+    expect(titles(a)).toEqual(['Drie', 'Een', 'Twee'])
+    expect(server.urls.filter((u) => u.startsWith('/api/sync/pull'))).toHaveLength(4)
     a.stop()
   })
 })

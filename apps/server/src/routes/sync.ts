@@ -1,3 +1,4 @@
+import { parseCursorParam } from '@dingen/core'
 import { Hono } from 'hono'
 import { z } from 'zod'
 import { AgentScopeError } from '../agents/access.js'
@@ -13,6 +14,13 @@ const PullQuery = z.object({
 /**
  * Sync-API. Vereist een ingelogde gebruiker (`userId` in de context); agents
  * only with an `all` grant (see app.ts), and their writes are still checked.
+ *
+ * Pull speaks two protocols (see `SYNC_PROTOCOL` in core):
+ * - 2: `GET /pull?cursor=<url-encoded JSON {"<spaceId>": seq}>` answers per
+ *   space (`PullResponse`). A bare number as cursor moves a protocol 1 cursor.
+ * - 1: `GET /pull?since=<seq>` answers `{ changes, seq, hasMore }` over all
+ *   spaces, for clients from before protocol 2. It can go once no released
+ *   client sends it (web app and MCP plugin from 1.0.0-alpha.4 and older).
  */
 export function syncRoutes() {
   const app = new Hono<AppEnv>()
@@ -26,6 +34,7 @@ export function syncRoutes() {
       const result = c.get('sync').push(c.get('userId'), parsed.data.changes, {
         access: accessOf(c),
         members: c.get('agents').memberGrants(c.get('userId')),
+        cursor: parsed.data.cursor,
       })
       return c.json(result)
     } catch (err) {
@@ -43,6 +52,12 @@ export function syncRoutes() {
   })
 
   app.get('/pull', (c) => {
+    const raw = c.req.query('cursor')
+    if (raw !== undefined) {
+      const cursor = parseCursorParam(raw)
+      if (cursor === null) return c.json({ error: 'invalid_cursor' }, 400)
+      return c.json(c.get('sync').pullSpaces(c.get('userId'), cursor, undefined, c.get('grants')))
+    }
     const parsed = PullQuery.safeParse(c.req.query())
     if (!parsed.success) {
       return c.json({ error: 'invalid_query', issues: parsed.error.issues }, 400)
@@ -52,8 +67,12 @@ export function syncRoutes() {
     )
   })
 
+  // `?space=<id>`: only that space (404 when the user is not a member of it).
   app.get('/snapshot', (c) => {
-    return c.json(c.get('sync').snapshot(c.get('userId'), c.get('grants')))
+    const space = c.req.query('space') ?? null
+    const body = c.get('sync').snapshot(c.get('userId'), c.get('grants'), space)
+    if (space !== null && body.spaces.length === 0) return c.json({ error: 'not_found' }, 404)
+    return c.json(body)
   })
 
   return app

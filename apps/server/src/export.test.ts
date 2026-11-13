@@ -62,7 +62,10 @@ async function pushAs(bearer: string, changes: Change[]) {
 
 async function snapshotOf(bearer: string) {
   const { entities } = await (await call(bearer, '/api/sync/snapshot')).json()
-  return entities.sort((a: { id: string }, b: { id: string }) => (a.id < b.id ? -1 : 1))
+  // Without the space: each account has its own personal space.
+  return entities
+    .map(({ spaceId: _space, ...record }: { spaceId: string; id: string }) => record)
+    .sort((a: { id: string }, b: { id: string }) => (a.id < b.id ? -1 : 1))
 }
 
 describe('export en import', () => {
