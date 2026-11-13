@@ -10,6 +10,7 @@ import {
   type EntityType,
   entitySchemas,
   isDeleted,
+  normalizeTagTitle,
   type Placed,
   type PullResponse,
   type PullSpace,
@@ -1076,4 +1077,17 @@ function withoutSpace({ spaceId: _space, ...record }: SpacedRecord): EntityRecor
 /** Grants that limit what can be read: anything but the owner or an `all` grant. */
 function restricted(grants: AgentGrant[] | null): grants is AgentGrant[] {
   return grants !== null && !grants.some((g) => g.scope === 'all')
+}
+
+/**
+ * A tag title pushed by a client is stored lowercase (plan 23, part 4), also from older
+ * clients that still allow capitals. Applied at the HTTP push endpoint.
+ */
+export function normalizePushedTag(change: Change): Change {
+  const title = change.fields.title
+  if (change.entityType !== 'tag' || typeof title !== 'string') return change
+  const normalized = normalizeTagTitle(title)
+  return normalized === title
+    ? change
+    : { ...change, fields: { ...change.fields, title: normalized } }
 }

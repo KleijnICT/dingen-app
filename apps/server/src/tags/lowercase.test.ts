@@ -13,7 +13,7 @@ import { ActivityService } from '../activity/service.js'
 import { type OpenedDatabase, openDatabase } from '../db.js'
 import { entities, meta } from '../schema.js'
 import { createPersonalSpace } from '../spaces/service.js'
-import { SyncService } from '../sync.js'
+import { normalizePushedTag, SyncService } from '../sync.js'
 import {
   LOWERCASE_TAGS_KEY,
   lowercaseTags,
@@ -223,5 +223,19 @@ describe('lowercaseTags on the database', () => {
     sync.push('A', [create('tag', later)])
     expect(migrateLowercaseTags(database.db)).toBeNull()
     expect(data('tag', later.id)?.title).toBe('Nieuw')
+  })
+})
+
+describe('normalizePushedTag', () => {
+  const base = { id: 'c1', clientId: 'x', entityType: 'tag', entityId: 't1', ts: 'ts' }
+  it('lowercases a tag title pushed by an older client', () => {
+    const out = normalizePushedTag({ ...base, fields: { title: '  Boodschappen ' } } as never)
+    expect(out.fields.title).toBe('boodschappen')
+  })
+  it('leaves other entities and fields alone', () => {
+    const task = { ...base, entityType: 'task', fields: { title: 'Bel Anna' } } as never
+    expect(normalizePushedTag(task)).toBe(task)
+    const order = { ...base, fields: { order: 3 } } as never
+    expect(normalizePushedTag(order)).toBe(order)
   })
 })

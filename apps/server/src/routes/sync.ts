@@ -5,7 +5,7 @@ import { AgentScopeError } from '../agents/access.js'
 import { accessOf } from '../auth/middleware.js'
 import type { AppEnv } from '../env.js'
 import { SpaceAccessError } from '../spaces/service.js'
-import { PushBody, SyncValidationError } from '../sync.js'
+import { normalizePushedTag, PushBody, SyncValidationError } from '../sync.js'
 
 const PullQuery = z.object({
   since: z.coerce.number().int().min(0).default(0),
@@ -31,11 +31,13 @@ export function syncRoutes() {
       return c.json({ error: 'invalid_body', issues: parsed.error.issues }, 400)
     }
     try {
-      const result = c.get('sync').push(c.get('userId'), parsed.data.changes, {
-        access: accessOf(c),
-        members: c.get('agents').memberGrants(c.get('userId')),
-        cursor: parsed.data.cursor,
-      })
+      const result = c
+        .get('sync')
+        .push(c.get('userId'), parsed.data.changes.map(normalizePushedTag), {
+          access: accessOf(c),
+          members: c.get('agents').memberGrants(c.get('userId')),
+          cursor: parsed.data.cursor,
+        })
       return c.json(result)
     } catch (err) {
       if (err instanceof AgentScopeError) {
