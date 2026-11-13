@@ -406,6 +406,8 @@ export const en = {
   'reminder.settings.insecure':
     'Reminders need a secure connection (HTTPS, or localhost). Open Dingen over HTTPS to turn them on for this device.',
   'reminder.settings.unsupported': 'This browser cannot show reminders from Dingen.',
+  'reminder.settings.proxied':
+    'Reminders on this device need the direct address of Dingen, not the view inside Home Assistant.',
   'reminder.settings.denied':
     'Notifications are blocked for Dingen. Allow them in the browser settings and try again.',
   'reminder.settings.failed': 'That did not work. Try again later.',

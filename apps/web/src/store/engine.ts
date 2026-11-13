@@ -12,6 +12,7 @@ import {
   recordKey,
   ulid,
 } from '@dingen/core'
+import { withBase } from '../base.js'
 import { dbNameFor, LocalDb } from './db.js'
 
 export type SyncStatus = 'idle' | 'syncing' | 'offline' | 'unauthorized'
@@ -279,7 +280,7 @@ export class SyncEngine {
   }
 
   private async request(path: string, init?: RequestInit): Promise<Response> {
-    const res = await this.fetchFn(path, {
+    const res = await this.fetchFn(withBase(path), {
       ...init,
       headers: { accept: 'application/json', ...init?.headers },
     })

@@ -398,6 +398,8 @@ export const nl: Messages = {
   'reminder.settings.insecure':
     'Herinneringen hebben een beveiligde verbinding nodig (HTTPS, of localhost). Open Dingen via HTTPS om ze op dit apparaat aan te zetten.',
   'reminder.settings.unsupported': 'Deze browser kan geen herinneringen van Dingen tonen.',
+  'reminder.settings.proxied':
+    'Herinneringen op dit apparaat vragen het directe adres van Dingen, niet de weergave binnen Home Assistant.',
   'reminder.settings.denied':
     'Meldingen van Dingen zijn geblokkeerd. Sta ze toe in de instellingen van de browser en probeer het opnieuw.',
   'reminder.settings.failed': 'Dat lukte niet. Probeer het later nog eens.',

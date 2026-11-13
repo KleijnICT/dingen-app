@@ -19,5 +19,11 @@ export interface AppEnv {
     grants: AgentGrant[] | null
     /** The agent behind the token; null for a session. */
     agentId: string | null
+    /**
+     * The path prefix the browser sees in front of the app (Home Assistant ingress, e.g.
+     * `/api/hassio_ingress/<token>`, no trailing slash); undefined for the root. Only the
+     * ingress listener sets it; index.html takes the base path from it (static.ts).
+     */
+    ingressPath: string | undefined
   }
 }

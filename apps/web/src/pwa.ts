@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { underPrefix } from './base.js'
 
 /**
  * Registers the service worker and reports when a new version is waiting. The new worker
@@ -28,9 +29,12 @@ function watch(reg: ServiceWorkerRegistration): void {
   })
 }
 
-/** Starts the service worker. Does nothing in development or where it is not supported. */
+/**
+ * Starts the service worker. Does nothing in development, where it is not supported, or under
+ * a path prefix (ingress): the worker's scope is `/`, and that origin belongs to the proxy.
+ */
 export function registerServiceWorker(): void {
-  if (!import.meta.env.PROD || !('serviceWorker' in navigator)) return
+  if (!import.meta.env.PROD || !('serviceWorker' in navigator) || underPrefix()) return
   window.addEventListener('load', () => {
     navigator.serviceWorker
       .register('/sw.js')

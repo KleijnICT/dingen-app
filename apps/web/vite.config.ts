@@ -69,6 +69,9 @@ function serviceWorker(): Plugin {
 }
 
 export default defineConfig({
+  // Relative asset URLs, so the app also works under a path prefix (Home Assistant ingress).
+  // The server puts a <base href> in index.html; see apps/server/src/static.ts.
+  base: './',
   plugins: [react(), serviceWorker()],
   define: {
     __DINGEN_VERSION__: JSON.stringify(appVersion()),
