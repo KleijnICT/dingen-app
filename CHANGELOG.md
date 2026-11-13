@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## 1.0.0-alpha.5
+
+A calmer task panel, spaces as groundwork for sharing, lowercase tags and
+backups with a safety net. A pre-release; `:latest` points to it. The update
+runs a database migration (with a backup first; if it fails the backup is put
+back and Dingen stops).
 
 - Backups: every night from 03:00 (in `DINGEN_TIMEZONE`) Dingen writes a
   consistent backup to `DATA_DIR/backups`, while it runs. Kept: 7 daily, 4
