@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+- Backups: every night from 03:00 (in `DINGEN_TIMEZONE`) Dingen writes a
+  consistent backup to `DATA_DIR/backups`, while it runs. Kept: 7 daily, 4
+  weekly and 3 monthly, plus the 10 newest from before an update. Backup names
+  now hold the kind, the moment and the schema version. `DINGEN_BACKUPS=off`
+  turns the nightly ones off.
+- A failed update no longer leaves a half-migrated database: if a database
+  migration or a one-time data conversion fails at start, Dingen puts back the
+  backup it made just before, says so in the log and stops, so the previous
+  version can be started. Data conversions get a backup first too.
+- The `dingen` command in the Docker image: `dingen backup`, `dingen backups`
+  and `dingen restore <file>` (only with the server stopped; saves the current
+  state first and refuses files that are not a Dingen database or come from a
+  newer version).
+- Sync after a restore: devices that are ahead of the server load a fresh
+  copy instead of missing changes; unsent changes are kept. Protocol 2 pulls
+  mark such a space `resync`; protocol 1 pulls get 409 `cursor_ahead`.
+- One server per data directory: the server holds a lock on
+  `DATA_DIR/dingen.lock` and does not start when another one (or a restore)
+  holds it.
 - Task panel: a task opens in a panel that slides in from the right (beside
   the list on wide screens, over it on medium widths, full screen on phones).
   With a mouse a click selects a task and a double click or Enter opens it; on

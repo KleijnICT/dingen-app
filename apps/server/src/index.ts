@@ -2,13 +2,14 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { serve } from '@hono/node-server'
 import { createApp, defaultPush } from './app.js'
-import { backupBeforeMigrations } from './backup.js'
+import { BackupScheduler } from './backup-scheduler.js'
 import { applyLogLevel, loadConfig } from './config.js'
-import { migrationsFolder, openDatabase } from './db.js'
+import { migrationsFolder, type OpenedDatabase } from './db.js'
 import { resetToDemo } from './demo/seed.js'
+import { DataDirLock } from './lock.js'
 import { ReminderPlanner } from './push/planner.js'
+import { prepareDatabase, StartupError } from './startup.js'
 import { mountWeb } from './static.js'
-import { migrateLowercaseTags } from './tags/lowercase.js'
 
 const config = loadConfig()
 applyLogLevel(config.logLevel)
@@ -18,46 +19,38 @@ if (config.homeAssistant) {
   )
 }
 
-// Staan er migraties klaar voor een bestaande database, dan eerst een kopie.
-// Lukt die niet, dan niet migreren: liever niet starten dan data riskeren.
+// One server per data directory; `dingen restore` takes the same lock, so it
+// refuses while the server runs (see lock.ts).
+let lock: DataDirLock | null = null
 try {
-  const backup = await backupBeforeMigrations({
+  lock = DataDirLock.acquire(config.dataDir)
+  if (lock === null) {
+    console.error(`Another Dingen server or a restore is using ${config.dataDir}; not starting.`)
+    process.exit(1)
+  }
+} catch (err) {
+  console.warn(
+    `Could not lock ${config.dataDir} (${err instanceof Error ? err.message : String(err)}); starting without the lock, so \`dingen restore\` cannot tell that the server runs.`,
+  )
+}
+// Held for the life of the process; the system releases it on exit.
+process.on('exit', () => lock?.release())
+
+// A backup before SQL or data migrations; if a migration fails, that backup
+// comes back and the server stops (see startup.ts).
+let opened: OpenedDatabase
+try {
+  opened = await prepareDatabase({
     databasePath: config.databasePath,
-    backupDir: path.join(config.dataDir, 'backups'),
+    backupDir: config.backupDir,
     migrationsFolder,
   })
-  if (backup) {
-    console.log(
-      `Database migration ${backup.from} → ${backup.to}: backup written to ${backup.file}`,
-    )
-  }
 } catch (err) {
-  console.error(
-    `Could not back up the database before migrating; not starting. ${err instanceof Error ? err.message : String(err)}`,
-  )
-  console.error(
-    `Check free disk space and write access to ${path.join(config.dataDir, 'backups')}.`,
-  )
+  if (!(err instanceof StartupError)) throw err
+  for (const line of err.message.split('\n')) console.error(line)
   process.exit(1)
 }
-
-const { db, sqliteVersion } = openDatabase(config.databasePath)
-
-// Data migrations that must go through the change log (so clients sync them)
-// run here, once, after the SQL migrations.
-try {
-  const tags = migrateLowercaseTags(db)
-  if (tags && tags.spaces > 0) {
-    console.log(
-      `Tags to lowercase: ${tags.renamed} renamed, ${tags.merged} merged, ${tags.retagged} tasks and projects re-tagged in ${tags.spaces} space(s)`,
-    )
-  }
-} catch (err) {
-  // Not recorded as done, so the next start tries again; the data stays as it was.
-  console.error(
-    `Could not convert tag names to lowercase; trying again at the next start. ${err instanceof Error ? err.message : String(err)}`,
-  )
-}
+const { db, sqlite, sqliteVersion } = opened
 
 if (config.demo) {
   console.warn('DEMO MODE (DINGEN_DEMO): wiping all accounts and data and writing the demo set.')
@@ -91,6 +84,16 @@ if (fs.existsSync(path.join(config.webDist, 'index.html'))) {
 }
 
 new ReminderPlanner(db, push, { timezone: config.timezone }).start()
+
+if (config.backups) {
+  new BackupScheduler(sqlite, {
+    backupDir: config.backupDir,
+    migrationsFolder,
+    timezone: config.timezone,
+  }).start()
+} else {
+  console.log('Nightly backups are off (DINGEN_BACKUPS); backups before an update are still made.')
+}
 
 serve({ fetch: app.fetch, port: config.port }, (info) => {
   console.log(

@@ -51,7 +51,9 @@ COPY apps/server/drizzle ./apps/server/drizzle
 COPY --from=build /app/apps/server/dist ./apps/server/dist
 COPY --from=build /app/apps/web/dist ./apps/web/dist
 COPY docker/entrypoint.sh /usr/local/bin/dingen-entrypoint
-RUN chmod 755 /usr/local/bin/dingen-entrypoint && mkdir -p /data && chown node:node /data
+# `dingen backup`, `dingen backups`, `dingen restore <file>` (see the README).
+COPY docker/dingen.sh /usr/local/bin/dingen
+RUN chmod 755 /usr/local/bin/dingen-entrypoint /usr/local/bin/dingen && mkdir -p /data && chown node:node /data
 # No `USER node`: the entrypoint starts as root only to make /data owned by
 # node (Home Assistant mounts it as root), then runs the server as node.
 VOLUME ["/data"]

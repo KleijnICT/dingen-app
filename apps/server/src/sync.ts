@@ -5,6 +5,7 @@ import {
   applyChange,
   type Change,
   Change as ChangeSchema,
+  CursorAheadError,
   type EntityKey,
   type EntityRecord,
   type EntityType,
@@ -37,7 +38,8 @@ import {
   type MemberGrants,
 } from './agents/access.js'
 import type { Db } from './db.js'
-import { changes, entities, type SpaceLevel, spaceMembers, spaces } from './schema.js'
+import { CURSOR_GAPS_KEY, type CursorGap } from './restore.js'
+import { changes, entities, meta, type SpaceLevel, spaceMembers, spaces } from './schema.js'
 import {
   after,
   arrivalAsChanges,
@@ -656,9 +658,12 @@ export class SyncService {
    */
   private advance(tx: Db, cursor: SpaceCursor, written: Written): SpaceCursor {
     const out: SpaceCursor = {}
+    const gaps = this.cursorGaps(tx)
     for (const [spaceId, mine] of written.perSpace) {
       const since = cursor[spaceId]
       if (since === undefined || written.moved.has(spaceId)) continue
+      // A cursor from before a restore: the client must resync, not skip ahead.
+      if (inGap(since, gaps)) continue
       const after = tx
         .select({ n: count() })
         .from(changes)
@@ -826,6 +831,10 @@ export class SyncService {
     limit = PULL_LIMIT,
     grants: AgentGrant[] | null = null,
   ): PullResult {
+    if (since > 0) {
+      const highest = Math.max(0, ...Object.values(this.spaceSeqs(spacesOf(this.db, userId))))
+      if (since > highest || inGap(since, this.cursorGaps())) throw new CursorAheadError()
+    }
     const rows = this.db
       .select()
       .from(changes)
@@ -892,6 +901,10 @@ export class SyncService {
    * the user is no longer a member of is listed in `removed`. A number instead
    * of a cursor (a stored protocol 1 cursor) counts for every space, without
    * snapshots. At most `limit` changes per answer over all spaces.
+   *
+   * A cursor ahead of the server (beyond the highest `seq` of the space, or in
+   * a range lost by a restore, see restore.ts) also gets a snapshot, marked
+   * `resync`: the client replaces the space with the server's state.
    */
   pullSpaces(
     userId: string,
@@ -906,14 +919,33 @@ export class SyncService {
         : Object.keys(cursor).filter((id) => !mine.some((s) => s.id === id))
     const readable = this.readableFilter(userId, grants)
     const moves = this.moveView(userId, grants)
+    const highest = this.spaceSeqs(mine.map((s) => s.id))
+    const gaps = this.cursorGaps()
+    const overall = Math.max(0, ...Object.values(highest))
     let budget = limit
     const out: PullSpace[] = []
     for (const space of mine) {
-      const since = typeof cursor === 'number' ? cursor : cursor[space.id]
+      const top = highest[space.id] ?? 0
+      let since = typeof cursor === 'number' ? cursor : cursor[space.id]
+      let resync = false
+      if (since !== undefined) {
+        // A number counts for every space: compare with the user's highest seq,
+        // then bring it down to this space's, so the new cursor is a seq of this space.
+        if (inGap(since, gaps) || since > (typeof cursor === 'number' ? overall : top)) {
+          resync = true
+          since = undefined
+        } else if (typeof cursor === 'number') since = Math.min(since, top)
+      }
       if (since === undefined) {
         const entities = this.liveEntities(userId, [space.id], grants).map(withoutSpace)
-        const seq = this.spaceSeqs([space.id])[space.id] ?? 0
-        out.push({ ...space, seq, changes: [], entities, hasMore: false })
+        out.push({
+          ...space,
+          seq: top,
+          changes: [],
+          entities,
+          hasMore: false,
+          ...(resync ? { resync: true as const } : {}),
+        })
         continue
       }
       // The index (space_id, seq) gives the rows in order: no sort over all spaces.
@@ -1022,6 +1054,22 @@ export class SyncService {
       .all()
     for (const row of rows) out[row.spaceId] = row.seq ?? 0
     return out
+  }
+
+  /** The `seq` ranges lost by restores (see restore.ts). */
+  private cursorGaps(db: Pick<Db, 'select'> = this.db): CursorGap[] {
+    const row = db
+      .select({ value: meta.value })
+      .from(meta)
+      .where(eq(meta.key, CURSOR_GAPS_KEY))
+      .get()
+    if (!row) return []
+    try {
+      const value: unknown = JSON.parse(row.value)
+      return Array.isArray(value) ? (value as CursorGap[]) : []
+    } catch {
+      return []
+    }
   }
 
   private hasChangesAfter(spaceId: string, since: number): boolean {
@@ -1210,6 +1258,11 @@ function restricted(grants: AgentGrant[] | null): grants is AgentGrant[] {
  * A tag title pushed by a client is stored lowercase (plan 23, part 4), also from older
  * clients that still allow capitals. Applied at the HTTP push endpoint.
  */
+/** Is a cursor in a `seq` range lost by a restore? */
+function inGap(since: number, gaps: readonly CursorGap[]): boolean {
+  return gaps.some((g) => since > g.after && since <= g.upTo)
+}
+
 export function normalizePushedTag(change: Change): Change {
   const title = change.fields.title
   if (change.entityType !== 'tag' || typeof title !== 'string') return change
