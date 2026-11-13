@@ -275,6 +275,8 @@ export const nl: Messages = {
   'data.import.working': 'Bezig met importeren…',
   'data.import.done':
     'Import klaar: {created} nieuw, {updated} bijgewerkt, {unchanged} ongewijzigd.',
+  'data.import.skipped':
+    '{skipped} overgeslagen: die staan hier al in een ruimte waar je niet mag bewerken. Het laatste getal per soort telt ze.',
   'data.import.failed': 'Import mislukt: {reason}',
   'data.import.notJson': 'dit is geen JSON-bestand',
   'data.import.invalid': 'het bestand is geen geldige Dingen-export ({issue})',
