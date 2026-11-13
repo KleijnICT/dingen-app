@@ -50,10 +50,14 @@ COPY apps/server/package.json ./apps/server/
 COPY apps/server/drizzle ./apps/server/drizzle
 COPY --from=build /app/apps/server/dist ./apps/server/dist
 COPY --from=build /app/apps/web/dist ./apps/web/dist
+COPY --chmod=755 docker/entrypoint.sh /usr/local/bin/dingen-entrypoint
 RUN mkdir -p /data && chown node:node /data
-USER node
+# No `USER node`: the entrypoint starts as root only to make /data owned by
+# node (Home Assistant mounts it as root), then runs the server as node.
 VOLUME ["/data"]
-EXPOSE 8080
+# 8080: the app. 8099: Home Assistant ingress, only in Home Assistant mode.
+EXPOSE 8080 8099
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s \
   CMD node -e "fetch('http://localhost:8080/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+ENTRYPOINT ["dingen-entrypoint"]
 CMD ["node", "apps/server/dist/index.js"]

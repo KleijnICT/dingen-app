@@ -5,13 +5,19 @@ import { serveStatic } from '@hono/node-server/serve-static'
 import type { Context } from 'hono'
 import { createApp, defaultPush } from './app.js'
 import { backupBeforeMigrations } from './backup.js'
-import { loadConfig } from './config.js'
+import { applyLogLevel, loadConfig } from './config.js'
 import { migrationsFolder, openDatabase } from './db.js'
 import { resetToDemo } from './demo/seed.js'
 import { ReminderPlanner } from './push/planner.js'
 import { staticHeaders } from './static.js'
 
 const config = loadConfig()
+applyLogLevel(config.logLevel)
+if (config.homeAssistant) {
+  console.log(
+    `Home Assistant mode: ingress on port ${config.homeAssistant.ingressPort} (trusted: ${config.homeAssistant.ingressTrusted.join(', ')}), registration ${config.registration}, time zone ${config.timezone}`,
+  )
+}
 
 // Staan er migraties klaar voor een bestaande database, dan eerst een kopie.
 // Lukt die niet, dan niet migreren: liever niet starten dan data riskeren.
@@ -57,6 +63,7 @@ const app = createApp({
   registration: config.registration,
   timezone: config.timezone,
   demo: config.demo,
+  ...(config.homeAssistant ? { ingressTrusted: config.homeAssistant.ingressTrusted } : {}),
 })
 
 // Onbekende API-paden krijgen JSON, nooit de SPA-fallback.
@@ -84,3 +91,15 @@ serve({ fetch: app.fetch, port: config.port }, (info) => {
   )
   console.log(`Database: ${config.databasePath}`)
 })
+
+if (config.homeAssistant) {
+  // Home Assistant ingress: the same app, but the listener marks its requests,
+  // so ingressGate only lets the Supervisor in and signs in the HA user.
+  serve(
+    {
+      fetch: (req, env) => app.fetch(req, { ...(env as object), ingress: true }),
+      port: config.homeAssistant.ingressPort,
+    },
+    (info) => console.log(`Home Assistant ingress listening on port ${info.port}`),
+  )
+}

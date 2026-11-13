@@ -11,6 +11,7 @@ import { CalendarService, type FetchFeed } from './calendar/service.js'
 import type { RegistrationMode } from './config.js'
 import type { Db } from './db.js'
 import type { AppEnv } from './env.js'
+import { ingressGate, SUPERVISOR_ADDRESS } from './ingress.js'
 import { PushService, webPushSender } from './push/service.js'
 import { loadVapidKeys } from './push/vapid.js'
 import { activityRoutes } from './routes/activity.js'
@@ -42,6 +43,11 @@ export interface AppDeps {
   demo?: boolean
   /** Web push; zonder wordt er een gemaakt met de sleutels uit de database. */
   push?: PushService
+  /**
+   * Addresses allowed on the Home Assistant ingress listener (requests with
+   * `c.env.ingress`); default the Supervisor. Ignored on the normal port.
+   */
+  ingressTrusted?: readonly string[]
 }
 
 /** Bouwt de Hono-app zonder HTTP-server of statische bestanden, zodat tests hem direct kunnen aanroepen. */
@@ -53,6 +59,8 @@ export function createApp(deps: AppDeps) {
   })
 
   const agents = new AgentService(deps.db)
+  // First, for every path (API and web app): only does something on the ingress listener.
+  app.use('*', ingressGate(auth, deps.ingressTrusted ?? [SUPERVISOR_ADDRESS]))
   const services = async (c: Context<AppEnv>, next: Next) => {
     c.set('sync', sync)
     c.set('auth', auth)
