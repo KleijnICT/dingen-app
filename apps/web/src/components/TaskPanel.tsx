@@ -1,17 +1,6 @@
 import type { Task } from '@dingen/core'
 import { views } from '@dingen/core'
-import {
-  CalendarDays,
-  ChevronLeft,
-  Clock,
-  Flag,
-  FolderInput,
-  type LucideIcon,
-  Repeat,
-  Tag,
-  UserRound,
-  X,
-} from 'lucide-react'
+import { ChevronLeft, Plus, X } from 'lucide-react'
 import {
   createContext,
   type FocusEvent,
@@ -33,6 +22,7 @@ import { describeWhen } from '../lists.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { commitTask, deleteTask, duplicateTask } from '../taskActions.js'
 import {
+  checklistProgress,
   fieldLayout,
   fieldValues,
   type OptionalField,
@@ -44,7 +34,7 @@ import { AreaGlyph } from './AreaIcons.js'
 import { AssigneeField } from './Assignee.js'
 import { Checklist } from './Checklist.js'
 import { DeadlineField } from './DeadlineField.js'
-import { CheckIcon, ProgressCircle } from './Icons.js'
+import { CheckIcon, MoonIcon, ProgressCircle, TodayIcon } from './Icons.js'
 import { MoreMenu, useDismiss } from './Menu.js'
 import { MoveList } from './MoveList.js'
 import { RepeatEditor } from './RepeatEditor.js'
@@ -188,13 +178,6 @@ interface EditorProps {
   onOpen: (id: string) => void
 }
 
-const FIELD_ICONS: Record<OptionalField, LucideIcon> = {
-  time: Clock,
-  deadline: Flag,
-  repeat: Repeat,
-  assignee: UserRound,
-}
-
 /**
  * Every field of a task, saved as it changes. Notes, checklist, When, List and Tags always
  * show; time, deadline, repeat and assignee only with a value, else from the Add row.
@@ -300,7 +283,6 @@ function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
   ) => (
     <FieldRow
       key={name}
-      icon={FIELD_ICONS[name]}
       label={label}
       field={name}
       onBlur={leave ? (e) => leaveField(name, e) : undefined}
@@ -316,7 +298,16 @@ function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
     repeat: t('panel.add.repeat'),
     assignee: t('panel.add.assignee'),
   }
+  // What each chip of the Add row says next to its plus.
+  const addTexts: Record<OptionalField, string> = {
+    time: t('panel.time'),
+    deadline: t('deadline.label'),
+    repeat: t('repeat.label'),
+    assignee: t('assign.toolbar'),
+  }
   const planning = shown.filter((f) => f !== 'assignee')
+  const progress = checklistProgress(ws.checklistByTask.get(task.id) ?? [])
+  const isToday = task.when.kind === 'date' && task.when.date <= ws.today
 
   return (
     <div ref={root} className={`task-editor ${done ? 'done' : ''}`}>
@@ -385,14 +376,33 @@ function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
         placeholder={t('task.notes')}
         aria-label={t('task.notes')}
       />
-      <Checklist task={task} />
+      <section className="panel-section" aria-label={t('checklist.label')}>
+        <h3 className="panel-section-label">
+          {t('checklist.label')}
+          {progress.total > 0 && (
+            <span className="panel-section-count">
+              {t('checklist.count', { done: progress.done, total: progress.total })}
+            </span>
+          )}
+        </h3>
+        <Checklist task={task} />
+      </section>
 
       <section className="panel-section" aria-label={t('panel.planning')}>
         <h3 className="panel-section-label">{t('panel.planning')}</h3>
-        <FieldRow icon={CalendarDays} label={t('when.label')}>
+        <FieldRow label={t('when.label')}>
           <PopoverButton
             label={t('when.label')}
-            value={whenText(task, ws.today, t)}
+            value={
+              <>
+                {isToday && (
+                  <span className={`field-button-icon ${task.evening ? 'evening' : 'today'}`}>
+                    {task.evening ? <MoonIcon size={15} /> : <TodayIcon size={15} />}
+                  </span>
+                )}
+                <span className="field-button-text">{whenText(task, ws.today, t)}</span>
+              </>
+            }
             text={whenText(task, ws.today, t)}
           >
             {(done) => (
@@ -412,7 +422,7 @@ function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
           name === 'time'
             ? field(
                 'time',
-                t('panel.time'),
+                t('panel.timeLabel'),
                 <ScheduleField
                   task={task}
                   onChange={(fields) => commitTask(engine, ws, task, fields)}
@@ -445,38 +455,35 @@ function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
 
       <section className="panel-section" aria-label={t('panel.organization')}>
         <h3 className="panel-section-label">{t('panel.organization')}</h3>
-        <FieldRow icon={FolderInput} label={t('panel.list')}>
+        <FieldRow label={t('panel.list')}>
           <ListButton task={task} />
         </FieldRow>
-        <FieldRow icon={Tag} label={t('tags.label')}>
+        <FieldRow label={t('tags.label')}>
           <TagEditor
             tagIds={task.tagIds}
             onChange={(tagIds) => commitTask(engine, ws, task, { tagIds })}
           />
         </FieldRow>
         {shown.includes('assignee') &&
-          field('assignee', t('assign.label'), <AssigneeField task={task} />)}
+          field('assignee', t('panel.assigned'), <AssigneeField task={task} />)}
       </section>
 
       {addable.length > 0 && (
         <fieldset className="panel-add">
-          <legend className="panel-section-label">{t('panel.add')}</legend>
-          {addable.map((name) => {
-            const Icon = FIELD_ICONS[name]
-            return (
-              <button
-                key={name}
-                type="button"
-                className="panel-add-button"
-                data-add={name}
-                aria-label={addLabels[name]}
-                title={addLabels[name]}
-                onClick={() => add(name)}
-              >
-                <Icon size={16} strokeWidth={1.8} aria-hidden="true" />
-              </button>
-            )
-          })}
+          <legend className="panel-add-legend">{t('panel.add')}</legend>
+          {addable.map((name) => (
+            <button
+              key={name}
+              type="button"
+              className="panel-add-button"
+              data-add={name}
+              aria-label={addLabels[name]}
+              onClick={() => add(name)}
+            >
+              <Plus size={13} strokeWidth={2} aria-hidden="true" />
+              {addTexts[name]}
+            </button>
+          ))}
         </fieldset>
       )}
     </div>
@@ -493,7 +500,6 @@ function whenText(task: Task, today: string, t: ReturnType<typeof useT>): string
 }
 
 interface RowProps {
-  icon: LucideIcon
   label: string
   /** Marks an optional field, so adding it can find its input. */
   field?: OptionalField
@@ -502,15 +508,12 @@ interface RowProps {
   children: ReactNode
 }
 
-/** One field of the panel: a muted label with its icon, and the value next to it. */
-function FieldRow({ icon: Icon, label, field, onBlur, onKeyDown, children }: RowProps) {
+/** One field of the panel: a muted word as its label, and the value next to it. */
+function FieldRow({ label, field, onBlur, onKeyDown, children }: RowProps) {
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: focus and Escape in the row's own field, not an action of the row
     <div className="panel-field" data-field={field} onBlur={onBlur} onKeyDown={onKeyDown}>
-      <span className="panel-field-label">
-        <Icon size={15} strokeWidth={1.8} className="panel-field-icon" aria-hidden="true" />
-        {label}
-      </span>
+      <span className="panel-field-label">{label}</span>
       <div className="panel-field-value">{children}</div>
     </div>
   )
@@ -600,7 +603,7 @@ function ListButton({ task }: { task: Task }) {
       text={headingName ? `${name}, ${headingName}` : name}
       value={
         <>
-          <span className="field-button-icon">{icon}</span>
+          <span className={`field-button-icon ${project ? 'project' : ''}`}>{icon}</span>
           <span className="field-button-text">
             {name}
             {headingName && (

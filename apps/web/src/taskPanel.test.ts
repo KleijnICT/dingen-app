@@ -1,6 +1,7 @@
 import { newTask } from '@dingen/core'
 import { describe, expect, it } from 'vitest'
 import {
+  checklistProgress,
   fieldLayout,
   type KeyInput,
   listKeyAction,
@@ -205,5 +206,15 @@ describe('fieldLayout', () => {
     const withDeadline = { ...plain, deadline: '2026-11-20' }
     expect(stillAdded(withDeadline, ['deadline', 'repeat'])).toEqual(['repeat'])
     expect(fieldLayout(plain, stillAdded(withDeadline, ['deadline']), true).shown).toEqual([])
+  })
+})
+
+describe('checklistProgress', () => {
+  it('counts the done items out of all of them', () => {
+    expect(checklistProgress([])).toEqual({ done: 0, total: 0 })
+    expect(
+      checklistProgress([{ done: true }, { done: false }, { done: false }, { done: false }]),
+    ).toEqual({ done: 1, total: 4 })
+    expect(checklistProgress([{ done: true }, { done: true }])).toEqual({ done: 2, total: 2 })
   })
 })
