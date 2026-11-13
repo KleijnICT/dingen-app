@@ -1,12 +1,22 @@
-import { type Heading, newHeading, newTask, orderBetween, type Project, views } from '@dingen/core'
+import {
+  type Heading,
+  newHeading,
+  newTask,
+  orderBetween,
+  type Project,
+  type Task,
+  views,
+} from '@dingen/core'
 import { Heading as HeadingIcon } from 'lucide-react'
 import { type ReactNode, useState } from 'react'
 import { useT } from '../i18n/index.js'
-import { completedDate, describeWhen } from '../lists.js'
+import { describeWhen } from '../lists.js'
 import { navigate } from '../router.js'
+import { projectSections } from '../sections.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { deleteProject, toggleProject, useLinger } from '../taskActions.js'
 import { AreaGlyph } from './AreaIcons.js'
+import { CompletedSection } from './CompletedSection.js'
 import { DeadlineBadge, DeadlineField } from './DeadlineField.js'
 import { ProgressCircle } from './Icons.js'
 import { InlineInput } from './InlineInput.js'
@@ -30,31 +40,21 @@ export function ProjectPage({ project, focusSignal }: Props) {
   const t = useT()
   const ws = useWorkspace()
   const access = useAccess('project', project.id)
-  const [showCompleted, setShowCompleted] = useState(false)
   const [tagFilter, setTagFilter] = useState<string | null>(null)
   const done = project.status !== 'open'
 
   const all = views.projectTasks(ws.tasks, project.id)
   const open = all.filter((task) => task.status === 'open')
-  const completed = all.filter((task) => task.status !== 'open')
   const { shown: shownOpen, toggle } = useLinger(open, ws, engine)
-  // Completed today stays at the bottom of the project until the day changes.
-  const lingering = new Set(shownOpen.map((task) => task.id))
-  const completedToday = completed
-    .filter((task) => completedDate(task) === ws.today && !lingering.has(task.id))
-    .sort(views.byCompletedDesc)
-  const completedEarlier = completed
-    .filter((task) => completedDate(task) !== ws.today)
-    .sort(views.byCompletedDesc)
-  const completedShown = showCompleted ? [...completedToday, ...completedEarlier] : completedToday
   const present = new Set(open.flatMap((task) => task.tagIds))
-  const filtered = tagFilter
-    ? shownOpen.filter((task) => task.tagIds.includes(tagFilter))
-    : shownOpen
   const headings = views.headingsOf(ws.headings, project.id)
+  // Open tasks per heading; completed ones in their own section at the bottom.
+  const sections = projectSections(all, shownOpen, headings, (task) =>
+    tagFilter ? task.tagIds.includes(tagFilter) : true,
+  )
   const progress = views.progress(project.id, ws.tasks)
 
-  const taskList = useTaskList([...shownOpen, ...completedShown], toggle)
+  const taskList = useTaskList([...shownOpen, ...sections.completed], toggle)
 
   function addNew() {
     if (done) return
@@ -103,13 +103,13 @@ export function ProjectPage({ project, focusSignal }: Props) {
 
   const rowProps = (task: (typeof all)[number]): RowProps =>
     taskList.rowProps(task, { showWhen: true })
-  const group = (headingId: string | null, header?: ReactNode) => (
+  const group = (headingId: string | null, tasks: Task[], header?: ReactNode) => (
     <TaskGroup
       group={{
         key: `project:${project.id}:${headingId ?? 'root'}`,
         target: { kind: 'project', projectId: project.id, headingId },
       }}
-      tasks={filtered.filter((task) => task.headingId === headingId)}
+      tasks={tasks}
       rowProps={rowProps}
       header={header}
     />
@@ -247,33 +247,27 @@ export function ProjectPage({ project, focusSignal }: Props) {
       )}
       <TagFilter present={present} active={tagFilter} onChange={setTagFilter} />
       {all.length === 0 && <p className="empty">{t('project.empty')}</p>}
-      {group(null)}
-      {headings.map((heading) => (
+      {group(null, sections.loose)}
+      {sections.headings.map(({ heading, tasks }) => (
         <div key={heading.id} className="group heading-group">
           {group(
             heading.id,
+            tasks,
             <HeadingRow heading={heading} onRemove={() => removeHeading(heading)} />,
           )}
         </div>
       ))}
-      {completedShown.length > 0 && (
-        <TaskGroup
-          className="completed"
-          group={{ key: `project:${project.id}:completed`, target: null }}
-          tasks={completedShown}
-          rowProps={rowProps}
-          frozen
-        />
-      )}
-      {completedEarlier.length > 0 && (
-        <div className="page-actions">
-          <button type="button" className="link" onClick={() => setShowCompleted((c) => !c)}>
-            {showCompleted
-              ? t('project.hideCompleted')
-              : t('project.showCompleted', { n: completedEarlier.length })}
-          </button>
-        </div>
-      )}
+      <CompletedSection
+        sectionKey={`project:${project.id}`}
+        tasks={sections.completed}
+        rowProps={(task) => {
+          // A calm reminder of where the task stood before it was completed.
+          const heading = task.headingId ? ws.headingById.get(task.headingId) : undefined
+          return heading && !heading.deleted && heading.title
+            ? { ...rowProps(task), caption: heading.title }
+            : rowProps(task)
+        }}
+      />
       <TaskToolbar
         onNew={done ? undefined : addNew}
         extra={

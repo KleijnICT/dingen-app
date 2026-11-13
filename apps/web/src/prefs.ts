@@ -99,3 +99,34 @@ export function useCollapsedAreas(): Set<string> {
   const raw = useSyncExternalStore(subscribe, readCollapsed, () => '')
   return new Set(raw.split(',').filter(Boolean))
 }
+
+/**
+ * Completed sections (in a project or area) that are folded open, as a
+ * comma-separated list of keys like `project:<id>`. Folded shut by default.
+ */
+const COMPLETED_KEY = 'dingen.completedOpen'
+
+function readCompletedOpen(): string {
+  try {
+    return localStorage.getItem(COMPLETED_KEY) ?? ''
+  } catch {
+    return ''
+  }
+}
+
+export function toggleCompletedOpen(key: string): void {
+  const keys = new Set(readCompletedOpen().split(',').filter(Boolean))
+  if (!keys.delete(key)) keys.add(key)
+  try {
+    if (keys.size === 0) localStorage.removeItem(COMPLETED_KEY)
+    else localStorage.setItem(COMPLETED_KEY, [...keys].join(','))
+  } catch {
+    // See setTodayView.
+  }
+  for (const l of listeners) l()
+}
+
+export function useCompletedOpen(key: string): boolean {
+  const raw = useSyncExternalStore(subscribe, readCompletedOpen, () => '')
+  return raw.split(',').includes(key)
+}

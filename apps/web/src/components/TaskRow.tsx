@@ -20,6 +20,8 @@ export interface RowProps {
   showWhen: boolean
   /** Show the project or area under the title (off inside that project or area). */
   showCaption: boolean
+  /** Text under the title in place of the project or area (a heading name, for instance). */
+  caption?: string
   /** One click: select (on touch screens this opens). */
   onSelect: () => void
   /** Double click or Enter. */
@@ -46,6 +48,7 @@ export function TaskRow({
   selected,
   showWhen,
   showCaption,
+  caption,
   onSelect,
   onOpen,
   onClose,
@@ -93,11 +96,15 @@ export function TaskRow({
       >
         <span className="task-text">
           <span className="task-title">{task.title || <em>{t('task.untitled')}</em>}</span>
-          {container && (
-            <span className="task-caption">
-              {container.title}
-              {heading && !showCaption ? ` › ${heading.title}` : ''}
-            </span>
+          {caption ? (
+            <span className="task-caption">{caption}</span>
+          ) : (
+            container && (
+              <span className="task-caption">
+                {container.title}
+                {heading && !showCaption ? ` › ${heading.title}` : ''}
+              </span>
+            )
           )}
         </span>
         <span className="task-meta">
