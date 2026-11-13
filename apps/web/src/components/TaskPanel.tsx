@@ -1,24 +1,52 @@
 import type { Task } from '@dingen/core'
 import { views } from '@dingen/core'
-import { ChevronLeft, X } from 'lucide-react'
+import {
+  CalendarDays,
+  ChevronLeft,
+  Clock,
+  Flag,
+  FolderInput,
+  type LucideIcon,
+  Repeat,
+  Tag,
+  UserRound,
+  X,
+} from 'lucide-react'
 import {
   createContext,
+  type FocusEvent,
   type KeyboardEvent,
+  type ReactNode,
+  type RefObject,
+  useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   useSyncExternalStore,
 } from 'react'
 import { createPortal } from 'react-dom'
+import { useAgents } from '../agents.js'
 import { useT } from '../i18n/index.js'
+import { describeWhen } from '../lists.js'
 import { useEngine, useWorkspace } from '../store/context.js'
-import { commitTask, deleteTask, moveTask } from '../taskActions.js'
-import { type PanelMode, panelMode } from '../taskPanel.js'
+import { commitTask, deleteTask, duplicateTask } from '../taskActions.js'
+import {
+  fieldLayout,
+  fieldValues,
+  type OptionalField,
+  type PanelMode,
+  panelMode,
+  stillAdded,
+} from '../taskPanel.js'
+import { AreaGlyph } from './AreaIcons.js'
 import { AssigneeField } from './Assignee.js'
 import { Checklist } from './Checklist.js'
 import { DeadlineField } from './DeadlineField.js'
-import { CheckIcon } from './Icons.js'
+import { CheckIcon, ProgressCircle } from './Icons.js'
+import { MoreMenu, useDismiss } from './Menu.js'
+import { MoveList } from './MoveList.js'
 import { RepeatEditor } from './RepeatEditor.js'
 import { ScheduleField } from './ScheduleField.js'
 import { TagEditor } from './TagEditor.js'
@@ -53,13 +81,15 @@ interface Props {
   focus: PanelFocus | null
   onClose: () => void
   onToggle: (task: Task) => void
+  /** Shows another task in the panel (a duplicate that was just made). */
+  onOpen: (id: string) => void
 }
 
 /**
  * The detail panel for the open task. It slides in from the right when it opens; another task
  * replaces its content without closing it.
  */
-export function TaskPanel({ task, focus, onClose, onToggle }: Props) {
+export function TaskPanel({ task, focus, onClose, onToggle, onOpen }: Props) {
   const slot = useContext(PanelSlot)
   const mode = usePanelMode()
   const t = useT()
@@ -91,7 +121,7 @@ export function TaskPanel({ task, focus, onClose, onToggle }: Props) {
     const el = root.current
     if (!el) return
     focused.current = focus.n
-    if (focus.target === 'title') el.querySelector<HTMLInputElement>('.editor-title')?.focus()
+    if (focus.target === 'title') el.querySelector<HTMLElement>('.editor-title')?.focus()
     else el.focus({ preventScroll: true })
   }, [focus, taskId])
 
@@ -115,33 +145,22 @@ export function TaskPanel({ task, focus, onClose, onToggle }: Props) {
         />
       )}
       <div ref={root} className={`task-panel ${mode}`} {...a11y} tabIndex={-1} inert={closing}>
-        <div className="panel-head">
-          {mode === 'full' ? (
+        {mode === 'full' && (
+          <div className="panel-head">
             <button type="button" className="panel-back" onClick={onClose}>
               <ChevronLeft size={18} aria-hidden="true" />
               {t('panel.back')}
             </button>
-          ) : (
-            <span />
-          )}
-          {mode !== 'full' && (
-            <button
-              type="button"
-              className="panel-close"
-              aria-label={t('panel.close')}
-              title={t('panel.close')}
-              onClick={onClose}
-            >
-              <X size={18} aria-hidden="true" />
-            </button>
-          )}
-        </div>
+          </div>
+        )}
         <div className="panel-body">
           <TaskEditor
             key={shown.id}
             task={shown}
+            mode={mode}
             onClose={onClose}
             onToggle={() => onToggle(shown)}
+            onOpen={onOpen}
           />
         </div>
       </div>
@@ -150,21 +169,108 @@ export function TaskPanel({ task, focus, onClose, onToggle }: Props) {
   )
 }
 
-interface EditorProps {
-  task: Task
-  onClose: () => void
-  onToggle: () => void
+/** Grows a text area with its content, so notes and long titles never scroll on their own. */
+function useAutoGrow(ref: RefObject<HTMLTextAreaElement | null>, value: string, mode: PanelMode) {
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the height follows text and width
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [ref, value, mode])
 }
 
-/** Every field of a task. Changes are saved on blur or right away. */
-function TaskEditor({ task, onClose, onToggle }: EditorProps) {
+interface EditorProps {
+  task: Task
+  mode: PanelMode
+  onClose: () => void
+  onToggle: () => void
+  onOpen: (id: string) => void
+}
+
+const FIELD_ICONS: Record<OptionalField, LucideIcon> = {
+  time: Clock,
+  deadline: Flag,
+  repeat: Repeat,
+  assignee: UserRound,
+}
+
+/**
+ * Every field of a task, saved as it changes. Notes, checklist, When, List and Tags always
+ * show; time, deadline, repeat and assignee only with a value, else from the Add row.
+ */
+function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
   const engine = useEngine()
   const ws = useWorkspace()
   const t = useT()
   const [title, setTitle] = useState(task.title)
   const [notes, setNotes] = useState(task.notes)
-  const titleRef = useRef<HTMLInputElement>(null)
+  const titleRef = useRef<HTMLTextAreaElement>(null)
+  const notesRef = useRef<HTMLTextAreaElement>(null)
+  const root = useRef<HTMLDivElement>(null)
   const done = task.status !== 'open'
+  useAutoGrow(titleRef, title, mode)
+  useAutoGrow(notesRef, notes, mode)
+
+  // Optional fields: the ones just added from the Add row, and the one whose picker opens next.
+  const [added, setAdded] = useState<OptionalField[]>([])
+  const [opening, setOpening] = useState<OptionalField | null>(null)
+  const canAssign = useAgents().length > 0
+  const { shown, addable } = fieldLayout(task, added, canAssign)
+  const values = fieldValues(task)
+
+  // A field that got its value is shown for that value; clearing it later hides it again.
+  useEffect(() => {
+    const next = stillAdded(task, added)
+    if (next.length !== added.length) setAdded(next)
+  }, [task, added])
+
+  // Right after adding a field, focus it and open its picker.
+  useEffect(() => {
+    if (!opening) return
+    setOpening(null)
+    const row = root.current?.querySelector(`[data-field="${opening}"]`)
+    const el = row?.querySelector<HTMLInputElement | HTMLSelectElement>('input, select')
+    if (!el) return
+    el.focus()
+    if (opening === 'repeat') return
+    try {
+      el.showPicker?.()
+    } catch {
+      // Not every browser opens a picker from code; the field has focus either way.
+    }
+  }, [opening])
+
+  function add(field: OptionalField) {
+    setAdded((a) => [...a, field])
+    setOpening(field)
+  }
+
+  const forget = useCallback((field: OptionalField) => {
+    setAdded((a) => a.filter((f) => f !== field))
+  }, [])
+
+  /** Takes back an added field that got no value; focus returns to its button in the Add row. */
+  function cancelAdd(field: OptionalField) {
+    forget(field)
+    requestAnimationFrame(() =>
+      root.current?.querySelector<HTMLElement>(`[data-add="${field}"]`)?.focus(),
+    )
+  }
+
+  /** Escape in a field that was just added and is still empty takes it back (not the panel). */
+  function escapeField(field: OptionalField, e: KeyboardEvent<HTMLDivElement>) {
+    if (e.key !== 'Escape' || e.defaultPrevented || values[field] || !added.includes(field)) return
+    e.preventDefault()
+    cancelAdd(field)
+  }
+
+  /** An added field left without a value goes away once focus moves on to something else. */
+  function leaveField(field: OptionalField, e: FocusEvent<HTMLDivElement>) {
+    const to = e.relatedTarget as Node | null
+    if (!to || e.currentTarget.contains(to) || values[field]) return
+    forget(field)
+  }
 
   function commit() {
     const fields: Record<string, unknown> = {}
@@ -178,162 +284,338 @@ function TaskEditor({ task, onClose, onToggle }: EditorProps) {
     onClose()
   }
 
-  function onKeyDown(e: KeyboardEvent) {
-    if (e.key === 'Enter' && e.target === titleRef.current) {
+  function onTitleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
       e.preventDefault()
       close()
     }
   }
 
-  const containerValue = task.projectId
-    ? `project:${task.projectId}`
-    : task.areaId
-      ? `area:${task.areaId}`
-      : 'none'
-  const headings = task.projectId ? views.headingsOf(ws.headings, task.projectId) : []
-  const looseProjects = views.projectsOf(ws.projects, null)
-  const areas = views.openAreas(ws.areas)
+  const field = (
+    name: OptionalField,
+    label: string,
+    control: ReactNode,
+    // Repeat closes its own form; leaving it open should not throw the draft away.
+    leave = true,
+  ) => (
+    <FieldRow
+      key={name}
+      icon={FIELD_ICONS[name]}
+      label={label}
+      field={name}
+      onBlur={leave ? (e) => leaveField(name, e) : undefined}
+      onKeyDown={(e) => escapeField(name, e)}
+    >
+      {control}
+    </FieldRow>
+  )
 
-  function onMove(value: string) {
-    if (value === 'none') moveTask(engine, ws, task, { kind: 'none' })
-    else if (value.startsWith('project:')) {
-      moveTask(engine, ws, task, { kind: 'project', projectId: value.slice(8) })
-    } else if (value.startsWith('area:')) {
-      moveTask(engine, ws, task, { kind: 'area', areaId: value.slice(5) })
-    }
+  const addLabels: Record<OptionalField, string> = {
+    time: t('panel.add.time'),
+    deadline: t('panel.add.deadline'),
+    repeat: t('panel.add.repeat'),
+    assignee: t('panel.add.assignee'),
   }
+  const planning = shown.filter((f) => f !== 'assignee')
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: Enter in the title closes the editor
-    <div className={`task-editor ${done ? 'done' : ''}`} onKeyDown={onKeyDown}>
-      <div className="editor-row">
+    <div ref={root} className={`task-editor ${done ? 'done' : ''}`}>
+      <div className="editor-head">
         <button
           type="button"
-          className="check"
+          className="check editor-check"
           aria-label={done ? t('task.markOpen') : t('task.markDone')}
           aria-pressed={done}
           onClick={onToggle}
         >
           {done && <CheckIcon />}
         </button>
-        <input
+        <textarea
           ref={titleRef}
           className="editor-title"
+          rows={1}
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => setTitle(e.target.value.replace(/\s*\n\s*/g, ' '))}
           onBlur={commit}
+          onKeyDown={onTitleKeyDown}
           placeholder={t('task.title')}
+          aria-label={t('task.title')}
         />
+        <MoreMenu
+          alignEnd
+          label={t('menu.taskActions')}
+          items={[
+            {
+              label: t('task.duplicate'),
+              onSelect: () => {
+                commit()
+                onOpen(duplicateTask(engine, ws, { ...task, title, notes }).id)
+              },
+            },
+            {
+              label: t('task.delete'),
+              danger: true,
+              confirm: t('task.deleteQuestion'),
+              onSelect: () => {
+                deleteTask(engine, ws, task)
+                onClose()
+              },
+            },
+          ]}
+        />
+        {mode !== 'full' && (
+          <button
+            type="button"
+            className="panel-close"
+            aria-label={t('panel.close')}
+            title={t('panel.close')}
+            onClick={close}
+          >
+            <X size={18} aria-hidden="true" />
+          </button>
+        )}
       </div>
       <textarea
+        ref={notesRef}
         className="editor-notes"
+        rows={2}
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
         onBlur={commit}
         placeholder={t('task.notes')}
-        rows={notes ? Math.min(12, notes.split('\n').length + 1) : 2}
+        aria-label={t('task.notes')}
       />
       <Checklist task={task} />
-      <WhenPicker
-        when={task.when}
-        evening={task.evening}
-        today={ws.today}
-        onChange={(when, evening) => commitTask(engine, ws, task, { when, evening })}
-      />
-      <ScheduleField task={task} onChange={(fields) => commitTask(engine, ws, task, fields)} />
-      <div className="editor-line">
-        <DeadlineField
-          deadline={task.deadline}
-          today={ws.today}
-          onChange={(deadline) => commitTask(engine, ws, task, { deadline })}
-        />
-        <RepeatEditor task={task} />
-      </div>
-      <div className="editor-line">
-        <TagEditor
-          tagIds={task.tagIds}
-          onChange={(tagIds) => commitTask(engine, ws, task, { tagIds })}
-        />
-        <AssigneeField task={task} />
-      </div>
-      <div className="editor-line">
-        <select
-          className="move-select"
-          value={containerValue}
-          onChange={(e) => onMove(e.target.value)}
-          aria-label={t('task.moveTo')}
-        >
-          <option value="none">{t('task.noContainer')}</option>
-          {looseProjects.length > 0 && (
-            <optgroup label={t('move.projects')}>
-              {looseProjects.map((p) => (
-                <option key={p.id} value={`project:${p.id}`}>
-                  {p.title || t('project.untitled')}
-                </option>
-              ))}
-            </optgroup>
-          )}
-          {areas.map((area) => (
-            <optgroup key={area.id} label={area.title || t('area.untitled')}>
-              <option value={`area:${area.id}`}>{area.title || t('area.untitled')}</option>
-              {views.projectsOf(ws.projects, area.id).map((p) => (
-                <option key={p.id} value={`project:${p.id}`}>
-                  {' '}
-                  {p.title || t('project.untitled')}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
-        {headings.length > 0 && task.projectId && (
-          <fieldset className="heading-picker" aria-label={t('project.heading')}>
-            <button
-              type="button"
-              className={`chip small ${task.headingId === null ? 'active' : ''}`}
-              onClick={() =>
-                moveTask(engine, ws, task, {
-                  kind: 'project',
-                  projectId: task.projectId as string,
-                  headingId: null,
-                })
-              }
-            >
-              {t('project.noHeading')}
-            </button>
-            {headings.map((h) => (
-              <button
-                type="button"
-                key={h.id}
-                className={`chip small ${task.headingId === h.id ? 'active' : ''}`}
-                onClick={() =>
-                  moveTask(engine, ws, task, {
-                    kind: 'project',
-                    projectId: task.projectId as string,
-                    headingId: h.id,
-                  })
-                }
-              >
-                {h.title || t('project.newHeading')}
-              </button>
-            ))}
-          </fieldset>
+
+      <section className="panel-section" aria-label={t('panel.planning')}>
+        <h3 className="panel-section-label">{t('panel.planning')}</h3>
+        <FieldRow icon={CalendarDays} label={t('when.label')}>
+          <PopoverButton
+            label={t('when.label')}
+            value={whenText(task, ws.today, t)}
+            text={whenText(task, ws.today, t)}
+          >
+            {(done) => (
+              <WhenPicker
+                when={task.when}
+                evening={task.evening}
+                today={ws.today}
+                onChange={(when, evening) => {
+                  commitTask(engine, ws, task, { when, evening })
+                  done()
+                }}
+              />
+            )}
+          </PopoverButton>
+        </FieldRow>
+        {planning.map((name) =>
+          name === 'time'
+            ? field(
+                'time',
+                t('panel.time'),
+                <ScheduleField
+                  task={task}
+                  onChange={(fields) => commitTask(engine, ws, task, fields)}
+                />,
+              )
+            : name === 'deadline'
+              ? field(
+                  'deadline',
+                  t('deadline.label'),
+                  <DeadlineField
+                    deadline={task.deadline}
+                    today={ws.today}
+                    onChange={(deadline) => commitTask(engine, ws, task, { deadline })}
+                  />,
+                )
+              : field(
+                  'repeat',
+                  t('repeat.label'),
+                  <RepeatEditor
+                    task={task}
+                    autoOpen={!values.repeat}
+                    onClosed={() => {
+                      if (!values.repeat) cancelAdd('repeat')
+                    }}
+                  />,
+                  false,
+                ),
         )}
-      </div>
-      <div className="editor-foot">
-        <button
-          type="button"
-          className="link danger"
-          onClick={() => {
-            deleteTask(engine, ws, task)
-            onClose()
-          }}
-        >
-          {t('task.delete')}
-        </button>
-        <button type="button" className="link" onClick={close}>
-          {t('task.done')}
-        </button>
-      </div>
+      </section>
+
+      <section className="panel-section" aria-label={t('panel.organization')}>
+        <h3 className="panel-section-label">{t('panel.organization')}</h3>
+        <FieldRow icon={FolderInput} label={t('panel.list')}>
+          <ListButton task={task} />
+        </FieldRow>
+        <FieldRow icon={Tag} label={t('tags.label')}>
+          <TagEditor
+            tagIds={task.tagIds}
+            onChange={(tagIds) => commitTask(engine, ws, task, { tagIds })}
+          />
+        </FieldRow>
+        {shown.includes('assignee') &&
+          field('assignee', t('assign.label'), <AssigneeField task={task} />)}
+      </section>
+
+      {addable.length > 0 && (
+        <fieldset className="panel-add">
+          <legend className="panel-section-label">{t('panel.add')}</legend>
+          {addable.map((name) => {
+            const Icon = FIELD_ICONS[name]
+            return (
+              <button
+                key={name}
+                type="button"
+                className="panel-add-button"
+                data-add={name}
+                aria-label={addLabels[name]}
+                title={addLabels[name]}
+                onClick={() => add(name)}
+              >
+                <Icon size={16} strokeWidth={1.8} aria-hidden="true" />
+              </button>
+            )
+          })}
+        </fieldset>
+      )}
     </div>
+  )
+}
+
+/** "Today", "This Evening", "Fri", "Someday": the When of a task in a few words. */
+function whenText(task: Task, today: string, t: ReturnType<typeof useT>): string {
+  if (task.when.kind === 'date' && task.when.date <= today) {
+    return task.evening ? t('when.thisEvening') : t('when.today')
+  }
+  const text = describeWhen(task.when, today)
+  return text.charAt(0).toLocaleUpperCase() + text.slice(1)
+}
+
+interface RowProps {
+  icon: LucideIcon
+  label: string
+  /** Marks an optional field, so adding it can find its input. */
+  field?: OptionalField
+  onBlur?: ((e: FocusEvent<HTMLDivElement>) => void) | undefined
+  onKeyDown?: ((e: KeyboardEvent<HTMLDivElement>) => void) | undefined
+  children: ReactNode
+}
+
+/** One field of the panel: a muted label with its icon, and the value next to it. */
+function FieldRow({ icon: Icon, label, field, onBlur, onKeyDown, children }: RowProps) {
+  return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: focus and Escape in the row's own field, not an action of the row
+    <div className="panel-field" data-field={field} onBlur={onBlur} onKeyDown={onKeyDown}>
+      <span className="panel-field-label">
+        <Icon size={15} strokeWidth={1.8} className="panel-field-icon" aria-hidden="true" />
+        {label}
+      </span>
+      <div className="panel-field-value">{children}</div>
+    </div>
+  )
+}
+
+interface PopoverProps {
+  label: string
+  /** What the button shows. */
+  value: ReactNode
+  /** The value as text, for screen readers. */
+  text: string
+  children: (done: () => void) => ReactNode
+}
+
+/**
+ * A field's value as a button that opens its choices in a small popover. Escape or a click
+ * outside closes the popover (not the panel); choosing closes it and returns focus.
+ */
+function PopoverButton({ label, value, text, children }: PopoverProps) {
+  const t = useT()
+  const [open, setOpen] = useState(false)
+  const root = useRef<HTMLDivElement>(null)
+  const button = useRef<HTMLButtonElement>(null)
+  const popover = useRef<HTMLDivElement>(null)
+  const close = useCallback(() => setOpen(false), [])
+  useDismiss(open, close, root, button)
+
+  // Opening moves focus to the current choice, so the keyboard can carry on from there.
+  useEffect(() => {
+    if (!open) return
+    const el = popover.current
+    const current = el?.querySelector<HTMLElement>('[aria-pressed="true"], .chip.active')
+    ;(current ?? el?.querySelector<HTMLElement>('button, input'))?.focus()
+  }, [open])
+
+  function done() {
+    setOpen(false)
+    button.current?.focus()
+  }
+
+  return (
+    <div className="panel-popover-anchor" ref={root}>
+      <button
+        ref={button}
+        type="button"
+        className="field-button"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-label={t('panel.field', { label, value: text })}
+        onClick={() => setOpen((o) => !o)}
+      >
+        {value}
+      </button>
+      {open && (
+        <div ref={popover} className="popover panel-popover" role="dialog" aria-label={label}>
+          {children(done)}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** The task's project or area (with its heading) as a button that opens the Move choices. */
+function ListButton({ task }: { task: Task }) {
+  const ws = useWorkspace()
+  const t = useT()
+  const project = task.projectId ? ws.projectById.get(task.projectId) : undefined
+  const area = !project && task.areaId ? ws.areaById.get(task.areaId) : undefined
+  const heading = task.headingId ? ws.headingById.get(task.headingId) : undefined
+  const name = project
+    ? project.title || t('project.untitled')
+    : area
+      ? area.title || t('area.untitled')
+      : t('task.noContainer')
+  const headingName = project && heading ? heading.title || t('project.newHeading') : null
+  const icon = project ? (
+    <ProgressCircle value={views.progress(project.id, ws.tasks)} size={14} />
+  ) : area ? (
+    <AreaGlyph icon={area.icon} color={area.color} size={14} />
+  ) : (
+    <span className="move-none" />
+  )
+
+  return (
+    <PopoverButton
+      label={t('panel.list')}
+      text={headingName ? `${name}, ${headingName}` : name}
+      value={
+        <>
+          <span className="field-button-icon">{icon}</span>
+          <span className="field-button-text">
+            {name}
+            {headingName && (
+              <>
+                <span className="field-button-sep" aria-hidden="true">
+                  {' › '}
+                </span>
+                {headingName}
+              </>
+            )}
+          </span>
+        </>
+      }
+    >
+      {(done) => <MoveList task={task} onDone={done} withHeadings />}
+    </PopoverButton>
   )
 }

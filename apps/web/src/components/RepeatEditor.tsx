@@ -8,6 +8,10 @@ import { RepeatIcon } from './Icons.js'
 
 interface Props {
   task: Task
+  /** Start with the form open (right after adding a repeat in the panel). */
+  autoOpen?: boolean
+  /** Called when the form closes: saved, stopped or canceled. */
+  onClosed?: () => void
 }
 
 const UNITS = ['day', 'week', 'month', 'year'] as const
@@ -15,14 +19,19 @@ const UNITS = ['day', 'week', 'month', 'year'] as const
 const WEEKDAYS = [1, 2, 3, 4, 5, 6, 0]
 
 /** The repeat rule of a task: a summary chip, and a small form when opened. */
-export function RepeatEditor({ task }: Props) {
+export function RepeatEditor({ task, autoOpen = false, onClosed }: Props) {
   const engine = useEngine()
   const ws = useWorkspace()
   const t = useT()
   const template = task.templateId ? ws.templateById.get(task.templateId) : undefined
   const current = template?.repeat ?? null
-  const [open, setOpen] = useState(false)
+  const [open, setOpenState] = useState(autoOpen)
   const [draft, setDraft] = useState<Repeat>(() => current ?? defaultRule(task, ws.today))
+
+  function setOpen(next: boolean) {
+    setOpenState(next)
+    if (!next) onClosed?.()
+  }
 
   function save() {
     setRepeat(engine, ws, task, draft)
@@ -58,7 +67,16 @@ export function RepeatEditor({ task }: Props) {
   }
 
   return (
-    <fieldset className="repeat-editor" aria-label={t('repeat.label')}>
+    <fieldset
+      className="repeat-editor"
+      aria-label={t('repeat.label')}
+      // Escape closes the form, not the panel around it.
+      onKeyDown={(e) => {
+        if (e.key !== 'Escape') return
+        e.preventDefault()
+        setOpen(false)
+      }}
+    >
       <label className="repeat-line">
         {t('repeat.every')}
         <input

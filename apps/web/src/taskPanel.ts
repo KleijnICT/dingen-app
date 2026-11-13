@@ -1,8 +1,10 @@
 /**
  * The rules behind the task panel, kept free of React and the DOM so they can be tested:
  * how the panel sits next to the list at a given width, and what a key press in a task list
- * does.
+ * does, and which of a task's fields the panel shows.
  */
+
+import type { Task } from '@dingen/core'
 
 /** Beside the list (wide), over the list with a scrim (medium), or the whole screen (phone). */
 export type PanelMode = 'side' | 'overlay' | 'full'
@@ -107,4 +109,60 @@ export function withTaskParam(search: string, id: string | null): string {
 /** The task in `?task=`, if any. */
 export function taskParamOf(search: string): string | null {
   return new URLSearchParams(search).get('task') || null
+}
+
+/** The fields of the panel that only show with a value (or right after adding one). */
+export type OptionalField = 'time' | 'deadline' | 'repeat' | 'assignee'
+
+/** In the order of the Add row: planning first, then organization. */
+export const OPTIONAL_FIELDS: readonly OptionalField[] = ['time', 'deadline', 'repeat', 'assignee']
+
+type FieldTask = Pick<
+  Task,
+  'status' | 'when' | 'time' | 'reminder' | 'deadline' | 'templateId' | 'assigneeId'
+>
+
+/** Whether each optional field has a value. */
+export function fieldValues(task: FieldTask): Record<OptionalField, boolean> {
+  return {
+    time: task.time !== null || task.reminder !== null,
+    deadline: task.deadline !== null,
+    repeat: task.templateId !== null,
+    assignee: task.assigneeId !== null,
+  }
+}
+
+export interface FieldLayout {
+  /** Fields shown in their section. */
+  shown: OptionalField[]
+  /** Fields offered in the Add row. */
+  addable: OptionalField[]
+}
+
+/**
+ * Which optional fields the panel shows and which it offers to add. A field shows when it has
+ * a value or was just added (`added`), as long as it can apply: a time needs a date, assigning
+ * needs someone to assign to (`canAssign`), and only an open task can start repeating.
+ */
+export function fieldLayout(
+  task: FieldTask,
+  added: readonly OptionalField[],
+  canAssign: boolean,
+): FieldLayout {
+  const values = fieldValues(task)
+  const applies: Record<OptionalField, boolean> = {
+    time: task.when.kind === 'date',
+    deadline: true,
+    repeat: task.status === 'open' || values.repeat,
+    assignee: canAssign || values.assignee,
+  }
+  const shown = OPTIONAL_FIELDS.filter((f) => applies[f] && (values[f] || added.includes(f)))
+  const addable = OPTIONAL_FIELDS.filter((f) => applies[f] && !shown.includes(f))
+  return { shown, addable }
+}
+
+/** The added fields still waiting for a value; one that got its value is no longer "added". */
+export function stillAdded(task: FieldTask, added: readonly OptionalField[]): OptionalField[] {
+  const values = fieldValues(task)
+  return added.filter((f) => !values[f])
 }

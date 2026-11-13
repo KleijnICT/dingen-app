@@ -1,4 +1,4 @@
-import { type Task, views } from '@dingen/core'
+import type { Task } from '@dingen/core'
 import {
   CalendarClock,
   CirclePlus,
@@ -12,11 +12,10 @@ import { createPortal } from 'react-dom'
 import { useAgents } from '../agents.js'
 import { useT } from '../i18n/index.js'
 import { useEngine, useWorkspace } from '../store/context.js'
-import { commitTask, type MoveTarget, moveTask } from '../taskActions.js'
-import { AreaGlyph } from './AreaIcons.js'
+import { commitTask } from '../taskActions.js'
 import { AssigneeList } from './Assignee.js'
-import { ProgressCircle } from './Icons.js'
 import { useDismiss } from './Menu.js'
+import { MoveList } from './MoveList.js'
 import { ScheduleField } from './ScheduleField.js'
 import { WhenPicker } from './WhenPicker.js'
 
@@ -113,7 +112,7 @@ export function TaskToolbar({ onNew, extra, selected }: TaskToolbarProps) {
             {shown === 'when' ? (
               <WhenPopup task={selected} onDone={() => setPopup(null)} />
             ) : shown === 'move' ? (
-              <MovePopup task={selected} onDone={() => setPopup(null)} />
+              <MoveList task={selected} onDone={() => setPopup(null)} />
             ) : (
               <AssigneeList task={selected} onDone={() => setPopup(null)} />
             )}
@@ -140,65 +139,5 @@ function WhenPopup({ task, onDone }: { task: Task; onDone: () => void }) {
       />
       <ScheduleField task={task} onChange={(fields) => commitTask(engine, ws, task, fields)} />
     </>
-  )
-}
-
-function MovePopup({ task, onDone }: { task: Task; onDone: () => void }) {
-  const engine = useEngine()
-  const ws = useWorkspace()
-  const t = useT()
-  const current = task.projectId
-    ? `project:${task.projectId}`
-    : task.areaId
-      ? `area:${task.areaId}`
-      : 'none'
-
-  function move(target: MoveTarget) {
-    moveTask(engine, ws, task, target)
-    onDone()
-  }
-  const item = (
-    key: string,
-    label: string,
-    icon: ReactNode,
-    target: MoveTarget,
-    nested = false,
-  ) => (
-    <button
-      key={key}
-      type="button"
-      className={`move-item ${nested ? 'nested' : ''}`}
-      aria-pressed={current === key}
-      onClick={() => move(target)}
-    >
-      {icon}
-      <span>{label}</span>
-    </button>
-  )
-  const project = (id: string, title: string, nested = false) =>
-    item(
-      `project:${id}`,
-      title || t('project.untitled'),
-      <ProgressCircle value={views.progress(id, ws.tasks)} size={15} />,
-      { kind: 'project', projectId: id },
-      nested,
-    )
-
-  return (
-    <div className="move-list">
-      {item('none', t('task.noContainer'), <span className="move-none" />, { kind: 'none' })}
-      {views.projectsOf(ws.projects, null).map((p) => project(p.id, p.title))}
-      {views
-        .openAreas(ws.areas)
-        .map((a) => [
-          item(
-            `area:${a.id}`,
-            a.title || t('area.untitled'),
-            <AreaGlyph icon={a.icon} color={a.color} size={15} />,
-            { kind: 'area', areaId: a.id },
-          ),
-          ...views.projectsOf(ws.projects, a.id).map((p) => project(p.id, p.title, true)),
-        ])}
-    </div>
   )
 }

@@ -189,6 +189,7 @@ export function useTaskList(tasks: Task[], toggle: (task: Task) => void): TaskLi
     focus,
     onClose: close,
     onToggle: toggle,
+    onOpen: (id: string) => open(id, 'panel'),
   })
 
   return { selected, rowProps, openNew, panel }
