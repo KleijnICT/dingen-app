@@ -6,6 +6,20 @@
 
 export type MemberId = `user:${string}` | `agent:${string}`
 
+/**
+ * The server itself, as the author of a change it makes on its own (a data
+ * migration such as lowercasing tags). Never an assignee.
+ */
+export const SYSTEM_ACTOR = 'system'
+
+/** Who made a change: a member, or the server itself. */
+export type ActorId = MemberId | typeof SYSTEM_ACTOR
+
+/** Is this a valid actor: a member id or `system`? */
+export function isActorId(value: string): value is ActorId {
+  return value === SYSTEM_ACTOR || parseMemberId(value) !== null
+}
+
 export const memberId = {
   user: (id: string): MemberId => `user:${id}`,
   agent: (id: string): MemberId => `agent:${id}`,
@@ -58,7 +72,7 @@ export interface ActivityItem {
   /** `seq` of the last change folded into this line; used for paging. */
   seq: number
   at: string
-  actor: MemberId
+  actor: ActorId
   kind: 'added' | 'completed' | 'reopened' | 'updated' | 'deleted'
   entityType: string
   entityId: string

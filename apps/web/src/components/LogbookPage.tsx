@@ -1,4 +1,4 @@
-import type { ActivityItem, Member } from '@dingen/core'
+import { type ActivityItem, type Member, SYSTEM_ACTOR } from '@dingen/core'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   actorName,
@@ -251,7 +251,11 @@ function ActivityList({ filter, me, owner, byId }: ListProps) {
               const name = actorName(item.actor, me, m)
               return (
                 <li key={`${item.seq}:${item.entityId}`} className="activity-line">
-                  <MemberAvatar member={m} fallbackId={item.actor} size={24} />
+                  <MemberAvatar
+                    member={m}
+                    fallbackId={item.actor === SYSTEM_ACTOR ? name : item.actor}
+                    size={24}
+                  />
                   <div className="activity-body">
                     <EntityTitle item={item} />
                     <span className="activity-meta">

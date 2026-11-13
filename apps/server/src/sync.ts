@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 import {
+  type ActorId,
   type AgentGrant,
   applyChange,
   type Change,
@@ -8,7 +9,6 @@ import {
   type EntityType,
   entitySchemas,
   isDeleted,
-  type MemberId,
   type PullResponse,
   type PullSpace,
   type PushResponse,
@@ -205,7 +205,7 @@ export class SyncService {
   push(userId: string, incoming: Change[], options: PushOptions = {}): PushResult {
     const receivedAt = options.receivedAt ?? new Date().toISOString()
     const access = options.access ?? null
-    const actor: MemberId = access?.actor ?? `user:${userId}`
+    const actor: ActorId = access?.actor ?? `user:${userId}`
     const members: MemberGrants = options.members ?? (() => undefined)
     return this.db.transaction((tx) => {
       const spaceIds = spacesOf(tx, userId)
@@ -310,7 +310,7 @@ export class SyncService {
   importRecords(
     userId: string,
     records: ImportRecord[],
-    actor: MemberId = `user:${userId}`,
+    actor: ActorId = `user:${userId}`,
   ): ImportResult {
     const receivedAt = new Date().toISOString()
     return this.db.transaction((tx) => {
@@ -565,7 +565,7 @@ export class SyncService {
     change: Change,
     record: EntityRecord,
     receivedAt: string,
-    actor: MemberId,
+    actor: ActorId,
     writeEntity = true,
   ): number {
     const inserted = tx

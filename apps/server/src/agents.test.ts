@@ -145,7 +145,7 @@ describe('reading within the scope', () => {
     const overview = await tool(agent.token, 'overview')
     expect(overview.data.areas).toEqual([])
     expect(overview.data.looseProjects).toEqual([])
-    expect(overview.data.tags.map((t: { title: string }) => t.title)).toEqual(['Errands'])
+    expect(overview.data.tags.map((t: { title: string }) => t.title)).toEqual(['errands'])
     const search = await tool(agent.token, 'search', { query: 'e' })
     expect(titles(search.data.tasks)).toEqual(['Loose capture'])
     expect(search.data.projects).toEqual([])

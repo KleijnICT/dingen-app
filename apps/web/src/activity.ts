@@ -1,4 +1,10 @@
-import { type ActivityItem, type Member, toCalendarDate, type When } from '@dingen/core'
+import {
+  type ActivityItem,
+  type Member,
+  SYSTEM_ACTOR,
+  toCalendarDate,
+  type When,
+} from '@dingen/core'
 import type { ActivityPage } from './api.js'
 import { type MessageKey, t } from './i18n/index.js'
 import { addDays, describeDate, describeWhen } from './lists.js'
@@ -60,6 +66,7 @@ export function mergeFresh(
 /** The name in a line: "You" for the signed-in user, else the member's name. */
 export function actorName(actor: string, me: string, member: Member | undefined): string {
   if (actor === me) return t('activity.you')
+  if (actor === SYSTEM_ACTOR) return t('activity.system')
   return member?.name ?? actor.replace(/^(user|agent):/, '')
 }
 

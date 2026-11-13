@@ -225,6 +225,56 @@ describe('export en import', () => {
     expect(await snapshotOf(carol)).toEqual([])
   })
 
+  it('importeert tags in kleine letters en voegt gelijke namen samen', async () => {
+    const dave = await account('dave@test.nl')
+    // Dave heeft al "werk"; het bestand (van vóór kleine letters) heeft "Werk" en "WERK".
+    const own = {
+      id: ulid(),
+      title: 'werk',
+      parentId: null,
+      createdAt: '2026-01-01T00:00:00.000Z',
+      deleted: false,
+      order: 'm',
+    }
+    await pushAs(dave, [create('tag', own)])
+    const stamp = () => clock.now()
+    const tagRecord = (title: string, createdAt: string) => {
+      const data = { id: ulid(), title, parentId: null, createdAt, deleted: false, order: 'n' }
+      const fieldTs = Object.fromEntries(
+        Object.keys(data)
+          .filter((k) => k !== 'id')
+          .map((k) => [k, stamp()]),
+      )
+      return { id: data.id, data, fieldTs }
+    }
+    const upper = tagRecord('Werk', '2026-02-01T00:00:00.000Z')
+    const shout = tagRecord('WERK', '2026-03-01T00:00:00.000Z')
+    const task = newTask({ title: 'Met tags', tagIds: [upper.id, shout.id] })
+    const taskTs = Object.fromEntries(
+      Object.keys(task)
+        .filter((k) => k !== 'id')
+        .map((k) => [k, stamp()]),
+    )
+    const file = {
+      format: 'dingen-export',
+      version: 1,
+      entities: { tag: [upper, shout], task: [{ id: task.id, data: task, fieldTs: taskTs }] },
+    }
+    const res = await call(dave, '/api/import', { method: 'POST', body: JSON.stringify(file) })
+    expect(res.status).toBe(200)
+
+    const all = await snapshotOf(dave)
+    const tags = all.filter(
+      (e: { entityType: string; data: { deleted: boolean } }) =>
+        e.entityType === 'tag' && !e.data.deleted,
+    )
+    expect(tags.map((t: { id: string; data: { title: string } }) => [t.id, t.data.title])).toEqual([
+      [own.id, 'werk'],
+    ])
+    const imported = all.find((e: { id: string }) => e.id === task.id)
+    expect(imported.data.tagIds).toEqual([own.id])
+  })
+
   it('weigert een onbekende mode', async () => {
     const res = await call(bob, '/api/import?mode=wissen', { method: 'POST', body: '{}' })
     expect(res.status).toBe(400)

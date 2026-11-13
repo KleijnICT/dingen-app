@@ -1,4 +1,5 @@
 import {
+  type ActorId,
   type AgentGrant,
   type AgentLevel,
   allows,
@@ -7,7 +8,6 @@ import {
   type EntityType,
   isDeleted,
   levelFor,
-  type MemberId,
   type Place,
   parseMemberId,
 } from '@dingen/core'
@@ -23,7 +23,8 @@ import {
 /** Who is acting on a request: the owner (`grants: null`) or one of their agents. */
 export interface Access {
   userId: string
-  actor: MemberId
+  /** `system` only for changes the server makes itself (a data migration). */
+  actor: ActorId
   /** null = the owner, without limits. */
   grants: AgentGrant[] | null
 }

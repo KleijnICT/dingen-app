@@ -547,6 +547,7 @@ export const en = {
   'activity.period.week': 'Last 7 days',
   'activity.period.month': 'Last 30 days',
   'activity.you': 'You',
+  'activity.system': 'Dingen',
   'activity.line.added': '{name} added',
   'activity.line.completed': '{name} completed',
   'activity.line.canceled': '{name} canceled',

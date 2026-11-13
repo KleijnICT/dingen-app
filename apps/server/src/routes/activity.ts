@@ -1,4 +1,4 @@
-import { ACTIVITY_KINDS, parseMemberId } from '@dingen/core'
+import { ACTIVITY_KINDS, type ActorId, isActorId } from '@dingen/core'
 import { Hono } from 'hono'
 import { z } from 'zod'
 import { type ActivityService, MAX_LIMIT } from '../activity/service.js'
@@ -25,7 +25,7 @@ const ActivityQuery = z.object({
   actor: z
     .string()
     .optional()
-    .refine((s) => s === undefined || parseMemberId(s) !== null, 'A member id'),
+    .refine((s) => s === undefined || isActorId(s), 'A member id or system'),
   since: Instant,
   until: Instant,
   before: z.coerce.number().int().min(1).optional(),
@@ -46,7 +46,7 @@ export function activityRoutes(activity: ActivityService) {
       c.get('userId'),
       {
         kinds: q.kinds,
-        actor: q.actor as `user:${string}` | `agent:${string}` | undefined,
+        actor: q.actor as ActorId | undefined,
         since: q.since,
         until: q.until,
         before: q.before,

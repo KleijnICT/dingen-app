@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { applyChange, type Change, type EntityRecord, recordKey } from '@dingen/core'
+import { applyChange, type Change, type EntityRecord, newTag, recordKey } from '@dingen/core'
 import { describe, expect, it } from 'vitest'
 import { DingenClient, type SyncTransport } from '../client.js'
 import { describePlan, writePlan } from './common.js'
@@ -122,5 +122,51 @@ describe('generic csv import', () => {
     const second = await apply()
     expect(second.alreadyThere).toBeGreaterThan(0)
     expect(Object.values(second.created).every((n) => n === 0)).toBe(true)
+  })
+})
+
+describe('csv import: tag names', () => {
+  const csv = `Title,Tags
+Een,"Bellen; Werk  Thuis"
+Twee,"BELLEN; ijs"
+Drie,IJs
+`
+
+  it('makes tags lowercase and one per name', () => {
+    const plan = planCsvImport(csv, { today: TODAY })
+    expect(plan.tags.map((t) => t.title)).toEqual(['bellen', 'werk thuis', 'ijs'])
+    const [een, twee, drie] = plan.tasks
+    expect(een?.tagIds).toEqual([plan.tags[0]?.id, plan.tags[1]?.id])
+    expect(twee?.tagIds).toEqual([plan.tags[0]?.id, plan.tags[2]?.id])
+    expect(drie?.tagIds).toEqual([plan.tags[2]?.id])
+  })
+
+  it('uses a tag the account already has under the same name', async () => {
+    const records = new Map<string, EntityRecord>()
+    const log: Change[] = []
+    const transport: SyncTransport = {
+      snapshot: async () => ({ entities: [...records.values()], seq: log.length }),
+      pull: async (since) => ({ changes: log.slice(since), seq: log.length, hasMore: false }),
+      push: async (changes) => {
+        for (const c of changes) {
+          const key = recordKey(c.entityType, c.entityId)
+          records.set(key, applyChange(records.get(key), c))
+          log.push(c)
+        }
+        return { seq: log.length, applied: changes.length, duplicates: 0 }
+      },
+    }
+    const client = new DingenClient(transport, { today: () => TODAY })
+    await client.refresh()
+    // An older tag with capitals (from before lowercase names) counts as the same.
+    const existing = newTag({ title: 'bellen' })
+    client.create('tag', { ...existing, title: 'Bellen' })
+    const res = writePlan(client, planCsvImport(csv, { today: TODAY }))
+    await client.flush()
+    expect(res.created.tag).toBe(2)
+    const tags = [...records.values()].filter((r) => r.entityType === 'tag')
+    expect(tags).toHaveLength(3)
+    const een = [...records.values()].find((r) => r.data.title === 'Een')
+    expect(een?.data.tagIds).toEqual([existing.id, expect.any(String)])
   })
 })
