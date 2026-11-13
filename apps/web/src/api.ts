@@ -58,6 +58,10 @@ export interface User {
   createdAt: string
   /** Administrator of this server (the first account); may invite others. */
   isAdmin?: boolean
+  /** Created through Home Assistant ingress (signed in by Home Assistant). */
+  homeAssistant?: boolean
+  /** False for an account without a password yet (a Home Assistant account). */
+  hasPassword?: boolean
 }
 
 export type RegistrationMode = 'closed' | 'open' | 'invite'

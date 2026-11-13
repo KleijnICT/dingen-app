@@ -1,13 +1,19 @@
 import { type Context, Hono } from 'hono'
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
 import { z } from 'zod'
-import { requireAuth, SESSION_COOKIE } from '../auth/middleware.js'
+import { requireAuth, requireSession, SESSION_COOKIE } from '../auth/middleware.js'
 import { AuthError } from '../auth/service.js'
 import { DEMO_ACCOUNTS, demoAccount } from '../demo/accounts.js'
 import type { AppEnv } from '../env.js'
 
 const Credentials = z.object({
   email: z.string().email().max(254),
+  password: z.string().min(8).max(1024),
+})
+
+const NewPassword = z.object({
+  /** Required unless the account has no password yet (a Home Assistant account). */
+  currentPassword: z.string().min(1).max(1024).optional(),
   password: z.string().min(8).max(1024),
 })
 
@@ -42,9 +48,11 @@ function handleAuthError(c: Ctx, err: unknown) {
         ? 429
         : err.code === 'email_taken'
           ? 409
-          : err.code.startsWith('invite_')
-            ? 403
-            : 401
+          : err.code === 'password_required'
+            ? 400
+            : err.code.startsWith('invite_')
+              ? 403
+              : 401
     return c.json({ error: err.code }, status)
   }
   throw err
@@ -121,9 +129,30 @@ export function authRoutes(options: { demo?: boolean } = {}) {
     return c.json({ ok: true })
   })
 
+  // `user.homeAssistant` and `user.hasPassword` describe the account; `ingress`
+  // is true when this request came through Home Assistant's ingress port.
   app.get('/me', requireAuth, (c) =>
-    c.json({ user: c.get('user'), source: c.get('authSource'), member: c.get('actor') }),
+    c.json({
+      user: c.get('user'),
+      source: c.get('authSource'),
+      member: c.get('actor'),
+      ingress: c.get('ingressUser') !== undefined,
+    }),
   )
+
+  // Change the password, or set the first one for an account without one.
+  app.post('/password', requireSession, async (c) => {
+    const parsed = NewPassword.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) return c.json({ error: 'invalid_body', issues: parsed.error.issues }, 400)
+    const user = c.get('user')
+    if (!user) return c.json({ error: 'unauthorized' }, 401)
+    try {
+      await c.get('auth').setPassword(user.id, parsed.data.password, parsed.data.currentPassword)
+      return c.json({ ok: true })
+    } catch (err) {
+      return handleAuthError(c, err)
+    }
+  })
 
   return app
 }

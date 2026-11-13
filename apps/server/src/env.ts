@@ -3,8 +3,18 @@ import type { AgentService } from './agents/service.js'
 import type { AuthService, AuthSource, User } from './auth/service.js'
 import type { SyncService } from './sync.js'
 
+/**
+ * Set by the HTTP listener, never by the client. The ingress listener (Home
+ * Assistant mode) passes `ingress: true`; `incoming` is @hono/node-server's request.
+ */
+export interface AppBindings {
+  ingress?: boolean
+  incoming?: { socket?: { remoteAddress?: string } }
+}
+
 /** Variabelen die middleware in de Hono-context zet. */
 export interface AppEnv {
+  Bindings: AppBindings
   Variables: {
     sync: SyncService
     auth: AuthService
@@ -19,11 +29,12 @@ export interface AppEnv {
     grants: AgentGrant[] | null
     /** The agent behind the token; null for a session. */
     agentId: string | null
+    /** The Home Assistant user's account on the ingress listener; undefined elsewhere. */
+    ingressUser?: User
     /**
-     * The path prefix the browser sees in front of the app (Home Assistant ingress, e.g.
-     * `/api/hassio_ingress/<token>`, no trailing slash); undefined for the root. Only the
-     * ingress listener sets it; index.html takes the base path from it (static.ts).
+     * Validated `X-Ingress-Path` (e.g. `/api/hassio_ingress/<token>`, no trailing slash),
+     * only on the ingress listener; index.html takes its base path from it (static.ts).
      */
-    ingressPath: string | undefined
+    ingressPath?: string
   }
 }

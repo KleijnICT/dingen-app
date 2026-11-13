@@ -466,10 +466,10 @@ describe('migration', () => {
       // A migrations folder that stops before 0006, like the previous build.
       const before = path.join(dir, 'migrations')
       fs.cpSync(migrationsFolder, before, { recursive: true })
-      fs.rmSync(path.join(before, '0006_agents.sql'))
       const journalPath = path.join(before, 'meta/_journal.json')
       const journal = JSON.parse(fs.readFileSync(journalPath, 'utf8'))
-      journal.entries = journal.entries.filter((e: { tag: string }) => e.tag !== '0006_agents')
+      // Drop 0006 and everything after it: drizzle skips a migration older than the last applied one.
+      journal.entries = journal.entries.filter((e: { tag: string }) => e.tag < '0006')
       fs.writeFileSync(journalPath, JSON.stringify(journal))
 
       const file = path.join(dir, 'dingen.db')

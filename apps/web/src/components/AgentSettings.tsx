@@ -22,6 +22,7 @@ import {
   withGrant,
 } from '../agents.js'
 import { errorText } from '../api.js'
+import { underPrefix } from '../base.js'
 import { formatDate, type MessageKey, useT } from '../i18n/index.js'
 import { useWorkspace } from '../store/context.js'
 import { AreaGlyph, areaColorVar } from './AreaIcons.js'
@@ -123,7 +124,11 @@ export function AgentSettings() {
   return (
     <div className="settings-form agents-settings">
       <p className="muted">{t('agents.intro')}</p>
-      <p className="muted">{t('agents.mcpHelp', { url: `${window.location.origin}/mcp` })}</p>
+      <p className="muted">
+        {underPrefix()
+          ? t('agents.mcpHelpIngress')
+          : t('agents.mcpHelp', { url: `${window.location.origin}/mcp` })}
+      </p>
       <div>
         <button type="button" onClick={() => setEditing('new')}>
           {t('agents.new')}
@@ -185,7 +190,8 @@ export function AgentSettings() {
 function TokenReveal({ fresh, onDone }: { fresh: Fresh; onDone: () => void }) {
   const t = useT()
   const [copied, setCopied] = useState(false)
-  const command = `claude mcp add --transport http dingen ${window.location.origin}/mcp --header "Authorization: Bearer ${fresh.token}"`
+  const origin = underPrefix() ? 'http://<home-assistant>:<port>' : window.location.origin
+  const command = `claude mcp add --transport http dingen ${origin}/mcp --header "Authorization: Bearer ${fresh.token}"`
 
   async function copy() {
     try {

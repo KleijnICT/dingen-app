@@ -50,6 +50,11 @@ export const users = sqliteTable('users', {
   createdAt: text('created_at').notNull(),
   /** Beheerder van deze installatie: mag uitnodigingen maken. Het eerste account. */
   isAdmin: integer('is_admin', { mode: 'boolean' }).notNull().default(false),
+  /**
+   * Home Assistant user id (the add-on's ingress, `X-Remote-User-Id`). Such an
+   * account starts without a usable password; see `NO_PASSWORD` in auth/password.ts.
+   */
+  haUserId: text('ha_user_id').unique(),
 })
 
 /** Browsersessies. `id` is de sha256 van het cookie-token. */

@@ -145,6 +145,16 @@ export const nl: Messages = {
   'area.deleteQuestion': 'Dit gebied met alle projecten en taken erin verwijderen?',
   'account.signOut': 'Uitloggen',
   'account.signedInAs': 'Ingelogd als {email} bij {app}.',
+  'account.homeAssistant':
+    'Home Assistant logt je hier in. Wil je Dingen op het directe adres gebruiken (de app op je telefoon, MCP), log daar dan in met {email} en een wachtwoord dat je hieronder instelt.',
+  'account.password.set': 'Wachtwoord instellen',
+  'account.password.change': 'Wachtwoord wijzigen',
+  'account.password.current': 'Huidig wachtwoord',
+  'account.password.new': 'Nieuw wachtwoord (minstens 8 tekens)',
+  'account.password.save': 'Wachtwoord opslaan',
+  'account.password.saved': 'Wachtwoord opgeslagen.',
+  'account.password.wrong': 'Het huidige wachtwoord klopt niet.',
+  'account.password.tooShort': 'Het nieuwe wachtwoord moet minstens 8 tekens hebben.',
   'account.language': 'Taal',
 
   // Area icon and colour
@@ -440,6 +450,8 @@ export const nl: Messages = {
     'Agents zijn assistenten en apps, zoals Claude, die via de MCP-server of de API in je lijsten werken. Elke agent heeft een eigen token en kan alleen bij wat jij hem geeft.',
   'agents.mcpHelp':
     'Koppel een agent met zijn token als Bearer-token op {url}, of met de plug-in voor Claude Code.',
+  'agents.mcpHelpIngress':
+    'Binnen Home Assistant is de MCP-server niet bereikbaar. Geef poort 8080 een hostpoort in de netwerkinstellingen van de app en koppel agents aan http://<home-assistant>:<poort>/mcp met hun token als Bearer-token.',
   'agents.new': 'Nieuwe agent',
   'agents.newTitle': 'Nieuwe agent',
   'agents.editTitle': 'Agent bewerken',

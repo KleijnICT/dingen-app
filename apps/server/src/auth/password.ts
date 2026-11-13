@@ -24,6 +24,17 @@ const P = 1
 const KEY_LENGTH = 64
 const MAX_MEM = 128 * 1024 * 1024
 
+/**
+ * Stored instead of a hash for an account without a password (created through
+ * Home Assistant ingress). It is not `scrypt:…`, so `verifyPassword` never accepts it.
+ */
+export const NO_PASSWORD = '!none'
+
+/** Can this stored value ever verify a password? */
+export function hasUsablePassword(stored: string): boolean {
+  return stored.startsWith('scrypt:')
+}
+
 /** Hash in de vorm `scrypt:N:r:p:salt:hash`, zodat parameters later kunnen opschuiven. */
 export async function hashPassword(password: string): Promise<string> {
   const salt = randomBytes(16)

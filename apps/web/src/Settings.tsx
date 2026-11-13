@@ -9,9 +9,9 @@ import {
   UserRound,
   X,
 } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { ApiError, api, errorText, type User } from './api.js'
-import { withBase } from './base.js'
+import { underPrefix, withBase } from './base.js'
 import { AgentSettings } from './components/AgentSettings.js'
 import { CalendarSettings } from './components/CalendarSettings.js'
 import { InvitationSettings } from './components/InvitationSettings.js'
@@ -129,6 +129,8 @@ function General() {
 
 function Account({ user, onSignedOut }: { user: User; onSignedOut: () => void }) {
   const t = useT()
+  // Inside Home Assistant (ingress) Home Assistant signs you in; signing out would not stick.
+  const ingress = underPrefix()
   async function logout() {
     await api.post('/api/auth/logout')
     onSignedOut()
@@ -136,12 +138,90 @@ function Account({ user, onSignedOut }: { user: User; onSignedOut: () => void })
   return (
     <div className="settings-form">
       <p>{t('account.signedInAs', { email: user.email, app: APP_NAME })}</p>
+      {user.homeAssistant && (
+        <p className="muted">{t('account.homeAssistant', { email: user.email })}</p>
+      )}
+      <PasswordForm hasPassword={user.hasPassword !== false} />
+      {!ingress && (
+        <div>
+          <button type="button" onClick={logout}>
+            {t('account.signOut')}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** Set a password (account without one, e.g. from Home Assistant) or change it. */
+function PasswordForm({ hasPassword: initial }: { hasPassword: boolean }) {
+  const t = useT()
+  const [hasPassword, setHasPassword] = useState(initial)
+  const [current, setCurrent] = useState('')
+  const [next, setNext] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
+
+  async function submit(e: FormEvent) {
+    e.preventDefault()
+    setBusy(true)
+    setMessage(null)
+    try {
+      await api.post('/api/auth/password', {
+        password: next,
+        ...(hasPassword ? { currentPassword: current } : {}),
+      })
+      setHasPassword(true)
+      setCurrent('')
+      setNext('')
+      setMessage({ ok: true, text: t('account.password.saved') })
+    } catch (err) {
+      const code = err instanceof ApiError ? err.code : undefined
+      const text =
+        code === 'invalid_credentials'
+          ? t('account.password.wrong')
+          : code === 'invalid_body'
+            ? t('account.password.tooShort')
+            : errorText(err)
+      setMessage({ ok: false, text })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <form className="settings-form" onSubmit={submit}>
+      <strong>{t(hasPassword ? 'account.password.change' : 'account.password.set')}</strong>
+      {hasPassword && (
+        <label className="settings-field">
+          <span>{t('account.password.current')}</span>
+          <input
+            type="password"
+            autoComplete="current-password"
+            value={current}
+            onChange={(e) => setCurrent(e.target.value)}
+            required
+          />
+        </label>
+      )}
+      <label className="settings-field">
+        <span>{t('account.password.new')}</span>
+        <input
+          type="password"
+          autoComplete="new-password"
+          minLength={8}
+          value={next}
+          onChange={(e) => setNext(e.target.value)}
+          required
+        />
+      </label>
       <div>
-        <button type="button" onClick={logout}>
-          {t('account.signOut')}
+        <button type="submit" disabled={busy}>
+          {t('account.password.save')}
         </button>
       </div>
-    </div>
+      {message && <p className={message.ok ? 'muted' : 'error'}>{message.text}</p>}
+    </form>
   )
 }
 

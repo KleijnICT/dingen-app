@@ -153,6 +153,16 @@ export const en = {
   // Account
   'account.signOut': 'Sign out',
   'account.signedInAs': 'Signed in as {email} at {app}.',
+  'account.homeAssistant':
+    'Home Assistant signs you in here. To use Dingen on its direct address (the app on your phone, MCP), sign in there with {email} and a password you set below.',
+  'account.password.set': 'Set a password',
+  'account.password.change': 'Change password',
+  'account.password.current': 'Current password',
+  'account.password.new': 'New password (at least 8 characters)',
+  'account.password.save': 'Save password',
+  'account.password.saved': 'Password saved.',
+  'account.password.wrong': 'The current password is not correct.',
+  'account.password.tooShort': 'The new password needs at least 8 characters.',
   'account.language': 'Language',
 
   // Area icon and colour
@@ -449,6 +459,8 @@ export const en = {
     'Agents are assistants and apps, such as Claude, that work in your lists through the MCP server or the API. Each agent has its own token and reaches only what you give it.',
   'agents.mcpHelp':
     'Connect an agent with its token as a Bearer token on {url}, or with the Claude Code plugin.',
+  'agents.mcpHelpIngress':
+    "Inside Home Assistant the MCP server is not reachable. Give port 8080 a host port in the app's network settings and connect agents to http://<home-assistant>:<port>/mcp with their token as a Bearer token.",
   'agents.new': 'New agent',
   'agents.newTitle': 'New agent',
   'agents.editTitle': 'Edit agent',
