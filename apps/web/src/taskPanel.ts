@@ -166,3 +166,11 @@ export function stillAdded(task: FieldTask, added: readonly OptionalField[]): Op
   const values = fieldValues(task)
   return added.filter((f) => !values[f])
 }
+
+/** How far a checklist is: its done items out of all of them, for the "1 of 4" in its heading. */
+export function checklistProgress(items: readonly { done: boolean }[]): {
+  done: number
+  total: number
+} {
+  return { done: items.filter((i) => i.done).length, total: items.length }
+}
