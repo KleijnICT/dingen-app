@@ -1,8 +1,9 @@
 import { type EntityType, entitySchemas, TIMESTAMP_PATTERN } from '@dingen/core'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 import type { Db } from './db.js'
 import { entities } from './schema.js'
+import { ownedSpacesOf } from './spaces/service.js'
 import type { ImportRecord } from './sync.js'
 
 export const EXPORT_FORMAT = 'dingen-export'
@@ -25,7 +26,10 @@ export interface ExportFile {
   entities: Record<EntityType, ExportRecord[]>
 }
 
-/** Alle levende (niet-verwijderde) entiteiten van een gebruiker. */
+/**
+ * Alle levende (niet-verwijderde) entiteiten in de ruimtes waarvan de gebruiker
+ * eigenaar is (plan 23); nu is dat de persoonlijke ruimte.
+ */
 export function buildExport(
   db: Db,
   userId: string,
@@ -35,7 +39,7 @@ export function buildExport(
   const rows = db
     .select()
     .from(entities)
-    .where(and(eq(entities.userId, userId), eq(entities.deleted, false)))
+    .where(and(inArray(entities.spaceId, ownedSpacesOf(db, userId)), eq(entities.deleted, false)))
     .all()
   const byType: Record<EntityType, ExportRecord[]> = {
     area: [],

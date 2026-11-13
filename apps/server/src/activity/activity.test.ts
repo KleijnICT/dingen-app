@@ -13,6 +13,7 @@ import {
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
 import { createApp } from '../app.js'
 import { openDatabase } from '../db.js'
+import { createPersonalSpace } from '../spaces/service.js'
 import { SyncService } from '../sync.js'
 import { changeTimeMs } from './derive.js'
 import { ActivityService } from './service.js'
@@ -21,6 +22,12 @@ const database = openDatabase(':memory:')
 const sync = new SyncService(database.db)
 const activity = new ActivityService(database.db)
 const USER = 'U1'
+database.sqlite
+  .prepare(
+    "insert into users (id, email, password_hash, created_at) values (?, 'u1@example.com', 'x', '2026-01-01T00:00:00.000Z')",
+  )
+  .run(USER)
+const SPACE = createPersonalSpace(database.db, USER, '2026-01-01T00:00:00.000Z')
 const BASE = Date.parse('2026-11-10T09:00:00.000Z')
 let wall = BASE
 // A fresh clock per test: an HLC never goes back, and tests set their own times.
@@ -294,7 +301,13 @@ describe('agent access', () => {
 })
 
 describe('GET /api/activity', () => {
-  const app = createApp({ db: database.db, version: 'test', sqliteVersion: database.sqliteVersion })
+  // Open: the service tests below already made accounts, so the HTTP one is not the first.
+  const app = createApp({
+    db: database.db,
+    version: 'test',
+    sqliteVersion: database.sqliteVersion,
+    registrationOpen: true,
+  })
   let cookie = ''
   let userId = ''
 
@@ -371,8 +384,8 @@ describe('GET /api/activity', () => {
 describe('a long log', () => {
   it('serves a page from 100k changes without reading them all', () => {
     const insert = database.sqlite.prepare(
-      `insert into changes (user_id, id, client_id, entity_type, entity_id, fields, ts, received_at, actor)
-       values (?, ?, 'BULK', 'task', ?, ?, ?, ?, null)`,
+      `insert into changes (user_id, space_id, id, client_id, entity_type, entity_id, fields, ts, received_at, actor)
+       values (?, ?, ?, 'BULK', 'task', ?, ?, ?, ?, null)`,
     )
     const tasks = Array.from({ length: 500 }, () => newTask({ title: 'Bulk', order: 'a' }))
     database.sqlite.transaction(() => {
@@ -394,6 +407,7 @@ describe('a long log', () => {
         const task = tasks[i % tasks.length] as (typeof tasks)[number]
         insert.run(
           USER,
+          SPACE,
           ulid(),
           task.id,
           JSON.stringify({ title: `Bulk ${i}` }),

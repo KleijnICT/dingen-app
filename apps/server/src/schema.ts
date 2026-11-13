@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm'
 import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
 /** Metadata over de installatie zelf. Eén rij per sleutel. */
@@ -11,7 +12,14 @@ export const changes = sqliteTable(
   'changes',
   {
     seq: integer('seq').primaryKey({ autoIncrement: true }),
+    /** The user who pushed the change (the author); access goes through `spaceId`. */
     userId: text('user_id').notNull(),
+    /**
+     * The space the entity was in when the change was made (plan 23). In the
+     * database the column has `default ''` (migration 0008 adds it to existing
+     * rows); the server always sets it.
+     */
+    spaceId: text('space_id').notNull(),
     id: text('id').notNull(),
     clientId: text('client_id').notNull(),
     entityType: text('entity_type').notNull(),
@@ -25,6 +33,7 @@ export const changes = sqliteTable(
   (t) => [
     uniqueIndex('changes_user_change_idx').on(t.userId, t.id),
     index('changes_user_seq_idx').on(t.userId, t.seq),
+    index('changes_space_seq_idx').on(t.spaceId, t.seq),
   ],
 )
 
@@ -32,7 +41,10 @@ export const changes = sqliteTable(
 export const entities = sqliteTable(
   'entities',
   {
+    /** The maker of the entity; access goes through `spaceId`. */
     userId: text('user_id').notNull(),
+    /** The space the entity lives in (plan 23); `default ''` in the database, see `changes`. */
+    spaceId: text('space_id').notNull(),
     entityType: text('entity_type').notNull(),
     id: text('id').notNull(),
     data: text('data', { mode: 'json' }).notNull().$type<Record<string, unknown>>(),
@@ -40,7 +52,11 @@ export const entities = sqliteTable(
     deleted: integer('deleted', { mode: 'boolean' }).notNull().default(false),
     updatedSeq: integer('updated_seq').notNull(),
   },
-  (t) => [primaryKey({ columns: [t.userId, t.entityType, t.id] })],
+  (t) => [
+    primaryKey({ columns: [t.userId, t.entityType, t.id] }),
+    // Per space and type, and point lookups by id within the user's spaces.
+    index('entities_space_type_id_idx').on(t.spaceId, t.entityType, t.id),
+  ],
 )
 
 export const users = sqliteTable('users', {
@@ -56,6 +72,50 @@ export const users = sqliteTable('users', {
    */
   haUserId: text('ha_user_id').unique(),
 })
+
+export type SpaceKind = 'personal' | 'shared'
+export type SpaceLevel = 'read' | 'edit' | 'manage'
+
+/**
+ * Spaces (plan 23): every entity lives in one. Each user has one personal
+ * space; shared spaces come with sharing. Agents are not members: their reach
+ * follows from their user's memberships plus their own grants (plan 19).
+ */
+export const spaces = sqliteTable(
+  'spaces',
+  {
+    id: text('id').primaryKey(),
+    kind: text('kind').notNull().$type<SpaceKind>(),
+    ownerId: text('owner_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    createdAt: text('created_at').notNull(),
+  },
+  (t) => [
+    index('spaces_owner_idx').on(t.ownerId),
+    // One personal space per user.
+    uniqueIndex('spaces_personal_owner_idx').on(t.ownerId).where(sql`kind = 'personal'`),
+  ],
+)
+
+/** Who is in a space, with which level. The owner is a member with `manage`. */
+export const spaceMembers = sqliteTable(
+  'space_members',
+  {
+    spaceId: text('space_id')
+      .notNull()
+      .references(() => spaces.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    level: text('level').notNull().$type<SpaceLevel>(),
+    joinedAt: text('joined_at').notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.spaceId, t.userId] }),
+    index('space_members_user_idx').on(t.userId),
+  ],
+)
 
 /** Browsersessies. `id` is de sha256 van het cookie-token. */
 export const sessions = sqliteTable(

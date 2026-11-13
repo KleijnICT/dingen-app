@@ -23,7 +23,14 @@ import {
   type MemberGrants,
 } from './agents/access.js'
 import type { Db } from './db.js'
-import { changes, entities } from './schema.js'
+import { changes, entities, type SpaceLevel } from './schema.js'
+import {
+  inSpacesOf,
+  levelAllows,
+  memberLevel,
+  personalSpaceOf,
+  SpaceAccessError,
+} from './spaces/service.js'
 
 export const PushBody = z.object({ changes: z.array(ChangeSchema).max(1000) })
 
@@ -122,6 +129,54 @@ export class SyncValidationError extends Error {
 
 const PULL_LIMIT = 500
 
+/** Where a stored entity lives: its row key (the maker) and its space. */
+interface Located {
+  record: EntityRecord
+  makerId: string
+  spaceId: string
+}
+
+/**
+ * Per batch: where each entity is (the stored row or the one written in this
+ * batch) and what the user may do in which space. New entities go to the
+ * user's personal space (moving between spaces comes with plan 23, part 3).
+ */
+class WriteContext {
+  private readonly touched = new Map<string, Located>()
+  private readonly levels = new Map<string, SpaceLevel | null>()
+  private personal: string | null | undefined
+
+  constructor(
+    private readonly tx: Db,
+    private readonly userId: string,
+    private readonly load: (type: EntityType, id: string) => Located | undefined,
+  ) {}
+
+  find(type: EntityType, id: string): Located | undefined {
+    return this.touched.get(recordKey(type, id)) ?? this.load(type, id)
+  }
+
+  remember(located: Located): void {
+    this.touched.set(recordKey(located.record.entityType, located.record.id), located)
+  }
+
+  /** The space a write lands in: the entity's own, or the personal space for a new one. */
+  target(existing: Located | undefined): { spaceId: string; makerId: string } {
+    if (existing) return { spaceId: existing.spaceId, makerId: existing.makerId }
+    if (this.personal === undefined) this.personal = personalSpaceOf(this.tx, this.userId)
+    if (!this.personal) throw new SpaceAccessError('This account has no personal space')
+    return { spaceId: this.personal, makerId: this.userId }
+  }
+
+  /** May the user write in this space (edit or manage)? */
+  canWrite(spaceId: string): boolean {
+    if (!this.levels.has(spaceId)) {
+      this.levels.set(spaceId, memberLevel(this.tx, spaceId, this.userId))
+    }
+    return levelAllows(this.levels.get(spaceId) ?? null, 'edit')
+  }
+}
+
 export interface PushOptions {
   /** Who pushes, and with which grants; default the owner. */
   access?: Access
@@ -144,11 +199,10 @@ export class SyncService {
     const actor: MemberId = access?.actor ?? `user:${userId}`
     const members: MemberGrants = options.members ?? (() => undefined)
     return this.db.transaction((tx) => {
-      const touched = new Map<string, EntityRecord>()
+      const ctx = new WriteContext(tx, userId, (type, id) => this.locate(tx, userId, type, id))
       const problems: { changeId: string; issues: string[] }[] = []
       const refused: string[] = []
-      const lookup: Lookup = (type, id) =>
-        touched.get(recordKey(type, id)) ?? this.loadRecord(tx, userId, type, id)
+      const lookup: Lookup = (type, id) => ctx.find(type, id)?.record
       let applied = 0
       let duplicates = 0
       let seq = this.currentSeq(userId)
@@ -164,9 +218,8 @@ export class SyncService {
           continue
         }
 
-        const key = recordKey(change.entityType, change.entityId)
-        const existing =
-          touched.get(key) ?? this.loadRecord(tx, userId, change.entityType, change.entityId)
+        const located = ctx.find(change.entityType, change.entityId)
+        const existing = located?.record
         const validation = validateChangeFields(change, existing?.data)
         if (!validation.ok) {
           problems.push({ changeId: change.id, issues: validation.issues })
@@ -181,8 +234,21 @@ export class SyncService {
             continue
           }
         }
-        touched.set(key, record)
-        seq = this.store(tx, userId, change, record, receivedAt, actor)
+        const target = ctx.target(located)
+        if (!ctx.canWrite(target.spaceId)) {
+          throw new SpaceAccessError('No write access to the space of this entity')
+        }
+        ctx.remember({ record, ...target })
+        seq = this.store(
+          tx,
+          userId,
+          target,
+          located !== undefined,
+          change,
+          record,
+          receivedAt,
+          actor,
+        )
         applied += 1
       }
 
@@ -208,12 +274,15 @@ export class SyncService {
   ): ImportResult {
     const receivedAt = new Date().toISOString()
     return this.db.transaction((tx) => {
+      const ctx = new WriteContext(tx, userId, (type, id) => this.locate(tx, userId, type, id))
       const counts = emptyCounts()
       const problems: { changeId: string; issues: string[] }[] = []
       let seq = this.currentSeq(userId)
 
       for (const incoming of records) {
-        const existing = this.loadRecord(tx, userId, incoming.entityType, incoming.id)
+        const located = ctx.find(incoming.entityType, incoming.id)
+        const existing = located?.record
+        const target = ctx.target(located)
         let record = existing
         for (const change of recordToChanges(incoming)) {
           const known = tx
@@ -224,8 +293,11 @@ export class SyncService {
           if (known) continue
           const next = applyChange(record, change)
           if (JSON.stringify(next) === JSON.stringify(record)) continue
+          if (!ctx.canWrite(target.spaceId)) {
+            throw new SpaceAccessError('No write access to the space of this entity')
+          }
           record = next
-          seq = this.store(tx, userId, change, next, receivedAt, actor, false)
+          seq = this.store(tx, userId, target, true, change, next, receivedAt, actor, false)
         }
 
         const bucket: ImportCounts = counts[incoming.entityType] ?? emptyBucket()
@@ -244,7 +316,8 @@ export class SyncService {
             })
           }
           // Het laatst geschreven record is de samengevoegde staat.
-          this.writeEntity(tx, userId, record, seq)
+          this.writeEntity(tx, target, located !== undefined, record, seq)
+          ctx.remember({ record, ...target })
         }
         bucket[existing ? 'updated' : 'created'] += 1
       }
@@ -267,7 +340,7 @@ export class SyncService {
     const rows = this.db
       .select()
       .from(changes)
-      .where(and(eq(changes.userId, userId), gt(changes.seq, since)))
+      .where(and(inSpacesOf(this.db, changes.spaceId, userId), gt(changes.seq, since)))
       .orderBy(asc(changes.seq))
       .limit(limit + 1)
       .all()
@@ -299,7 +372,7 @@ export class SyncService {
     const rows = this.db
       .select()
       .from(entities)
-      .where(and(eq(entities.userId, userId), eq(entities.deleted, false)))
+      .where(and(inSpacesOf(this.db, entities.spaceId, userId), eq(entities.deleted, false)))
       .all()
     const records: EntityRecord[] = rows.map((r) => ({
       entityType: r.entityType as EntityType,
@@ -316,7 +389,11 @@ export class SyncService {
 
   /** All records of the user (deleted ones too), for access checks outside a push. */
   lookupFor(userId: string): Lookup {
-    const rows = this.db.select().from(entities).where(eq(entities.userId, userId)).all()
+    const rows = this.db
+      .select()
+      .from(entities)
+      .where(inSpacesOf(this.db, entities.spaceId, userId))
+      .all()
     const byKey = new Map<string, EntityRecord>(
       rows.map((r) => [
         recordKey(r.entityType as EntityType, r.id),
@@ -342,6 +419,8 @@ export class SyncService {
   private store(
     tx: Db,
     userId: string,
+    target: { spaceId: string; makerId: string },
+    exists: boolean,
     change: Change,
     record: EntityRecord,
     receivedAt: string,
@@ -352,6 +431,7 @@ export class SyncService {
       .insert(changes)
       .values({
         userId,
+        spaceId: target.spaceId,
         id: change.id,
         clientId: change.clientId,
         entityType: change.entityType,
@@ -363,29 +443,41 @@ export class SyncService {
       })
       .returning({ seq: changes.seq })
       .get()
-    if (writeEntity) this.writeEntity(tx, userId, record, inserted.seq)
+    if (writeEntity) this.writeEntity(tx, target, exists, record, inserted.seq)
     return inserted.seq
   }
 
-  private writeEntity(tx: Db, userId: string, record: EntityRecord, seq: number): void {
+  /**
+   * Writes the state of an entity. A known one is updated in place (its row
+   * key is the maker), a new one is inserted in the target space. `exists`
+   * may be true for an entity first written earlier in the same batch.
+   */
+  private writeEntity(
+    tx: Db,
+    target: { spaceId: string; makerId: string },
+    exists: boolean,
+    record: EntityRecord,
+    seq: number,
+  ): void {
+    const state = {
+      data: record.data,
+      fieldTs: record.fieldTs,
+      deleted: isDeleted(record),
+      updatedSeq: seq,
+    }
+    const key = and(
+      eq(entities.userId, target.makerId),
+      eq(entities.entityType, record.entityType),
+      eq(entities.id, record.id),
+    )
+    if (exists && tx.update(entities).set(state).where(key).run().changes > 0) return
     tx.insert(entities)
       .values({
-        userId,
+        userId: target.makerId,
+        spaceId: target.spaceId,
         entityType: record.entityType,
         id: record.id,
-        data: record.data,
-        fieldTs: record.fieldTs,
-        deleted: isDeleted(record),
-        updatedSeq: seq,
-      })
-      .onConflictDoUpdate({
-        target: [entities.userId, entities.entityType, entities.id],
-        set: {
-          data: record.data,
-          fieldTs: record.fieldTs,
-          deleted: isDeleted(record),
-          updatedSeq: seq,
-        },
+        ...state,
       })
       .run()
   }
@@ -395,7 +487,7 @@ export class SyncService {
     return !!this.db
       .select({ id: entities.id })
       .from(entities)
-      .where(and(eq(entities.userId, userId), eq(entities.deleted, false)))
+      .where(and(inSpacesOf(this.db, entities.spaceId, userId), eq(entities.deleted, false)))
       .limit(1)
       .get()
   }
@@ -404,26 +496,30 @@ export class SyncService {
     const row = this.db
       .select({ seq: max(changes.seq) })
       .from(changes)
-      .where(eq(changes.userId, userId))
+      .where(inSpacesOf(this.db, changes.spaceId, userId))
       .get()
     return row?.seq ?? 0
   }
 
-  private loadRecord(
-    db: Db,
-    userId: string,
-    entityType: EntityType,
-    id: string,
-  ): EntityRecord | undefined {
+  /** The stored entity with this type and id in one of the user's spaces. */
+  private locate(db: Db, userId: string, entityType: EntityType, id: string): Located | undefined {
     const row = db
       .select()
       .from(entities)
       .where(
-        and(eq(entities.userId, userId), eq(entities.entityType, entityType), eq(entities.id, id)),
+        and(
+          inSpacesOf(db, entities.spaceId, userId),
+          eq(entities.entityType, entityType),
+          eq(entities.id, id),
+        ),
       )
       .get()
     if (!row) return undefined
-    return { entityType, id, data: row.data, fieldTs: row.fieldTs }
+    return {
+      record: { entityType, id, data: row.data, fieldTs: row.fieldTs },
+      makerId: row.userId,
+      spaceId: row.spaceId,
+    }
   }
 }
 

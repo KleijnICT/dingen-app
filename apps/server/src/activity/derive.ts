@@ -37,6 +37,8 @@ export interface LogRow {
   ts: string
   receivedAt: string
   actor: string | null
+  /** The user who pushed the change; missing in rows built by hand (tests). */
+  userId?: string
 }
 
 /** The entity a row counts for in the Logbook (a checklist item counts for its task). */
@@ -69,12 +71,15 @@ export function changeTimeMs(row: Pick<LogRow, 'receivedAt'>): number {
   return Date.parse(row.receivedAt)
 }
 
-/** A missing actor is the owner: rows from before plan 19 and sessions without one. */
+/**
+ * A missing actor is the user who pushed the change (rows from before plan 19
+ * and sessions without one), else `ownerId`.
+ */
 export function actorOf(row: LogRow, ownerId: string): MemberId {
   const a = row.actor
   return a && (a.startsWith('user:') || a.startsWith('agent:'))
     ? (a as MemberId)
-    : `user:${ownerId}`
+    : `user:${row.userId ?? ownerId}`
 }
 
 /** A row creates its entity when it carries `createdAt`: only a whole new entity sends that. */

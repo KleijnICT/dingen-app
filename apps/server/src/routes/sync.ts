@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { AgentScopeError } from '../agents/access.js'
 import { accessOf } from '../auth/middleware.js'
 import type { AppEnv } from '../env.js'
+import { SpaceAccessError } from '../spaces/service.js'
 import { PushBody, SyncValidationError } from '../sync.js'
 
 const PullQuery = z.object({
@@ -30,6 +31,9 @@ export function syncRoutes() {
     } catch (err) {
       if (err instanceof AgentScopeError) {
         return c.json({ error: 'agent_scope', message: err.message }, 403)
+      }
+      if (err instanceof SpaceAccessError) {
+        return c.json({ error: 'space_access', message: err.message }, 403)
       }
       if (err instanceof SyncValidationError) {
         return c.json({ error: 'invalid_changes', problems: err.problems }, 400)

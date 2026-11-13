@@ -2,6 +2,7 @@ import type { ACTIVITY_KINDS, ActivityItem, AgentGrant, EntityType, MemberId } f
 import type Database from 'better-sqlite3'
 import { canRead, type Lookup } from '../agents/access.js'
 import type { Db } from '../db.js'
+import { IN_SPACES_OF_USER_SQL } from '../spaces/service.js'
 import {
   ACTIVITY_ENTITY_TYPES,
   type Described,
@@ -57,11 +58,12 @@ interface Candidate {
 const TYPES_SQL = ACTIVITY_ENTITY_TYPES.map((t) => `'${t}'`).join(', ')
 
 /**
- * Reads the change log of one user newest first and turns it into Logbook
- * lines. Cost per request: the log is read through the `(user_id, seq)` index
- * from `before` downwards, in chunks, and only until the page is full (or the
- * scan budget is spent, or `since` is passed); every entity it meets is looked
- * up once by primary key in `entities` (the materialised state, no replay).
+ * Reads the change log of the user's spaces newest first and turns it into
+ * Logbook lines. Cost per request: the log is read through the
+ * `(space_id, seq)` index from `before` downwards, in chunks, and only until
+ * the page is full (or the scan budget is spent, or `since` is passed); every
+ * entity it meets is looked up once through the `(space_id, entity_type, id)`
+ * index in `entities` (the materialised state, no replay).
  * The `from` values of updated fields come from one more walk back through the
  * log for just the entities on the page, which stops as soon as every field is
  * found (at the latest at the entity's creation).
@@ -77,14 +79,14 @@ export class ActivityService {
     this.sqlite = sqlite
     this.scan = sqlite.prepare(
       `select seq, entity_type as entityType, entity_id as entityId, fields, ts,
-              received_at as receivedAt, actor
+              received_at as receivedAt, actor, user_id as userId
          from changes
-        where user_id = ? and seq < ? and entity_type in (${TYPES_SQL})
+        where ${IN_SPACES_OF_USER_SQL} and seq < ? and entity_type in (${TYPES_SQL})
         order by seq desc
         limit ?`,
     )
     this.entity = sqlite.prepare(
-      'select data, deleted from entities where user_id = ? and entity_type = ? and id = ?',
+      `select data, deleted from entities where ${IN_SPACES_OF_USER_SQL} and entity_type = ? and id = ?`,
     )
   }
 
@@ -311,9 +313,9 @@ export class ActivityService {
     const start = Math.max(...needs.map((n) => n.minSeq))
     const stmt = this.sqlite.prepare(
       `select seq, entity_type as entityType, entity_id as entityId, fields, ts,
-              received_at as receivedAt, actor
+              received_at as receivedAt, actor, user_id as userId
          from changes
-        where user_id = ? and seq < ? and entity_id in (${ids.map(() => '?').join(', ')})
+        where ${IN_SPACES_OF_USER_SQL} and seq < ? and entity_id in (${ids.map(() => '?').join(', ')})
         order by seq desc
         limit ?`,
     )
