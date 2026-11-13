@@ -238,7 +238,15 @@ interface ImportSummary {
   total: ImportCounts
 }
 
-const DATA_TYPES: EntityType[] = ['area', 'project', 'heading', 'task', 'checklistItem', 'tag']
+const DATA_TYPES: EntityType[] = [
+  'area',
+  'project',
+  'heading',
+  'task',
+  'checklistItem',
+  'tag',
+  'review',
+]
 
 /** Export and import of all data as one JSON file. */
 function DataTab() {

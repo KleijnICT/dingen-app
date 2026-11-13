@@ -1,4 +1,4 @@
-import { type Change, createClock, newProject, newTask, ulid } from '@dingen/core'
+import { type Change, createClock, newProject, newReview, newTask, ulid } from '@dingen/core'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { createApp } from './app.js'
@@ -434,6 +434,17 @@ describe('import on another server', () => {
     expect(after.entities.map((e) => e.spaceId)).toEqual([after.spaces[0]?.id, after.spaces[0]?.id])
     const again = await (await two.importFile(gina.bearer, old)).json()
     expect(again.total).toEqual({ created: 0, updated: 0, unchanged: 2, skipped: 0 })
+  })
+
+  it('imports reviews too', async () => {
+    const two = server()
+    const hans = await two.account('hans@test.nl')
+    const review = newReview({ kind: 'weekly' })
+    const file = { format: 'dingen-export', version: 1, entities: { review: [fileRecord(review)] } }
+    const res = await two.importFile(hans.bearer, file)
+    expect((await res.json()).total).toMatchObject({ created: 1 })
+    const after = await two.snapshot(hans.bearer)
+    expect(after.entities.filter((e) => e.entityType === 'review')).toHaveLength(1)
   })
 
   it('merges tags per space by their lowercase name', async () => {

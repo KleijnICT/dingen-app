@@ -1,5 +1,37 @@
 # Changelog
 
+## Unreleased
+
+- Task panel: a task opens in a panel that slides in from the right (beside
+  the list on wide screens, over it on medium widths, full screen on phones).
+  With a mouse a click selects a task and a double click or Enter opens it; on
+  touch screens a tap opens. With the panel open, arrow keys and clicks switch
+  the task. The address bar holds the open task (`?task=`), so a reload or a
+  jump from Search keeps it open.
+- The panel is calm: the title with a `…` menu (Duplicate, Delete), notes, the
+  checklist with a heading and count, then Planning (When; time and reminder,
+  deadline and repeat only when set) and Organisation (List with its heading,
+  Tags; Assigned only when set). Empty fields are added from a row at the
+  bottom. Everything saves as you type.
+- Duplicate a task: the copy lands right below the original, with an
+  unchecked checklist, without repeat or assignee.
+- Projects and areas show completed tasks in their own folded "Completed"
+  section at the bottom, instead of under the last heading.
+- Reviews: a weekly or monthly review that was never done counts from the day
+  the account was created, so a new account is not asked for a review right
+  away. The banners on Today can be closed until tomorrow.
+- Tags are always lowercase. Existing tags are converted once at start;
+  tags that become equal are merged and tasks point to the one that stays (the
+  Logbook shows this as done by Dingen).
+- Spaces (groundwork for sharing; nothing changes in use yet): all data
+  belongs to a space, every account has a personal space, access goes through
+  membership. The sync protocol is version 2 with a cursor per space (`GET
+  /api/sync/pull?cursor=`); the old `since=` form keeps working for older
+  clients. Entities can move between spaces with their contents. The export
+  format is version 2 with the spaces you own; version 1 files still import,
+  reviews now included. The update runs a database migration (with a backup
+  first).
+
 ## 1.0.0-alpha.4
 
 Dingen as a Home Assistant app. A pre-release; `:latest` points to it. The

@@ -19,7 +19,15 @@ export const EXPORT_FORMAT = 'dingen-export'
 export const EXPORT_VERSION = 2
 
 /** Volgorde waarin soorten in het bestand staan: eerst de containers, dan de inhoud. */
-export const EXPORT_TYPES = ['area', 'project', 'heading', 'task', 'checklistItem', 'tag'] as const
+export const EXPORT_TYPES = [
+  'area',
+  'project',
+  'heading',
+  'task',
+  'checklistItem',
+  'tag',
+  'review',
+] as const
 
 export interface ExportRecord {
   id: string
