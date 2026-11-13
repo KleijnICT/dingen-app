@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased
+## 1.0.0-alpha.4
+
+Dingen as a Home Assistant app. A pre-release; `:latest` points to it. The
+update runs a database migration (with a backup first).
 
 - Home Assistant: Dingen is a Home Assistant app (add-on), from the repository
   KleijnICT/dingen-app-ha-addon. It opens in the sidebar through ingress and
