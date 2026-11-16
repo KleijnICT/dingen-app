@@ -93,6 +93,10 @@ class ServiceTransport implements SyncTransport {
     return this.access.actor
   }
 
+  async grants() {
+    return this.access.grants
+  }
+
   async members(): Promise<Member[]> {
     return this.agents.members(this.access.userId)
   }

@@ -234,6 +234,25 @@ describe('mcp reviews', () => {
     expect(due.currentStep).toBe('looseTasks')
   })
 
+  it('deletes a project with its headings and tasks, and an area with everything in it', async () => {
+    const area = await call('create_area', { title: 'Wegdoen' })
+    const project = await call('create_project', {
+      title: 'Weg ermee',
+      area: area.id,
+      headings: ['Deel'],
+    })
+    const inProject = await call('create_task', { title: 'Taak in project', project: project.id })
+    const inArea = await call('create_task', { title: 'Taak in gebied', area: area.id })
+    await call('delete_project', { id: project.id })
+    await expect(call('get_task', { id: inProject.id })).rejects.toThrow()
+    await expect(call('delete_project', { id: project.id })).rejects.toThrow(/No project/)
+    expect((await call('get_task', { id: inArea.id })).id).toBe(inArea.id)
+    await call('delete_area', { id: area.id })
+    await expect(call('get_task', { id: inArea.id })).rejects.toThrow()
+    const o = await call('overview')
+    expect(o.areas.map((a: { id: string }) => a.id)).not.toContain(area.id)
+  })
+
   it('shows projects with signals and ticks them off one by one', async () => {
     const area = await rcall('create_area', { title: 'Thuis' })
     const project = await rcall('create_project', { title: 'Zolder opruimen', area: area.id })

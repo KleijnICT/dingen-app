@@ -237,6 +237,67 @@ describe('writing within the scope', () => {
     expect(area.error).toMatch(/outside this agent's scope/)
   })
 
+  it('delete_project and delete_area need manage on the item or on everything', async () => {
+    const area = newArea({ title: 'Doomed area', order: ord() })
+    const mk = (title: string, areaId: string | null) => newProject({ title, areaId, order: ord() })
+    const p1 = mk('Doomed one', area.id)
+    const p2 = mk('Doomed two', null)
+    const p3 = mk('Doomed three', null)
+    const p4 = mk('Doomed four', null)
+    const heading = newHeading({ title: 'Part', projectId: p1.id, order: ord() })
+    const t = (title: string, place: { projectId?: string; areaId?: string }) =>
+      newTask({ title, ...place, when: { kind: 'anytime' }, order: ord() })
+    const t1 = t('In project', { projectId: p1.id })
+    const t2 = t('In area', { areaId: area.id })
+    const seed = [area, p1, p2, p3, p4].map((e, i) => change(i === 0 ? 'area' : 'project', e))
+    seed.push(change('heading', heading), change('task', t1), change('task', t2))
+    const pushed = await app.request('/api/sync/push', json('POST', { changes: seed }, { cookie }))
+    expect(pushed.status).toBe(200)
+    const alive = async (token: string, id: string) =>
+      (await tool(token, 'get_task', { id })).error === null
+
+    const reader = await makeAgent('Del reader', [{ scope: 'all', level: 'read' }])
+    const editor = await makeAgent('Del editor', [
+      { scope: 'project', id: p2.id, level: 'edit' },
+      { scope: 'area', id: area.id, level: 'edit' },
+    ])
+    for (const agent of [reader, editor]) {
+      const a = await tool(agent.token, 'delete_project', { id: p2.id })
+      expect(a.error).toMatch(/needs Manage/)
+      const b = await tool(agent.token, 'delete_project', { id: p1.id })
+      expect(b.error).toMatch(/needs Manage/)
+      const c = await tool(agent.token, 'delete_area', { id: area.id })
+      expect(c.error).toMatch(/needs Manage/)
+    }
+    expect(await alive(reader.token, t1.id)).toBe(true)
+
+    // Manage on the project itself: that project goes, with its heading and tasks.
+    const onProject = await makeAgent('Del project', [
+      { scope: 'project', id: p2.id, level: 'manage' },
+    ])
+    expect((await tool(onProject.token, 'delete_area', { id: area.id })).error).toMatch(
+      /No area|needs Manage/,
+    )
+    expect((await tool(onProject.token, 'delete_project', { id: p2.id })).error).toBe(null)
+    expect((await tool(onProject.token, 'delete_project', { id: p2.id })).error).toMatch(
+      /No project/,
+    )
+
+    // Manage on the area: deleting the area takes its projects, headings and tasks along.
+    const onArea = await makeAgent('Del area', [{ scope: 'area', id: area.id, level: 'manage' }])
+    const gone = await tool(onArea.token, 'delete_area', { id: area.id })
+    expect(gone.error).toBe(null)
+    expect(await alive(reader.token, t1.id)).toBe(false)
+    expect(await alive(reader.token, t2.id)).toBe(false)
+    expect(
+      (await tool(reader.token, 'overview')).data.areas.map((a: { id: string }) => a.id),
+    ).not.toContain(area.id)
+
+    // Manage on Everything may delete a project anywhere.
+    const everything = await makeAgent('Del all', [{ scope: 'all', level: 'manage' }])
+    expect((await tool(everything.token, 'delete_project', { id: p3.id })).error).toBe(null)
+  })
+
   it('moving a task to a place outside the scope is refused', async () => {
     const agent = await makeAgent('Two places', [
       { scope: 'project', id: site.id, level: 'edit' },

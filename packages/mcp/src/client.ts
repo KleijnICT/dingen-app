@@ -1,5 +1,6 @@
 import {
   type ActivityItem,
+  type AgentGrant,
   type Area,
   applyChange,
   buildSnapshot,
@@ -88,6 +89,8 @@ export interface SyncTransport {
   whoami?(): Promise<string>
   /** The owner and their agents, for assigning. */
   members?(): Promise<Member[]>
+  /** The grants of the agent this transport acts as; null (or absent) means no known limits. */
+  grants?(): Promise<AgentGrant[] | null>
   /** When the account was created (ISO instant); the anchor for reviews never done. */
   accountCreatedAt?(): Promise<string | null>
 }
@@ -254,6 +257,11 @@ export class DingenClient implements Writer {
     const createdAt = await this.transport.accountCreatedAt?.().catch(() => null)
     this.anchor = createdAt ? todayIn(this.timezone, new Date(createdAt)) : null
     return this.anchor
+  }
+
+  /** The agent's grants, or null for the owner or when the transport cannot tell. */
+  async grants(): Promise<AgentGrant[] | null> {
+    return (await this.transport.grants?.()) ?? null
   }
 
   /** The owner and their agents; empty when the transport cannot tell. */
