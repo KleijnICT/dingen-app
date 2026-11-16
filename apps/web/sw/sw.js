@@ -54,7 +54,8 @@ self.addEventListener('fetch', (event) => {
 })
 
 // --- herinneringen ---
-// Web push: de server stuurt { title, body, tag, url } op het moment van een herinnering.
+// Web push: de server stuurt { title, body, tag, url } op het moment van een herinnering,
+// en wanneer een agent je een taak toewijst.
 
 self.addEventListener('push', (event) => {
   let data = {}
@@ -80,9 +81,15 @@ self.addEventListener('notificationclick', (event) => {
   const target = new URL(event.notification.data?.url || '/', self.location.origin).href
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windows) => {
-      // An open Dingen only gets focus: navigating would reload it mid-edit.
+      // An open Dingen only gets focus: navigating would reload it mid-edit. A notification
+      // about one task (`?task=`) asks the open app to show it, without a reload (src/pwa.ts).
       const open = windows.find((w) => new URL(w.url).origin === self.location.origin)
-      return open ? open.focus() : self.clients.openWindow(target)
+      if (!open) return self.clients.openWindow(target)
+      const url = new URL(target)
+      if (url.searchParams.has('task')) {
+        open.postMessage({ type: 'OPEN_PATH', path: url.pathname + url.search })
+      }
+      return open.focus()
     }),
   )
 })

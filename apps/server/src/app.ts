@@ -12,6 +12,7 @@ import type { RegistrationMode } from './config.js'
 import type { Db } from './db.js'
 import type { AppEnv } from './env.js'
 import { ingressGate, SUPERVISOR_ADDRESS } from './ingress.js'
+import { AssignmentNotifier } from './push/assigned.js'
 import { PushService, webPushSender } from './push/service.js'
 import { loadVapidKeys } from './push/vapid.js'
 import { activityRoutes } from './routes/activity.js'
@@ -53,7 +54,12 @@ export interface AppDeps {
 /** Bouwt de Hono-app zonder HTTP-server of statische bestanden, zodat tests hem direct kunnen aanroepen. */
 export function createApp(deps: AppDeps) {
   const app = new Hono<AppEnv>()
-  const sync = new SyncService(deps.db)
+  const push = deps.push ?? defaultPush(deps.db)
+  const assignments = new AssignmentNotifier(deps.db, push)
+  // An agent assigning a task to a person sends that person a push (plan 19, decision 10).
+  const sync = new SyncService(deps.db, {
+    onAssigned: (list) => void assignments.notify(list).catch((err) => console.error(err)),
+  })
   const auth = new AuthService(deps.db, {
     registration: deps.registration ?? (deps.registrationOpen ? 'open' : 'closed'),
   })
@@ -111,7 +117,6 @@ export function createApp(deps: AppDeps) {
   app.route('/api/calendars', calendarRoutes(calendars, deps.timezone ?? 'Europe/Amsterdam'))
 
   // --- herinneringen ---
-  const push = deps.push ?? defaultPush(deps.db)
   app.use('/api/push/*', requireAllScope('read'))
   app.route('/api/push', pushRoutes(push))
 
