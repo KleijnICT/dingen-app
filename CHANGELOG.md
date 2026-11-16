@@ -11,6 +11,12 @@
   reminder at that time, so no notification is lost. Sync protocol 3 and
   export format 3; older clients and export files keep working and are
   converted.
+- Estimated duration in the web app: add a duration to a task from the Add
+  row of the task panel (5m, 15m, 30m, 1h, 2h, or type any value such as 45
+  or 1h30); the row shows it small and grey on the right. Today and Anytime
+  get a duration filter next to the tags (at most 5m, 15m, 30m or 1h), kept
+  per device; tasks without a duration drop out while it is on. The activity
+  overview names duration changes.
 
 ## 1.0.0-alpha.5
 
