@@ -1,14 +1,44 @@
 import type { ChecklistItem, Task } from '@dingen/core'
-import { createElement, type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
+import {
+  createElement,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { setTaskParam, useTaskParam } from '../router.js'
+import {
+  EMPTY_SELECTION,
+  extendSelection,
+  nextAfterRemoval,
+  pruneSelection,
+  type Selection,
+  selectOne,
+  selectRange,
+  toggleInSelection,
+} from '../selection.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { deleteTask } from '../taskActions.js'
-import { listKeyAction, rowClickAction } from '../taskPanel.js'
+import { type ClickHow, listKeyAction, rowClickAction } from '../taskPanel.js'
 import { type PanelFocus, TaskPanel } from './TaskPanel.js'
 import type { RowProps } from './TaskRow.js'
 
 export interface TaskList {
+  /** The selected task when exactly one is selected. */
   selected: Task | undefined
+  /** Every selected task, top to bottom; the toolbar acts on all of them. */
+  selection: Task[]
+  /** Selection mode on a touch screen (after a long press): taps add and remove tasks. */
+  selecting: boolean
+  /** Clears the selection and leaves selection mode. */
+  clearSelection: () => void
+  /** Deletes every selected task; with more than one it first asks (see `askingDelete`). */
+  deleteSelection: (confirmed?: boolean) => void
+  /** The toolbar is asking whether to delete the selected tasks. */
+  askingDelete: boolean
+  cancelDelete: () => void
   rowProps: (task: Task, extra?: Partial<RowProps>) => RowProps
   /** Opens a freshly created task in the panel; it is removed again if left empty. */
   openNew: (id: string) => void
@@ -32,7 +62,9 @@ const rowButton = (id: string) =>
  */
 export function useTaskList(tasks: Task[], toggle: (task: Task) => void): TaskList {
   const param = useTaskParam()
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [rawSelection, setSelection] = useState<Selection>(EMPTY_SELECTION)
+  const [selecting, setSelecting] = useState(false)
+  const [askingDelete, setAskingDelete] = useState(false)
   const [newId, setNewId] = useState<string | null>(null)
   const [focus, setFocus] = useState<PanelFocus | null>(null)
   const engine = useEngine()
@@ -44,6 +76,65 @@ export function useTaskList(tasks: Task[], toggle: (task: Task) => void): TaskLi
       ws.tasks.find((t) => t.id === param && !t.deleted && t.status === 'open'))
     : undefined
   const openId = openTask?.id ?? null
+
+  // Tasks that leave the page (deleted, done and gone, filtered out) leave the selection;
+  // the open task counts as present, since it stays open off the list.
+  const present = useMemo(() => {
+    const ids = new Set(tasks.map((t) => t.id))
+    if (openId) ids.add(openId)
+    return ids
+  }, [tasks, openId])
+  const sel = pruneSelection(rawSelection, present)
+  const selectedId = sel.ids.length === 1 ? (sel.ids[0] ?? null) : sel.focus
+  const count = sel.ids.length
+
+  // Selection mode ends when nothing is selected any more; asking to delete ends with fewer
+  // than two.
+  useEffect(() => {
+    if (selecting && count === 0) setSelecting(false)
+    if (askingDelete && count < 2) setAskingDelete(false)
+  }, [selecting, askingDelete, count])
+
+  /** Applies a new selection; with more than one task selected the panel closes. */
+  const applySelection = useCallback(
+    (next: Selection) => {
+      setSelection(next)
+      setAskingDelete(false)
+      if (next.ids.length > 1 && openId) setTaskParam(null)
+    },
+    [openId],
+  )
+
+  const clearSelection = useCallback(() => {
+    setSelection(EMPTY_SELECTION)
+    setSelecting(false)
+    setAskingDelete(false)
+  }, [])
+
+  const selection = useMemo(() => {
+    const byId = new Map(tasks.map((t) => [t.id, t]))
+    if (openTask) byId.set(openTask.id, openTask)
+    return sel.ids.map((id) => byId.get(id)).filter((t): t is Task => Boolean(t))
+  }, [sel.ids, tasks, openTask])
+
+  const deleteSelection = useCallback(
+    (confirmed = false) => {
+      if (selection.length === 0) return
+      if (selection.length > 1 && !confirmed) {
+        setAskingDelete(true)
+        return
+      }
+      const ids = selection.map((t) => t.id)
+      const next = selecting ? null : nextAfterRemoval(ids, rowIds())
+      if (openId && ids.includes(openId)) setTaskParam(null)
+      // One snapshot for all of them; the sync engine pushes the changes together.
+      for (const task of selection) deleteTask(engine, ws, task)
+      setAskingDelete(false)
+      setSelection(selectOne(next))
+      if (selecting) setSelecting(false)
+    },
+    [selection, selecting, openId, engine, ws],
+  )
 
   // A new task that is closed without a title, notes or checklist was never
   // meant; it goes away. Read from the engine: the snapshot may lag a render.
@@ -62,7 +153,7 @@ export function useTaskList(tasks: Task[], toggle: (task: Task) => void): TaskLi
   // Search) the list scrolls to it.
   useEffect(() => {
     if (!openId) return
-    setSelectedId(openId)
+    setSelection(selectOne(openId))
     requestAnimationFrame(() => {
       document
         .querySelector(`.content [data-task-id="${openId}"]`)
@@ -82,7 +173,7 @@ export function useTaskList(tasks: Task[], toggle: (task: Task) => void): TaskLi
   }, [openId, param])
 
   const open = useCallback((id: string, target: PanelFocus['target'] | null) => {
-    setSelectedId(id)
+    setSelection(selectOne(id))
     setTaskParam(id)
     if (target) setFocus((f) => ({ target, n: (f?.n ?? 0) + 1 }))
   }, [])
@@ -114,6 +205,7 @@ export function useTaskList(tasks: Task[], toggle: (task: Task) => void): TaskLi
       const action = listKeyAction({
         key: e.key,
         modified: e.metaKey || e.ctrlKey || e.altKey,
+        shift: e.shiftKey,
         typing: Boolean(target?.closest('input, textarea, select, [contenteditable="true"]')),
         inPopup: Boolean(popup && popup !== panel),
         inPanel: Boolean(panel && panel !== target),
@@ -121,6 +213,7 @@ export function useTaskList(tasks: Task[], toggle: (task: Task) => void): TaskLi
         inList: Boolean(target?.closest('.content [data-task-id]')),
         onButton: Boolean(target?.closest('button, a, [role="button"]')),
         selected: selectedId,
+        count,
         open: openId,
         ids: rowIds(),
       })
@@ -131,8 +224,21 @@ export function useTaskList(tasks: Task[], toggle: (task: Task) => void): TaskLi
           close()
           break
         case 'deselect':
-          setSelectedId(null)
+          clearSelection()
           break
+        case 'deleteSelection':
+          deleteSelection()
+          break
+        case 'extend': {
+          const onRow = target?.closest('.content [data-task-id]')
+          const next = extendSelection(sel, action.direction, rowIds())
+          if (!next) break
+          applySelection(next)
+          const row = next.focus ? rowButton(next.focus) : null
+          row?.scrollIntoView({ block: 'nearest' })
+          if (onRow) row?.focus()
+          break
+        }
         case 'open':
           open(action.id, 'panel')
           break
@@ -141,7 +247,7 @@ export function useTaskList(tasks: Task[], toggle: (task: Task) => void): TaskLi
           if (!task) return
           const onRow = target?.closest('.content [data-task-id]')
           if (openId === action.id) setTaskParam(null)
-          setSelectedId(action.next)
+          setSelection(selectOne(action.next))
           deleteTask(engine, ws, task)
           // Focus moves on to the row that is now selected.
           const next = action.next
@@ -150,7 +256,7 @@ export function useTaskList(tasks: Task[], toggle: (task: Task) => void): TaskLi
         }
         case 'move': {
           const onRow = target?.closest('.content [data-task-id]')
-          setSelectedId(action.id)
+          setSelection(selectOne(action.id))
           if (openId && tasks.some((t) => t.id === action.id)) setTaskParam(action.id)
           const row = rowButton(action.id)
           row?.scrollIntoView({ block: 'nearest' })
@@ -161,7 +267,20 @@ export function useTaskList(tasks: Task[], toggle: (task: Task) => void): TaskLi
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [openId, selectedId, tasks, engine, ws, open, close])
+  }, [
+    openId,
+    selectedId,
+    count,
+    sel,
+    tasks,
+    engine,
+    ws,
+    open,
+    close,
+    clearSelection,
+    deleteSelection,
+    applySelection,
+  ])
 
   const openNew = useCallback(
     (id: string) => {
@@ -171,18 +290,32 @@ export function useTaskList(tasks: Task[], toggle: (task: Task) => void): TaskLi
     [open],
   )
 
-  const selected = selectedId ? tasks.find((t) => t.id === selectedId) : undefined
+  const selected = count === 1 && selectedId ? tasks.find((t) => t.id === selectedId) : undefined
 
   const rowProps = (task: Task, extra: Partial<RowProps> = {}): RowProps => ({
     open: openId === task.id,
-    selected: selectedId === task.id,
+    selected: sel.ids.includes(task.id),
     showWhen: false,
     showCaption: false,
-    onSelect: () => {
+    onSelect: (how: ClickHow = {}) => {
       const coarse = window.matchMedia?.('(pointer: coarse)').matches ?? false
-      if (rowClickAction(coarse, Boolean(openId)) === 'select') setSelectedId(task.id)
+      const action = rowClickAction(coarse, Boolean(openId), { ...how, selecting })
+      if (action === 'select') setSelection(selectOne(task.id))
+      else if (action === 'toggle') {
+        // The open task counts as selected, so Cmd-click adds to it.
+        const from = openId && count === 0 ? selectOne(openId) : sel
+        applySelection(toggleInSelection(from, task.id, rowIds()))
+      } else if (action === 'range') applySelection(selectRange(sel, task.id, rowIds()))
       // Switching tasks with the panel open keeps focus in the list, like the arrow keys.
       else open(task.id, openId ? null : 'panel')
+    },
+    onLongPress: () => {
+      // A long press starts selection mode with this task (or adds it when already in it).
+      if (openId) setTaskParam(null)
+      setSelection((s) =>
+        selecting ? toggleInSelection(s, task.id, rowIds()) : selectOne(task.id),
+      )
+      setSelecting(true)
     },
     onOpen: () => open(task.id, 'panel'),
     onToggle: () => toggle(task),
@@ -197,7 +330,18 @@ export function useTaskList(tasks: Task[], toggle: (task: Task) => void): TaskLi
     onOpen: (id: string) => open(id, 'panel'),
   })
 
-  return { selected, rowProps, openNew, panel }
+  return {
+    selected,
+    selection,
+    selecting,
+    clearSelection,
+    deleteSelection,
+    askingDelete,
+    cancelDelete: () => setAskingDelete(false),
+    rowProps,
+    openNew,
+    panel,
+  }
 }
 
 /**

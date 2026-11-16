@@ -133,7 +133,7 @@ function NewTaskBar({ focusSignal }: { focusSignal: number }) {
 
   return (
     <>
-      <TaskToolbar onNew={addNew} selected={undefined} />
+      <TaskToolbar onNew={addNew} />
       {taskList.panel}
     </>
   )

@@ -1353,6 +1353,106 @@ button.link.danger {
 .toolbar-popover .when-picker {
   padding-left: 0;
 }
+
+/* --- Several tasks selected --- */
+.selection-count {
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--accent);
+  white-space: nowrap;
+}
+/* On a touch screen in selection mode: a small bar just above the toolbar. */
+.selection-bar {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+  font-size: 0.9em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.selection-bar button {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: none;
+  color: var(--muted);
+  font-weight: 500;
+}
+.selection-bar button.selection-done {
+  background: var(--accent);
+  color: white;
+  font-weight: 600;
+}
+.bulk-tags {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.bulk-tags-input {
+  width: 100%;
+}
+.bulk-tags-empty {
+  padding: 4px 8px;
+  color: var(--muted);
+  font-size: 0.9em;
+}
+.bulk-tag-mark {
+  flex: none;
+  display: grid;
+  place-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1.5px solid var(--check);
+  color: white;
+}
+.bulk-tag[aria-pressed="true"] .bulk-tag-mark,
+.bulk-tag[aria-pressed="mixed"] .bulk-tag-mark {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.bulk-tag[aria-pressed="true"] {
+  font-weight: 400;
+}
+.delete-question {
+  width: min(280px, calc(100vw - 32px));
+}
+.delete-question p {
+  margin: 2px 2px 10px;
+}
+.delete-question-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.delete-question-buttons button {
+  padding: 6px 12px;
+}
+.delete-question-buttons button.secondary {
+  background: var(--surface);
+  color: var(--fg);
+  border: 1px solid var(--line);
+}
+.delete-question-buttons button.danger {
+  background: var(--error);
+}
+/* A long press selects; it should not open the system's callout or select the text. */
+@media (pointer: coarse) {
+  .task-main {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
 .move-list {
   display: flex;
   flex-direction: column;

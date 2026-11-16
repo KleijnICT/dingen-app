@@ -259,7 +259,7 @@ export function ListPage({ list, focusSignal, header }: Props) {
         <p className="empty">{t(`list.empty.${list.id}` as MessageKey)}</p>
       )}
       {body}
-      <TaskToolbar onNew={addNew} selected={taskList.selected} />
+      <TaskToolbar onNew={addNew} list={taskList} />
       {taskList.panel}
     </section>
   )

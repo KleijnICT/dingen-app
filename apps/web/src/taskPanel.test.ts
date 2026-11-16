@@ -149,6 +149,46 @@ describe('rowClickAction', () => {
   it('shows the clicked task when the panel is already open', () => {
     expect(rowClickAction(false, true)).toBe('open')
   })
+  it('selects a range with Shift and adds or removes with Cmd or Ctrl, panel open or not', () => {
+    expect(rowClickAction(false, false, { range: true })).toBe('range')
+    expect(rowClickAction(false, true, { range: true })).toBe('range')
+    expect(rowClickAction(false, false, { toggle: true })).toBe('toggle')
+    expect(rowClickAction(false, true, { toggle: true })).toBe('toggle')
+  })
+  it('adds or removes with a tap in selection mode on a touch screen', () => {
+    expect(rowClickAction(true, false, { selecting: true })).toBe('toggle')
+  })
+})
+
+describe('listKeyAction with several tasks', () => {
+  it('extends the selection with Shift+Arrow', () => {
+    expect(key({ shift: true, selected: 'a' })).toEqual({ kind: 'extend', direction: 'down' })
+    expect(key({ key: 'ArrowUp', shift: true, selected: 'b' })).toEqual({
+      kind: 'extend',
+      direction: 'up',
+    })
+    expect(key({ shift: true, ids: [] })).toBeNull()
+  })
+
+  it('does not open the panel with Enter', () => {
+    expect(key({ key: 'Enter', selected: 'b', count: 2 })).toBeNull()
+    expect(key({ key: 'Enter', selected: 'b', count: 1 })).toEqual({ kind: 'open', id: 'b' })
+  })
+
+  it('clears the selection with Escape', () => {
+    expect(key({ key: 'Escape', selected: 'b', count: 3 })).toEqual({ kind: 'deselect' })
+    expect(key({ key: 'Escape', selected: null, count: 2 })).toEqual({ kind: 'deselect' })
+  })
+
+  it('deletes all of them with Backspace or Delete', () => {
+    expect(key({ key: 'Backspace', selected: 'b', count: 2 })).toEqual({
+      kind: 'deleteSelection',
+    })
+    expect(key({ key: 'Delete', selected: 'b', count: 2, inList: true })).toEqual({
+      kind: 'deleteSelection',
+    })
+    expect(key({ key: 'Backspace', selected: 'b', count: 2, typing: true })).toBeNull()
+  })
 })
 
 describe('fieldValues', () => {

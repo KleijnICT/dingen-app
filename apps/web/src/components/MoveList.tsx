@@ -15,23 +15,24 @@ interface Props {
    * keeps the list open, so a heading can follow.
    */
   withHeadings?: boolean
+  /** More tasks that move along with `task` (several selected in the list). */
+  others?: Task[]
 }
 
 /** Every place a task can go: nowhere, a loose project, an area and its projects. */
-export function MoveList({ task, onDone, withHeadings = false }: Props) {
+export function MoveList({ task, onDone, withHeadings = false, others = [] }: Props) {
   const engine = useEngine()
   const ws = useWorkspace()
   const t = useT()
-  const current = task.projectId
-    ? `project:${task.projectId}`
-    : task.areaId
-      ? `area:${task.areaId}`
-      : 'none'
+  const place = (x: Task) =>
+    x.projectId ? `project:${x.projectId}` : x.areaId ? `area:${x.areaId}` : 'none'
+  // With several tasks, only a place they all share shows as current.
+  const current = others.every((x) => place(x) === place(task)) ? place(task) : null
   const headings =
     withHeadings && task.projectId ? views.headingsOf(ws.headings, task.projectId) : []
 
   function move(target: MoveTarget) {
-    moveTask(engine, ws, task, target)
+    for (const x of [task, ...others]) moveTask(engine, ws, x, target)
     const stay =
       withHeadings &&
       target.kind === 'project' &&
@@ -69,7 +70,7 @@ export function MoveList({ task, onDone, withHeadings = false }: Props) {
         <ProgressCircle value={views.progress(id, ws.tasks)} size={15} />,
         { kind: 'project', projectId: id },
         depth,
-        own && (headings.length === 0 || task.headingId === null),
+        own && current !== null && (headings.length === 0 || task.headingId === null),
       ),
       ...(own
         ? headings.map((h) =>

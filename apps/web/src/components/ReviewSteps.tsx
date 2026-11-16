@@ -101,7 +101,7 @@ function TasksStep(props: { tasks: Task[]; emptyKey: MessageKey; showWhen: boole
       ) : (
         group('tasks', shown, { showWhen: props.showWhen, showCaption: true })
       )}
-      <TaskToolbar selected={taskList.selected} />
+      <TaskToolbar list={taskList} />
       {taskList.panel}
     </>
   )
@@ -210,7 +210,7 @@ function LookBackStep(props: { tasks: Task[]; projects: Project[]; perArea: Area
           {group('done', props.tasks, { showCaption: true })}
         </div>
       )}
-      <TaskToolbar selected={taskList.selected} />
+      <TaskToolbar list={taskList} />
       {taskList.panel}
     </>
   )
@@ -235,7 +235,7 @@ function DueSoonStep(props: { tasks: Task[]; projects: Project[] }) {
         </div>
       )}
       {shown.length > 0 && group('dated', shown, { showWhen: true, showCaption: true })}
-      <TaskToolbar selected={taskList.selected} />
+      <TaskToolbar list={taskList} />
       {taskList.panel}
     </>
   )
@@ -426,7 +426,7 @@ function ProjectCard({ project }: { project: Project }) {
       ) : (
         group(`project:${project.id}`, shown, { showWhen: true })
       )}
-      <TaskToolbar onNew={addTask} selected={taskList.selected} />
+      <TaskToolbar onNew={addTask} list={taskList} />
       {taskList.panel}
     </>
   )
@@ -502,7 +502,7 @@ function AreaCard({ item, deep }: { item: AreaItem; deep: boolean }) {
           group(`area:${area.id}`, shown, { showWhen: true })
         )}
       </div>
-      <TaskToolbar onNew={addTask} selected={taskList.selected} />
+      <TaskToolbar onNew={addTask} list={taskList} />
       {taskList.panel}
     </>
   )
@@ -594,7 +594,7 @@ function SomedayScanStep(props: { tasks: Task[]; projects: Project[] }) {
           {group('someday', shown, { showCaption: true })}
         </div>
       )}
-      <TaskToolbar selected={taskList.selected} />
+      <TaskToolbar list={taskList} />
       {taskList.panel}
     </>
   )
@@ -657,7 +657,7 @@ function SomedayDeepStep(props: { review: Review; projects: Project[]; groups: A
           </div>
         )
       })}
-      <TaskToolbar selected={taskList.selected} />
+      <TaskToolbar list={taskList} />
       {taskList.panel}
     </>
   )

@@ -9,12 +9,29 @@ import type { Task } from '@dingen/core'
 /** Beside the list (wide), over the list with a scrim (medium), or the whole screen (phone). */
 export type PanelMode = 'side' | 'overlay' | 'full'
 
+/** How a row was clicked: with Shift, with Cmd or Ctrl, or as a tap in selection mode. */
+export interface ClickHow {
+  /** Shift is held: select the range from the anchor. */
+  range?: boolean
+  /** Cmd or Ctrl is held: add or remove this one task. */
+  toggle?: boolean
+  /** Selection mode on a touch screen (after a long press): a tap adds or removes. */
+  selecting?: boolean
+}
+
 /**
  * What a click on a task row does. With a mouse it only selects, so the toolbar's When and
  * Move can act on it; a double click opens the panel. On a touch screen a tap opens. When the
- * panel is already open, a click shows the clicked task in it.
+ * panel is already open, a click shows the clicked task in it. Shift selects a range and Cmd
+ * or Ctrl adds or removes one task; in selection mode a tap does that too.
  */
-export function rowClickAction(coarsePointer: boolean, panelOpen: boolean): 'open' | 'select' {
+export function rowClickAction(
+  coarsePointer: boolean,
+  panelOpen: boolean,
+  how: ClickHow = {},
+): 'open' | 'select' | 'range' | 'toggle' {
+  if (how.selecting || how.toggle) return 'toggle'
+  if (how.range) return 'range'
   return coarsePointer || panelOpen ? 'open' : 'select'
 }
 
@@ -43,7 +60,12 @@ export interface KeyInput {
   inList: boolean
   /** Focus is on a button or link, which Enter already presses. */
   onButton: boolean
+  /** Shift is held (Shift+Arrow extends the selection). */
+  shift?: boolean
+  /** The focused row of the selection. */
   selected: string | null
+  /** How many tasks are selected; with more than one the panel stays closed. */
+  count?: number
   open: string | null
   /** The task ids in the order they appear on screen. */
   ids: string[]
@@ -55,27 +77,33 @@ export type KeyAction =
   | { kind: 'close' }
   | { kind: 'deselect' }
   | { kind: 'delete'; id: string; next: string | null }
+  | { kind: 'deleteSelection' }
+  | { kind: 'extend'; direction: 'up' | 'down' }
   | null
 
 /**
  * What a key does in a task list. Arrows move the selection (an open panel follows), Enter
  * opens the panel, Escape closes it (the selection stays) or else clears the selection, and
  * Backspace or Delete removes the selected task (with the panel open, only from the list).
+ * Shift+Arrow extends the selection; with several tasks selected Enter does nothing, Escape
+ * clears them and Backspace or Delete removes them all (after asking).
  * Typing in the panel only reacts to Escape.
  */
 export function listKeyAction(k: KeyInput): KeyAction {
   if (k.modified || k.inPopup) return null
+  const many = (k.count ?? 0) > 1
   if (k.typing || k.inPanel) {
     return k.key === 'Escape' && k.inPanel && k.open ? { kind: 'close' } : null
   }
   switch (k.key) {
     case 'Escape':
       if (k.open) return { kind: 'close' }
-      return k.selected ? { kind: 'deselect' } : null
+      return k.selected || many ? { kind: 'deselect' } : null
     case 'Enter':
-      return k.selected && !k.open && !k.onButton ? { kind: 'open', id: k.selected } : null
+      return k.selected && !many && !k.open && !k.onButton ? { kind: 'open', id: k.selected } : null
     case 'Backspace':
     case 'Delete': {
+      if (many) return k.onPanel || (k.open && !k.inList) ? null : { kind: 'deleteSelection' }
       // With the panel open, only from the list: the open task should not vanish by accident.
       if (!k.selected || k.onPanel || (k.open && !k.inList)) return null
       const at = k.ids.indexOf(k.selected)
@@ -85,6 +113,7 @@ export function listKeyAction(k: KeyInput): KeyAction {
     case 'ArrowDown':
     case 'ArrowUp': {
       if (k.ids.length === 0) return null
+      if (k.shift) return { kind: 'extend', direction: k.key === 'ArrowDown' ? 'down' : 'up' }
       const at = k.selected ? k.ids.indexOf(k.selected) : -1
       const next =
         k.key === 'ArrowDown'

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Select several tasks at once (web): Shift-click selects a range, Cmd/Ctrl-click
+  adds or removes one, Shift+Arrow extends the selection; on a touch screen a long
+  press starts selection mode, where taps add and remove tasks. The toolbar shows
+  how many are selected and When, Move and the new Tags button act on all of them;
+  Backspace/Delete (or the toolbar's Delete button) deletes them after one
+  confirmation. Escape clears the selection.
 - Settings → Calendars: removing a calendar now goes through a `…` menu with a confirmation, like deleting a project.
 - MCP tools `delete_project` and `delete_area`, only for an agent with Manage
   on that project or area (or on Everything): they delete like the app does,
