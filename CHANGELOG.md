@@ -17,6 +17,13 @@
   get a duration filter next to the tags (at most 5m, 15m, 30m or 1h), kept
   per device; tasks without a duration drop out while it is on. The activity
   overview names duration changes.
+- MCP tools and plugin: `create_task` and `update_task` take a `daypart`
+  (morning, afternoon, evening) and a `duration` in minutes; `list_tasks`
+  gets a `max_duration` filter and shows daypart and duration. The old
+  `evening` and `time` fields still work for this version and are converted
+  (a time becomes its daypart plus a reminder); they are marked deprecated.
+  The Dingen skill describes dayparts, reminders as the one exact time, and
+  durations.
 
 ## 1.0.0-alpha.5
 

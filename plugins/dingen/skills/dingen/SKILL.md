@@ -13,8 +13,8 @@ structure: the user trusts the app because every task is filed the same way.
 
 - **Inbox**: everything not yet decided. Capture goes here.
 - **Today**: tasks with a when-date of today or earlier, or a deadline of
-  today or earlier. **This Evening** is the part of Today for later in the day
-  (`evening: true`).
+  today or earlier, grouped by daypart: first the tasks without one, then
+  Morning, Afternoon and Evening.
 - **Upcoming**: tasks with a when-date or deadline in the future.
 - **Anytime**: tasks without a date that can be done now.
 - **Someday**: ideas without commitment. No dates.
@@ -33,10 +33,18 @@ structure: the user trusts the app because every task is filed the same way.
 - **deadline** is a hard date with consequences. Set it only when there is one.
 - No date is the default. A wished-for date clutters Today; only set one when
   the user names it or there is a real deadline.
-- **time** is a time of day on the when-date ("call at 14:30"); setting it
-  also sets a **reminder** at that time, which the user gets as a
-  notification. Set a time only when the user names one. A reminder can also
-  be on its own or on an earlier day ("remind me the evening before").
+- **daypart** plans a task with a date for the `morning`, `afternoon` (from
+  12:00) or `evening` (from 18:00) of that day; `null` for none. A task has
+  no exact time of day. Set a daypart only when the user names a part of the
+  day ("tonight", "Friday afternoon").
+- **reminder** is the one exact time: a notification on the when-date or an
+  earlier day ("call at 14:30" is a daypart afternoon plus a reminder at
+  14:30; "remind me the evening before" is a reminder on the day before). Set
+  one only when the user names a time or asks to be reminded.
+- **duration** is an optional estimate in whole minutes (5, 15, 30, 60, 120 or
+  any other, up to 1440). Set it when the user gives one ("takes ten
+  minutes"); do not guess. It helps to pick work that fits: `list_tasks` with
+  `max_duration` shows only tasks estimated at most that long.
 
 ### Repeating tasks
 
@@ -140,13 +148,19 @@ How to guide one:
 
 ## Tool notes
 
-- `list_tasks` filters combine: a list, a project, an area, a tag or
-  `assigned_to`.
+- `list_tasks` filters combine: a list, a project, an area, a tag,
+  `assigned_to` or `max_duration` (minutes; tasks without a duration drop
+  out). Task output carries `daypart` and `duration` when set.
 - `create_task` accepts `when` as `inbox`, `anytime`, `someday`, `today`,
-  `tomorrow` or `YYYY-MM-DD`, plus `evening`, `deadline`, `heading`,
-  `checklist`, `repeat`, `time` (`HH:MM`) and `reminder` (`HH:MM`, or
-  `YYYY-MM-DD HH:MM` on or before the date; `null` for none). Time and
-  reminder need a date and go along with a repeating task.
+  `tomorrow` or `YYYY-MM-DD`, plus `daypart`, `duration`, `deadline`,
+  `heading`, `checklist`, `repeat` and `reminder` (`HH:MM`, or
+  `YYYY-MM-DD HH:MM` on or before the date; `null` for none). Daypart and
+  reminder need a date and go along with a repeating task, like the duration.
+  `update_task` takes the same fields; `null` clears them. Moving a task to a
+  list without a date clears its daypart and reminder.
+- `evening` and `time` are deprecated and will go: they still work for now
+  (`evening: true` is the evening daypart, a `time` becomes its daypart plus a
+  reminder at that time), but use `daypart` and `reminder` instead.
 - `update_task` with `checklist` replaces the whole checklist; pass existing
   item ids to keep them. `repeat: null` stops repeating.
 - `complete_project` hides the project's open tasks from the lists; it can be
