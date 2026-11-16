@@ -4,6 +4,12 @@
 
 - Links in notes (http, https and www.) are clickable and open in a new tab; click elsewhere on the text to edit. The notes of a project in a review show links too.
 - Drag the edge of the sidebar or the task panel (beside the list) to make it wider or narrower, with mouse, finger or pen; double-click or double-tap puts the default back, and the arrow keys move a focused edge in steps. The widths are kept per device, and the list always keeps room.
+- Select several tasks at once (web): Shift-click selects a range, Cmd/Ctrl-click
+  adds or removes one, Shift+Arrow extends the selection; on a touch screen a long
+  press starts selection mode, where taps add and remove tasks. The toolbar shows
+  how many are selected and When, Move and the new Tags button act on all of them;
+  Backspace/Delete (or the toolbar's Delete button) deletes them after one
+  confirmation. Escape clears the selection.
 - Settings → Calendars: removing a calendar now goes through a `…` menu with a confirmation, like deleting a project.
 - MCP tools `delete_project` and `delete_area`, only for an agent with Manage
   on that project or area (or on Everything): they delete like the app does,

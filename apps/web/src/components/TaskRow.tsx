@@ -3,7 +3,9 @@ import { views } from '@dingen/core'
 import type { CSSProperties } from 'react'
 import { formatDate, useT } from '../i18n/index.js'
 import { containerOf, describeWhen } from '../lists.js'
+import { useLongPress } from '../longPress.js'
 import { useWorkspace } from '../store/context.js'
+import type { ClickHow } from '../taskPanel.js'
 import { AssigneeBadge } from './Assignee.js'
 import { DaypartBadge } from './DaypartBadge.js'
 import { DeadlineBadge } from './DeadlineField.js'
@@ -24,9 +26,12 @@ export interface RowProps {
   caption?: string
   /**
    * A click: selects the task (with a mouse) or opens it in the panel (on a touch screen,
-   * or when the panel is already open, it then shows this task).
+   * or when the panel is already open, it then shows this task). With Shift it selects a
+   * range, with Cmd or Ctrl it adds or removes this task.
    */
-  onSelect: () => void
+  onSelect: (how?: ClickHow) => void
+  /** A long press on a touch screen: starts selecting several tasks. */
+  onLongPress?: () => void
   /** Double click: opens the task in the panel. */
   onOpen: () => void
   onToggle: () => void
@@ -55,8 +60,10 @@ export function TaskRow({
   onSelect,
   onOpen,
   onToggle,
+  onLongPress,
   drag,
 }: Props) {
+  const press = useLongPress(onLongPress)
   const ws = useWorkspace()
   const t = useT()
   const done = task.status !== 'open'
@@ -90,8 +97,18 @@ export function TaskRow({
         className="task-main"
         aria-pressed={selected}
         aria-expanded={open}
-        onClick={onSelect}
-        onDoubleClick={onOpen}
+        {...press.handlers}
+        onMouseDown={(e) => {
+          // Shift-click selects a range; it should not also select the text.
+          if (e.shiftKey) e.preventDefault()
+        }}
+        onClick={(e) => {
+          if (press.consumeClick()) return
+          onSelect({ range: e.shiftKey, toggle: e.metaKey || e.ctrlKey })
+        }}
+        onDoubleClick={(e) => {
+          if (!e.shiftKey && !e.metaKey && !e.ctrlKey) onOpen()
+        }}
       >
         <span className="task-text">
           <span className="task-title">{task.title || <em>{t('task.untitled')}</em>}</span>

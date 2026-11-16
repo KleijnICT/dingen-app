@@ -269,7 +269,7 @@ export function ProjectPage({ project, focusSignal }: Props) {
             />
           )
         }
-        selected={taskList.selected}
+        list={taskList}
       />
       {taskList.panel}
     </section>
