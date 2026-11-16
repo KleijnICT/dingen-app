@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Links in notes (http, https and www.) are clickable and open in a new tab; click elsewhere on the text to edit. The notes of a project in a review show links too.
 - Settings → Calendars: removing a calendar now goes through a `…` menu with a confirmation, like deleting a project.
 - MCP tools `delete_project` and `delete_area`, only for an agent with Manage
   on that project or area (or on Everything): they delete like the app does,

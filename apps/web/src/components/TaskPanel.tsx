@@ -42,6 +42,7 @@ import { Checklist } from './Checklist.js'
 import { DeadlineField } from './DeadlineField.js'
 import { DurationField } from './Duration.js'
 import { CheckIcon, MoonIcon, ProgressCircle, TodayIcon } from './Icons.js'
+import { LinkedNotes } from './LinkedText.js'
 import { MoreMenu, useDismiss } from './Menu.js'
 import { MoveList } from './MoveList.js'
 import { RepeatEditor } from './RepeatEditor.js'
@@ -207,7 +208,6 @@ function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
   const root = useRef<HTMLDivElement>(null)
   const done = task.status !== 'open'
   useAutoGrow(titleRef, title, mode)
-  useAutoGrow(notesRef, notes, mode)
 
   // The fields just added from the Add row, the one that opens next, and the one with focus:
   // a field being cleared stays until focus leaves it.
@@ -458,15 +458,14 @@ function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
           onBlur={(e) => leaveField('notes', e)}
           onKeyDown={(e) => escapeField('notes', e)}
         >
-          <textarea
-            ref={notesRef}
-            className="editor-notes"
-            rows={2}
+          <LinkedNotes
+            textareaRef={notesRef}
             value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+            onChange={setNotes}
             onBlur={commit}
             placeholder={t('task.notes')}
-            aria-label={t('task.notes')}
+            label={t('task.notes')}
+            growKey={mode}
           />
         </div>
       )}

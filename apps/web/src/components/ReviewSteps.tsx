@@ -26,6 +26,7 @@ import { useEngine, useWorkspace } from '../store/context.js'
 import { deleteProject, toggleProject, useLinger } from '../taskActions.js'
 import { AreaGlyph } from './AreaIcons.js'
 import { ProgressCircle } from './Icons.js'
+import { LinkedText } from './LinkedText.js'
 import { MoreMenu } from './Menu.js'
 import { ProjectRow } from './ProjectRow.js'
 import { TaskGroup } from './TaskGroup.js'
@@ -420,7 +421,11 @@ function ProjectCard({ project }: { project: Project }) {
         />
       </header>
       <SignalChips list={signals(project, ws, ws.today)} />
-      {project.notes && <p className="review-card-notes">{project.notes}</p>}
+      {project.notes && (
+        <p className="review-card-notes">
+          <LinkedText text={project.notes} />
+        </p>
+      )}
       {shown.length === 0 ? (
         <p className="empty">{t('review.card.noTasks')}</p>
       ) : (
