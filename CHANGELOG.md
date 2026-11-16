@@ -11,6 +11,14 @@
   reminder at that time, so no notification is lost. Sync protocol 3 and
   export format 3; older clients and export files keep working and are
   converted.
+- Dayparts in the web app: the When picker offers Today, Tomorrow, Next week
+  (the Monday of next week), a date and Someday, and under a date a choice of
+  no daypart, morning, afternoon or evening; the separate This Evening choice
+  is gone. Today shows the tasks without a daypart first, then Morning,
+  Afternoon and Evening when they hold something, with calendar events under
+  the daypart of their start time; dragging a task into a daypart sets it.
+  The estimated time shows per daypart and for the whole day. Upcoming and the
+  task panel show the daypart.
 - Estimated duration in the web app: add a duration to a task from the Add
   row of the task panel (5m, 15m, 30m, 1h, 2h, or type any value such as 45
   or 1h30); the row shows it small and grey on the right. Today and Anytime

@@ -1,84 +1,70 @@
-import type { When } from '@dingen/core'
+import { DAYPARTS, type Daypart, type When } from '@dingen/core'
+import { whenOptions } from '../dayparts.js'
 import { useT } from '../i18n/index.js'
-import { addDays } from '../lists.js'
 
 interface Props {
   when: When
-  evening: boolean
+  daypart: Daypart | null
   today: string
-  onChange: (when: When, evening: boolean) => void
-  /** Projects have no Inbox and no evening. */
+  /**
+   * A choice. `close` is false after a date, so a daypart can still be picked
+   * underneath; a daypart or anything without a date closes the picker.
+   */
+  onChange: (when: When, daypart: Daypart | null, close: boolean) => void
+  /** Projects have no Inbox and no daypart. */
   forProject?: boolean
 }
 
-/** The one way to plan: Inbox, Today, This Evening, Tomorrow, Anytime, Someday, or a date. */
-export function WhenPicker({ when, evening, today, onChange, forProject = false }: Props) {
+/**
+ * The one way to plan: Inbox, Today, Tomorrow, Next week, Anytime, Someday or
+ * a date, and under a date the daypart (none, morning, afternoon, evening).
+ * Moving to a date keeps the daypart; without a date there is none.
+ */
+export function WhenPicker({ when, daypart, today, onChange, forProject = false }: Props) {
   const t = useT()
-  const isDate = when.kind === 'date'
-  const isToday = isDate && when.date <= today
-  const options: { label: string; active: boolean; apply: () => void }[] = [
-    ...(forProject
-      ? []
-      : [
-          {
-            label: t('when.inbox'),
-            active: when.kind === 'inbox',
-            apply: () => onChange({ kind: 'inbox' }, false),
-          },
-        ]),
-    {
-      label: t('when.today'),
-      active: isToday && !evening,
-      apply: () => onChange({ kind: 'date', date: today }, false),
-    },
-    ...(forProject
-      ? []
-      : [
-          {
-            label: t('when.thisEvening'),
-            active: isToday && evening,
-            apply: () => onChange({ kind: 'date', date: today }, true),
-          },
-        ]),
-    {
-      label: t('when.tomorrow'),
-      active: isDate && when.date === addDays(today, 1),
-      apply: () => onChange({ kind: 'date', date: addDays(today, 1) }, evening),
-    },
-    {
-      label: t('when.anytime'),
-      active: when.kind === 'anytime',
-      apply: () => onChange({ kind: 'anytime' }, false),
-    },
-    {
-      label: t('when.someday'),
-      active: when.kind === 'someday',
-      apply: () => onChange({ kind: 'someday' }, false),
-    },
-  ]
+  const date = when.kind === 'date' ? when.date : null
 
   return (
-    <fieldset className="when-picker" aria-label={t('when.label')}>
-      {options.map((o) => (
-        <button
-          type="button"
-          key={o.label}
-          className={`chip ${o.active ? 'active' : ''}`}
-          onClick={o.apply}
-        >
-          {o.label}
-        </button>
-      ))}
-      <input
-        type="date"
-        className="chip date"
-        value={isDate ? when.date : ''}
-        min={today}
-        onChange={(e) => {
-          if (e.target.value) onChange({ kind: 'date', date: e.target.value }, evening)
-        }}
-        aria-label={t('when.pickDate')}
-      />
-    </fieldset>
+    <div className="when-picker-wrap">
+      <fieldset className="when-picker" aria-label={t('when.label')}>
+        {whenOptions(when, today, forProject).map((o) => (
+          <button
+            type="button"
+            key={o.key}
+            className={`chip ${o.active ? 'active' : ''}`}
+            aria-pressed={o.active}
+            onClick={() => onChange(o.when, o.when.kind === 'date' ? daypart : null, o.close)}
+          >
+            {t(`when.${o.key}`)}
+          </button>
+        ))}
+        <input
+          type="date"
+          className="chip date"
+          value={date ?? ''}
+          min={today}
+          onChange={(e) => {
+            if (e.target.value)
+              onChange({ kind: 'date', date: e.target.value }, daypart, forProject)
+          }}
+          aria-label={t('when.pickDate')}
+        />
+      </fieldset>
+      {date !== null && !forProject && (
+        <fieldset className="daypart-picker" aria-label={t('daypart.label')}>
+          {[null, ...DAYPARTS].map((part) => (
+            <button
+              type="button"
+              key={part ?? 'none'}
+              className={`chip small ${daypart === part ? 'active' : ''}`}
+              aria-pressed={daypart === part}
+              onClick={() => onChange(when, part, true)}
+            >
+              {t(`daypart.${part ?? 'none'}`)}
+            </button>
+          ))}
+        </fieldset>
+      )}
+    </div>
   )
 }

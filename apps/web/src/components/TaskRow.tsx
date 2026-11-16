@@ -5,9 +5,10 @@ import { formatDate, useT } from '../i18n/index.js'
 import { containerOf, describeWhen } from '../lists.js'
 import { useWorkspace } from '../store/context.js'
 import { AssigneeBadge } from './Assignee.js'
+import { DaypartBadge } from './DaypartBadge.js'
 import { DeadlineBadge } from './DeadlineField.js'
 import { DurationBadge } from './Duration.js'
-import { CheckIcon, ChecklistIcon, MoonIcon, NotesIcon, RepeatIcon } from './Icons.js'
+import { CheckIcon, ChecklistIcon, NotesIcon, RepeatIcon } from './Icons.js'
 import { ScheduleBadge } from './ScheduleField.js'
 
 export interface RowProps {
@@ -15,6 +16,8 @@ export interface RowProps {
   open: boolean
   selected: boolean
   showWhen: boolean
+  /** Show the daypart of a dated task (Upcoming); rows that show the date show it too. */
+  showDaypart?: boolean
   /** Show the project or area under the title (off inside that project or area). */
   showCaption: boolean
   /** Text under the title in place of the project or area (a heading name, for instance). */
@@ -46,6 +49,7 @@ export function TaskRow({
   open,
   selected,
   showWhen,
+  showDaypart = false,
   showCaption,
   caption,
   onSelect,
@@ -109,7 +113,6 @@ export function TaskRow({
             </span>
           ))}
           {!done && <ScheduleBadge task={task} />}
-          {task.daypart === 'evening' && <MoonIcon className="meta-icon" />}
           {task.notes && <NotesIcon className="meta-icon" />}
           {checklist.total > 0 && (
             <span className="meta-checklist">
@@ -123,6 +126,7 @@ export function TaskRow({
           {showWhen && task.when.kind === 'date' && (
             <span className="meta-when">{describeWhen(task.when, ws.today)}</span>
           )}
+          {!done && (showWhen || showDaypart) && <DaypartBadge task={task} />}
           {!done && task.duration !== null && <DurationBadge minutes={task.duration} />}
           {done && task.completedAt && (
             <span className="meta-when">

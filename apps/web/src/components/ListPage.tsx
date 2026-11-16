@@ -1,5 +1,4 @@
-import { newTask, orderBetween, type Project, type Task, views } from '@dingen/core'
-import { useDndContext } from '@dnd-kit/core'
+import { type Daypart, newTask, orderBetween, type Project, type Task, views } from '@dingen/core'
 import { useState } from 'react'
 import { daysWithEvents, rangeFor, useCalendarData } from '../calendar.js'
 import { listTarget, type TaskGroupInfo } from '../dnd.js'
@@ -27,6 +26,7 @@ import { ReviewBanner } from './ReviewBanner.js'
 import { TagFilter } from './TagFilter.js'
 import { TaskGroup } from './TaskGroup.js'
 import type { RowProps } from './TaskRow.js'
+import { TodayBody, TodayTotal } from './TodayBody.js'
 import { TaskToolbar } from './Toolbar.js'
 import { useOnSignal, useTaskList } from './useTaskList.js'
 
@@ -44,7 +44,6 @@ export function ListPage({ list, focusSignal, header }: Props) {
   const [tagFilter, setTagFilter] = useState<string | null>(null)
   // Tasks added on this page, kept in view by the duration filter until they have one.
   const [added, setAdded] = useState<string[]>([])
-  const draggingSomething = useDndContext().active !== null
   const todayView = useTodayView()
   const calendar = useCalendarData()
   const maxDuration = useDurationFilter(list.id)
@@ -91,16 +90,17 @@ export function ListPage({ list, focusSignal, header }: Props) {
   const rowProps = (
     task: Task,
     showCaption = list.id !== 'anytime' && list.id !== 'someday',
-  ): RowProps => taskList.rowProps(task, { showCaption })
+  ): RowProps => taskList.rowProps(task, { showCaption, showDaypart: list.id === 'upcoming' })
   const group = (
     key: string,
     target: MoveTarget | null,
     tasks: Task[],
     orderField: TaskGroupInfo['orderField'] = 'order',
     showCaption?: boolean,
+    daypart?: Daypart | null,
   ) => (
     <TaskGroup
-      group={{ key: `${list.id}:${key}`, target, orderField } satisfies TaskGroupInfo}
+      group={{ key: `${list.id}:${key}`, target, orderField, daypart } satisfies TaskGroupInfo}
       tasks={tasks}
       rowProps={(task) => rowProps(task, showCaption)}
       frozen={list.id === 'logbook'}
@@ -110,46 +110,18 @@ export function ListPage({ list, focusSignal, header }: Props) {
 
   let body: React.ReactNode
   switch (list.id) {
-    case 'today': {
-      const evening = shown.filter((task) => task.daypart === 'evening')
-      const day = shown.filter((task) => task.daypart !== 'evening')
-      const todayWhen = { kind: 'date', date: ws.today } as const
-      // "My order" is one flat list with its own order; "By project" follows each project's order.
-      const dayBody =
-        todayView === 'manual'
-          ? group('day', { kind: 'when', when: todayWhen, daypart: null }, day, 'todayOrder')
-          : groupByContainer([...day].sort(views.byOrder)).map((g) => (
-              <div key={g.key} className="group">
-                {g.key !== 'none' && (
-                  <h2 className="group-title">
-                    <button type="button" className="group-link" onClick={() => navigate(g.href)}>
-                      {g.title}
-                    </button>
-                  </h2>
-                )}
-                {group(g.key, g.target, g.tasks, 'order', false)}
-              </div>
-            ))
+    case 'today':
       body = (
-        <>
-          <DayEvents date={ws.today} />
-          {projects.length > 0 && <ul className="tasks">{projects.map(projectRow)}</ul>}
-          {dayBody}
-          <div className="group evening">
-            {(evening.length > 0 || draggingSomething) && (
-              <h2 className="group-title">{t('list.thisEvening')}</h2>
-            )}
-            {group(
-              'evening',
-              { kind: 'when', when: todayWhen, daypart: 'evening' },
-              evening,
-              'todayOrder',
-            )}
-          </div>
-        </>
+        <TodayBody
+          today={ws.today}
+          tasks={shown}
+          view={todayView}
+          projects={projects.length > 0 && <ul className="tasks">{projects.map(projectRow)}</ul>}
+          group={group}
+          groupByContainer={groupByContainer}
+        />
       )
       break
-    }
     case 'upcoming':
       // A task that was just checked off lingers in its group; it has no upcoming date any more.
       body = withEventDays(
@@ -254,7 +226,12 @@ export function ListPage({ list, focusSignal, header }: Props) {
       {header ?? (
         <header className="list-header">
           <h1>{t(list.titleKey)}</h1>
-          {list.id === 'today' && <p className="muted">{describeLongDate(ws.today)}</p>}
+          {list.id === 'today' && (
+            <p className="muted today-date">
+              {describeLongDate(ws.today)}
+              <TodayTotal tasks={shown} />
+            </p>
+          )}
           {list.id === 'today' && (
             <fieldset className="view-switch" aria-label={t('today.view')}>
               {(['manual', 'grouped'] as const).map((view) => (

@@ -57,6 +57,14 @@ describe('activity lines', () => {
     expect(describeLine(canceled, 'You', ctx)).toBe('You canceled')
   })
 
+  it('names the daypart', () => {
+    const line = item(1, '2026-11-12T10:00:00Z', {
+      kind: 'updated',
+      fields: [{ field: 'daypart', from: null, to: 'afternoon' }],
+    })
+    expect(describeLine(line, 'You', ctx)).toBe('You changed the daypart from none to afternoon')
+  })
+
   it('says where a move between spaces went', () => {
     const moved = (to: string) =>
       item(4, '2026-11-12T10:00:00Z', {
