@@ -15,6 +15,10 @@
   Clicking it opens the task. Nothing is sent when you assign a task
   yourself, when an agent sends the same assignee again, or when an agent
   completes a task (that stays in the Logbook).
+- On phones the sidebar is a drawer from the left instead of the bottom
+  navigation bar: the menu button top left or a swipe from the left screen
+  edge opens it, with the same lists, areas, projects, New List and Settings
+  as on the desktop. Choosing a list, Escape or tapping beside it closes it.
 - Dayparts and estimated duration, groundwork (core and server): a task has a
   daypart (morning, afternoon or evening) instead of This Evening and a time
   of day, and an optional estimated duration. A reminder keeps its own exact
