@@ -174,7 +174,7 @@ describe('fieldLayout', () => {
   it('shows fields with a value and keeps them out of the Add row', () => {
     const full = {
       ...dated,
-      time: '09:00',
+      reminder: { daysBefore: 0, time: '09:00' },
       deadline: '2026-11-20',
       templateId: 'tpl',
       assigneeId: 'me',
@@ -183,10 +183,6 @@ describe('fieldLayout', () => {
       shown: ['time', 'deadline', 'repeat', 'assignee'],
       addable: [],
     })
-    // A reminder alone counts as a time and reminder.
-    expect(
-      fieldLayout({ ...dated, reminder: { daysBefore: 0, time: '09:00' } }, [], true).shown,
-    ).toEqual(['time'])
   })
 
   it('shows a just added field before it has a value', () => {

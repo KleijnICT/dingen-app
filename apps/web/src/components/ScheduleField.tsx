@@ -1,5 +1,12 @@
-import { addDays, daysBetween, type Reminder, scheduleFields, type Task } from '@dingen/core'
-import { Bell, Clock } from 'lucide-react'
+import {
+  addDays,
+  daypartStartTime,
+  daysBetween,
+  type Reminder,
+  reminderFields,
+  type Task,
+} from '@dingen/core'
+import { Bell } from 'lucide-react'
 import { useT } from '../i18n/index.js'
 
 interface Props {
@@ -7,13 +14,10 @@ interface Props {
   onChange: (fields: Record<string, unknown>) => void
 }
 
-/** Default time for a reminder on a task without a time. */
-const DEFAULT_REMINDER_TIME = '09:00'
-
 /**
- * Time of day and reminder of a task with a date. Setting a time also sets a
- * reminder at that time; the bell turns it off, or on again, and the reminder
- * can move to another day (up to the task's date) and time.
+ * The reminder of a task with a date. The bell turns it on (at the start of
+ * the task's daypart) or off, and the reminder can move to another day (up to
+ * the task's date) and time. It does not follow the daypart.
  */
 export function ScheduleField({ task, onChange }: Props) {
   const t = useT()
@@ -22,34 +26,13 @@ export function ScheduleField({ task, onChange }: Props) {
   const reminder = task.reminder
   const reminderDate = reminder ? addDays(date, -reminder.daysBefore) : null
 
-  const set = (input: { time?: string | null; reminder?: Reminder | null }) => {
-    const fields = scheduleFields(task, input)
+  const set = (input: { reminder: Reminder | null }) => {
+    const fields = reminderFields(task, input.reminder)
     if (Object.keys(fields).length > 0) onChange(fields)
   }
 
   return (
     <div className="schedule-field">
-      <span className={`schedule-time ${task.time ? 'set' : ''}`}>
-        <Clock size={14} className="meta-icon" aria-hidden="true" />
-        <input
-          type="time"
-          className="chip date"
-          value={task.time ?? ''}
-          onChange={(e) => set({ time: e.target.value || null })}
-          aria-label={t('reminder.time')}
-        />
-        {task.time && (
-          <button
-            type="button"
-            className="task-delete visible"
-            aria-label={t('reminder.clearTime')}
-            title={t('reminder.clearTime')}
-            onClick={() => set({ time: null })}
-          >
-            ×
-          </button>
-        )}
-      </span>
       <span className="schedule-reminder">
         <button
           type="button"
@@ -57,9 +40,7 @@ export function ScheduleField({ task, onChange }: Props) {
           aria-pressed={reminder !== null}
           onClick={() =>
             set({
-              reminder: reminder
-                ? null
-                : { daysBefore: 0, time: task.time ?? DEFAULT_REMINDER_TIME },
+              reminder: reminder ? null : { daysBefore: 0, time: daypartStartTime(task.daypart) },
             })
           }
         >
@@ -98,14 +79,14 @@ export function ScheduleField({ task, onChange }: Props) {
   )
 }
 
-/** Time and bell in a task row; nothing without a date. */
+/** The bell and the reminder time in a task row; nothing without a date or reminder. */
 export function ScheduleBadge({ task }: { task: Task }) {
   const t = useT()
-  if (task.when.kind !== 'date' || (task.time === null && task.reminder === null)) return null
+  if (task.when.kind !== 'date' || task.reminder === null) return null
   return (
-    <span className="meta-time" title={task.reminder ? t('reminder.label') : undefined}>
-      {task.reminder && <Bell size={12} aria-label={t('reminder.label')} />}
-      {task.time}
+    <span className="meta-time" title={t('reminder.label')}>
+      <Bell size={12} aria-label={t('reminder.label')} />
+      {task.reminder.time}
     </span>
   )
 }

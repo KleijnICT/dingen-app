@@ -119,13 +119,13 @@ export const OPTIONAL_FIELDS: readonly OptionalField[] = ['time', 'deadline', 'r
 
 type FieldTask = Pick<
   Task,
-  'status' | 'when' | 'time' | 'reminder' | 'deadline' | 'templateId' | 'assigneeId'
+  'status' | 'when' | 'reminder' | 'deadline' | 'templateId' | 'assigneeId'
 >
 
 /** Whether each optional field has a value. */
 export function fieldValues(task: FieldTask): Record<OptionalField, boolean> {
   return {
-    time: task.time !== null || task.reminder !== null,
+    time: task.reminder !== null,
     deadline: task.deadline !== null,
     repeat: task.templateId !== null,
     assignee: task.assigneeId !== null,

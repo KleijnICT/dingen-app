@@ -4,6 +4,8 @@ import {
   normalizeTagTitle,
   type SpaceKind,
   TIMESTAMP_PATTERN,
+  upgradeTaskFields,
+  withoutRetired,
 } from '@dingen/core'
 import { and, asc, eq, inArray } from 'drizzle-orm'
 import { z } from 'zod'
@@ -15,8 +17,12 @@ export const EXPORT_FORMAT = 'dingen-export'
 /**
  * Version 2 (plan 23, part 5): a `spaces` list and a `spaceId` on every
  * record. Version 1 files (one personal space, no `spaceId`) still import.
+ *
+ * Version 3 (plan 25): tasks have `daypart` and `duration` instead of
+ * `evening` and `time`. Tasks in version 1 and 2 files are converted on
+ * import as the data migration does (see `upgradeTaskRecord`).
  */
-export const EXPORT_VERSION = 2
+export const EXPORT_VERSION = 3
 
 /** Volgorde waarin soorten in het bestand staan: eerst de containers, dan de inhoud. */
 export const EXPORT_TYPES = [
@@ -124,6 +130,8 @@ const Entities = z.object({
   review: z.array(RecordShape).default([]),
 })
 
+const Spaces = z.array(z.object({ id: z.string().min(1), kind: z.enum(['personal', 'shared']) }))
+
 const Base = {
   format: z.literal(EXPORT_FORMAT),
   appVersion: z.string().optional(),
@@ -135,10 +143,41 @@ const Envelope = z.discriminatedUnion('version', [
   z.object({
     ...Base,
     version: z.literal(2),
-    spaces: z.array(z.object({ id: z.string().min(1), kind: z.enum(['personal', 'shared']) })),
+    spaces: Spaces,
+    entities: Entities,
+  }),
+  z.object({
+    ...Base,
+    version: z.literal(3),
+    spaces: Spaces,
     entities: Entities,
   }),
 ])
+
+/**
+ * A task from a version 1 or 2 file in version 3 terms: `evening` and `time`
+ * become a daypart (and a reminder at the time when it had none), stamped
+ * with the latest stamp of the old fields. Other records come back as they are.
+ */
+export function upgradeTaskRecord(rec: {
+  data: Record<string, unknown>
+  fieldTs: Record<string, string>
+}): { data: Record<string, unknown>; fieldTs: Record<string, string> } {
+  const { data, fieldTs } = rec
+  if (!('evening' in data) && !('time' in data)) return rec
+  const legacy: Record<string, unknown> = {}
+  if ('evening' in data) legacy.evening = data.evening
+  if ('time' in data) legacy.time = data.time
+  const base = withoutRetired('task', data)
+  const fields = upgradeTaskFields(legacy, base)
+  const stamps = [fieldTs.evening, fieldTs.time].filter((ts): ts is string => !!ts).sort()
+  const ts = stamps.at(-1)
+  const nextTs = { ...fieldTs }
+  delete nextTs.evening
+  delete nextTs.time
+  for (const field of Object.keys(fields)) if (ts) nextTs[field] = ts
+  return { data: { ...base, ...fields }, fieldTs: nextTs }
+}
 
 export type ParsedExport =
   | { ok: true; records: ImportRecord[]; spaces: ImportSpace[] }
@@ -158,7 +197,7 @@ export function parseExport(input: unknown): ParsedExport {
     }
   }
   const file = envelope.data
-  const fileSpaces: ImportSpace[] = file.version === 2 ? file.spaces : []
+  const fileSpaces: ImportSpace[] = file.version === 1 ? [] : file.spaces
   const records: ImportRecord[] = []
   const issues: string[] = []
   const seen = new Set<string>()
@@ -171,8 +210,13 @@ export function parseExport(input: unknown): ParsedExport {
     issues.push('spaces: meer dan één persoonlijke ruimte')
   }
   for (const type of EXPORT_TYPES) {
-    for (const [index, rec] of file.entities[type].entries()) {
+    for (const [index, original] of file.entities[type].entries()) {
       const where = `${type}[${index}]`
+      // Tasks of files from before dayparts (plan 25).
+      const rec =
+        type === 'task' && file.version < 3
+          ? { ...original, ...upgradeTaskRecord(original) }
+          : original
       if (rec.spaceId !== undefined && !spaceIds.has(rec.spaceId)) {
         issues.push(`${where}: onbekende ruimte ${rec.spaceId}`)
       }

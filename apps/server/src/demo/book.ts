@@ -2,6 +2,7 @@ import {
   type Area,
   addDays,
   type CalendarDate,
+  type Daypart,
   type EntityOf,
   type EntityType,
   entitySchemas,
@@ -41,8 +42,9 @@ export interface TaskInput {
   project?: Project
   heading?: Heading
   when?: WhenInput
-  evening?: boolean
-  time?: string
+  daypart?: Daypart
+  /** Estimated minutes. */
+  duration?: number
   /** [days before, time]. */
   reminder?: [number, string]
   /** Days from today. */
@@ -207,8 +209,8 @@ export class Book {
       headingId: input.heading?.id ?? null,
       areaId: project || input.heading ? null : (input.area?.id ?? null),
       when: this.when(input.when ?? (closedDays !== undefined ? 'anytime' : 'inbox')),
-      evening: input.evening ?? false,
-      time: input.time ?? null,
+      daypart: input.daypart ?? null,
+      duration: input.duration ?? null,
       reminder: input.reminder ? { daysBefore: input.reminder[0], time: input.reminder[1] } : null,
       deadline: input.deadline === undefined ? null : this.day(input.deadline),
       tagIds: this.tagsOf(input.tags),

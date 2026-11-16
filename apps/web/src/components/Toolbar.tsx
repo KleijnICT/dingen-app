@@ -12,7 +12,7 @@ import { createPortal } from 'react-dom'
 import { useAgents } from '../agents.js'
 import { useT } from '../i18n/index.js'
 import { useEngine, useWorkspace } from '../store/context.js'
-import { commitTask } from '../taskActions.js'
+import { commitTask, whenFields } from '../taskActions.js'
 import { AssigneeList } from './Assignee.js'
 import { useDismiss } from './Menu.js'
 import { MoveList } from './MoveList.js'
@@ -130,10 +130,10 @@ function WhenPopup({ task, onDone }: { task: Task; onDone: () => void }) {
     <>
       <WhenPicker
         when={task.when}
-        evening={task.evening}
+        evening={task.daypart === 'evening'}
         today={ws.today}
         onChange={(when, evening) => {
-          commitTask(engine, ws, task, { when, evening })
+          commitTask(engine, ws, task, whenFields(task, when, evening))
           onDone()
         }}
       />

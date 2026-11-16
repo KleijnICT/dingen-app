@@ -23,8 +23,8 @@ import {
   type Reminder,
   Repeat,
   type Snapshot,
+  sameReminder,
   sameTagTitle,
-  scheduleFields,
   setRepeat,
   signals,
   stopRepeat,
@@ -32,6 +32,7 @@ import {
   type Task,
   toggleProject,
   toggleTask,
+  upgradeTaskFields,
   views,
   type When,
 } from '@dingen/core'
@@ -309,7 +310,6 @@ export function createMcpServer(client: DingenClient): McpServer {
           title: input.title,
           notes: input.notes,
           when,
-          evening: input.evening && when.kind === 'date',
           deadline: input.deadline ? parseDate(input.deadline, ws.today) : null,
           projectId: project?.id ?? null,
           headingId: heading?.id ?? null,
@@ -369,13 +369,7 @@ export function createMcpServer(client: DingenClient): McpServer {
         }
         if (input.title !== undefined) fields.title = input.title
         if (input.notes !== undefined) fields.notes = input.notes
-        if (input.when !== undefined) {
-          const when = parseWhen(input.when, ws.today)
-          fields.when = when
-          fields.evening = when.kind === 'date' ? (input.evening ?? task.evening) : false
-        } else if (input.evening !== undefined) {
-          fields.evening = input.evening && task.when.kind === 'date'
-        }
+        if (input.when !== undefined) fields.when = parseWhen(input.when, ws.today)
         if (input.deadline !== undefined) {
           fields.deadline = input.deadline === null ? null : parseDate(input.deadline, ws.today)
         }
@@ -846,13 +840,23 @@ function parseWhen(input: string, today: string): When {
   }
 }
 
-/** Time and reminder from tool input, as task fields; needs a date. */
+/**
+ * Daypart and reminder from tool input, as task fields; needs a date.
+ * `evening` and `time` are the fields from before dayparts (plan 25),
+ * converted as for an old client: evening is the evening daypart, a time
+ * gives its daypart and, without a reminder, a reminder at that time.
+ */
 function scheduleInput(
   task: Task,
-  input: { time?: string | null | undefined; reminder?: string | null | undefined },
+  input: {
+    evening?: boolean | undefined
+    time?: string | null | undefined
+    reminder?: string | null | undefined
+  },
   today: string,
 ): Record<string, unknown> {
-  if (input.time === undefined && input.reminder === undefined) return {}
+  if (input.time === undefined && input.reminder === undefined && input.evening === undefined)
+    return {}
   if (task.when.kind !== 'date') {
     if (!input.time && !input.reminder) return {}
     throw new ToolError('A time or reminder needs a date in `when`')
@@ -870,7 +874,15 @@ function scheduleInput(
     if (daysBefore > 365) throw new ToolError('A reminder can be at most a year before')
     reminder = { daysBefore, time }
   }
-  return scheduleFields(task, { time: input.time, reminder })
+  const legacy: Record<string, unknown> = {}
+  if (input.evening !== undefined) legacy.evening = input.evening
+  if (input.time) legacy.time = input.time
+  if (reminder !== undefined) legacy.reminder = reminder
+  const fields = { ...upgradeTaskFields(legacy, { ...task }) }
+  if ('reminder' in fields && sameReminder(fields.reminder as Reminder | null, task.reminder))
+    delete fields.reminder
+  if ('daypart' in fields && fields.daypart === task.daypart) delete fields.daypart
+  return fields
 }
 
 function parseRepeat(input: z.infer<typeof RepeatInput>, today: string): Repeat {
@@ -902,8 +914,8 @@ function taskRow(ws: Snapshot, t: Task) {
     title: t.title,
     status: t.status,
     when: describeWhen(t.when),
-    ...(t.evening ? { evening: true } : {}),
-    ...(t.time ? { time: t.time } : {}),
+    ...(t.daypart ? { daypart: t.daypart } : {}),
+    ...(t.duration ? { duration: t.duration } : {}),
     ...(t.reminder && t.when.kind === 'date'
       ? { reminder: `${addDays(t.when.date, -t.reminder.daysBefore)} ${t.reminder.time}` }
       : {}),

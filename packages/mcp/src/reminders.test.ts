@@ -47,14 +47,16 @@ beforeAll(async () => {
 })
 
 // --- herinneringen ---
+// `evening` and `time` are the fields from before dayparts (plan 25): converted.
 describe('time and reminder', () => {
-  it('a time also sets a reminder at that time', async () => {
+  it('a time becomes its daypart and a reminder at that time', async () => {
     const task = await call('create_task', {
       title: 'Bel de huisarts',
       when: 'tomorrow',
       time: '08:00',
     })
-    expect(task.time).toBe('08:00')
+    expect(task.time).toBeUndefined()
+    expect(task.daypart).toBe('morning')
     expect(task.reminder).toBe('2026-11-10 08:00')
   })
 
@@ -72,8 +74,20 @@ describe('time and reminder', () => {
       time: '12:30',
       reminder: null,
     })
-    expect(quiet.time).toBe('12:30')
+    expect(quiet.daypart).toBe('afternoon')
     expect(quiet.reminder).toBeUndefined()
+  })
+
+  it('evening is the evening daypart, also with a time', async () => {
+    const task = await call('create_task', {
+      title: 'Afwassen',
+      when: 'today',
+      evening: true,
+      time: '10:00',
+    })
+    expect(task.daypart).toBe('evening')
+    const off = await call('update_task', { id: task.id, evening: false })
+    expect(off.daypart).toBeUndefined()
   })
 
   it('refuses a time without a date and a reminder after the date', async () => {
@@ -86,21 +100,21 @@ describe('time and reminder', () => {
     ).rejects.toThrow()
   })
 
-  it('update_task moves a following reminder with the time and clears both without a date', async () => {
+  it('update_task leaves the reminder when the time moves, and clears both without a date', async () => {
     const task = await call('create_task', { title: 'Overleg', when: 'today', time: '10:00' })
-    const moved = await call('update_task', { id: task.id, time: '11:00' })
-    expect(moved.reminder).toBe('2026-11-09 11:00')
+    const moved = await call('update_task', { id: task.id, time: '19:00' })
+    expect([moved.daypart, moved.reminder]).toEqual(['evening', '2026-11-09 10:00'])
     const later = await call('update_task', { id: task.id, when: '2026-11-13' })
-    expect([later.time, later.reminder]).toEqual(['11:00', '2026-11-13 11:00'])
+    expect([later.daypart, later.reminder]).toEqual(['evening', '2026-11-13 10:00'])
     const off = await call('update_task', { id: task.id, reminder: null })
     expect(off.reminder).toBeUndefined()
-    const someday = await call('update_task', { id: task.id, time: '09:00', reminder: '09:00' })
-    expect(someday.reminder).toBe('2026-11-13 09:00')
+    const again = await call('update_task', { id: task.id, time: '09:00', reminder: '09:00' })
+    expect([again.daypart, again.reminder]).toEqual(['morning', '2026-11-13 09:00'])
     const cleared = await call('update_task', { id: task.id, when: 'someday' })
-    expect([cleared.time, cleared.reminder]).toEqual([undefined, undefined])
+    expect([cleared.daypart, cleared.reminder]).toEqual([undefined, undefined])
   })
 
-  it('a repeating task keeps time and reminder for the next occurrence', async () => {
+  it('a repeating task keeps daypart and reminder for the next occurrence', async () => {
     const task = await call('create_task', {
       title: 'Medicijnen',
       when: 'today',
@@ -110,6 +124,10 @@ describe('time and reminder', () => {
     await call('complete_task', { id: task.id })
     const upcoming = await call('list_tasks', { list: 'upcoming' })
     const next = upcoming.find((t: { title: string }) => t.title === 'Medicijnen')
-    expect(next).toMatchObject({ when: '2026-11-10', time: '08:00', reminder: '2026-11-10 08:00' })
+    expect(next).toMatchObject({
+      when: '2026-11-10',
+      daypart: 'morning',
+      reminder: '2026-11-10 08:00',
+    })
   })
 })

@@ -105,8 +105,8 @@ describe('demo set', () => {
     expect(inbox.length).toBeLessThanOrEqual(7)
 
     const todayList = views.today(views.notInSomedayProject(live, ws.projects), today)
-    expect(todayList.filter((t) => !t.evening).length).toBeGreaterThanOrEqual(4)
-    expect(todayList.filter((t) => t.evening).length).toBeGreaterThanOrEqual(2)
+    expect(todayList.filter((t) => t.daypart !== 'evening').length).toBeGreaterThanOrEqual(4)
+    expect(todayList.filter((t) => t.daypart === 'evening').length).toBeGreaterThanOrEqual(2)
 
     const upcoming = views.upcoming(live, today)
     expect(upcoming.length).toBeGreaterThanOrEqual(8)

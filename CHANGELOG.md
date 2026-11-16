@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- Dayparts and estimated duration, groundwork (core and server): a task has a
+  daypart (morning, afternoon or evening) instead of This Evening and a time
+  of day, and an optional estimated duration. A reminder keeps its own exact
+  time and no longer follows the task. The update converts existing tasks
+  once, with a backup first: This Evening becomes the evening daypart, a time
+  becomes its daypart, and a task with a time but no reminder gets a
+  reminder at that time, so no notification is lost. Sync protocol 3 and
+  export format 3; older clients and export files keep working and are
+  converted.
+
 ## 1.0.0-alpha.5
 
 A calmer task panel, spaces as groundwork for sharing, lowercase tags and

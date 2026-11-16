@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { type Change, createClock, newArea, newTask, ulid } from '@dingen/core'
+import { type Change, createClock, newArea, newTask, SYNC_PROTOCOL, ulid } from '@dingen/core'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { ActivityService } from '../activity/service.js'
@@ -272,14 +272,14 @@ describe('access goes through spaces', () => {
       SpaceAccessError,
     )
     expect(sync.snapshot('C')).toEqual({
-      protocol: 2,
+      protocol: SYNC_PROTOCOL,
       entities: [],
       spaces: [],
       cursor: {},
       seq: 0,
     })
     expect(sync.pullSpaces('C', {})).toEqual({
-      protocol: 2,
+      protocol: SYNC_PROTOCOL,
       spaces: [],
       removed: [],
       cursor: {},

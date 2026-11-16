@@ -98,13 +98,13 @@ export function ListPage({ list, focusSignal, header }: Props) {
   let body: React.ReactNode
   switch (list.id) {
     case 'today': {
-      const evening = shown.filter((task) => task.evening)
-      const day = shown.filter((task) => !task.evening)
+      const evening = shown.filter((task) => task.daypart === 'evening')
+      const day = shown.filter((task) => task.daypart !== 'evening')
       const todayWhen = { kind: 'date', date: ws.today } as const
       // "My order" is one flat list with its own order; "By project" follows each project's order.
       const dayBody =
         todayView === 'manual'
-          ? group('day', { kind: 'when', when: todayWhen, evening: false }, day, 'todayOrder')
+          ? group('day', { kind: 'when', when: todayWhen, daypart: null }, day, 'todayOrder')
           : groupByContainer([...day].sort(views.byOrder)).map((g) => (
               <div key={g.key} className="group">
                 {g.key !== 'none' && (
@@ -128,7 +128,7 @@ export function ListPage({ list, focusSignal, header }: Props) {
             )}
             {group(
               'evening',
-              { kind: 'when', when: todayWhen, evening: true },
+              { kind: 'when', when: todayWhen, daypart: 'evening' },
               evening,
               'todayOrder',
             )}

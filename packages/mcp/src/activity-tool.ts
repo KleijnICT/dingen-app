@@ -159,6 +159,8 @@ const FIELD_NAMES: Record<string, string> = {
   title: 'title',
   notes: 'notes',
   when: 'when',
+  daypart: 'daypart',
+  duration: 'duration',
   evening: 'evening',
   time: 'time',
   reminder: 'reminder',

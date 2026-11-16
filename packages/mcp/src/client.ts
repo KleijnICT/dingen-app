@@ -18,6 +18,7 @@ import {
   type Member,
   mergeCursor,
   clientId as newClientId,
+  PROTOCOL_HEADER,
   type Project,
   type PullResponse,
   type PushResponse,
@@ -25,6 +26,7 @@ import {
   type Snapshot,
   type SpaceCursor,
   type SpaceInfo,
+  SYNC_PROTOCOL,
   type Tag,
   type Task,
   toCalendarDate,
@@ -121,6 +123,7 @@ export class HttpTransport implements SyncTransport {
       headers: {
         accept: 'application/json',
         authorization: `Bearer ${this.token}`,
+        [PROTOCOL_HEADER]: String(SYNC_PROTOCOL),
         ...init?.headers,
       },
     })

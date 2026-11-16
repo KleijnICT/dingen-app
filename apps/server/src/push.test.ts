@@ -204,7 +204,7 @@ describe('ReminderPlanner', () => {
     newTask({
       title: 'Bel de loodgieter',
       when: { kind: 'date', date: '2026-11-12' },
-      time: '09:30',
+      daypart: 'morning',
       reminder: { daysBefore: 0, time: '09:30' },
       ...fields,
     })
@@ -219,7 +219,7 @@ describe('ReminderPlanner', () => {
     expect(outbox).toEqual([
       {
         endpoint,
-        payload: { title: 'Bel de loodgieter', body: '09:30', tag: task.id, url: '/today' },
+        payload: { title: 'Bel de loodgieter', body: '', tag: task.id, url: '/today' },
       },
     ])
     clock += 30_000
@@ -241,7 +241,6 @@ describe('ReminderPlanner', () => {
   it('skips reminders that are more than an hour late, done or deleted', async () => {
     const late = reminderTask({
       title: 'Te laat',
-      time: null,
       reminder: { daysBefore: 0, time: '06:00' },
     })
     const done = reminderTask({
@@ -290,13 +289,12 @@ describe('ReminderPlanner', () => {
       title: 'Tegels bestellen',
       projectId,
       reminder: { daysBefore: 0, time: '11:00' },
-      time: '11:00',
     })
     await save(carol, task)
     clock = Date.parse('2026-11-12T10:45:00Z') // 11:45, 45 minutes late
     await planner.tick()
     expect(outbox.find((o) => o.payload.title === 'Tegels bestellen')?.payload.body).toBe(
-      '11:00 · Verbouwing',
+      'Verbouwing',
     )
   })
 

@@ -3,6 +3,7 @@ import { type BackupResult, backupBeforeMigrations } from './backup.js'
 import { type Db, type OpenedDatabase, openDatabase } from './db.js'
 import { replaceDatabase } from './restore.js'
 import { LOWERCASE_TAGS_KEY, migrateLowercaseTags } from './tags/lowercase.js'
+import { DAYPARTS_KEY, migrateDayparts } from './tasks/dayparts.js'
 
 /**
  * A data migration: a one-time change to the data that must go through the
@@ -24,6 +25,16 @@ export const DATA_MIGRATIONS: DataMigration[] = [
       const tags = migrateLowercaseTags(db)
       return tags && tags.spaces > 0
         ? `Tags to lowercase: ${tags.renamed} renamed, ${tags.merged} merged, ${tags.retagged} tasks and projects re-tagged in ${tags.spaces} space(s)`
+        : null
+    },
+  },
+  {
+    key: DAYPARTS_KEY,
+    name: 'dayparts instead of evening and time',
+    run: (db) => {
+      const r = migrateDayparts(db)
+      return r && r.cleaned > 0
+        ? `Dayparts: ${r.evening} evening, ${r.timed} from a time, ${r.reminders} reminders added, ${r.cleaned} tasks cleaned in ${r.spaces} space(s)`
         : null
     },
   },

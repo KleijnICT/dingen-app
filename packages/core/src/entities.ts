@@ -169,6 +169,13 @@ export const Reminder = z.object({
 })
 export type Reminder = z.infer<typeof Reminder>
 
+/** Part of the day a task is planned for (plan 25); see dayparts.ts for the boundaries. */
+export const Daypart = z.enum(['morning', 'afternoon', 'evening'])
+export type Daypart = z.infer<typeof Daypart>
+
+/** Longest estimated duration of a task, in minutes: one day. */
+export const MAX_DURATION = 1440
+
 export const Task = Base.extend({
   title: z.string(),
   notes: z.string(),
@@ -177,10 +184,14 @@ export const Task = Base.extend({
   headingId: Id.nullable(),
   areaId: Id.nullable(),
   when: When,
-  evening: z.boolean(),
-  /** Tijd van de dag bij een `when`-datum; null = geen tijd. */
-  time: TimeOfDay.nullable().default(null),
-  /** Herinnering bij een `when`-datum; null = geen. */
+  /**
+   * Part of the day at a `when` date; null = none, and always null without a
+   * date. Replaces `evening` and `time` of protocol 2 (plan 25).
+   */
+  daypart: Daypart.nullable().default(null),
+  /** Estimated duration in whole minutes; null = not estimated. */
+  duration: z.number().int().min(1).max(MAX_DURATION).nullable().default(null),
+  /** Herinnering bij een `when`-datum; null = geen. Independent of the daypart. */
   reminder: Reminder.nullable().default(null),
   deadline: CalendarDate.nullable(),
   tagIds: z.array(Id),
@@ -265,6 +276,27 @@ export const Change = z.object({
 })
 export type Change = z.infer<typeof Change>
 
+/**
+ * Fields an entity had in an older protocol and no longer has (plan 25). Data
+ * stored before the migration may still carry them; they are ignored when a
+ * change is validated against it.
+ */
+export const RETIRED_FIELDS: Partial<Record<EntityType, readonly string[]>> = {
+  task: ['evening', 'time'],
+}
+
+/** `data` without the retired fields of its entity type. */
+export function withoutRetired(
+  entityType: EntityType,
+  data: Record<string, unknown>,
+): Record<string, unknown> {
+  const retired = RETIRED_FIELDS[entityType]
+  if (!retired?.some((f) => f in data)) return data
+  const out = { ...data }
+  for (const field of retired) delete out[field]
+  return out
+}
+
 export type ValidationResult = { ok: true } | { ok: false; issues: string[] }
 
 /**
@@ -280,7 +312,7 @@ export function validateChangeFields(
     return { ok: false, issues: ['fields.id wijkt af van entityId'] }
   }
   const candidate = existing
-    ? { ...existing, ...change.fields }
+    ? { ...withoutRetired(change.entityType, existing), ...change.fields }
     : { id: change.entityId, ...change.fields }
   const result = schema.strict().safeParse(candidate)
   if (result.success) return { ok: true }
