@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Settings → Calendars: removing a calendar now goes through a `…` menu with a confirmation, like deleting a project.
 - Dayparts and estimated duration, groundwork (core and server): a task has a
   daypart (morning, afternoon or evening) instead of This Evening and a time
   of day, and an optional estimated duration. A reminder keeps its own exact
