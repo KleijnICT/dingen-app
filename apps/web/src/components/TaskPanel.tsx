@@ -417,10 +417,16 @@ function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
                 onOpen(duplicateTask(engine, ws, { ...task, title, notes }).id)
               },
             },
-            {
-              label: t('task.convertToProject'),
-              onSelect: () => convertToProject(engine, ws, { ...task, title, notes }),
-            },
+            // Not for a finished task or one occurrence of a repeating task: converting
+            // would skip that occurrence and bring the next one straight back.
+            ...(task.status === 'open' && task.templateId === null
+              ? [
+                  {
+                    label: t('task.convertToProject'),
+                    onSelect: () => convertToProject(engine, ws, { ...task, title, notes }),
+                  },
+                ]
+              : []),
             {
               label: t('task.delete'),
               danger: true,
