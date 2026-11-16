@@ -1,8 +1,9 @@
 import { useSyncExternalStore } from 'react'
+import { clampWidth, PANEL_LIMITS, SIDEBAR_LIMITS } from './resize.js'
 
 /**
  * Per-device choices that are not part of the data: how Today is ordered,
- * how wide the sidebar is and which areas are folded shut.
+ * how wide the sidebar and the task panel are and which areas are folded shut.
  * Stored in localStorage, like the language.
  */
 
@@ -38,30 +39,29 @@ export function useTodayView(): TodayView {
   return useSyncExternalStore(subscribe, read, () => 'manual')
 }
 
-/** Sidebar width in pixels; dragged by the user, kept per device. */
-export const SIDEBAR_DEFAULT = 220
-export const SIDEBAR_MIN = 160
-export const SIDEBAR_MAX = 480
-const WIDTH_KEY = 'dingen.sidebarWidth'
+/** Sidebar and panel widths in pixels; dragged by the user, kept per device. */
+const WIDTH_KEYS = { sidebar: 'dingen.sidebarWidth', panel: 'dingen.panelWidth' } as const
+const WIDTH_LIMITS = { sidebar: SIDEBAR_LIMITS, panel: PANEL_LIMITS } as const
+export type Resizable = keyof typeof WIDTH_KEYS
 
-export function clampSidebar(width: number): number {
-  return Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, Math.round(width)))
-}
-
-function readWidth(): number {
+function readWidth(part: Resizable): number {
+  const { min, max, default: fallback } = WIDTH_LIMITS[part]
   try {
-    const stored = Number(localStorage.getItem(WIDTH_KEY))
-    return stored > 0 ? clampSidebar(stored) : SIDEBAR_DEFAULT
+    const stored = Number(localStorage.getItem(WIDTH_KEYS[part]))
+    return stored > 0 ? clampWidth(stored, min, max) : fallback
   } catch {
-    return SIDEBAR_DEFAULT
+    return fallback
   }
 }
+const readSidebarWidth = () => readWidth('sidebar')
+const readPanelWidth = () => readWidth('panel')
 
 /** `null` puts the default width back. */
-export function setSidebarWidth(width: number | null): void {
+export function setWidth(part: Resizable, width: number | null): void {
+  const { min, max } = WIDTH_LIMITS[part]
   try {
-    if (width === null) localStorage.removeItem(WIDTH_KEY)
-    else localStorage.setItem(WIDTH_KEY, String(clampSidebar(width)))
+    if (width === null) localStorage.removeItem(WIDTH_KEYS[part])
+    else localStorage.setItem(WIDTH_KEYS[part], String(clampWidth(width, min, max)))
   } catch {
     // See setTodayView.
   }
@@ -69,7 +69,11 @@ export function setSidebarWidth(width: number | null): void {
 }
 
 export function useSidebarWidth(): number {
-  return useSyncExternalStore(subscribe, readWidth, () => SIDEBAR_DEFAULT)
+  return useSyncExternalStore(subscribe, readSidebarWidth, () => SIDEBAR_LIMITS.default)
+}
+
+export function usePanelWidth(): number {
+  return useSyncExternalStore(subscribe, readPanelWidth, () => PANEL_LIMITS.default)
 }
 
 /** Areas folded shut in the sidebar, as a comma-separated list of ids. */

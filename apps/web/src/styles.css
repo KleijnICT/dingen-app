@@ -7,6 +7,7 @@
   --line: #e2e2dd;
   --hover: rgba(0, 0, 0, 0.04);
   --accent: #2f7de1;
+  --resize-line: #c4c4bd;
   --ok: #2f9e5b;
   --error: #c0392b;
   --inbox: #3a86d6;
@@ -36,6 +37,7 @@
     --fg: #f2f2f7;
     --muted: #93939a;
     --line: #333338;
+    --resize-line: #55555c;
     --hover: rgba(255, 255, 255, 0.05);
     --check: #4a4a50;
     --area-red: #ff6369;
@@ -230,6 +232,9 @@ button.link.danger {
   display: grid;
   grid-template-columns: var(--sidebar-width, 220px) 1fr;
   height: 100%;
+  position: relative;
+  /* What the sidebar takes from the window; nothing in focus mode. */
+  --sidebar-room: var(--sidebar-width, 220px);
 }
 .focus-toggle {
   display: inline-flex;
@@ -246,18 +251,69 @@ button.link.danger {
   overflow: hidden;
   position: relative;
 }
-.sidebar-resize {
+/* Drag handles on the sidebar's right edge and the side panel's left edge: a wide, invisible
+   grip around the hairline that lights up on hover, while dragging and with keyboard focus. */
+.resize-handle {
   position: absolute;
   top: 0;
-  right: 0;
   bottom: 0;
-  width: 6px;
+  z-index: 5;
+  width: 9px;
+  transform: translateX(-50%);
   cursor: col-resize;
   touch-action: none;
+  outline: none;
 }
-.sidebar-resize:hover,
-.sidebar-resize:active {
-  background: var(--line);
+.resize-handle::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  margin-left: -0.5px;
+  background: var(--resize-line);
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+}
+.resize-handle:hover::before {
+  opacity: 1;
+  transition-delay: 150ms;
+}
+.resize-handle.dragging::before,
+.resize-handle:focus-visible::before {
+  width: 2px;
+  margin-left: -1px;
+  background: var(--accent);
+  opacity: 1;
+  transition: none;
+}
+@media (pointer: coarse) {
+  .resize-handle {
+    width: 21px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .resize-handle::before,
+  .resize-handle:hover::before {
+    transition: none;
+  }
+}
+/* While dragging, the whole window shows the resize cursor and nothing gets selected. */
+.resizing,
+.resizing * {
+  /* biome-ignore lint/complexity/noImportantStyles: must beat every cursor below it */
+  cursor: col-resize !important;
+  user-select: none;
+  -webkit-user-select: none;
+}
+/* Each handle is centred on the hairline it moves: the sidebar's right border... */
+.sidebar-resize {
+  left: calc(var(--sidebar-width) - 0.5px);
+}
+/* ...and the panel's left border. */
+.panel-resize {
+  left: 0.5px;
 }
 .nav {
   list-style: none;
@@ -495,6 +551,7 @@ button.link.danger {
 }
 .task-panel-host {
   display: flex;
+  position: relative;
 }
 .task-panel {
   display: flex;
@@ -510,7 +567,8 @@ button.link.danger {
   animation: panel-out 200ms ease-in forwards;
 }
 .task-panel.side {
-  width: 420px;
+  /* Its own width, but the list keeps at least 360px when the window is narrow. */
+  width: min(var(--panel-width, 420px), max(320px, calc(100vw - var(--sidebar-room) - 360px)));
   border-left: 1px solid var(--line);
 }
 .task-panel-host.overlay {
@@ -3219,6 +3277,7 @@ button.agent-main .muted {
 /* Focus mode in Today: the sidebar steps aside. */
 .app.focus-mode {
   grid-template-columns: 1fr;
+  --sidebar-room: 0px;
 }
 .app.focus-mode .sidebar {
   display: none;

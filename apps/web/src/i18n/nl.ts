@@ -50,6 +50,7 @@ export const nl: Messages = {
   'task.markOpen': 'Markeer als open',
   'task.delete': 'Verwijderen',
   'panel.label': 'Taakdetails',
+  'panel.resize': 'Breedte van het taakpaneel aanpassen',
   'panel.ok': 'OK',
   'panel.close': 'Sluiten',
   'panel.back': 'Terug',

@@ -19,6 +19,8 @@ import { createPortal } from 'react-dom'
 import { useAgents } from '../agents.js'
 import { useT } from '../i18n/index.js'
 import { describeWhen } from '../lists.js'
+import { setWidth, usePanelWidth } from '../prefs.js'
+import { PANEL_LIMITS } from '../resize.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import {
   commitTask,
@@ -46,6 +48,7 @@ import { LinkedNotes } from './LinkedText.js'
 import { MoreMenu, useDismiss } from './Menu.js'
 import { MoveList } from './MoveList.js'
 import { RepeatEditor } from './RepeatEditor.js'
+import { ResizeHandle } from './ResizeHandle.js'
 import { ScheduleField } from './ScheduleField.js'
 import { TagEditor } from './TagEditor.js'
 import { WhenPicker } from './WhenPicker.js'
@@ -90,6 +93,7 @@ interface Props {
 export function TaskPanel({ task, focus, onClose, onToggle, onOpen }: Props) {
   const slot = useContext(PanelSlot)
   const mode = usePanelMode()
+  const panelWidth = usePanelWidth()
   const t = useT()
   const root = useRef<HTMLDivElement>(null)
   // The last task shown, so the panel can slide out after it closed.
@@ -142,6 +146,17 @@ export function TaskPanel({ task, focus, onClose, onToggle, onOpen }: Props) {
           onPointerDown={closing ? undefined : onClose}
         />
       )}
+      {mode === 'side' && !closing && (
+        <ResizeHandle
+          className="panel-resize"
+          label={t('panel.resize')}
+          width={panelWidth}
+          limits={PANEL_LIMITS}
+          edge="left"
+          room={panelRoom}
+          onChange={setPanelWidth}
+        />
+      )}
       <div ref={root} className={`task-panel ${mode}`} {...a11y} tabIndex={-1} inert={closing}>
         {mode === 'full' && (
           <div className="panel-head">
@@ -165,6 +180,16 @@ export function TaskPanel({ task, focus, onClose, onToggle, onOpen }: Props) {
     </div>,
     slot,
   )
+}
+
+/** Room for the panel: the window, less the sidebar (gone in focus mode). */
+function panelRoom(): number {
+  const sidebar = document.querySelector('.app > .sidebar')
+  return window.innerWidth - (sidebar?.getBoundingClientRect().width ?? 0)
+}
+
+function setPanelWidth(width: number | null): void {
+  setWidth('panel', width)
 }
 
 /** Grows a text area with its content, so notes and long titles never scroll on their own. */
