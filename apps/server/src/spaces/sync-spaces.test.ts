@@ -324,10 +324,10 @@ describe('sync per space (HTTP)', () => {
     return { app, call }
   }
 
-  it('speaks protocol 2 with a cursor, protocol 1 with since, and says which in health', async () => {
+  it('speaks protocol 2 with a cursor, protocol 1 with since, and says protocol 3 in health', async () => {
     const { app, call } = await setup()
     const health = await (await app.request('/api/health')).json()
-    expect(health.syncProtocol).toBe(2)
+    expect(health.syncProtocol).toBe(3)
 
     const task = newTask({ title: 'Melk', order: 'a' })
     const empty = (await (
@@ -374,7 +374,7 @@ describe('sync per space (HTTP)', () => {
     }
 
     const snap = (await (await call('/api/sync/snapshot')).json()) as SnapshotResponse
-    expect(snap).toMatchObject({ protocol: 2, seq: 1, cursor: { [personal]: 1 } })
+    expect(snap).toMatchObject({ protocol: 3, seq: 1, cursor: { [personal]: 1 } })
     expect(snap.entities[0]?.spaceId).toBe(personal)
     const one = await call(`/api/sync/snapshot?space=${personal}`)
     expect(((await one.json()) as SnapshotResponse).entities).toHaveLength(1)

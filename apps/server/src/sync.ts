@@ -1208,6 +1208,11 @@ export class SyncService {
   }
 
   /** The stored entity with this type and id in one of these spaces (the user's). */
+  /** An entity as stored, in one of the user's spaces; undefined when there is none. */
+  current(userId: string, entityType: EntityType, id: string): EntityRecord | undefined {
+    return this.locate(this.db, spacesOf(this.db, userId), entityType, id)?.record
+  }
+
   private locate(
     db: Db,
     spaceIds: string[],

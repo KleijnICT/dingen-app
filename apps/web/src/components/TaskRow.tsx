@@ -108,7 +108,7 @@ export function TaskRow({
             </span>
           ))}
           {!done && <ScheduleBadge task={task} />}
-          {task.evening && <MoonIcon className="meta-icon" />}
+          {task.daypart === 'evening' && <MoonIcon className="meta-icon" />}
           {task.notes && <NotesIcon className="meta-icon" />}
           {checklist.total > 0 && (
             <span className="meta-checklist">

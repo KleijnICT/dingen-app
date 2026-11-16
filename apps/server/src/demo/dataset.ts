@@ -72,7 +72,7 @@ function sam(ctx: DemoContext): ImportRecord[] {
   b.task('Send designs to Hannah for feedback', {
     heading: design,
     when: 2,
-    time: '10:00',
+    daypart: 'morning',
     reminder: [0, '09:30'],
     created: 4,
   })
@@ -129,7 +129,7 @@ function sam(ctx: DemoContext): ImportRecord[] {
   b.task('Usability test with five people', {
     project: onboarding,
     when: 6,
-    time: '14:00',
+    daypart: 'afternoon',
     reminder: [1, '17:00'],
     created: 5,
     checklist: ['x Recruit testers', 'Write the test script', 'Book the meeting room'],
@@ -137,7 +137,7 @@ function sam(ctx: DemoContext): ImportRecord[] {
   b.task('Present the new flow to Luis and the team', {
     project: onboarding,
     when: 11,
-    time: '11:00',
+    daypart: 'morning',
     reminder: [0, '10:00'],
     created: 5,
   })
@@ -199,7 +199,7 @@ function sam(ctx: DemoContext): ImportRecord[] {
     3,
     {
       area: business,
-      time: '09:00',
+      daypart: 'morning',
       reminder: [0, '09:00'],
       tags: ['computer'],
       notes: 'Hours from the time sheet; reminders for anything older than 30 days.',
@@ -240,7 +240,13 @@ function sam(ctx: DemoContext): ImportRecord[] {
     created: 6,
   })
   b.task('Buy light bulbs for the hallway', { area: home, when: 'anytime', tags: ['errands'] })
-  b.task('Take out the recycling', { area: home, when: 0, evening: true, tags: ['15 min'] })
+  b.task('Take out the recycling', {
+    area: home,
+    when: 0,
+    daypart: 'evening',
+    duration: 5,
+    tags: ['15 min'],
+  })
   b.task('Learn to bake sourdough', { area: home, when: 'someday', created: 35 })
   b.task('Renew the car insurance', { area: home, done: 20 })
   b.task('Pay the window cleaner', { area: home, done: 0, doneAt: '08:30' })
@@ -260,11 +266,12 @@ function sam(ctx: DemoContext): ImportRecord[] {
 
   // --- Health ---
   b.task('Book a dentist check-up', { area: health, when: 'anytime', tags: ['calls'], created: 9 })
-  b.task('Yoga class', { area: health, when: 1, time: '07:30', reminder: [0, '07:00'] })
+  b.task('Yoga class', { area: health, when: 1, daypart: 'morning', reminder: [0, '07:00'] })
   b.task('Stretch for fifteen minutes', {
     area: health,
     when: 0,
-    evening: true,
+    daypart: 'evening',
+    duration: 15,
     tags: ['15 min'],
   })
   b.task('Try bouldering', { area: health, when: 'someday', created: 26 })
@@ -328,7 +335,7 @@ function sam(ctx: DemoContext): ImportRecord[] {
     created: 7,
     checklist: ['Passports', 'Chargers', 'Walking shoes', 'Camera', 'Euros for the tram'],
   })
-  b.task('Call Mum', { area: family, when: 0, evening: true, tags: ['calls'] })
+  b.task('Call Mum', { area: family, when: 0, daypart: 'evening', tags: ['calls'] })
   b.task("Birthday present for Alex's little one", { area: family, done: 4 })
 
   // --- No area ---
@@ -340,7 +347,7 @@ function sam(ctx: DemoContext): ImportRecord[] {
     'Weekly review',
     { unit: 'week', every: 1, basis: 'completion', start: b.day(-22) },
     0,
-    { time: '16:00', reminder: [0, '15:45'], doneAt: '16:40' },
+    { daypart: 'afternoon', reminder: [0, '15:45'], doneAt: '16:40' },
     [15, 8],
   )
   b.review('weekly', 15, WEEKLY_STEPS)
@@ -392,7 +399,7 @@ function morgan(ctx: DemoContext): ImportRecord[] {
     created: 3,
     checklist: ['x Set 1', 'Set 2', 'Set 3'],
   })
-  b.task("Plan tomorrow's lessons", { area: school, when: 0, evening: true })
+  b.task("Plan tomorrow's lessons", { area: school, when: 0, daypart: 'evening' })
   b.task('Mark the Year 8 quizzes', { area: school, done: 3 })
 
   b.task('Call the plumber about the dripping kitchen tap', {
@@ -405,7 +412,7 @@ function morgan(ctx: DemoContext): ImportRecord[] {
   b.task('Buy bin bags', { area: home, when: 'anytime', tags: ['errands'] })
   b.task('Order new reading glasses', { area: health, done: 6 })
 
-  b.task('Swim', { area: health, when: 2, time: '07:00', reminder: [0, '06:30'] })
+  b.task('Swim', { area: health, when: 2, daypart: 'morning', reminder: [0, '06:30'] })
   b.repeating(
     'Physio exercises',
     { unit: 'day', every: 1, basis: 'schedule', start: b.day(-10) },

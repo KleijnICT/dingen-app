@@ -9,11 +9,13 @@ import {
   isDeleted,
   mergeCursor,
   clientId as newClientId,
+  PROTOCOL_HEADER,
   type PullResponse,
   type PushResponse,
   recordKey,
   SPACE_FIELD,
   type SpaceCursor,
+  SYNC_PROTOCOL,
   ulid,
 } from '@dingen/core'
 import { withBase } from '../base.js'
@@ -391,7 +393,11 @@ export class SyncEngine {
   private async request(path: string, init?: RequestInit): Promise<Response> {
     const res = await this.fetchFn(withBase(path), {
       ...init,
-      headers: { accept: 'application/json', ...init?.headers },
+      headers: {
+        accept: 'application/json',
+        [PROTOCOL_HEADER]: String(SYNC_PROTOCOL),
+        ...init?.headers,
+      },
     })
     if (res.status === 401) throw new UnauthorizedError()
     return res

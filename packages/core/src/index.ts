@@ -21,6 +21,7 @@ export * from './actions.js'
 // --- agenda ---
 export * from './calendar.js'
 export * from './dates.js'
+export * from './dayparts.js'
 export * from './entities.js'
 export * from './factories.js'
 export * from './hlc.js'

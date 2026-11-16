@@ -47,7 +47,11 @@ function server() {
   function call(bearer: string, path: string, init: RequestInit = {}) {
     return app.request(path, {
       ...init,
-      headers: { 'content-type': 'application/json', authorization: bearer },
+      headers: {
+        'content-type': 'application/json',
+        authorization: bearer,
+        'x-dingen-protocol': '3',
+      },
     })
   }
 
@@ -185,7 +189,7 @@ describe('export', () => {
       /^attachment; filename="dingen-export-\d{4}-\d{2}-\d{2}\.json"$/,
     )
     const file = await res.json()
-    expect(file).toMatchObject({ format: 'dingen-export', version: 2, appVersion: '9.9.9' })
+    expect(file).toMatchObject({ format: 'dingen-export', version: 3, appVersion: '9.9.9' })
     const personal = file.spaces[0]
     expect(file.spaces).toEqual([
       { id: personal.id, kind: 'personal' },
@@ -512,8 +516,9 @@ describe('invalid files', () => {
     const cases: [string, unknown][] = [
       ['not a JSON object', 'tekst'],
       ['wrong format', { ...good, format: 'iets-anders' }],
-      ['unknown version', { ...good, version: 3 }],
-      ['version 2 without spaces', { ...good, spaces: undefined }],
+      ['unknown version', { ...good, version: 4 }],
+      ['version 2 without spaces', { ...good, version: 2, spaces: undefined }],
+      ['version 3 without spaces', { ...good, spaces: undefined }],
       ['invalid task', withTask({ ...task0, data: { ...task0.data, status: 'kapot' } })],
       ['id differs', withTask({ ...task0, id: ulid() })],
       ['stamp missing', withTask({ ...task0, fieldTs: {} })],

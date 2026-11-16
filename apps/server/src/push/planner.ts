@@ -148,7 +148,7 @@ export class ReminderPlanner {
       const title = row?.data.title
       container = typeof title === 'string' && title ? title : null
     }
-    const body = [task.time, container].filter(Boolean).join(' · ')
+    const body = container ?? ''
     return { title: task.title || '…', body, tag: task.id, url: '/today' }
   }
 }

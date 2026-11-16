@@ -225,9 +225,9 @@ file twice changes nothing. The same is available over the API:
 `GET /api/export` and `POST /api/import?mode=merge|reject` (`reject` refuses when
 the account already has data).
 
-The file (format version 2) holds the spaces you own, your personal space and
+The file (format version 3) holds the spaces you own, your personal space and
 shared spaces you made, not spaces you are only a member of:
-`{ format: "dingen-export", version: 2, appVersion, exportedAt, spaces: [{ id, kind }],
+`{ format: "dingen-export", version: 3, appVersion, exportedAt, spaces: [{ id, kind }],
 entities: { <type>: [{ id, spaceId, data, fieldTs }] } }`. On import an item that
 is already on the server keeps its space; when it is in a space where you may
 not edit (or cannot see), it is skipped. A new item goes back to its space when
@@ -236,7 +236,9 @@ the exported one, and an exported shared space becomes a new shared space with
 the same id, owned by you, so importing again finds it. Otherwise an item goes
 to the space of its project, area, heading or task when you may edit there,
 else to your personal space; files of version 1 (no spaces) are placed that
-way too. Tags with the same name in one space become one tag. The answer is
+way too. Tasks in files of version 1 and 2 have `evening` and `time` instead of
+a daypart; they are converted as on the update to dayparts (a time becomes its
+daypart, plus a reminder at that time when the task had none). Tags with the same name in one space become one tag. The answer is
 `{ mode, counts: { <type>: { created, updated, unchanged, skipped } }, total, seq }`.
 
 ## Connecting Claude (MCP)
@@ -470,7 +472,8 @@ Clients keep a local replica and sync it with three calls under `/api/sync`
 a space: for now each account has one, its personal space. The server numbers
 every change with one rising `seq`; a client keeps a cursor per space, the
 highest `seq` it has seen there. `GET /api/health` reports the protocol as
-`syncProtocol` (now `2`).
+`syncProtocol` (now `3`). A client names the protocol it speaks with the
+header `x-dingen-protocol: 3` on its sync requests.
 
 - `GET /api/sync/pull?cursor=<URL-encoded JSON {"<spaceId>": seq}>` answers
   `{ protocol, spaces, removed, cursor, hasMore }`. Each entry in `spaces` is
@@ -528,6 +531,17 @@ app, the MCP plugin): `GET /api/sync/pull?since=<seq>` answers
 moves over with `pull?cursor=<seq>` (a bare number counts for every space).
 The `since` form will be removed once released clients no longer use it,
 at the earliest with 1.0.
+
+Protocol 3 (dayparts): a task has `daypart` (`morning`, `afternoon`,
+`evening` or null; only with a date) and `duration` (minutes, 1 to 1440, or
+null) instead of `evening` and `time`. A request without the
+`x-dingen-protocol: 3` header is answered as protocol 2: tasks (in snapshots,
+`entities`, `arrived` and changes of the daypart) also carry `evening` (true
+for the evening daypart) and `time: null`. Pushed `evening` and `time` are
+converted from any client: `evening: true` is the evening daypart,
+`evening: false` clears an evening daypart, and a `time` becomes its daypart
+(afternoon from 12:00, evening from 18:00) plus, when the task has no
+reminder, a reminder at that time on the day itself.
 
 ## License
 

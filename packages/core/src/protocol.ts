@@ -18,8 +18,27 @@ import type { EntityRecord } from './sync.js'
  * space, or moves an existing one there with its children. A pull reports a
  * move per space as `arrived` (the whole entity, now in this space) and `left`
  * (gone out of your sight: drop it); protocol 1 pulls get a deletion instead.
+ *
+ * - Protocol 3 (plan 25): a task has `daypart` and `duration` instead of
+ *   `evening` and `time`. A client says it speaks protocol 3 with the header
+ *   `PROTOCOL_HEADER` on its sync requests. Without it the server answers as
+ *   protocol 2 (tasks with a derived `evening` and `time: null`, see
+ *   `downgradeTaskData`), and it converts pushed `evening` and `time` from
+ *   any client (see `upgradeTaskFields`).
  */
-export const SYNC_PROTOCOL = 2
+export const SYNC_PROTOCOL = 3
+
+/** The request header in which a client names the sync protocol it speaks. */
+export const PROTOCOL_HEADER = 'x-dingen-protocol'
+
+/** The protocol of a client that names none: from before protocol 3. */
+export const LEGACY_PROTOCOL = 2
+
+/** The protocol a request speaks, from its `PROTOCOL_HEADER` value. */
+export function requestProtocol(header: string | null | undefined): number {
+  const value = Number(header)
+  return Number.isInteger(value) && value >= 1 ? value : LEGACY_PROTOCOL
+}
 
 /**
  * The change field that names the space for an entity: on a new entity the

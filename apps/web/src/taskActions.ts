@@ -1,4 +1,4 @@
-import { type Snapshot, type Task, views, type Writer } from '@dingen/core'
+import { type Snapshot, type Task, views, type When, type Writer } from '@dingen/core'
 import { useEffect, useRef, useState } from 'react'
 
 export {
@@ -18,6 +18,17 @@ export {
 } from '@dingen/core'
 
 import { orderBetween, toggleTask } from '@dingen/core'
+
+/**
+ * The fields for a choice in the When picker, which still offers This Evening
+ * as a switch: evening sets the evening daypart, leaving it clears only an
+ * evening daypart, and without a date there is none.
+ */
+export function whenFields(task: Task, when: When, evening: boolean): Record<string, unknown> {
+  if (when.kind !== 'date') return { when, daypart: null }
+  const daypart = evening ? 'evening' : task.daypart === 'evening' ? null : task.daypart
+  return { when, daypart }
+}
 
 /** Gives `task` the order that puts it between `before` and `after` in a sorted list. */
 export function reorder(

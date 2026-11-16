@@ -1,9 +1,22 @@
-import { CURSOR_AHEAD, CursorAheadError, parseCursorParam } from '@dingen/core'
+import {
+  CURSOR_AHEAD,
+  CursorAheadError,
+  PROTOCOL_HEADER,
+  parseCursorParam,
+  requestProtocol,
+} from '@dingen/core'
 import { Hono } from 'hono'
 import { z } from 'zod'
 import { AgentScopeError } from '../agents/access.js'
 import { accessOf } from '../auth/middleware.js'
 import type { AppEnv } from '../env.js'
+import {
+  legacyPull,
+  legacyPullSpaces,
+  legacySnapshot,
+  needsLegacyTasks,
+  upgradePushedChanges,
+} from '../legacy-protocol.js'
 import { SpaceAccessError } from '../spaces/service.js'
 import { normalizePushedTag, PushBody, SyncValidationError } from '../sync.js'
 
@@ -22,6 +35,10 @@ const PullQuery = z.object({
  *   spaces, for clients from before protocol 2. A `since` ahead of the server
  *   (restored from a back-up) gets 409 `cursor_ahead`: take a fresh snapshot. It can go once no released
  *   client sends it (web app and MCP plugin from 1.0.0-alpha.4 and older).
+ *
+ * Tasks (protocol 3, plan 25): a request without the `x-dingen-protocol: 3`
+ * header gets tasks with `evening` and `time` as protocol 2 had them, and
+ * pushed `evening` and `time` are converted; see legacy-protocol.ts.
  */
 export function syncRoutes() {
   const app = new Hono<AppEnv>()
@@ -31,14 +48,18 @@ export function syncRoutes() {
     if (!parsed.success) {
       return c.json({ error: 'invalid_body', issues: parsed.error.issues }, 400)
     }
+    const sync = c.get('sync')
+    const userId = c.get('userId')
+    // Protocol 2 task fields become protocol 3 ones here, not in the service.
+    const pushed = upgradePushedChanges(parsed.data.changes.map(normalizePushedTag), (type, id) =>
+      sync.current(userId, type, id),
+    )
     try {
-      const result = c
-        .get('sync')
-        .push(c.get('userId'), parsed.data.changes.map(normalizePushedTag), {
-          access: accessOf(c),
-          members: c.get('agents').memberGrants(c.get('userId')),
-          cursor: parsed.data.cursor,
-        })
+      const result = sync.push(userId, pushed, {
+        access: accessOf(c),
+        members: c.get('agents').memberGrants(userId),
+        cursor: parsed.data.cursor,
+      })
       return c.json(result)
     } catch (err) {
       if (err instanceof AgentScopeError) {
@@ -55,20 +76,23 @@ export function syncRoutes() {
   })
 
   app.get('/pull', (c) => {
+    const legacy = needsLegacyTasks(requestProtocol(c.req.header(PROTOCOL_HEADER)))
     const raw = c.req.query('cursor')
     if (raw !== undefined) {
       const cursor = parseCursorParam(raw)
       if (cursor === null) return c.json({ error: 'invalid_cursor' }, 400)
-      return c.json(c.get('sync').pullSpaces(c.get('userId'), cursor, undefined, c.get('grants')))
+      const result = c.get('sync').pullSpaces(c.get('userId'), cursor, undefined, c.get('grants'))
+      return c.json(legacy ? legacyPullSpaces(result) : result)
     }
     const parsed = PullQuery.safeParse(c.req.query())
     if (!parsed.success) {
       return c.json({ error: 'invalid_query', issues: parsed.error.issues }, 400)
     }
     try {
-      return c.json(
-        c.get('sync').pull(c.get('userId'), parsed.data.since, undefined, c.get('grants')),
-      )
+      const result = c
+        .get('sync')
+        .pull(c.get('userId'), parsed.data.since, undefined, c.get('grants'))
+      return c.json(legacy ? legacyPull(result) : result)
     } catch (err) {
       // The server was restored from a backup: the client must load a fresh snapshot.
       if (err instanceof CursorAheadError) {
@@ -83,7 +107,8 @@ export function syncRoutes() {
     const space = c.req.query('space') ?? null
     const body = c.get('sync').snapshot(c.get('userId'), c.get('grants'), space)
     if (space !== null && body.spaces.length === 0) return c.json({ error: 'not_found' }, 404)
-    return c.json(body)
+    const legacy = needsLegacyTasks(requestProtocol(c.req.header(PROTOCOL_HEADER)))
+    return c.json(legacy ? legacySnapshot(body) : body)
   })
 
   return app

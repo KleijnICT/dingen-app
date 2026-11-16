@@ -20,7 +20,7 @@ import { useAgents } from '../agents.js'
 import { useT } from '../i18n/index.js'
 import { describeWhen } from '../lists.js'
 import { useEngine, useWorkspace } from '../store/context.js'
-import { commitTask, deleteTask, duplicateTask } from '../taskActions.js'
+import { commitTask, deleteTask, duplicateTask, whenFields } from '../taskActions.js'
 import {
   checklistProgress,
   fieldLayout,
@@ -396,8 +396,10 @@ function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
             value={
               <>
                 {isToday && (
-                  <span className={`field-button-icon ${task.evening ? 'evening' : 'today'}`}>
-                    {task.evening ? <MoonIcon size={15} /> : <TodayIcon size={15} />}
+                  <span
+                    className={`field-button-icon ${task.daypart === 'evening' ? 'evening' : 'today'}`}
+                  >
+                    {task.daypart === 'evening' ? <MoonIcon size={15} /> : <TodayIcon size={15} />}
                   </span>
                 )}
                 <span className="field-button-text">{whenText(task, ws.today, t)}</span>
@@ -408,10 +410,10 @@ function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
             {(done) => (
               <WhenPicker
                 when={task.when}
-                evening={task.evening}
+                evening={task.daypart === 'evening'}
                 today={ws.today}
                 onChange={(when, evening) => {
-                  commitTask(engine, ws, task, { when, evening })
+                  commitTask(engine, ws, task, whenFields(task, when, evening))
                   done()
                 }}
               />
@@ -493,7 +495,7 @@ function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
 /** "Today", "This Evening", "Fri", "Someday": the When of a task in a few words. */
 function whenText(task: Task, today: string, t: ReturnType<typeof useT>): string {
   if (task.when.kind === 'date' && task.when.date <= today) {
-    return task.evening ? t('when.thisEvening') : t('when.today')
+    return task.daypart === 'evening' ? t('when.thisEvening') : t('when.today')
   }
   const text = describeWhen(task.when, today)
   return text.charAt(0).toLocaleUpperCase() + text.slice(1)

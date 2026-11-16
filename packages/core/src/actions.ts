@@ -2,6 +2,7 @@ import { addDays } from './dates.js'
 import type {
   Area,
   ChecklistItem,
+  Daypart,
   Entity,
   EntityType,
   Heading,
@@ -75,10 +76,13 @@ export function buildSnapshot(
   }
 }
 
-/** Where a task can be moved to: a list (sets `when`), a project, a heading, or an area. */
+/**
+ * Where a task can be moved to: a list (sets `when`, and the daypart when
+ * given), a project, a heading, or an area.
+ */
 export type MoveTarget =
   | { kind: 'none' }
-  | { kind: 'when'; when: When; evening?: boolean }
+  | { kind: 'when'; when: When; daypart?: Daypart | null }
   | { kind: 'project'; projectId: string; headingId?: string | null }
   | { kind: 'area'; areaId: string }
 
@@ -90,8 +94,8 @@ const MIRRORED = new Set([
   'projectId',
   'headingId',
   'areaId',
-  'evening',
-  'time',
+  'daypart',
+  'duration',
   'reminder',
 ])
 
@@ -111,15 +115,15 @@ export function commitTask(
 }
 
 /**
- * Without a date there is no time and no reminder: moving a task to the Inbox,
- * Anytime or Someday clears both. Only on the task itself, not on its template,
- * so later occurrences keep their time.
+ * Without a date there is no daypart and no reminder: moving a task to the
+ * Inbox, Anytime or Someday clears both. Only on the task itself, not on its
+ * template, so later occurrences keep their daypart.
  */
 function clearedSchedule(task: Task, fields: Record<string, unknown>): Record<string, unknown> {
   const when = fields.when as When | undefined
   if (!when || when.kind === 'date') return {}
   const cleared: Record<string, unknown> = {}
-  if (task.time !== null || fields.time != null) cleared.time = null
+  if (task.daypart !== null || fields.daypart != null) cleared.daypart = null
   if (task.reminder !== null || fields.reminder != null) cleared.reminder = null
   return cleared
 }
@@ -337,10 +341,16 @@ export function moveFields(ws: Snapshot, task: Task, target: MoveTarget): Record
       fields.headingId = null
       break
     case 'when': {
-      const evening = target.evening ?? false
-      if (sameWhen(task.when, target.when) && task.evening === evening) return fields
+      // No daypart given: a task keeps its own (on another date too).
+      const daypart =
+        target.when.kind === 'date'
+          ? target.daypart === undefined
+            ? task.daypart
+            : target.daypart
+          : null
+      if (sameWhen(task.when, target.when) && task.daypart === daypart) return fields
       fields.when = target.when
-      fields.evening = evening
+      fields.daypart = daypart
       break
     }
     case 'project': {
