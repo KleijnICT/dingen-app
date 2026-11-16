@@ -3221,3 +3221,8 @@ button.agent-main .muted {
 .app.focus-mode .sidebar {
   display: none;
 }
+/* On phones the drawer and its menu bar step aside too; the Focus button turns it off. */
+.app.focus-mode .mobile-bar,
+.app.focus-mode .drawer-host {
+  display: none;
+}
