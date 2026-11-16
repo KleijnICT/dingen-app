@@ -77,6 +77,9 @@
   section heading only shows with a field in it. A new task now always starts
   in the Inbox, from any list, project or area (the + button is on every list,
   the Logbook too); choosing a When or a list in the panel moves it there.
+- Long project and area titles wrap onto more lines instead of being cut off;
+  the Logbook's filters (kind, who, period) moved into the filter button,
+  with a small chip for each filter that is on.
 
 ## 1.0.0-alpha.5
 

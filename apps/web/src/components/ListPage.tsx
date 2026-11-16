@@ -42,9 +42,11 @@ interface Props {
   focusSignal: number
   /** Under the title (the Logbook puts its own filters there). */
   below?: React.ReactNode
+  /** Extra icon buttons on the title row (the Logbook's filter button). */
+  extraActions?: React.ReactNode
 }
 
-export function ListPage({ list, focusSignal, below }: Props) {
+export function ListPage({ list, focusSignal, below, extraActions }: Props) {
   const engine = useEngine()
   const t = useT()
   const ws = useWorkspace()
@@ -238,6 +240,7 @@ export function ListPage({ list, focusSignal, below }: Props) {
         }
         actions={
           <>
+            {extraActions}
             <FilterButton {...filters} />
             {isToday && (
               <HeaderButton

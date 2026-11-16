@@ -1,4 +1,4 @@
-import { type KeyboardEvent, useEffect, useState } from 'react'
+import { type KeyboardEvent, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 interface Props {
   value: string
@@ -8,6 +8,8 @@ interface Props {
   'aria-label'?: string
   autoFocus?: boolean
   multiline?: boolean
+  /** One line of text that wraps onto more lines when it is long (page titles). */
+  wrap?: boolean
 }
 
 /**
@@ -22,9 +24,20 @@ export function InlineInput({
   'aria-label': ariaLabel,
   autoFocus = false,
   multiline = false,
+  wrap = false,
 }: Props) {
   const [draft, setDraft] = useState(value)
   const [editing, setEditing] = useState(false)
+  const area = useRef<HTMLTextAreaElement>(null)
+
+  // A wrapping title grows with its text, so a long one never scrolls or gets cut off.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the height follows the text
+  useLayoutEffect(() => {
+    const el = area.current
+    if (!wrap || !el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [wrap, draft])
 
   // Follow outside changes (another device) while not typing.
   useEffect(() => {
@@ -55,6 +68,18 @@ export function InlineInput({
     onFocus: () => setEditing(true),
     onBlur: commit,
     onKeyDown,
+  }
+  if (wrap) {
+    return (
+      <textarea
+        {...shared}
+        ref={area}
+        rows={1}
+        // biome-ignore lint/a11y/noAutofocus: a new item needs its title right away
+        autoFocus={autoFocus}
+        onChange={(e) => setDraft(e.target.value.replace(/\s*\n\s*/g, ' '))}
+      />
+    )
   }
   if (multiline) {
     return (

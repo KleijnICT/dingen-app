@@ -3521,3 +3521,26 @@ button.tag-settings-name:hover {
   place-items: center;
   width: 14px;
 }
+
+/* Project and area titles wrap onto more lines instead of being cut off. */
+textarea.title-input {
+  display: block;
+  resize: none;
+  overflow: hidden;
+  line-height: 1.2;
+  font-family: inherit;
+  field-sizing: fixed;
+  flex: 1;
+  width: 100%;
+  max-width: none;
+}
+
+/* The Logbook's filters inside the filter popover: one column. */
+.filter-popover .activity-filters {
+  flex-direction: column;
+  align-items: stretch;
+  margin-top: 0;
+}
+.filter-popover .activity-selects {
+  flex-direction: column;
+}

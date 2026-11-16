@@ -20,7 +20,7 @@ import { useEngine, useWorkspace } from '../store/context.js'
 import { createInboxTask, toggleTask } from '../taskActions.js'
 import { ListPage } from './ListPage.js'
 import { MemberAvatar, useMembers } from './MemberAvatar.js'
-import { PageHeader } from './PageHeader.js'
+import { FilterChips, FilterPopover, PageHeader } from './PageHeader.js'
 import { pathOf } from './Search.js'
 import { TaskToolbar } from './Toolbar.js'
 import { useOnSignal, useTaskList } from './useTaskList.js'
@@ -48,7 +48,7 @@ export function LogbookPage({ list, user, focusSignal }: Props) {
   const { members, byId } = useMembers()
   const me = `user:${user.id}`
 
-  const filters = (
+  const filterControls = (
     <div className="activity-filters">
       <fieldset className="view-switch" aria-label={t('activity.filters')}>
         {KIND_FILTERS.map((k) => (
@@ -98,12 +98,36 @@ export function LogbookPage({ list, user, focusSignal }: Props) {
     </div>
   )
 
+  const chips = [
+    ...(kind !== 'all'
+      ? [{ key: 'kind', label: t(`activity.kind.${kind}`), clear: () => setKind('all') }]
+      : []),
+    ...(kind !== 'completed' && who
+      ? [
+          {
+            key: 'who',
+            label: who === me ? t('activity.you') : (members.find((m) => m.id === who)?.name ?? ''),
+            clear: () => setWho(''),
+          },
+        ]
+      : []),
+    ...(kind !== 'completed' && period !== 'all'
+      ? [{ key: 'period', label: t(`activity.period.${period}`), clear: () => setPeriod('all') }]
+      : []),
+  ]
+  const filterButton = <FilterPopover active={chips.length > 0}>{filterControls}</FilterPopover>
+  const filters = <FilterChips chips={chips} />
+
   if (kind === 'completed') {
-    return <ListPage list={list} focusSignal={focusSignal} below={filters} />
+    return (
+      <ListPage list={list} focusSignal={focusSignal} below={filters} extraActions={filterButton} />
+    )
   }
   return (
     <section className="list-page logbook activity">
-      <PageHeader title={<h1>{t(list.titleKey)}</h1>}>{filters}</PageHeader>
+      <PageHeader title={<h1>{t(list.titleKey)}</h1>} actions={filterButton}>
+        {filters}
+      </PageHeader>
       <ActivityList
         filter={{ kinds: kindsFor(kind), actor: who || undefined, period }}
         me={me}

@@ -140,6 +140,51 @@ export function ActiveFilters({ tag, onTag, durationList, maxDuration }: PageFil
       clear: () => setDurationFilter(durationList, null),
     })
   }
+  return <FilterChips chips={chips} />
+}
+
+/**
+ * A filter button whose popover holds any filters a page brings (the Logbook's kinds,
+ * people and period). `active` colours the button when something is narrowed down.
+ */
+export function FilterPopover({ active, children }: { active: boolean; children: ReactNode }) {
+  const t = useT()
+  const [open, setOpen] = useState(false)
+  const root = useRef<HTMLDivElement>(null)
+  const button = useRef<HTMLButtonElement>(null)
+  const close = useCallback(() => setOpen(false), [])
+  useDismiss(open, close, root, button)
+  const label = t('filter.button')
+  return (
+    <div className="filter-menu" ref={root}>
+      <button
+        ref={button}
+        type="button"
+        className={`header-button ${active ? 'on' : ''}`}
+        aria-label={label}
+        title={label}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+      >
+        <ListFilter size={17} strokeWidth={2} aria-hidden="true" />
+      </button>
+      {open && (
+        <div className="popover filter-popover" role="dialog" aria-label={label}>
+          {children}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** Small chips for filters that are on; × turns one off. */
+export function FilterChips({
+  chips,
+}: {
+  chips: { key: string; label: string; clear: () => void }[]
+}) {
+  const t = useT()
   if (chips.length === 0) return null
   return (
     <div className="active-filters">

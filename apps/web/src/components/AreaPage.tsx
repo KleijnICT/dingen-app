@@ -73,6 +73,7 @@ export function AreaPage({ area, focusSignal }: Props) {
             <AreaAppearance area={area} />
             <InlineInput
               className="title-input"
+              wrap
               value={area.title}
               placeholder={t('area.untitled')}
               aria-label={t('area.title')}

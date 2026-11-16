@@ -204,6 +204,7 @@ export function ProjectPage({ project, focusSignal }: Props) {
             </button>
             <InlineInput
               className="title-input"
+              wrap
               value={project.title}
               placeholder={t('project.untitled')}
               aria-label={t('project.title')}
