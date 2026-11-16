@@ -35,6 +35,12 @@
 - The task panel stays open when its task leaves the list, for example after
   choosing Tomorrow in Today, so more fields can be filled in; an OK button
   at the bottom closes it.
+- A calmer task panel: every field, including notes, checklist, When, list
+  and tags, only shows once it has a value; the others are in the Add row,
+  and adding one opens it (the When and list choices open right away). A
+  section heading only shows with a field in it. A new task now always starts
+  in the Inbox, from any list, project or area (the + button is on every list,
+  the Logbook too); choosing a When or a list in the panel moves it there.
 
 ## 1.0.0-alpha.5
 

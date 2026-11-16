@@ -179,9 +179,16 @@ interface EditorProps {
   onOpen: (id: string) => void
 }
 
+/** What gets focus when these fields are added: their text field (without a picker). */
+const FOCUS_ON_ADD: Partial<Record<OptionalField, string>> = {
+  notes: 'textarea',
+  checklist: '.checklist-new input',
+  tags: '.tag-input',
+}
+
 /**
- * Every field of a task, saved as it changes. Notes, checklist, When, List and Tags always
- * show; time, deadline, repeat and assignee only with a value, else from the Add row.
+ * Every field of a task, saved as it changes. Only the header and OK always show; every other
+ * field shows with a value, while it has focus, or right after adding it from the Add row.
  */
 function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
   const engine = useEngine()
@@ -196,24 +203,39 @@ function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
   useAutoGrow(titleRef, title, mode)
   useAutoGrow(notesRef, notes, mode)
 
-  // Optional fields: the ones just added from the Add row, and the one whose picker opens next.
+  // The fields just added from the Add row, the one that opens next, and the one with focus:
+  // a field being cleared stays until focus leaves it.
   const [added, setAdded] = useState<OptionalField[]>([])
   const [opening, setOpening] = useState<OptionalField | null>(null)
+  const [active, setActive] = useState<OptionalField | null>(null)
   const canAssign = useAgents().length > 0
-  const { shown, addable } = fieldLayout(task, added, canAssign)
-  const values = fieldValues(task)
+  const checklist = ws.checklistByTask.get(task.id) ?? []
+  const checklistCount = checklist.length
+  // The notes as typed count, so blurring them does not hide the field before they are saved.
+  const extra = { checklist: checklistCount, notes }
+  const keep = active && !added.includes(active) ? [...added, active] : added
+  const { shown, addable, sections } = fieldLayout(task, keep, canAssign, extra)
+  const values = fieldValues(task, extra)
+  const has = (name: OptionalField) => shown.includes(name)
 
   // A field that got its value is shown for that value; clearing it later hides it again.
   useEffect(() => {
-    const next = stillAdded(task, added)
+    const next = stillAdded(task, added, { checklist: checklistCount, notes })
     if (next.length !== added.length) setAdded(next)
-  }, [task, added])
+  }, [task, added, checklistCount, notes])
 
-  // Right after adding a field, focus it and open its picker.
+  // Right after adding a field, focus it and open its picker. When and List open their
+  // popover by themselves (`autoOpen`), which takes focus into it.
   useEffect(() => {
     if (!opening) return
     setOpening(null)
+    if (opening === 'when' || opening === 'list') return
     const row = root.current?.querySelector(`[data-field="${opening}"]`)
+    const text = FOCUS_ON_ADD[opening]
+    if (text) {
+      row?.querySelector<HTMLElement>(text)?.focus()
+      return
+    }
     const el = row?.querySelector<HTMLInputElement | HTMLSelectElement>('input, select')
     if (!el) return
     el.focus()
@@ -237,23 +259,50 @@ function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
   /** Takes back an added field that got no value; focus returns to its button in the Add row. */
   function cancelAdd(field: OptionalField) {
     forget(field)
+    setActive(null)
     requestAnimationFrame(() =>
       root.current?.querySelector<HTMLElement>(`[data-add="${field}"]`)?.focus(),
     )
   }
 
   /** Escape in a field that was just added and is still empty takes it back (not the panel). */
-  function escapeField(field: OptionalField, e: KeyboardEvent<HTMLDivElement>) {
+  function escapeField(field: OptionalField, e: KeyboardEvent<HTMLElement>) {
     if (e.key !== 'Escape' || e.defaultPrevented || values[field] || !added.includes(field)) return
     e.preventDefault()
     cancelAdd(field)
   }
 
-  /** An added field left without a value goes away once focus moves on to something else. */
-  function leaveField(field: OptionalField, e: FocusEvent<HTMLDivElement>) {
+  /**
+   * An added field left without a value goes away once focus moves on to something else.
+   * Focus that lands on nothing, or on the panel around the field (a click on an empty part
+   * of a popover), has not moved on.
+   */
+  function leaveField(field: OptionalField, e: FocusEvent<HTMLElement>) {
     const to = e.relatedTarget as Node | null
-    if (!to || e.currentTarget.contains(to) || values[field]) return
+    if (!to || e.currentTarget.contains(to) || to.contains(e.currentTarget) || values[field]) {
+      return
+    }
     forget(field)
+  }
+
+  /**
+   * Follows which field has focus; focus that moves out of the panel clears it. Focus that
+   * arrives elsewhere in the panel also takes back added fields left empty: one whose popover
+   * closed on a click outside lost its focus to nothing, so it never saw focus move on.
+   * Repeat keeps its own form open.
+   */
+  function onFocusIn(e: FocusEvent<HTMLElement>) {
+    const el = (e.target as HTMLElement).closest<HTMLElement>('[data-field]')
+    const next = (el?.dataset.field as OptionalField | undefined) ?? null
+    setActive(next)
+    setAdded((a) => {
+      const kept = a.filter((f) => f === next || f === 'repeat' || values[f])
+      return kept.length === a.length ? a : kept
+    })
+  }
+  function onFocusOut(e: FocusEvent<HTMLElement>) {
+    const to = e.relatedTarget as Node | null
+    if (to && !e.currentTarget.contains(to) && !to.contains(e.currentTarget)) setActive(null)
   }
 
   function commit() {
@@ -294,26 +343,42 @@ function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
   )
 
   const addLabels: Record<OptionalField, string> = {
+    notes: t('panel.add.notes'),
+    checklist: t('panel.add.checklist'),
+    when: t('panel.add.when'),
     time: t('panel.add.time'),
     deadline: t('panel.add.deadline'),
     repeat: t('panel.add.repeat'),
     duration: t('panel.add.duration'),
+    list: t('panel.add.list'),
+    tags: t('panel.add.tags'),
     assignee: t('panel.add.assignee'),
   }
   // What each chip of the Add row says next to its plus.
   const addTexts: Record<OptionalField, string> = {
+    notes: t('task.notes'),
+    checklist: t('checklist.label'),
+    when: t('when.label'),
     time: t('panel.time'),
     deadline: t('deadline.label'),
     repeat: t('repeat.label'),
     duration: t('duration.label'),
+    list: t('panel.list'),
+    tags: t('tags.label'),
     assignee: t('assign.toolbar'),
   }
-  const planning = shown.filter((f) => f !== 'assignee' && f !== 'duration')
-  const progress = checklistProgress(ws.checklistByTask.get(task.id) ?? [])
+  const progress = checklistProgress(checklist)
   const isToday = task.when.kind === 'date' && task.when.date <= ws.today
+  const whenValue = whenText(task, ws.today, t)
 
   return (
-    <div ref={root} className={`task-editor ${done ? 'done' : ''}`}>
+    // biome-ignore lint/a11y/noStaticElementInteractions: follows focus, not an action of its own
+    <div
+      ref={root}
+      className={`task-editor ${done ? 'done' : ''}`}
+      onFocus={onFocusIn}
+      onBlur={onFocusOut}
+    >
       <div className="editor-head">
         <button
           type="button"
@@ -369,118 +434,154 @@ function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
           </button>
         )}
       </div>
-      <textarea
-        ref={notesRef}
-        className="editor-notes"
-        rows={2}
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-        onBlur={commit}
-        placeholder={t('task.notes')}
-        aria-label={t('task.notes')}
-      />
-      <section className="panel-section" aria-label={t('checklist.label')}>
-        <h3 className="panel-section-label">
-          {t('checklist.label')}
-          {progress.total > 0 && (
-            <span className="panel-section-count">
-              {t('checklist.count', { done: progress.done, total: progress.total })}
-            </span>
-          )}
-        </h3>
-        <Checklist task={task} />
-      </section>
-
-      <section className="panel-section" aria-label={t('panel.planning')}>
-        <h3 className="panel-section-label">{t('panel.planning')}</h3>
-        <FieldRow label={t('when.label')}>
-          <PopoverButton
-            label={t('when.label')}
-            value={
-              <>
-                {isToday && (
-                  <span
-                    className={`field-button-icon ${task.daypart === 'evening' ? 'evening' : 'today'}`}
-                  >
-                    {task.daypart === 'evening' ? <MoonIcon size={15} /> : <TodayIcon size={15} />}
-                  </span>
-                )}
-                <span className="field-button-text">{whenText(task, ws.today, t)}</span>
-              </>
-            }
-            text={whenText(task, ws.today, t)}
-          >
-            {(done) => (
-              <WhenPicker
-                when={task.when}
-                daypart={task.daypart}
-                today={ws.today}
-                onChange={(when, daypart, close) => {
-                  commitTask(engine, ws, task, whenFields(when, daypart))
-                  if (close) done()
-                }}
-              />
-            )}
-          </PopoverButton>
-        </FieldRow>
-        {planning.map((name) =>
-          name === 'time'
-            ? field(
-                'time',
-                t('panel.timeLabel'),
-                <ScheduleField
-                  task={task}
-                  onChange={(fields) => commitTask(engine, ws, task, fields)}
-                />,
-              )
-            : name === 'deadline'
-              ? field(
-                  'deadline',
-                  t('deadline.label'),
-                  <DeadlineField
-                    deadline={task.deadline}
-                    today={ws.today}
-                    onChange={(deadline) => commitTask(engine, ws, task, { deadline })}
-                  />,
-                )
-              : field(
-                  'repeat',
-                  t('repeat.label'),
-                  <RepeatEditor
-                    task={task}
-                    autoOpen={!values.repeat}
-                    onClosed={() => {
-                      if (!values.repeat) cancelAdd('repeat')
-                    }}
-                  />,
-                  false,
-                ),
-        )}
-        {shown.includes('duration') &&
-          field(
-            'duration',
-            t('duration.label'),
-            <DurationField
-              duration={task.duration}
-              onChange={(duration) => commitTask(engine, ws, task, { duration })}
-            />,
-          )}
-      </section>
-
-      <section className="panel-section" aria-label={t('panel.organization')}>
-        <h3 className="panel-section-label">{t('panel.organization')}</h3>
-        <FieldRow label={t('panel.list')}>
-          <ListButton task={task} />
-        </FieldRow>
-        <FieldRow label={t('tags.label')}>
-          <TagEditor
-            tagIds={task.tagIds}
-            onChange={(tagIds) => commitTask(engine, ws, task, { tagIds })}
+      {has('notes') && (
+        // biome-ignore lint/a11y/noStaticElementInteractions: focus and Escape in the notes, not an action of their own
+        <div
+          className="editor-notes-field"
+          data-field="notes"
+          onBlur={(e) => leaveField('notes', e)}
+          onKeyDown={(e) => escapeField('notes', e)}
+        >
+          <textarea
+            ref={notesRef}
+            className="editor-notes"
+            rows={2}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            onBlur={commit}
+            placeholder={t('task.notes')}
+            aria-label={t('task.notes')}
           />
-        </FieldRow>
-        {shown.includes('assignee') &&
-          field('assignee', t('panel.assigned'), <AssigneeField task={task} />)}
-      </section>
+        </div>
+      )}
+
+      {sections.includes('checklist') && (
+        <section className="panel-section" aria-label={t('checklist.label')}>
+          <h3 className="panel-section-label">
+            {t('checklist.label')}
+            {progress.total > 0 && (
+              <span className="panel-section-count">
+                {t('checklist.count', { done: progress.done, total: progress.total })}
+              </span>
+            )}
+          </h3>
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: focus and Escape in the checklist, not an action of its own */}
+          <div
+            data-field="checklist"
+            onBlur={(e) => leaveField('checklist', e)}
+            onKeyDown={(e) => escapeField('checklist', e)}
+          >
+            <Checklist task={task} />
+          </div>
+        </section>
+      )}
+
+      {sections.includes('planning') && (
+        <section className="panel-section" aria-label={t('panel.planning')}>
+          <h3 className="panel-section-label">{t('panel.planning')}</h3>
+          {has('when') &&
+            field(
+              'when',
+              t('when.label'),
+              <PopoverButton
+                label={t('when.label')}
+                autoOpen={opening === 'when'}
+                value={
+                  <>
+                    {isToday && (
+                      <span
+                        className={`field-button-icon ${task.daypart === 'evening' ? 'evening' : 'today'}`}
+                      >
+                        {task.daypart === 'evening' ? (
+                          <MoonIcon size={15} />
+                        ) : (
+                          <TodayIcon size={15} />
+                        )}
+                      </span>
+                    )}
+                    <span className="field-button-text">{whenValue}</span>
+                  </>
+                }
+                text={whenValue}
+              >
+                {(done) => (
+                  <WhenPicker
+                    when={task.when}
+                    daypart={task.daypart}
+                    today={ws.today}
+                    onChange={(when, daypart, close) => {
+                      commitTask(engine, ws, task, whenFields(when, daypart))
+                      if (close) done()
+                    }}
+                  />
+                )}
+              </PopoverButton>,
+            )}
+          {has('time') &&
+            field(
+              'time',
+              t('panel.timeLabel'),
+              <ScheduleField
+                task={task}
+                onChange={(fields) => commitTask(engine, ws, task, fields)}
+              />,
+            )}
+          {has('deadline') &&
+            field(
+              'deadline',
+              t('deadline.label'),
+              <DeadlineField
+                deadline={task.deadline}
+                today={ws.today}
+                onChange={(deadline) => commitTask(engine, ws, task, { deadline })}
+              />,
+            )}
+          {has('repeat') &&
+            field(
+              'repeat',
+              t('repeat.label'),
+              <RepeatEditor
+                task={task}
+                autoOpen={!values.repeat}
+                onClosed={() => {
+                  if (!values.repeat) cancelAdd('repeat')
+                }}
+              />,
+              false,
+            )}
+          {has('duration') &&
+            field(
+              'duration',
+              t('duration.label'),
+              <DurationField
+                duration={task.duration}
+                onChange={(duration) => commitTask(engine, ws, task, { duration })}
+              />,
+            )}
+        </section>
+      )}
+
+      {sections.includes('organization') && (
+        <section className="panel-section" aria-label={t('panel.organization')}>
+          <h3 className="panel-section-label">{t('panel.organization')}</h3>
+          {has('list') &&
+            field(
+              'list',
+              t('panel.list'),
+              <ListButton task={task} autoOpen={opening === 'list'} />,
+            )}
+          {has('tags') &&
+            field(
+              'tags',
+              t('tags.label'),
+              <TagEditor
+                tagIds={task.tagIds}
+                onChange={(tagIds) => commitTask(engine, ws, task, { tagIds })}
+              />,
+            )}
+          {has('assignee') && field('assignee', t('panel.assigned'), <AssigneeField task={task} />)}
+        </section>
+      )}
 
       {addable.length > 0 && (
         <fieldset className="panel-add">
@@ -524,8 +625,8 @@ interface RowProps {
   label: string
   /** Marks an optional field, so adding it can find its input. */
   field?: OptionalField
-  onBlur?: ((e: FocusEvent<HTMLDivElement>) => void) | undefined
-  onKeyDown?: ((e: KeyboardEvent<HTMLDivElement>) => void) | undefined
+  onBlur?: ((e: FocusEvent<HTMLElement>) => void) | undefined
+  onKeyDown?: ((e: KeyboardEvent<HTMLElement>) => void) | undefined
   children: ReactNode
 }
 
@@ -542,6 +643,8 @@ function FieldRow({ label, field, onBlur, onKeyDown, children }: RowProps) {
 
 interface PopoverProps {
   label: string
+  /** Opens right away (the field was just added). */
+  autoOpen?: boolean
   /** What the button shows. */
   value: ReactNode
   /** The value as text, for screen readers. */
@@ -553,13 +656,21 @@ interface PopoverProps {
  * A field's value as a button that opens its choices in a small popover. Escape or a click
  * outside closes the popover (not the panel); choosing closes it and returns focus.
  */
-function PopoverButton({ label, value, text, children }: PopoverProps) {
+function PopoverButton({ label, autoOpen = false, value, text, children }: PopoverProps) {
   const t = useT()
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(autoOpen)
   const root = useRef<HTMLDivElement>(null)
   const button = useRef<HTMLButtonElement>(null)
   const popover = useRef<HTMLDivElement>(null)
-  const close = useCallback(() => setOpen(false), [])
+  // A click outside closes the popover. Focus inside it goes back to the button first, so it
+  // moves on from there to what was clicked instead of getting lost with the popover; the
+  // field then knows focus left it.
+  const close = useCallback(() => {
+    if (popover.current?.contains(document.activeElement)) {
+      button.current?.focus({ preventScroll: true })
+    }
+    setOpen(false)
+  }, [])
   useDismiss(open, close, root, button)
 
   // Opening moves focus to the current choice, so the keyboard can carry on from there.
@@ -598,7 +709,7 @@ function PopoverButton({ label, value, text, children }: PopoverProps) {
 }
 
 /** The task's project or area (with its heading) as a button that opens the Move choices. */
-function ListButton({ task }: { task: Task }) {
+function ListButton({ task, autoOpen }: { task: Task; autoOpen: boolean }) {
   const ws = useWorkspace()
   const t = useT()
   const project = task.projectId ? ws.projectById.get(task.projectId) : undefined
@@ -621,6 +732,7 @@ function ListButton({ task }: { task: Task }) {
   return (
     <PopoverButton
       label={t('panel.list')}
+      autoOpen={autoOpen}
       text={headingName ? `${name}, ${headingName}` : name}
       value={
         <>

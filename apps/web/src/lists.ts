@@ -15,37 +15,15 @@ export interface ListDef {
   id: ListId
   titleKey: MessageKey
   path: string
-  /** `when` for a task added in this list; null means no quick add. */
-  newWhen: (today: string) => When | null
 }
 
 export const LISTS: ListDef[] = [
-  { id: 'inbox', titleKey: 'list.inbox', path: '/inbox', newWhen: () => ({ kind: 'inbox' }) },
-  {
-    id: 'today',
-    titleKey: 'list.today',
-    path: '/today',
-    newWhen: (today) => ({ kind: 'date', date: today }),
-  },
-  {
-    id: 'upcoming',
-    titleKey: 'list.upcoming',
-    path: '/upcoming',
-    newWhen: (today) => ({ kind: 'date', date: addDays(today, 1) }),
-  },
-  {
-    id: 'anytime',
-    titleKey: 'list.anytime',
-    path: '/anytime',
-    newWhen: () => ({ kind: 'anytime' }),
-  },
-  {
-    id: 'someday',
-    titleKey: 'list.someday',
-    path: '/someday',
-    newWhen: () => ({ kind: 'someday' }),
-  },
-  { id: 'logbook', titleKey: 'list.logbook', path: '/logbook', newWhen: () => null },
+  { id: 'inbox', titleKey: 'list.inbox', path: '/inbox' },
+  { id: 'today', titleKey: 'list.today', path: '/today' },
+  { id: 'upcoming', titleKey: 'list.upcoming', path: '/upcoming' },
+  { id: 'anytime', titleKey: 'list.anytime', path: '/anytime' },
+  { id: 'someday', titleKey: 'list.someday', path: '/someday' },
+  { id: 'logbook', titleKey: 'list.logbook', path: '/logbook' },
 ]
 
 export function listTasks(id: ListId, ws: Workspace): Task[] {

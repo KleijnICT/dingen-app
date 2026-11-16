@@ -40,17 +40,13 @@ export function parseDuration(input: string): number | null {
   return rounded >= 1 && rounded <= MAX_DURATION ? rounded : null
 }
 
-/**
- * The tasks that fit in the filter's maximum; all of them without a filter.
- * Tasks in `keep` stay regardless: one just added here has no duration yet.
- */
+/** The tasks that fit in the filter's maximum; all of them without a filter. */
 export function filterByDuration<T extends Pick<Task, 'id' | 'duration'>>(
   tasks: T[],
   max: number | null,
-  keep: readonly string[] = [],
 ): T[] {
   if (max === null) return tasks
-  return tasks.filter((task) => fitsDuration(task, max) || keep.includes(task.id))
+  return tasks.filter((task) => fitsDuration(task, max))
 }
 
 /** The lists with a duration filter. */

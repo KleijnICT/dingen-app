@@ -1,4 +1,4 @@
-import { type ActivityItem, type Member, SYSTEM_ACTOR } from '@dingen/core'
+import { type ActivityItem, type Member, SYSTEM_ACTOR, type Task } from '@dingen/core'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   actorName,
@@ -16,10 +16,13 @@ import { type ActivityFilter, fetchActivity, type User } from '../api.js'
 import { formatDate, useT } from '../i18n/index.js'
 import { describeDate, type ListDef } from '../lists.js'
 import { areaPath, navigate, projectPath, taskPath } from '../router.js'
-import { useWorkspace } from '../store/context.js'
+import { useEngine, useWorkspace } from '../store/context.js'
+import { createInboxTask, toggleTask } from '../taskActions.js'
 import { ListPage } from './ListPage.js'
 import { MemberAvatar, useMembers } from './MemberAvatar.js'
 import { pathOf } from './Search.js'
+import { TaskToolbar } from './Toolbar.js'
+import { useOnSignal, useTaskList } from './useTaskList.js'
 
 const PAGE = 50
 /** Pages fetched in a row when a narrow filter keeps coming back empty. */
@@ -109,7 +112,30 @@ export function LogbookPage({ list, user, focusSignal }: Props) {
         owner={{ id: me as Member['id'], kind: 'user', name: user.email, icon: null, color: null }}
         byId={byId}
       />
+      <NewTaskBar focusSignal={focusSignal} />
     </section>
+  )
+}
+
+/**
+ * The toolbar under the activity, for a new task (which goes to the Inbox) and Search; the
+ * activity has no tasks to select.
+ */
+function NewTaskBar({ focusSignal }: { focusSignal: number }) {
+  const engine = useEngine()
+  const ws = useWorkspace()
+  const taskList = useTaskList([], (task: Task) => toggleTask(engine, ws, task))
+
+  function addNew() {
+    taskList.openNew(createInboxTask(engine, ws).id)
+  }
+  useOnSignal(focusSignal, addNew)
+
+  return (
+    <>
+      <TaskToolbar onNew={addNew} selected={undefined} />
+      {taskList.panel}
+    </>
   )
 }
 

@@ -2848,7 +2848,8 @@ button.agent-main .muted {
 }
 
 /* --- Editor (in the task panel): header and notes, then the Checklist, Planning and
-   Organisation sections, each opened by a hairline inside the padding, then the Add row --- */
+   Organisation sections (only those with a field), each opened by a hairline inside the
+   padding, then the Add row --- */
 .task-editor {
   display: flex;
   flex-direction: column;
@@ -2890,6 +2891,10 @@ button.agent-main .muted {
 .editor-notes:focus {
   outline: none;
 }
+.editor-notes-field {
+  display: flex;
+  flex-direction: column;
+}
 .editor-notes {
   margin-top: 10px;
   border: 0;
@@ -2909,7 +2914,7 @@ button.agent-main .muted {
   padding: 14px 0 0 30px;
   border-top: 1px solid var(--line);
 }
-.editor-notes + .panel-section {
+.editor-notes-field + .panel-section {
   margin-top: 18px;
 }
 .panel-section-label {

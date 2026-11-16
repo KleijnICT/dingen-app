@@ -1,4 +1,4 @@
-import { type Daypart, newTask, orderBetween, type Project, type Task, views } from '@dingen/core'
+import { type Daypart, type Project, type Task, views } from '@dingen/core'
 import { useState } from 'react'
 import { daysWithEvents, rangeFor, useCalendarData } from '../calendar.js'
 import { listTarget, type TaskGroupInfo } from '../dnd.js'
@@ -18,7 +18,7 @@ import {
 import { setTodayView, useTodayView } from '../prefs.js'
 import { areaPath, navigate, projectPath } from '../router.js'
 import { useEngine, useWorkspace } from '../store/context.js'
-import { type MoveTarget, useLinger } from '../taskActions.js'
+import { createInboxTask, type MoveTarget, useLinger } from '../taskActions.js'
 import { DayEvents } from './CalendarEvents.js'
 import { DurationFilter } from './Duration.js'
 import { ProjectRow } from './ProjectRow.js'
@@ -42,8 +42,6 @@ export function ListPage({ list, focusSignal, header }: Props) {
   const t = useT()
   const ws = useWorkspace()
   const [tagFilter, setTagFilter] = useState<string | null>(null)
-  // Tasks added on this page, kept in view by the duration filter until they have one.
-  const [added, setAdded] = useState<string[]>([])
   const todayView = useTodayView()
   const calendar = useCalendarData()
   const maxDuration = useDurationFilter(list.id)
@@ -57,7 +55,7 @@ export function ListPage({ list, focusSignal, header }: Props) {
   )
   const present = new Set(visible.flatMap((task) => task.tagIds))
   const tagged = tagFilter ? all.filter((task) => task.tagIds.includes(tagFilter)) : all
-  const shown = filterByDuration(tagged, maxDuration, added)
+  const shown = filterByDuration(tagged, maxDuration)
   // The duration filter shows once a task here has a duration, or while it is on.
   const durationFilter =
     hasDurationFilter(list.id) &&
@@ -67,24 +65,13 @@ export function ListPage({ list, focusSignal, header }: Props) {
   const projects = listProjects(list.id, ws)
 
   const taskList = useTaskList(shown, toggle)
-  const canAdd = list.newWhen(ws.today) !== null
 
+  // A new task goes to the Inbox, from any list; the panel keeps it open here.
   function addNew() {
-    const when = list.newWhen(ws.today)
-    if (!when) return
-    const last = visible.at(-1)
-    const task = newTask({
-      title: '',
-      when,
-      tagIds: tagFilter ? [tagFilter] : [],
-      order: orderBetween(last?.order ?? null, null),
-    })
-    engine.create('task', task)
-    if (maxDuration !== null) setAdded((ids) => [...ids, task.id])
-    taskList.openNew(task.id)
+    taskList.openNew(createInboxTask(engine, ws, tagFilter).id)
   }
 
-  // `n` anywhere in the window adds a task here.
+  // `n` anywhere in the window adds a task.
   useOnSignal(focusSignal, addNew)
 
   const rowProps = (
@@ -257,7 +244,7 @@ export function ListPage({ list, focusSignal, header }: Props) {
         <p className="empty">{t(`list.empty.${list.id}` as MessageKey)}</p>
       )}
       {body}
-      <TaskToolbar onNew={canAdd ? addNew : undefined} selected={taskList.selected} />
+      <TaskToolbar onNew={addNew} selected={taskList.selected} />
       {taskList.panel}
     </section>
   )

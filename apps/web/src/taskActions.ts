@@ -17,7 +17,7 @@ export {
   toggleTask,
 } from '@dingen/core'
 
-import { orderBetween, toggleTask } from '@dingen/core'
+import { newTask, orderBetween, toggleTask } from '@dingen/core'
 
 export { whenFields } from './dayparts.js'
 
@@ -32,6 +32,27 @@ export function reorder(
   engine.mutate(entityType, id, {
     order: orderBetween(before?.order ?? null, after?.order ?? null),
   })
+}
+
+/**
+ * A new, empty task, always in the Inbox wherever it was made: after the last task there, with
+ * the tag of the active tag filter. Filling in List or When in the panel moves it on.
+ */
+export function newInboxTask(ws: Pick<Snapshot, 'tasks'>, tagId: string | null = null): Task {
+  const last = views.inbox(ws.tasks).at(-1)
+  return newTask({
+    title: '',
+    when: { kind: 'inbox' },
+    tagIds: tagId ? [tagId] : [],
+    order: orderBetween(last?.order ?? null, null),
+  })
+}
+
+/** Creates a new, empty task in the Inbox (see `newInboxTask`) and returns it. */
+export function createInboxTask(engine: Writer, ws: Snapshot, tagId: string | null = null): Task {
+  const task = newInboxTask(ws, tagId)
+  engine.create('task', task)
+  return task
 }
 
 const LINGER_MS = 1200

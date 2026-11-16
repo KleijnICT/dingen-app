@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   checklistProgress,
   fieldLayout,
+  fieldValues,
   type KeyInput,
   listKeyAction,
   panelMode,
@@ -150,70 +151,133 @@ describe('rowClickAction', () => {
   })
 })
 
+describe('fieldValues', () => {
+  const inbox = newTask({ title: 'New' })
+
+  it('gives a new inbox task no values at all', () => {
+    expect(Object.values(fieldValues(inbox)).some(Boolean)).toBe(false)
+  })
+
+  it('reads notes, checklist, When, list and tags', () => {
+    const full = {
+      ...inbox,
+      notes: 'Call first',
+      when: { kind: 'anytime' as const },
+      projectId: 'p',
+      tagIds: ['t'],
+    }
+    expect(fieldValues(full, { checklist: 2 })).toMatchObject({
+      notes: true,
+      checklist: true,
+      when: true,
+      list: true,
+      tags: true,
+    })
+    expect(fieldValues({ ...inbox, areaId: 'a' }).list).toBe(true)
+  })
+
+  it('counts the notes as typed, ahead of the saved task', () => {
+    expect(fieldValues(inbox, { notes: 'typing' }).notes).toBe(true)
+    expect(fieldValues({ ...inbox, notes: 'saved' }, { notes: '  ' }).notes).toBe(false)
+  })
+})
+
 describe('fieldLayout', () => {
+  const inbox = newTask({ title: 'New' })
   const plain = newTask({ title: 'Plain', when: { kind: 'anytime' } })
   const dated = newTask({ title: 'Dated', when: { kind: 'date', date: '2026-11-13' } })
 
-  it('offers every applicable empty field and shows none', () => {
-    expect(fieldLayout(dated, [], true)).toEqual({
+  it('shows nothing for a new task and offers every field in order', () => {
+    expect(fieldLayout(inbox, [], true)).toEqual({
       shown: [],
-      addable: ['time', 'deadline', 'repeat', 'duration', 'assignee'],
+      addable: [
+        'notes',
+        'checklist',
+        'when',
+        'deadline',
+        'repeat',
+        'duration',
+        'list',
+        'tags',
+        'assignee',
+      ],
+      sections: [],
     })
   })
 
   it('offers a time only for a task with a date', () => {
-    expect(fieldLayout(plain, [], true).addable).toEqual([
-      'deadline',
-      'repeat',
-      'duration',
-      'assignee',
-    ])
-    expect(fieldLayout(plain, ['time'], true).shown).toEqual([])
+    expect(fieldLayout(dated, [], true).addable).toContain('time')
+    expect(fieldLayout(plain, [], true).addable).not.toContain('time')
+    expect(fieldLayout(plain, ['time'], true).shown).toEqual(['when'])
   })
 
   it('offers assigning only when there is someone to assign to', () => {
-    expect(fieldLayout(plain, [], false).addable).toEqual(['deadline', 'repeat', 'duration'])
-    expect(fieldLayout({ ...plain, assigneeId: 'agent:a' }, [], false).shown).toEqual(['assignee'])
+    expect(fieldLayout(plain, [], false).addable).not.toContain('assignee')
+    expect(fieldLayout({ ...plain, assigneeId: 'agent:a' }, [], false).shown).toContain('assignee')
   })
 
-  it('shows fields with a value and keeps them out of the Add row', () => {
+  it('shows fields with a value, in their sections, and keeps them out of the Add row', () => {
     const full = {
       ...dated,
+      notes: 'Bring the keys',
       reminder: { daysBefore: 0, time: '09:00' },
       deadline: '2026-11-20',
       templateId: 'tpl',
       assigneeId: 'me',
       duration: 30,
+      areaId: 'a',
+      tagIds: ['t'],
     }
-    expect(fieldLayout(full, [], true)).toEqual({
-      shown: ['time', 'deadline', 'repeat', 'duration', 'assignee'],
+    expect(fieldLayout(full, [], true, { checklist: 1 })).toEqual({
+      shown: [
+        'notes',
+        'checklist',
+        'when',
+        'time',
+        'deadline',
+        'repeat',
+        'duration',
+        'list',
+        'tags',
+        'assignee',
+      ],
       addable: [],
+      sections: ['notes', 'checklist', 'planning', 'organization'],
     })
   })
 
+  it('shows a section only when one of its fields shows', () => {
+    expect(fieldLayout(plain, [], true).sections).toEqual(['planning'])
+    expect(fieldLayout({ ...inbox, tagIds: ['t'] }, [], true).sections).toEqual(['organization'])
+    expect(fieldLayout(inbox, [], true, { checklist: 3 }).sections).toEqual(['checklist'])
+  })
+
   it('shows a just added field before it has a value', () => {
-    expect(fieldLayout(plain, ['deadline'], true)).toEqual({
-      shown: ['deadline'],
-      addable: ['repeat', 'duration', 'assignee'],
-    })
+    for (const f of ['notes', 'checklist', 'when', 'list', 'tags', 'deadline'] as const) {
+      const layout = fieldLayout(inbox, [f], true)
+      expect(layout.shown).toEqual([f])
+      expect(layout.addable).not.toContain(f)
+    }
   })
 
   it('does not start repeating a completed task', () => {
     const done = { ...plain, status: 'completed' as const }
-    expect(fieldLayout(done, [], false).addable).toEqual(['deadline', 'duration'])
-    expect(fieldLayout({ ...done, templateId: 'tpl' }, [], false).shown).toEqual(['repeat'])
+    expect(fieldLayout(done, [], false).addable).not.toContain('repeat')
+    expect(fieldLayout({ ...done, templateId: 'tpl' }, [], false).shown).toContain('repeat')
   })
 
   it('offers a duration for any task and shows it once it has one', () => {
-    expect(fieldLayout({ ...plain, duration: 15 }, [], false).shown).toEqual(['duration'])
-    expect(fieldLayout(plain, ['duration'], false).shown).toEqual(['duration'])
-    expect(stillAdded({ ...plain, duration: 15 }, ['duration'])).toEqual([])
+    expect(fieldLayout({ ...inbox, duration: 15 }, [], false).shown).toEqual(['duration'])
+    expect(fieldLayout(inbox, ['duration'], false).shown).toEqual(['duration'])
+    expect(stillAdded({ ...inbox, duration: 15 }, ['duration'])).toEqual([])
   })
 
   it('forgets an added field once it has a value, so clearing it hides it again', () => {
-    const withDeadline = { ...plain, deadline: '2026-11-20' }
+    const withDeadline = { ...inbox, deadline: '2026-11-20' }
     expect(stillAdded(withDeadline, ['deadline', 'repeat'])).toEqual(['repeat'])
-    expect(fieldLayout(plain, stillAdded(withDeadline, ['deadline']), true).shown).toEqual([])
+    expect(fieldLayout(inbox, stillAdded(withDeadline, ['deadline']), true).shown).toEqual([])
+    expect(stillAdded(inbox, ['notes', 'checklist'], { notes: 'x', checklist: 1 })).toEqual([])
+    expect(stillAdded({ ...inbox, tagIds: ['t'] }, ['tags', 'list'])).toEqual(['list'])
   })
 })
 
