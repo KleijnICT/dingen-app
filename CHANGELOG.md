@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Settings → Tags: every tag as a tree with its number of open tasks. Create a
+  tag (always lowercase), rename it inline (a name already used in the same
+  space is refused), move it under another tag or to the top level, and
+  delete it: it comes off its tasks and projects, which stay, and the tags
+  directly under it move to the top level. The settings tabs fit on one row
+  again.
 - Dayparts and estimated duration, groundwork (core and server): a task has a
   daypart (morning, afternoon or evening) instead of This Evening and a time
   of day, and an optional estimated duration. A reminder keeps its own exact
