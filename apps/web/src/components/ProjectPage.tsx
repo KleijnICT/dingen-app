@@ -1,7 +1,6 @@
 import {
   type Heading,
   newHeading,
-  newTask,
   orderBetween,
   type Project,
   type Task,
@@ -14,7 +13,7 @@ import { describeWhen } from '../lists.js'
 import { navigate } from '../router.js'
 import { projectSections } from '../sections.js'
 import { useEngine, useWorkspace } from '../store/context.js'
-import { deleteProject, toggleProject, useLinger } from '../taskActions.js'
+import { createInboxTask, deleteProject, toggleProject, useLinger } from '../taskActions.js'
 import { AreaGlyph } from './AreaIcons.js'
 import { CompletedSection } from './CompletedSection.js'
 import { DeadlineBadge, DeadlineField } from './DeadlineField.js'
@@ -56,18 +55,9 @@ export function ProjectPage({ project, focusSignal }: Props) {
 
   const taskList = useTaskList([...shownOpen, ...sections.completed], toggle)
 
+  // A new task goes to the Inbox, also from here: List or When in the panel moves it on.
   function addNew() {
-    if (done) return
-    const siblings = open.filter((task) => task.headingId === null)
-    const task = newTask({
-      title: '',
-      projectId: project.id,
-      when: { kind: 'anytime' },
-      tagIds: tagFilter ? [tagFilter] : [],
-      order: orderBetween(siblings.at(-1)?.order ?? null, null),
-    })
-    engine.create('task', task)
-    taskList.openNew(task.id)
+    taskList.openNew(createInboxTask(engine, ws, tagFilter).id)
   }
   useOnSignal(focusSignal, addNew)
 
@@ -269,7 +259,7 @@ export function ProjectPage({ project, focusSignal }: Props) {
         }}
       />
       <TaskToolbar
-        onNew={done ? undefined : addNew}
+        onNew={addNew}
         extra={
           !done && (
             <ToolbarButton

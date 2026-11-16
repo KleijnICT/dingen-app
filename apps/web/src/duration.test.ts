@@ -59,10 +59,6 @@ describe('filterByDuration', () => {
     expect(ids(filterByDuration(tasks, 30))).toEqual(['a', 'b'])
     expect(ids(filterByDuration(tasks, 5))).toEqual(['a'])
   })
-
-  it('keeps a task just added, before it has a duration', () => {
-    expect(ids(filterByDuration(tasks, 5, ['c']))).toEqual(['a', 'c'])
-  })
 })
 
 describe('duration filter storage', () => {

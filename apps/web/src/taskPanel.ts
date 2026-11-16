@@ -111,30 +111,90 @@ export function taskParamOf(search: string): string | null {
   return new URLSearchParams(search).get('task') || null
 }
 
-/** The fields of the panel that only show with a value (or right after adding one). */
-export type OptionalField = 'time' | 'deadline' | 'repeat' | 'duration' | 'assignee'
+/**
+ * The fields of the panel. Each one only shows with a value (or right after adding it, or
+ * while it has focus); the header with the title and the OK button always show.
+ */
+export type OptionalField =
+  | 'notes'
+  | 'checklist'
+  | 'when'
+  | 'time'
+  | 'deadline'
+  | 'repeat'
+  | 'duration'
+  | 'list'
+  | 'tags'
+  | 'assignee'
 
-/** In the order of the Add row: planning first, then organization. */
+/** In the order of the Add row: notes and checklist, then planning, then organization. */
 export const OPTIONAL_FIELDS: readonly OptionalField[] = [
+  'notes',
+  'checklist',
+  'when',
   'time',
   'deadline',
   'repeat',
   'duration',
+  'list',
+  'tags',
   'assignee',
 ]
 
+/** The parts of the panel; each but the notes opens with a heading and a hairline. */
+export type PanelSection = 'notes' | 'checklist' | 'planning' | 'organization'
+
+export const SECTION_OF: Record<OptionalField, PanelSection> = {
+  notes: 'notes',
+  checklist: 'checklist',
+  when: 'planning',
+  time: 'planning',
+  deadline: 'planning',
+  repeat: 'planning',
+  duration: 'planning',
+  list: 'organization',
+  tags: 'organization',
+  assignee: 'organization',
+}
+
 type FieldTask = Pick<
   Task,
-  'status' | 'when' | 'reminder' | 'deadline' | 'templateId' | 'assigneeId' | 'duration'
+  | 'status'
+  | 'notes'
+  | 'when'
+  | 'reminder'
+  | 'deadline'
+  | 'templateId'
+  | 'assigneeId'
+  | 'duration'
+  | 'projectId'
+  | 'areaId'
+  | 'tagIds'
 >
 
-/** Whether each optional field has a value. */
-export function fieldValues(task: FieldTask): Record<OptionalField, boolean> {
+/** What the panel knows beyond the task itself. */
+export interface FieldExtra {
+  /** How many checklist items the task has. */
+  checklist?: number
+  /** The notes as typed, which may be ahead of the saved task. */
+  notes?: string
+}
+
+/** Whether each field has a value. */
+export function fieldValues(
+  task: FieldTask,
+  extra: FieldExtra = {},
+): Record<OptionalField, boolean> {
   return {
+    notes: (extra.notes ?? task.notes).trim() !== '',
+    checklist: (extra.checklist ?? 0) > 0,
+    when: task.when.kind !== 'inbox',
     time: task.reminder !== null,
     deadline: task.deadline !== null,
     repeat: task.templateId !== null,
     duration: task.duration !== null,
+    list: task.projectId !== null || task.areaId !== null,
+    tags: task.tagIds.length > 0,
     assignee: task.assigneeId !== null,
   }
 }
@@ -144,34 +204,50 @@ export interface FieldLayout {
   shown: OptionalField[]
   /** Fields offered in the Add row. */
   addable: OptionalField[]
+  /** The sections with at least one field shown; the others leave no heading or hairline. */
+  sections: PanelSection[]
 }
 
 /**
- * Which optional fields the panel shows and which it offers to add. A field shows when it has
- * a value or was just added (`added`), as long as it can apply: a time needs a date, assigning
- * needs someone to assign to (`canAssign`), and only an open task can start repeating.
+ * Which fields the panel shows and which it offers to add. A field shows when it has a value
+ * or was just added (`added`, which also holds the field that has focus), as long as it can
+ * apply: a time needs a date, assigning needs someone to assign to (`canAssign`), and only an
+ * open task can start repeating.
  */
 export function fieldLayout(
   task: FieldTask,
   added: readonly OptionalField[],
   canAssign: boolean,
+  extra: FieldExtra = {},
 ): FieldLayout {
-  const values = fieldValues(task)
+  const values = fieldValues(task, extra)
   const applies: Record<OptionalField, boolean> = {
+    notes: true,
+    checklist: true,
+    when: true,
     time: task.when.kind === 'date',
     deadline: true,
     repeat: task.status === 'open' || values.repeat,
     duration: true,
+    list: true,
+    tags: true,
     assignee: canAssign || values.assignee,
   }
   const shown = OPTIONAL_FIELDS.filter((f) => applies[f] && (values[f] || added.includes(f)))
   const addable = OPTIONAL_FIELDS.filter((f) => applies[f] && !shown.includes(f))
-  return { shown, addable }
+  const sections = (['notes', 'checklist', 'planning', 'organization'] as const).filter((s) =>
+    shown.some((f) => SECTION_OF[f] === s),
+  )
+  return { shown, addable, sections }
 }
 
 /** The added fields still waiting for a value; one that got its value is no longer "added". */
-export function stillAdded(task: FieldTask, added: readonly OptionalField[]): OptionalField[] {
-  const values = fieldValues(task)
+export function stillAdded(
+  task: FieldTask,
+  added: readonly OptionalField[],
+  extra: FieldExtra = {},
+): OptionalField[] {
+  const values = fieldValues(task, extra)
   return added.filter((f) => !values[f])
 }
 

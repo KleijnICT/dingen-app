@@ -1,11 +1,11 @@
-import { type Area, newProject, newTask, orderBetween, type Task, views } from '@dingen/core'
+import { type Area, newProject, orderBetween, type Task, views } from '@dingen/core'
 import { FolderPlus } from 'lucide-react'
 import { useState } from 'react'
 import { useT } from '../i18n/index.js'
 import { navigate, projectPath } from '../router.js'
 import { completedSection } from '../sections.js'
 import { useEngine, useWorkspace } from '../store/context.js'
-import { deleteArea, useLinger } from '../taskActions.js'
+import { createInboxTask, deleteArea, useLinger } from '../taskActions.js'
 import { AreaAppearance } from './AreaAppearance.js'
 import { CompletedSection } from './CompletedSection.js'
 import { InlineInput } from './InlineInput.js'
@@ -40,16 +40,9 @@ export function AreaPage({ area, focusSignal }: Props) {
 
   const taskList = useTaskList([...shown, ...completed], toggle)
 
+  // A new task goes to the Inbox, also from here: List or When in the panel moves it on.
   function addNew() {
-    const task = newTask({
-      title: '',
-      areaId: area.id,
-      when: { kind: 'anytime' },
-      tagIds: tagFilter ? [tagFilter] : [],
-      order: orderBetween(open.at(-1)?.order ?? null, null),
-    })
-    engine.create('task', task)
-    taskList.openNew(task.id)
+    taskList.openNew(createInboxTask(engine, ws, tagFilter).id)
   }
   useOnSignal(focusSignal, addNew)
 
