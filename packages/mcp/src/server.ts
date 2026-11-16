@@ -7,9 +7,12 @@ import {
   commitTask,
   type Daypart,
   daysBetween,
+  deleteArea,
+  deleteProject,
   deleteTask,
   fitsDuration,
   type Heading,
+  levelFor,
   MAX_DURATION,
   mirrorChecklist,
   moveFields,
@@ -21,6 +24,7 @@ import {
   newTask,
   normalizeTagTitle,
   orderBetween,
+  type Place,
   type Project,
   parseMemberId,
   type Reminder,
@@ -599,6 +603,27 @@ export function createMcpServer(client: DingenClient): McpServer {
   )
 
   server.registerTool(
+    'delete_project',
+    {
+      title: 'Delete a project',
+      description:
+        'Deletes a project together with its headings and all its tasks, like deleting it in the app. Needs Manage on that project (or on its area, or on Everything); with less it refuses. Only when the user asked for it; to finish a project use complete_project.',
+      inputSchema: { id: Ref },
+    },
+    ({ id }) =>
+      run(async (ws) => {
+        const project = findProject(ws, id)
+        await requireManage(client, `project "${project.title}"`, {
+          kind: 'project',
+          projectId: project.id,
+          areaId: project.areaId,
+        })
+        deleteProject(client, ws, project)
+        return { deleted: project.id }
+      }),
+  )
+
+  server.registerTool(
     'create_area',
     {
       title: 'Create an area',
@@ -620,6 +645,23 @@ export function createMcpServer(client: DingenClient): McpServer {
         })
         client.create('area', area)
         return { id: area.id, title: area.title, icon: area.icon, color: area.color }
+      }),
+  )
+
+  server.registerTool(
+    'delete_area',
+    {
+      title: 'Delete an area',
+      description:
+        'Deletes an area with everything in it: its projects (with their headings and tasks) and its loose tasks, like deleting it in the app. Needs Manage on that area (or on Everything); with less it refuses. Only when the user asked for it.',
+      inputSchema: { id: Ref },
+    },
+    ({ id }) =>
+      run(async (ws) => {
+        const area = findArea(ws, id)
+        await requireManage(client, `area "${area.title}"`, { kind: 'area', areaId: area.id })
+        deleteArea(client, ws, area)
+        return { deleted: area.id }
       }),
   )
 
@@ -673,6 +715,16 @@ export function createMcpServer(client: DingenClient): McpServer {
   })
 
   return server
+}
+
+/** Refuses unless the agent has Manage on `place` (the owner and unrestricted clients always pass). */
+async function requireManage(client: DingenClient, what: string, place: Place): Promise<void> {
+  const grants = await client.grants()
+  if (levelFor(grants, place) !== 'manage') {
+    throw new ToolError(
+      `Not allowed: deleting the ${what} needs Manage on it (or on Everything); this agent has less. Ask the user to raise the agent's access, or to delete it themselves.`,
+    )
+  }
 }
 
 // ---------- lookups

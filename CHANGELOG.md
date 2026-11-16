@@ -3,6 +3,10 @@
 ## Unreleased
 
 - Settings → Calendars: removing a calendar now goes through a `…` menu with a confirmation, like deleting a project.
+- MCP tools `delete_project` and `delete_area`, only for an agent with Manage
+  on that project or area (or on Everything): they delete like the app does,
+  including headings, tasks and, for an area, its projects. Without Manage the
+  tool refuses with a clear message.
 - Dayparts and estimated duration, groundwork (core and server): a task has a
   daypart (morning, afternoon or evening) instead of This Evening and a time
   of day, and an optional estimated duration. A reminder keeps its own exact

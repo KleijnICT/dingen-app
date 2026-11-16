@@ -73,8 +73,10 @@ week" is usually after completion, "pay rent on the 1st" on a schedule.
 5. **"What's on today?"**: `list_tasks` with `list: "today"`. Mention overdue
    deadlines explicitly. Do not move dates without asking.
 6. **Structure belongs to the user.** Create an area or project only when the
-   user asks or agrees. Renaming and deleting areas, projects and tags is done
-   in the app, not through the tools.
+   user asks or agrees. Renaming areas and tags is done in the app. Deleting a
+   project or area (`delete_project`, `delete_area`) takes everything inside it
+   along and needs Manage on it: only when the user explicitly asks, and
+   prefer `complete_project`.
 7. **Prefer reversible actions.** Complete, cancel or move to Someday rather
    than delete. Use `delete_task` only when the user asks to delete.
 8. **Report back briefly** after changes: what was created or changed, where,
@@ -165,6 +167,9 @@ How to guide one:
   item ids to keep them. `repeat: null` stops repeating.
 - `complete_project` hides the project's open tasks from the lists; it can be
   reopened.
+- `delete_project` and `delete_area` delete with all headings and tasks inside
+  (like in the app) and refuse without Manage on that project or area, or on
+  Everything.
 - Project and area output carries `reviewedAt` and `signals`; `overview`
   shows them for every open project and area.
 - Dates are in the user's time zone; "today" follows the server setting.
