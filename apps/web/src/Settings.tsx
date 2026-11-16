@@ -5,6 +5,7 @@ import {
   CalendarDays,
   Info,
   Settings as SettingsIcon,
+  Tags,
   Ticket,
   UserRound,
   X,
@@ -16,12 +17,14 @@ import { AgentSettings } from './components/AgentSettings.js'
 import { CalendarSettings } from './components/CalendarSettings.js'
 import { InvitationSettings } from './components/InvitationSettings.js'
 import { ReminderSettings } from './components/ReminderSettings.js'
+import { TagSettings } from './components/TagSettings.js'
 import { LOCALES, type Locale, setLocale, useLocale, useT } from './i18n/index.js'
 
 const TABS = [
   { id: 'general', icon: SettingsIcon },
   { id: 'account', icon: UserRound },
   { id: 'agents', icon: Bot },
+  { id: 'tags', icon: Tags },
   { id: 'calendars', icon: CalendarDays },
   { id: 'data', icon: ArrowDownUp },
   // --- uitnodigingen: alleen voor de beheerder ---
@@ -97,6 +100,7 @@ export function Settings({ user, onSignedOut, onClose }: Props) {
           {tab === 'general' && <General />}
           {tab === 'account' && <Account user={user} onSignedOut={onSignedOut} />}
           {tab === 'agents' && <AgentSettings />}
+          {tab === 'tags' && <TagSettings />}
           {tab === 'calendars' && <CalendarSettings />}
           {tab === 'data' && <DataTab />}
           {tab === 'invitations' && user.isAdmin && <InvitationSettings />}

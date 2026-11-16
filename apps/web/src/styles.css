@@ -1575,7 +1575,7 @@ button.link.danger {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 4px;
+  gap: 2px;
   padding: 10px 12px 12px;
   border-bottom: 1px solid var(--line);
 }
@@ -1584,8 +1584,8 @@ button.link.danger {
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  min-width: 68px;
-  padding: 8px 6px 6px;
+  min-width: 60px;
+  padding: 8px 5px 6px;
   border-radius: 9px;
   background: none;
   color: var(--muted);
@@ -3225,4 +3225,72 @@ button.agent-main .muted {
 .app.focus-mode .mobile-bar,
 .app.focus-mode .drawer-host {
   display: none;
+}
+
+/* --- Settings → Tags --- */
+.tag-settings-add {
+  display: flex;
+}
+.tag-settings-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.tag-settings-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  border-top: 1px solid var(--line);
+}
+.tag-settings-branch {
+  flex: none;
+  color: var(--muted);
+}
+.tag-settings-name {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  font-weight: 500;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+button.tag-settings-name:hover {
+  background: var(--hover);
+}
+.settings-form input.tag-settings-name.editing {
+  padding: 5px 6px;
+  border-color: var(--accent);
+  border-radius: 6px;
+}
+.tag-settings-count {
+  flex: none;
+  min-width: 2ch;
+  font-size: 0.85em;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.tag-settings-item.up .more-menu .menu {
+  /* Opens upwards: these rows sit at the bottom of the scrolling settings body. */
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+.tag-settings-parents {
+  max-height: min(300px, 40vh);
+  overflow-y: auto;
+}
+.tag-settings-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
