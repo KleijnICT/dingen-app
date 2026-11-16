@@ -1,4 +1,5 @@
 import { type Daypart, newTask, orderBetween, type Project, type Task, views } from '@dingen/core'
+import { Focus } from 'lucide-react'
 import { useState } from 'react'
 import { daysWithEvents, rangeFor, useCalendarData } from '../calendar.js'
 import { listTarget, type TaskGroupInfo } from '../dnd.js'
@@ -15,7 +16,7 @@ import {
   listProjects,
   listTasks,
 } from '../lists.js'
-import { setTodayView, useTodayView } from '../prefs.js'
+import { setFocusMode, setTodayView, useFocusMode, useTodayView } from '../prefs.js'
 import { areaPath, navigate, projectPath } from '../router.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { type MoveTarget, useLinger } from '../taskActions.js'
@@ -45,6 +46,7 @@ export function ListPage({ list, focusSignal, header }: Props) {
   // Tasks added on this page, kept in view by the duration filter until they have one.
   const [added, setAdded] = useState<string[]>([])
   const todayView = useTodayView()
+  const focus = useFocusMode() && list.id === 'today'
   const calendar = useCalendarData()
   const maxDuration = useDurationFilter(list.id)
 
@@ -116,6 +118,7 @@ export function ListPage({ list, focusSignal, header }: Props) {
           today={ws.today}
           tasks={shown}
           view={todayView}
+          focus={focus}
           projects={projects.length > 0 && <ul className="tasks">{projects.map(projectRow)}</ul>}
           group={group}
           groupByContainer={groupByContainer}
@@ -246,9 +249,21 @@ export function ListPage({ list, focusSignal, header }: Props) {
               ))}
             </fieldset>
           )}
+          {list.id === 'today' && (
+            <button
+              type="button"
+              className={`chip small focus-toggle ${focus ? 'active' : ''}`}
+              aria-pressed={focus}
+              title={t('today.focus.hint')}
+              onClick={() => setFocusMode(!focus)}
+            >
+              <Focus size={13} aria-hidden="true" />
+              {t('today.focus')}
+            </button>
+          )}
         </header>
       )}
-      {list.id === 'today' && <ReviewBanner />}
+      {list.id === 'today' && !focus && <ReviewBanner />}
       <div className="list-filters">
         <TagFilter present={present} active={tagFilter} onChange={setTagFilter} />
         {durationFilter}

@@ -128,6 +128,8 @@ export const en = {
   'today.view': 'Order',
   'today.view.manual': 'My order',
   'today.view.grouped': 'By project',
+  'today.focus': 'Focus',
+  'today.focus.hint': "Only today's tasks, full width (F; Esc to leave)",
   'confirm.cancel': 'Cancel',
 
   // Deadlines and repeating

@@ -26,8 +26,9 @@ import { ShellActions, ToolbarSlot } from './components/Toolbar.js'
 import { UpdateNotice } from './components/UpdateNotice.js'
 import { ReviewAnchorContext } from './components/useReviews.js'
 import { type DragData, handleDragEnd } from './dnd.js'
+import { focusActive, focusKeyAction } from './focus.js'
 import { LISTS } from './lists.js'
-import { useSidebarWidth } from './prefs.js'
+import { setFocusMode, useFocusMode, useSidebarWidth } from './prefs.js'
 import { parseReviewKind } from './reviewFlow.js'
 import { navigate, parseRoute, usePath } from './router.js'
 import { Settings } from './Settings.js'
@@ -49,6 +50,7 @@ export function Shell({ user, onSignedOut }: Props) {
   // A weekly or monthly review never done counts from the day the account was made.
   const reviewAnchor = useMemo(() => dateOf(user.createdAt), [user.createdAt])
   const sidebarWidth = useSidebarWidth()
+  const focusPref = useFocusMode()
   const route = parseRoute(path)
   const [dragging, setDragging] = useState<DragData | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(route.kind === 'account')
@@ -90,6 +92,34 @@ export function Shell({ user, onSignedOut }: Props) {
   useEffect(() => {
     if (redirect) navigate('/today')
   }, [redirect])
+
+  const onToday = list?.id === 'today'
+  const focus = focusActive(focusPref, list?.id)
+  useEffect(() => {
+    function onFocusKey(e: KeyboardEvent) {
+      const target = e.target instanceof HTMLElement ? e.target : null
+      const panel = target?.closest('.task-panel') ?? null
+      const popup = target?.closest('[role="dialog"], [role="menu"]')
+      const action = focusKeyAction({
+        key: e.key,
+        modified: e.metaKey || e.ctrlKey || e.altKey,
+        // The task list's own handler runs first and marks the keys it used.
+        handled:
+          e.defaultPrevented ||
+          Boolean(document.querySelector('[role="dialog"][aria-modal="true"]')),
+        typing: Boolean(target?.closest('input, textarea, select, [contenteditable="true"]')),
+        inPopup: Boolean(popup && popup !== panel),
+        inPanel: Boolean(panel),
+        onToday,
+        on: focus,
+      })
+      if (!action) return
+      e.preventDefault()
+      setFocusMode(action === 'toggle' ? !focus : false)
+    }
+    window.addEventListener('keydown', onFocusKey)
+    return () => window.removeEventListener('keydown', onFocusKey)
+  }, [onToday, focus])
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -135,7 +165,7 @@ export function Shell({ user, onSignedOut }: Props) {
             onDragCancel={() => setDragging(null)}
           >
             <div
-              className="app"
+              className={focus ? 'app focus-mode' : 'app'}
               style={{ '--sidebar-width': `${sidebarWidth}px` } as CSSProperties}
             >
               <Sidebar
