@@ -143,7 +143,7 @@ export const nl: Messages = {
   'tagSettings.confirm': '“{name}” verwijderen? De tag gaat van zijn taken af; de taken blijven.',
   'tagSettings.confirmParent':
     '“{name}” verwijderen? De tag gaat van zijn taken af; de taken blijven. De tags direct eronder gaan naar het bovenste niveau.',
-  'today.view': 'Volgorde',
+  'today.view': 'Weergaveopties',
   'today.view.manual': 'Mijn volgorde',
   'today.view.grouped': 'Per project',
   'today.focus': 'Focus',
@@ -161,7 +161,8 @@ export const nl: Messages = {
   'duration.customLabel': 'Andere duur, in minuten',
   'duration.clear': 'Duur weghalen',
   'duration.filter': 'Duur',
-  'duration.filterLabel': 'Duurfilter: {value}',
+  'filter.button': 'Filteren',
+  'filter.clear': 'Filter weghalen: {name}',
   'duration.atMost': '≤ {d}',
   'duration.off': 'Uit',
   'repeat.label': 'Herhaal',

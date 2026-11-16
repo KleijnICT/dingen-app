@@ -1,4 +1,4 @@
-import { ChevronLeft, EllipsisVertical } from 'lucide-react'
+import { Check, ChevronLeft, EllipsisVertical } from 'lucide-react'
 import { type ReactNode, type RefObject, useEffect, useRef, useState } from 'react'
 import { useT } from '../i18n/index.js'
 
@@ -37,6 +37,8 @@ export interface MenuItem {
   confirm?: string
   /** Shows this inside the menu instead of acting; `close` closes the menu. */
   panel?: (close: () => void) => ReactNode
+  /** A choice among several (Today's order): shows a check mark when true. */
+  checked?: boolean
 }
 
 interface Props {
@@ -125,10 +127,17 @@ export function MoreMenu({ label, items, alignEnd = false }: Props) {
               <button
                 key={item.label}
                 type="button"
-                role="menuitem"
+                {...(item.checked === undefined
+                  ? { role: 'menuitem' }
+                  : { role: 'menuitemradio', 'aria-checked': item.checked })}
                 className={`menu-item ${item.danger ? 'danger' : ''}`}
                 onClick={() => choose(item)}
               >
+                {item.checked !== undefined && (
+                  <span className="menu-check" aria-hidden="true">
+                    {item.checked && <Check size={14} strokeWidth={2.2} />}
+                  </span>
+                )}
                 {item.label}
               </button>
             ))

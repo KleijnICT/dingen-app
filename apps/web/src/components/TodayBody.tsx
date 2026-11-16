@@ -1,6 +1,5 @@
 import { type Daypart, type Task, views } from '@dingen/core'
 import { useDndContext } from '@dnd-kit/core'
-import { Hourglass } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useCalendarData } from '../calendar.js'
 import {
@@ -123,16 +122,18 @@ export function TodayBody({
   )
 }
 
-/** The estimated time of today's open tasks, at the top of Today; nothing at zero. */
+/** ` · 30m`: the estimated time of today's open tasks, after the date; nothing at zero. */
 export function TodayTotal({ tasks }: { tasks: Task[] }) {
   const t = useT()
   const total = totalText(tasks, useLocale())
   if (!total) return null
   const label = t('today.total', { duration: total })
   return (
-    <span className="duration-total day-total" title={label}>
-      <Hourglass size={13} aria-hidden="true" />
-      {total}
-    </span>
+    <>
+      <span aria-hidden="true"> · </span>
+      <span className="day-total" title={label}>
+        {total}
+      </span>
+    </>
   )
 }

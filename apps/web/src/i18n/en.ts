@@ -147,7 +147,7 @@ export const en = {
   'tagSettings.confirm': 'Delete “{name}”? It comes off its tasks; the tasks stay.',
   'tagSettings.confirmParent':
     'Delete “{name}”? It comes off its tasks; the tasks stay. The tags directly under it move to the top level.',
-  'today.view': 'Order',
+  'today.view': 'View options',
   'today.view.manual': 'My order',
   'today.view.grouped': 'By project',
   'today.focus': 'Focus',
@@ -167,7 +167,8 @@ export const en = {
   'duration.customLabel': 'Other duration, in minutes',
   'duration.clear': 'Remove duration',
   'duration.filter': 'Duration',
-  'duration.filterLabel': 'Duration filter: {value}',
+  'filter.button': 'Filter',
+  'filter.clear': 'Remove filter: {name}',
   'duration.atMost': '≤ {d}',
   'duration.off': 'Off',
   'repeat.label': 'Repeat',

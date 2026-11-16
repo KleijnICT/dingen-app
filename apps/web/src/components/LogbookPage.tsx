@@ -20,6 +20,7 @@ import { useEngine, useWorkspace } from '../store/context.js'
 import { createInboxTask, toggleTask } from '../taskActions.js'
 import { ListPage } from './ListPage.js'
 import { MemberAvatar, useMembers } from './MemberAvatar.js'
+import { PageHeader } from './PageHeader.js'
 import { pathOf } from './Search.js'
 import { TaskToolbar } from './Toolbar.js'
 import { useOnSignal, useTaskList } from './useTaskList.js'
@@ -47,65 +48,62 @@ export function LogbookPage({ list, user, focusSignal }: Props) {
   const { members, byId } = useMembers()
   const me = `user:${user.id}`
 
-  const header = (
-    <header className="list-header">
-      <h1>{t(list.titleKey)}</h1>
-      <div className="activity-filters">
-        <fieldset className="view-switch" aria-label={t('activity.filters')}>
-          {KIND_FILTERS.map((k) => (
-            <button
-              type="button"
-              key={k}
-              className={`chip small ${kind === k ? 'active' : ''}`}
-              aria-pressed={kind === k}
-              onClick={() => setKind(k)}
-            >
-              {t(`activity.kind.${k}`)}
-            </button>
-          ))}
-        </fieldset>
-        {kind !== 'completed' && (
-          <div className="activity-selects">
-            <select
-              className="move-select"
-              aria-label={t('activity.who')}
-              value={who}
-              onChange={(e) => setWho(e.target.value)}
-            >
-              <option value="">{t('activity.who.all')}</option>
-              <option value={me}>{t('activity.you')}</option>
-              {members
-                .filter((m) => m.id !== me)
-                .map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name}
-                  </option>
-                ))}
-            </select>
-            <select
-              className="move-select"
-              aria-label={t('activity.period')}
-              value={period}
-              onChange={(e) => setPeriod(e.target.value as PeriodFilter)}
-            >
-              {PERIOD_FILTERS.map((p) => (
-                <option key={p} value={p}>
-                  {t(`activity.period.${p}`)}
+  const filters = (
+    <div className="activity-filters">
+      <fieldset className="view-switch" aria-label={t('activity.filters')}>
+        {KIND_FILTERS.map((k) => (
+          <button
+            type="button"
+            key={k}
+            className={`chip small ${kind === k ? 'active' : ''}`}
+            aria-pressed={kind === k}
+            onClick={() => setKind(k)}
+          >
+            {t(`activity.kind.${k}`)}
+          </button>
+        ))}
+      </fieldset>
+      {kind !== 'completed' && (
+        <div className="activity-selects">
+          <select
+            className="move-select"
+            aria-label={t('activity.who')}
+            value={who}
+            onChange={(e) => setWho(e.target.value)}
+          >
+            <option value="">{t('activity.who.all')}</option>
+            <option value={me}>{t('activity.you')}</option>
+            {members
+              .filter((m) => m.id !== me)
+              .map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
                 </option>
               ))}
-            </select>
-          </div>
-        )}
-      </div>
-    </header>
+          </select>
+          <select
+            className="move-select"
+            aria-label={t('activity.period')}
+            value={period}
+            onChange={(e) => setPeriod(e.target.value as PeriodFilter)}
+          >
+            {PERIOD_FILTERS.map((p) => (
+              <option key={p} value={p}>
+                {t(`activity.period.${p}`)}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+    </div>
   )
 
   if (kind === 'completed') {
-    return <ListPage list={list} focusSignal={focusSignal} header={header} />
+    return <ListPage list={list} focusSignal={focusSignal} below={filters} />
   }
   return (
     <section className="list-page logbook activity">
-      {header}
+      <PageHeader title={<h1>{t(list.titleKey)}</h1>}>{filters}</PageHeader>
       <ActivityList
         filter={{ kinds: kindsFor(kind), actor: who || undefined, period }}
         me={me}

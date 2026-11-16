@@ -20,9 +20,9 @@ import { DeadlineBadge, DeadlineField } from './DeadlineField.js'
 import { ProgressCircle } from './Icons.js'
 import { InlineInput } from './InlineInput.js'
 import { MemberAvatars, MembersPanel, useAccess } from './MembersPanel.js'
-import { MoreMenu } from './Menu.js'
+import { type MenuItem, MoreMenu } from './Menu.js'
+import { ActiveFilters, FilterButton, type PageFilters, PageHeader } from './PageHeader.js'
 import { TagEditor } from './TagEditor.js'
-import { TagFilter } from './TagFilter.js'
 import { TaskGroup } from './TaskGroup.js'
 import type { RowProps } from './TaskRow.js'
 import { TaskToolbar, ToolbarButton } from './Toolbar.js'
@@ -46,6 +46,7 @@ export function ProjectPage({ project, focusSignal }: Props) {
   const open = all.filter((task) => task.status === 'open')
   const { shown: shownOpen, toggle } = useLinger(open, ws, engine)
   const present = new Set(open.flatMap((task) => task.tagIds))
+  const filters: PageFilters = { present, tag: tagFilter, onTag: setTagFilter }
   const headings = views.headingsOf(ws.headings, project.id)
   // Open tasks per heading; completed ones in their own section at the bottom.
   const sections = projectSections(all, shownOpen, headings, (task) =>
@@ -105,112 +106,122 @@ export function ProjectPage({ project, focusSignal }: Props) {
     />
   )
 
+  const menuItems: MenuItem[] = [
+    {
+      label: done ? t('project.reopen') : t('project.complete'),
+      onSelect: () => toggleProject(engine, project),
+    },
+    {
+      label: t('menu.when'),
+      onSelect: () => {},
+      panel: (close) => (
+        <WhenPicker
+          forProject
+          when={project.when}
+          daypart={null}
+          today={ws.today}
+          onChange={(when) => {
+            engine.mutate('project', project.id, { when })
+            close()
+          }}
+        />
+      ),
+    },
+    {
+      label: t('menu.deadline'),
+      onSelect: () => {},
+      panel: () => (
+        <DeadlineField
+          deadline={project.deadline}
+          today={ws.today}
+          onChange={(deadline) => engine.mutate('project', project.id, { deadline })}
+        />
+      ),
+    },
+    {
+      label: t('menu.tags'),
+      onSelect: () => {},
+      panel: () => (
+        <TagEditor
+          tagIds={project.tagIds}
+          onChange={(tagIds) => engine.mutate('project', project.id, { tagIds })}
+        />
+      ),
+    },
+    {
+      label: t('menu.move'),
+      onSelect: () => {},
+      panel: (close) => (
+        <div className="move-list">
+          {[null, ...views.openAreas(ws.areas)].map((a) => (
+            <button
+              key={a?.id ?? 'none'}
+              type="button"
+              className="move-item"
+              aria-pressed={project.areaId === (a?.id ?? null)}
+              onClick={() => {
+                moveToArea(a?.id ?? null)
+                close()
+              }}
+            >
+              {a ? (
+                <AreaGlyph icon={a.icon} color={a.color} size={15} />
+              ) : (
+                <span className="move-none" />
+              )}
+              <span>{a ? a.title || t('area.untitled') : t('project.noArea')}</span>
+            </button>
+          ))}
+        </div>
+      ),
+    },
+    {
+      label: t('members.title'),
+      onSelect: () => {},
+      panel: () => <MembersPanel type="project" id={project.id} access={access} />,
+    },
+    {
+      label: t('project.delete'),
+      danger: true,
+      confirm: t('project.deleteQuestion'),
+      onSelect: remove,
+    },
+  ]
+
   return (
     <section className="list-page project">
-      <header className="list-header project-header">
-        <button
-          type="button"
-          className={`project-check ${done ? 'done' : ''}`}
-          aria-label={done ? t('project.reopen') : t('project.complete')}
-          title={`${Math.round(progress * 100)}%`}
-          onClick={() => toggleProject(engine, project)}
-        >
-          <ProgressCircle value={progress} done={done} size={26} />
-        </button>
-        <InlineInput
-          className="title-input"
-          value={project.title}
-          placeholder={t('project.untitled')}
-          aria-label={t('project.title')}
-          autoFocus={project.title === ''}
-          onCommit={(title) => engine.mutate('project', project.id, { title })}
-        />
-        <MemberAvatars entries={access.entries} />
-        <MoreMenu
-          label={t('menu.projectActions')}
-          items={[
-            {
-              label: done ? t('project.reopen') : t('project.complete'),
-              onSelect: () => toggleProject(engine, project),
-            },
-            {
-              label: t('menu.when'),
-              onSelect: () => {},
-              panel: (close) => (
-                <WhenPicker
-                  forProject
-                  when={project.when}
-                  daypart={null}
-                  today={ws.today}
-                  onChange={(when) => {
-                    engine.mutate('project', project.id, { when })
-                    close()
-                  }}
-                />
-              ),
-            },
-            {
-              label: t('menu.deadline'),
-              onSelect: () => {},
-              panel: () => (
-                <DeadlineField
-                  deadline={project.deadline}
-                  today={ws.today}
-                  onChange={(deadline) => engine.mutate('project', project.id, { deadline })}
-                />
-              ),
-            },
-            {
-              label: t('menu.tags'),
-              onSelect: () => {},
-              panel: () => (
-                <TagEditor
-                  tagIds={project.tagIds}
-                  onChange={(tagIds) => engine.mutate('project', project.id, { tagIds })}
-                />
-              ),
-            },
-            {
-              label: t('menu.move'),
-              onSelect: () => {},
-              panel: (close) => (
-                <div className="move-list">
-                  {[null, ...views.openAreas(ws.areas)].map((a) => (
-                    <button
-                      key={a?.id ?? 'none'}
-                      type="button"
-                      className="move-item"
-                      aria-pressed={project.areaId === (a?.id ?? null)}
-                      onClick={() => {
-                        moveToArea(a?.id ?? null)
-                        close()
-                      }}
-                    >
-                      {a ? (
-                        <AreaGlyph icon={a.icon} color={a.color} size={15} />
-                      ) : (
-                        <span className="move-none" />
-                      )}
-                      <span>{a ? a.title || t('area.untitled') : t('project.noArea')}</span>
-                    </button>
-                  ))}
-                </div>
-              ),
-            },
-            {
-              label: t('members.title'),
-              onSelect: () => {},
-              panel: () => <MembersPanel type="project" id={project.id} access={access} />,
-            },
-            {
-              label: t('project.delete'),
-              danger: true,
-              confirm: t('project.deleteQuestion'),
-              onSelect: remove,
-            },
-          ]}
-        />
-      </header>
+      <PageHeader
+        title={
+          <>
+            <button
+              type="button"
+              className={`project-check ${done ? 'done' : ''}`}
+              aria-label={done ? t('project.reopen') : t('project.complete')}
+              title={`${Math.round(progress * 100)}%`}
+              onClick={() => toggleProject(engine, project)}
+            >
+              <ProgressCircle value={progress} done={done} size={26} />
+            </button>
+            <InlineInput
+              className="title-input"
+              value={project.title}
+              placeholder={t('project.untitled')}
+              aria-label={t('project.title')}
+              autoFocus={project.title === ''}
+              onCommit={(title) => engine.mutate('project', project.id, { title })}
+            />
+            <MemberAvatars entries={access.entries} />
+          </>
+        }
+        actions={
+          <>
+            <FilterButton {...filters} />
+            <MoreMenu alignEnd label={t('menu.projectActions')} items={menuItems} />
+          </>
+        }
+      >
+        <ActiveFilters {...filters} />
+      </PageHeader>
       <InlineInput
         multiline
         className="editor-notes page-notes"
@@ -235,7 +246,6 @@ export function ProjectPage({ project, focusSignal }: Props) {
           })}
         </div>
       )}
-      <TagFilter present={present} active={tagFilter} onChange={setTagFilter} />
       {all.length === 0 && <p className="empty">{t('project.empty')}</p>}
       {group(null, sections.loose)}
       {sections.headings.map(({ heading, tasks }) => (
