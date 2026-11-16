@@ -21,7 +21,7 @@ const MONTHLY_STEPS = ['monthLookBack', 'areasDeep', 'somedayDeep']
 function sam(ctx: DemoContext): ImportRecord[] {
   const b = new Book(ctx)
 
-  for (const title of ['calls', 'errands', 'computer', 'waiting', '15 min']) b.tag(title)
+  for (const title of ['calls', 'errands', 'computer', 'waiting']) b.tag(title)
 
   const clients = b.area('Clients', 'briefcase', 'blue', 8)
   const business = b.area('Business', 'wallet', 'green', 8)
@@ -162,7 +162,7 @@ function sam(ctx: DemoContext): ImportRecord[] {
     created: 3,
     checklist: ['x October', 'November', 'December'],
   })
-  b.task('Check the mileage log', { project: vat, when: 'anytime', tags: ['15 min'], created: 3 })
+  b.task('Check the mileage log', { project: vat, when: 'anytime', duration: 15, created: 3 })
   b.task('Submit the return online', { project: vat, when: 7, tags: ['computer'], created: 3 })
 
   const portfolio = b.project('Portfolio refresh', {
@@ -245,7 +245,6 @@ function sam(ctx: DemoContext): ImportRecord[] {
     when: 0,
     daypart: 'evening',
     duration: 5,
-    tags: ['15 min'],
   })
   b.task('Learn to bake sourdough', { area: home, when: 'someday', created: 35 })
   b.task('Renew the car insurance', { area: home, done: 20 })
@@ -260,7 +259,7 @@ function sam(ctx: DemoContext): ImportRecord[] {
       weekdays: [weekdayOf(b.day(0))],
     },
     0,
-    { area: home, tags: ['15 min'] },
+    { area: home, duration: 10 },
     [14, 7],
   )
 
@@ -272,7 +271,6 @@ function sam(ctx: DemoContext): ImportRecord[] {
     when: 0,
     daypart: 'evening',
     duration: 15,
-    tags: ['15 min'],
   })
   b.task('Try bouldering', { area: health, when: 'someday', created: 26 })
   for (const days of [2, 6, 10, 17, 24]) {
@@ -339,7 +337,7 @@ function sam(ctx: DemoContext): ImportRecord[] {
   b.task("Birthday present for Alex's little one", { area: family, done: 4 })
 
   // --- No area ---
-  b.task('Check the passport expiry dates', { when: 'anytime', tags: ['15 min'], created: 3 })
+  b.task('Check the passport expiry dates', { when: 'anytime', duration: 15, created: 3 })
   b.project('Learn basic Portuguese', { when: 'someday', created: 30, reviewed: 25 })
 
   // --- Reviews: the weekly one is due again, the monthly one is not ---
