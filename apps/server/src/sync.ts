@@ -38,6 +38,7 @@ import {
   type MemberGrants,
 } from './agents/access.js'
 import type { Db } from './db.js'
+import { type Assignment, assignmentIn } from './push/assigned.js'
 import { CURSOR_GAPS_KEY, type CursorGap } from './restore.js'
 import { changes, entities, meta, type SpaceLevel, spaceMembers, spaces } from './schema.js'
 import {
@@ -325,8 +326,20 @@ export interface PushOptions {
   cursor?: SpaceCursor | undefined
 }
 
+export interface SyncServiceOptions {
+  /**
+   * Called after a push has committed, with the tasks an agent assigned to a
+   * person in it (see push/assigned.ts). Never inside the transaction, so a
+   * notification never goes out for a batch that rolled back.
+   */
+  onAssigned?: (assignments: Assignment[]) => void
+}
+
 export class SyncService {
-  constructor(private readonly db: Db) {}
+  constructor(
+    private readonly db: Db,
+    private readonly options: SyncServiceOptions = {},
+  ) {}
 
   /**
    * Verwerkt een batch wijzigingen atomair: óf alles wordt toegepast, óf niets.
@@ -337,7 +350,8 @@ export class SyncService {
     const access = options.access ?? null
     const actor: ActorId = access?.actor ?? `user:${userId}`
     const members: MemberGrants = options.members ?? (() => undefined)
-    return this.db.transaction((tx) => {
+    const assigned: Assignment[] = []
+    const result = this.db.transaction((tx) => {
       const spaceIds = spacesOf(tx, userId)
       const ctx = new WriteContext(tx, userId, (type, id) => this.locate(tx, spaceIds, type, id))
       const problems: { changeId: string; issues: string[] }[] = []
@@ -427,6 +441,8 @@ export class SyncService {
           actor,
         )
         written.row(target.spaceId, seq)
+        const assignment = assignmentIn(actor, change, existing?.data, record)
+        if (assignment) assigned.push(assignment)
         if (!located) {
           written.placed.push({
             entityType: change.entityType,
@@ -447,6 +463,14 @@ export class SyncService {
       if (written.placed.length > 0) result.placed = written.placed
       return result
     })
+    if (assigned.length > 0 && this.options.onAssigned) {
+      try {
+        this.options.onAssigned(assigned)
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    return result
   }
 
   /**

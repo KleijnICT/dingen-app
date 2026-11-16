@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import { underPrefix } from './base.js'
+import { navigate } from './router.js'
 
 /**
  * Registers the service worker and reports when a new version is waiting. The new worker
@@ -35,6 +36,13 @@ function watch(reg: ServiceWorkerRegistration): void {
  */
 export function registerServiceWorker(): void {
   if (!import.meta.env.PROD || !('serviceWorker' in navigator) || underPrefix()) return
+  // A click on a notification about one task, while the app is open (sw/sw.js).
+  navigator.serviceWorker.addEventListener('message', (event: MessageEvent) => {
+    const data = event.data as { type?: unknown; path?: unknown } | null
+    if (data?.type === 'OPEN_PATH' && typeof data.path === 'string' && data.path.startsWith('/')) {
+      navigate(data.path)
+    }
+  })
   window.addEventListener('load', () => {
     navigator.serviceWorker
       .register('/sw.js')
