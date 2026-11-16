@@ -320,6 +320,9 @@ export const nl: Messages = {
   'calendar.checking': 'Controleren…',
   'calendar.rename': 'Naam van de agenda',
   'calendar.remove': 'Verwijderen',
+  'calendar.actions': 'Acties voor {name}',
+  'calendar.removeQuestion':
+    '“{name}” verwijderen? De afspraken verdwijnen uit Dingen; de agenda zelf blijft ongemoeid.',
   'calendar.help':
     'De meeste agenda-apps hebben in de instellingen van een agenda een privé-iCal-link (ICS), zoals "Geheim adres in iCal-indeling" of "Agenda publiceren". De link blijft op de server; hier zie je alleen de host. Afspraken worden elke 15 minuten ververst.',
   'calendar.error.invalid_url': 'Dit is geen geldig https://- of webcal://-adres.',

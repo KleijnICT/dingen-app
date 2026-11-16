@@ -327,6 +327,9 @@ export const en = {
   'calendar.checking': 'Checking…',
   'calendar.rename': 'Calendar name',
   'calendar.remove': 'Remove',
+  'calendar.actions': 'Actions for {name}',
+  'calendar.removeQuestion':
+    'Remove “{name}”? Its events disappear from Dingen; the calendar itself is not touched.',
   'calendar.help':
     'Most calendar apps have a private iCal (ICS) link in the calendar\'s settings, such as "Secret address in iCal format" or "Publish calendar". The link stays on the server; only its host is shown here. Appointments refresh every 15 minutes.',
   'calendar.error.invalid_url': 'That is not a valid https:// or webcal:// address.',

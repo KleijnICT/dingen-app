@@ -4,6 +4,7 @@ import { ApiError, api, errorText } from '../api.js'
 import { refreshCalendar } from '../calendar.js'
 import { type MessageKey, useT } from '../i18n/index.js'
 import { areaColorVar, knownColor } from './AreaIcons.js'
+import { MoreMenu } from './Menu.js'
 
 interface CalendarSummary {
   id: string
@@ -197,9 +198,18 @@ function CalendarItem({
           }}
         />
         <span className="calendar-host muted">{calendar.host}</span>
-        <button type="button" className="link danger" onClick={onRemove}>
-          {t('calendar.remove')}
-        </button>
+        <MoreMenu
+          alignEnd
+          label={t('calendar.actions', { name: calendar.name })}
+          items={[
+            {
+              label: t('calendar.remove'),
+              danger: true,
+              confirm: t('calendar.removeQuestion', { name: calendar.name }),
+              onSelect: onRemove,
+            },
+          ]}
+        />
       </div>
       <div className="color-row calendar-colors">
         {AREA_COLORS.map((id) => (
