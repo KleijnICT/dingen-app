@@ -11,7 +11,7 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core'
-import { type CSSProperties, useCallback, useEffect, useMemo, useState } from 'react'
+import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { User } from './api.js'
 import { useCalendarFeed } from './calendar.js'
 import { AreaPage } from './components/AreaPage.js'
@@ -21,6 +21,7 @@ import { ProjectPage } from './components/ProjectPage.js'
 import { ReviewPage } from './components/ReviewPage.js'
 import { Search } from './components/Search.js'
 import { Sidebar } from './components/Sidebar.js'
+import { MenuButton, SidebarDrawer, useNarrow } from './components/SidebarDrawer.js'
 import { PanelSlot } from './components/TaskPanel.js'
 import { ShellActions, ToolbarSlot } from './components/Toolbar.js'
 import { UpdateNotice } from './components/UpdateNotice.js'
@@ -58,6 +59,11 @@ export function Shell({ user, onSignedOut }: Props) {
   const actions = useMemo(() => ({ openSearch: () => setSearchOpen(true) }), [])
   const closeSettings = useCallback(() => setSettingsOpen(false), [])
   const closeSearch = useCallback(() => setSearchOpen(false), [])
+  const narrow = useNarrow()
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const menuButton = useRef<HTMLButtonElement>(null)
+  const openDrawer = useCallback(() => setDrawerOpen(true), [])
+  const closeDrawer = useCallback(() => setDrawerOpen(false), [])
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
   const onDragStart = useCallback((e: DragStartEvent) => {
     setDragging((e.active.data.current as DragData | undefined) ?? null)
@@ -69,6 +75,10 @@ export function Shell({ user, onSignedOut }: Props) {
     },
     [engine, ws],
   )
+
+  // Choosing a list closes the drawer; so does growing past phone width.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: path is the trigger
+  useEffect(() => setDrawerOpen(false), [path, narrow])
 
   // The day changes at midnight; checking once a minute is enough.
   useEffect(() => {
@@ -123,6 +133,17 @@ export function Shell({ user, onSignedOut }: Props) {
     page = <ReviewPage kind={parseReviewKind(route.reviewKind ?? undefined)} />
   }
 
+  const sidebar = (
+    <Sidebar
+      path={path}
+      status={engine.status}
+      onOpenSettings={() => {
+        setDrawerOpen(false)
+        setSettingsOpen(true)
+      }}
+    />
+  )
+
   return (
     <WorkspaceContext.Provider value={ws}>
       <ReviewAnchorContext.Provider value={reviewAnchor}>
@@ -138,12 +159,24 @@ export function Shell({ user, onSignedOut }: Props) {
               className="app"
               style={{ '--sidebar-width': `${sidebarWidth}px` } as CSSProperties}
             >
-              <Sidebar
-                path={path}
-                status={engine.status}
-                onOpenSettings={() => setSettingsOpen(true)}
-              />
+              {narrow ? (
+                <SidebarDrawer
+                  open={drawerOpen}
+                  onOpen={openDrawer}
+                  onClose={closeDrawer}
+                  returnFocus={menuButton}
+                >
+                  {sidebar}
+                </SidebarDrawer>
+              ) : (
+                sidebar
+              )}
               <main className="content-pane">
+                {narrow && (
+                  <div className="mobile-bar">
+                    <MenuButton open={drawerOpen} onOpen={openDrawer} buttonRef={menuButton} />
+                  </div>
+                )}
                 <div className="content-body">
                   <div className="content">
                     <ToolbarSlot.Provider value={toolbar}>

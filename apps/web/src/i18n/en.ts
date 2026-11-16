@@ -37,6 +37,7 @@ export const en = {
   'list.empty.someday': 'Nothing for someday.',
   'list.empty.logbook': 'Nothing completed yet.',
   'nav.lists': 'Lists',
+  'nav.open': 'Open sidebar',
 
   // Sync
   'sync.idle': 'Synced',

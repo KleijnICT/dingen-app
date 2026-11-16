@@ -36,6 +36,7 @@ export const nl: Messages = {
   'list.empty.someday': 'Niets voor ooit.',
   'list.empty.logbook': 'Nog niets afgerond.',
   'nav.lists': 'Lijsten',
+  'nav.open': 'Zijbalk openen',
 
   'sync.idle': 'Gesynchroniseerd',
   'sync.syncing': 'Synchroniseren…',
