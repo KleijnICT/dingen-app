@@ -20,7 +20,13 @@ import { useAgents } from '../agents.js'
 import { useT } from '../i18n/index.js'
 import { describeWhen } from '../lists.js'
 import { useEngine, useWorkspace } from '../store/context.js'
-import { commitTask, deleteTask, duplicateTask, whenFields } from '../taskActions.js'
+import {
+  commitTask,
+  convertToProject,
+  deleteTask,
+  duplicateTask,
+  whenFields,
+} from '../taskActions.js'
 import {
   checklistProgress,
   fieldLayout,
@@ -345,6 +351,10 @@ function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
                 commit()
                 onOpen(duplicateTask(engine, ws, { ...task, title, notes }).id)
               },
+            },
+            {
+              label: t('task.convertToProject'),
+              onSelect: () => convertToProject(engine, ws, { ...task, title, notes }),
             },
             {
               label: t('task.delete'),

@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { buildSnapshot, duplicateOf, duplicateTask, type Writer } from './actions.js'
-import type { Entity, EntityType, Task } from './entities.js'
-import { newChecklistItem, newTask } from './factories.js'
+import {
+  buildSnapshot,
+  convertTaskToProject,
+  duplicateOf,
+  duplicateTask,
+  type Writer,
+} from './actions.js'
+import { type Entity, type EntityType, Project, Task } from './entities.js'
+import { newChecklistItem, newProject, newTask } from './factories.js'
+import { ulid } from './ids.js'
 import { compareOrder, orderBetween } from './order.js'
 import * as views from './views.js'
 
@@ -103,5 +110,121 @@ describe('duplicate', () => {
       ['Hotel', false, copy.id],
     ])
     expect(copied[0]?.id).not.toBe(items[0]?.id)
+  })
+})
+
+describe('convert a task to a project', () => {
+  const a = orderBetween(null, null)
+  const b = orderBetween(a, null)
+  const c = orderBetween(b, null)
+  const AREA = ulid()
+  const OTHER_AREA = ulid()
+  const TAGS = [ulid(), ulid()]
+  const project = newProject({ title: 'Home', areaId: AREA, order: a })
+  const task = newTask({
+    title: 'Move house',
+    notes: 'Before spring',
+    projectId: project.id,
+    when: { kind: 'date', date: today },
+    daypart: 'morning',
+    duration: 45,
+    reminder: { daysBefore: 0, time: '08:00' },
+    deadline: '2026-12-01',
+    tagIds: TAGS,
+    assigneeId: 'agent:x',
+  })
+  const items = [
+    newChecklistItem({ title: 'Boxes', taskId: task.id, done: true, order: a }),
+    newChecklistItem({ title: 'Movers', taskId: task.id, order: b }),
+    newChecklistItem({ title: 'New address', taskId: task.id, order: c }),
+  ] as const
+  // Out of order on purpose: the snapshot sorts the checklist.
+  const ws = buildSnapshot(today, {
+    tasks: [task],
+    projects: [project],
+    areas: [],
+    headings: [],
+    tags: [],
+    checklist: [items[2], items[0], items[1]],
+  })
+
+  function convert(snap = ws, t = task) {
+    const created: [EntityType, Entity][] = []
+    const mutated: [EntityType, string, Record<string, unknown>][] = []
+    const w: Writer = {
+      create: (type, entity) => created.push([type, entity]),
+      mutate: (type, id, fields) => mutated.push([type, id, fields]),
+    }
+    const result = convertTaskToProject(w, snap, t)
+    return { result, created, mutated }
+  }
+
+  it("takes the task's content and the area of its project, not what only tasks have", () => {
+    const { result, created } = convert()
+    expect(created[0]).toEqual(['project', result])
+    expect(result).toMatchObject({
+      title: 'Move house',
+      notes: 'Before spring',
+      areaId: AREA,
+      status: 'open',
+      when: { kind: 'date', date: today },
+      deadline: '2026-12-01',
+      tagIds: TAGS,
+    })
+    expect(result.tagIds).not.toBe(task.tagIds)
+    expect(Object.keys(result)).not.toContain('daypart')
+    // Below the other projects in the area.
+    expect(compareOrder(result.order, project.order)).toBe(1)
+  })
+
+  it('turns the checklist into tasks in order, ticked items completed', () => {
+    const { result, created } = convert()
+    expect(created.slice(1).map(([type]) => type)).toEqual(['task', 'task', 'task'])
+    const tasks = created.slice(1).map(([, e]) => e as Task)
+    expect([...tasks].sort(views.byOrder).map((t) => [t.title, t.status])).toEqual([
+      ['Boxes', 'completed'],
+      ['Movers', 'open'],
+      ['New address', 'open'],
+    ])
+    for (const t of tasks) {
+      expect(t).toMatchObject({ projectId: result.id, areaId: null, when: { kind: 'anytime' } })
+      expect(t.completedAt === null).toBe(t.status === 'open')
+      expect(Task.safeParse(t).success).toBe(true)
+    }
+    expect(Project.safeParse(result).success).toBe(true)
+  })
+
+  it('deletes the original task', () => {
+    const { mutated } = convert()
+    expect(mutated).toEqual([['task', task.id, { deleted: true }]])
+  })
+
+  it('makes an Inbox task an Anytime project without an area', () => {
+    const inboxTask = newTask({ title: 'Plan party' })
+    const { result, created } = convert(snapshot([inboxTask]), inboxTask)
+    expect(result).toMatchObject({ when: { kind: 'anytime' }, areaId: null, deadline: null })
+    expect(created).toHaveLength(1)
+  })
+
+  it("keeps a loose task's area and someday", () => {
+    const loose = newTask({ title: 'Learn piano', areaId: OTHER_AREA, when: { kind: 'someday' } })
+    const { result } = convert(snapshot([loose]), loose)
+    expect(result).toMatchObject({ areaId: OTHER_AREA, when: { kind: 'someday' } })
+  })
+
+  it('refuses the template of a repeating task', () => {
+    const template = newTask({
+      title: 'Weekly',
+      repeat: {
+        unit: 'week',
+        every: 1,
+        basis: 'schedule',
+        weekdays: [],
+        start: today,
+        until: null,
+        deadlineDays: null,
+      },
+    })
+    expect(() => convert(snapshot([template]), template)).toThrow()
   })
 })

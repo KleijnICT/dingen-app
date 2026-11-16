@@ -67,6 +67,7 @@ export const nl: Messages = {
   'panel.add.duration': 'Duur toevoegen',
   'menu.taskActions': 'Taakacties',
   'task.duplicate': 'Dupliceren',
+  'task.convertToProject': 'Omzetten naar project',
   'task.deleteQuestion': 'Deze taak verwijderen?',
 
   'when.label': 'Wanneer',

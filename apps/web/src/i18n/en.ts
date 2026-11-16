@@ -70,6 +70,7 @@ export const en = {
   'panel.add.duration': 'Add duration',
   'menu.taskActions': 'Task actions',
   'task.duplicate': 'Duplicate',
+  'task.convertToProject': 'Convert to project',
   'task.deleteQuestion': 'Delete this task?',
 
   // When

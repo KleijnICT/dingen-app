@@ -165,6 +165,12 @@ How to guide one:
   item ids to keep them. `repeat: null` stops repeating.
 - `complete_project` hides the project's open tasks from the lists; it can be
   reopened.
+- `convert_task_to_project` turns a task that turned out to be bigger into a
+  project: title, notes, area, tags, plan date and deadline carry over, each
+  checklist item becomes a task, and the task itself is deleted. Propose it,
+  do not just do it (structure belongs to the user), and suggest phrasing the
+  project title as the desired outcome ("Kitchen renovated", not "Kitchen").
+  It needs edit where the task is and manage in the target area.
 - Project and area output carries `reviewedAt` and `signals`; `overview`
   shows them for every open project and area.
 - Dates are in the user's time zone; "today" follows the server setting.

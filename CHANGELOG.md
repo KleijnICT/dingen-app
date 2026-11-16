@@ -35,6 +35,10 @@
 - The task panel stays open when its task leaves the list, for example after
   choosing Tomorrow in Today, so more fields can be filled in; an OK button
   at the bottom closes it.
+- Convert a task to a project, from the task panel's menu or with the MCP
+  tool `convert_task_to_project`: the project takes the task's title, notes,
+  area, tags, plan date and deadline, each checklist item becomes a task in
+  it (ticked items completed), the task is deleted and the project opens.
 
 ## 1.0.0-alpha.5
 
