@@ -231,6 +231,11 @@ button.link.danger {
   grid-template-columns: var(--sidebar-width, 220px) 1fr;
   height: 100%;
 }
+.focus-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
 .sidebar {
   background: var(--sidebar);
   display: flex;
@@ -3175,4 +3180,12 @@ button.agent-main .muted {
 }
 .panel-ok {
   min-width: 88px;
+}
+
+/* Focus mode in Today: the sidebar steps aside. */
+.app.focus-mode {
+  grid-template-columns: 1fr;
+}
+.app.focus-mode .sidebar {
+  display: none;
 }

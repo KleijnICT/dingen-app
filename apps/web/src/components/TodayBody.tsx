@@ -30,6 +30,8 @@ interface Props {
   today: string
   tasks: Task[]
   view: 'manual' | 'grouped'
+  /** Focus mode: only tasks, no events, no projects, no empty groups. */
+  focus?: boolean
   /** The projects planned for today; above the tasks without a daypart. */
   projects: ReactNode
   /** A sortable group of rows (ListPage's `group`). */
@@ -51,17 +53,26 @@ interface Props {
  * daypart of their start time. Dropping a task in a group sets its daypart.
  * A heading shows the estimated time of its open tasks.
  */
-export function TodayBody({ today, tasks, view, projects, group, groupByContainer }: Props) {
+export function TodayBody({
+  today,
+  tasks,
+  view,
+  focus = false,
+  projects,
+  group,
+  groupByContainer,
+}: Props) {
   const t = useT()
   const locale = useLocale()
   const dragging = useDndContext().active !== null
   const { events } = useCalendarData()
   const byPart = tasksByDaypart(tasks)
-  const eventsByPart = eventsByDaypart(events, today)
+  const eventsByPart = eventsByDaypart(focus ? [] : events, today)
   const todayWhen = { kind: 'date', date: today } as const
 
   const rows = (slot: DaypartSlot, items: Task[]) => {
     const daypart = slot === 'none' ? null : slot
+    if (focus && items.length === 0 && !dragging) return null
     // "My order" is one list per daypart with its own order; "By project" follows each
     // project's order. An empty group is still a place to drop while dragging.
     if (view === 'manual' || items.length === 0) {
@@ -83,8 +94,8 @@ export function TodayBody({ today, tasks, view, projects, group, groupByContaine
 
   return (
     <>
-      <DayEvents date={today} slot="none" />
-      {projects}
+      {!focus && <DayEvents date={today} slot="none" />}
+      {!focus && projects}
       {rows('none', byPart.none)}
       {SLOTS.filter((slot): slot is Daypart => slot !== 'none').map((slot) => {
         const items = byPart[slot]
@@ -103,7 +114,7 @@ export function TodayBody({ today, tasks, view, projects, group, groupByContaine
                 </span>
               )}
             </h2>
-            <DayEvents date={today} slot={slot} />
+            {!focus && <DayEvents date={today} slot={slot} />}
             {rows(slot, items)}
           </section>
         )

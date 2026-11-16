@@ -124,6 +124,8 @@ export const nl: Messages = {
   'today.view': 'Volgorde',
   'today.view.manual': 'Mijn volgorde',
   'today.view.grouped': 'Per project',
+  'today.focus': 'Focus',
+  'today.focus.hint': 'Alleen de taken van vandaag, volle breedte (F; Esc om te sluiten)',
   'confirm.cancel': 'Annuleren',
   'deadline.label': 'Deadline',
   'deadline.clear': 'Deadline weghalen',

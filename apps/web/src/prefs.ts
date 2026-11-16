@@ -167,3 +167,28 @@ export function closeReviewBanner(kind: string, today: string): void {
 export function useReviewBannersClosed(): string {
   return useSyncExternalStore(subscribe, readBannerClosed, () => '')
 }
+
+/** Focus mode in Today: only the day's tasks, no sidebar. Kept per device. */
+const FOCUS_KEY = 'dingen.focusMode'
+
+function readFocus(): boolean {
+  try {
+    return localStorage.getItem(FOCUS_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+export function setFocusMode(on: boolean): void {
+  try {
+    if (on) localStorage.setItem(FOCUS_KEY, '1')
+    else localStorage.removeItem(FOCUS_KEY)
+  } catch {
+    // Private windows may refuse storage; the choice then lasts until reload.
+  }
+  for (const l of listeners) l()
+}
+
+export function useFocusMode(): boolean {
+  return useSyncExternalStore(subscribe, readFocus, () => false)
+}
