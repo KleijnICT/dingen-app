@@ -21,10 +21,16 @@ import { areaPath, navigate, projectPath } from '../router.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { createInboxTask, type MoveTarget, useLinger } from '../taskActions.js'
 import { DayEvents } from './CalendarEvents.js'
-import { DurationFilter } from './Duration.js'
+import { MoreMenu } from './Menu.js'
+import {
+  ActiveFilters,
+  FilterButton,
+  HeaderButton,
+  type PageFilters,
+  PageHeader,
+} from './PageHeader.js'
 import { ProjectRow } from './ProjectRow.js'
 import { ReviewBanner } from './ReviewBanner.js'
-import { TagFilter } from './TagFilter.js'
 import { TaskGroup } from './TaskGroup.js'
 import type { RowProps } from './TaskRow.js'
 import { TodayBody, TodayTotal } from './TodayBody.js'
@@ -34,11 +40,11 @@ import { useOnSignal, useTaskList } from './useTaskList.js'
 interface Props {
   list: ListDef
   focusSignal: number
-  /** Replaces the title header (the Logbook puts its filters there). */
-  header?: React.ReactNode
+  /** Under the title (the Logbook puts its own filters there). */
+  below?: React.ReactNode
 }
 
-export function ListPage({ list, focusSignal, header }: Props) {
+export function ListPage({ list, focusSignal, below }: Props) {
   const engine = useEngine()
   const t = useT()
   const ws = useWorkspace()
@@ -59,11 +65,17 @@ export function ListPage({ list, focusSignal, header }: Props) {
   const tagged = tagFilter ? all.filter((task) => task.tagIds.includes(tagFilter)) : all
   const shown = filterByDuration(tagged, maxDuration)
   // The duration filter shows once a task here has a duration, or while it is on.
-  const durationFilter =
-    hasDurationFilter(list.id) &&
-    (maxDuration !== null || visible.some((task) => task.duration !== null)) ? (
-      <DurationFilter list={list.id} active={maxDuration} />
-    ) : null
+  const filters: PageFilters = {
+    present,
+    tag: tagFilter,
+    onTag: setTagFilter,
+    durationList:
+      hasDurationFilter(list.id) &&
+      (maxDuration !== null || visible.some((task) => task.duration !== null))
+        ? list.id
+        : null,
+    maxDuration,
+  }
   const projects = listProjects(list.id, ws)
 
   const taskList = useTaskList(shown, toggle)
@@ -211,50 +223,49 @@ export function ListPage({ list, focusSignal, header }: Props) {
     return groups
   }
 
+  const isToday = list.id === 'today'
   return (
     <section className={`list-page ${list.id}`}>
-      {header ?? (
-        <header className="list-header">
-          <h1>{t(list.titleKey)}</h1>
-          {list.id === 'today' && (
-            <p className="muted today-date">
+      <PageHeader
+        title={<h1>{t(list.titleKey)}</h1>}
+        subtitle={
+          isToday && (
+            <>
               {describeLongDate(ws.today)}
               <TodayTotal tasks={shown} />
-            </p>
-          )}
-          {list.id === 'today' && (
-            <fieldset className="view-switch" aria-label={t('today.view')}>
-              {(['manual', 'grouped'] as const).map((view) => (
-                <button
-                  type="button"
-                  key={view}
-                  className={`chip small ${todayView === view ? 'active' : ''}`}
-                  onClick={() => setTodayView(view)}
-                >
-                  {t(`today.view.${view}`)}
-                </button>
-              ))}
-            </fieldset>
-          )}
-          {list.id === 'today' && (
-            <button
-              type="button"
-              className={`chip small focus-toggle ${focus ? 'active' : ''}`}
-              aria-pressed={focus}
-              title={t('today.focus.hint')}
-              onClick={() => setFocusMode(!focus)}
-            >
-              <Focus size={13} aria-hidden="true" />
-              {t('today.focus')}
-            </button>
-          )}
-        </header>
-      )}
-      {list.id === 'today' && !focus && <ReviewBanner />}
-      <div className="list-filters">
-        <TagFilter present={present} active={tagFilter} onChange={setTagFilter} />
-        {durationFilter}
-      </div>
+            </>
+          )
+        }
+        actions={
+          <>
+            <FilterButton {...filters} />
+            {isToday && (
+              <HeaderButton
+                icon={Focus}
+                label={t('today.focus')}
+                hint={t('today.focus.hint')}
+                pressed={focus}
+                onClick={() => setFocusMode(!focus)}
+              />
+            )}
+            {isToday && (
+              <MoreMenu
+                alignEnd
+                label={t('today.view')}
+                items={(['manual', 'grouped'] as const).map((view) => ({
+                  label: t(`today.view.${view}`),
+                  checked: todayView === view,
+                  onSelect: () => setTodayView(view),
+                }))}
+              />
+            )}
+          </>
+        }
+      >
+        <ActiveFilters {...filters} />
+        {below}
+      </PageHeader>
+      {isToday && !focus && <ReviewBanner />}
       {shown.length === 0 && projects.length === 0 && (
         <p className="empty">{t(`list.empty.${list.id}` as MessageKey)}</p>
       )}

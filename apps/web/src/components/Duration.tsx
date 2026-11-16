@@ -1,13 +1,6 @@
 import { DURATION_CHOICES, DURATION_FILTERS } from '@dingen/core'
 import { Timer } from 'lucide-react'
-import {
-  type KeyboardEvent,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react'
+import { type KeyboardEvent, useEffect, useState } from 'react'
 import {
   type DurationFilterList,
   parseDuration,
@@ -15,7 +8,6 @@ import {
   useDurationText,
 } from '../duration.js'
 import { useT } from '../i18n/index.js'
-import { useDismiss } from './Menu.js'
 
 interface FieldProps {
   duration: number | null
@@ -116,76 +108,26 @@ interface FilterProps {
 }
 
 /**
- * The duration filter of Today and Anytime: a button that opens the steps
+ * The duration filter of Today and Anytime, inside the page's filter popover: the steps
  * (at most 5 minutes up to at most an hour) and Off. Kept per device and list.
  */
 export function DurationFilter({ list, active }: FilterProps) {
   const t = useT()
   const text = useDurationText()
-  const [open, setOpen] = useState(false)
-  const root = useRef<HTMLDivElement>(null)
-  const button = useRef<HTMLButtonElement>(null)
-  const menu = useRef<HTMLDivElement>(null)
-  const [alignEnd, setAlignEnd] = useState(false)
-  const close = useCallback(() => {
-    setOpen(false)
-    setAlignEnd(false)
-  }, [])
-  useDismiss(open, close, root, button)
-
-  // On a narrow screen the menu opens towards the left when it would run off the right edge.
-  useLayoutEffect(() => {
-    const el = menu.current
-    if (!open || !el || alignEnd) return
-    if (el.getBoundingClientRect().right > document.documentElement.clientWidth - 8) {
-      setAlignEnd(true)
-    }
-  }, [open, alignEnd])
-
-  function choose(max: number | null) {
-    setDurationFilter(list, max)
-    close()
-    button.current?.focus()
-  }
-
-  const label = active === null ? t('duration.filter') : t('duration.atMost', { d: text(active) })
   const options: (number | null)[] = [...DURATION_FILTERS, null]
-
   return (
-    <div className="duration-filter" ref={root}>
-      <button
-        ref={button}
-        type="button"
-        className={`chip small duration-filter-button ${active !== null ? 'active' : ''}`}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-label={t('duration.filterLabel', { value: label })}
-        onClick={() => (open ? close() : setOpen(true))}
-      >
-        <Timer size={12} aria-hidden="true" />
-        {label}
-      </button>
-      {open && (
-        <div
-          ref={menu}
-          className={`popover menu duration-menu ${alignEnd ? 'end' : ''}`}
-          role="menu"
-          aria-label={t('duration.filter')}
+    <fieldset className="filter-chips" aria-label={t('duration.filter')}>
+      {options.map((max) => (
+        <button
+          type="button"
+          key={max ?? 'off'}
+          className={`chip small ${active === max ? 'active' : ''}`}
+          aria-pressed={active === max}
+          onClick={() => setDurationFilter(list, max)}
         >
-          {options.map((max) => (
-            <button
-              type="button"
-              key={max ?? 'off'}
-              role="menuitemradio"
-              aria-checked={active === max}
-              className={`menu-item ${active === max ? 'checked' : ''}`}
-              onClick={() => choose(max)}
-            >
-              {max === null ? t('duration.off') : t('duration.atMost', { d: text(max) })}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
+          {max === null ? t('duration.off') : t('duration.atMost', { d: text(max) })}
+        </button>
+      ))}
+    </fieldset>
   )
 }

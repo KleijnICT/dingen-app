@@ -11,8 +11,8 @@ import { CompletedSection } from './CompletedSection.js'
 import { InlineInput } from './InlineInput.js'
 import { MemberAvatars, MembersPanel, useAccess } from './MembersPanel.js'
 import { MoreMenu } from './Menu.js'
+import { ActiveFilters, FilterButton, type PageFilters, PageHeader } from './PageHeader.js'
 import { ProjectRow } from './ProjectRow.js'
-import { TagFilter } from './TagFilter.js'
 import { TaskGroup } from './TaskGroup.js'
 import type { RowProps } from './TaskRow.js'
 import { TaskToolbar, ToolbarButton } from './Toolbar.js'
@@ -35,6 +35,7 @@ export function AreaPage({ area, focusSignal }: Props) {
   const { shown, toggle } = useLinger(open, ws, engine)
   const completed = completedSection(all, shown)
   const present = new Set(open.flatMap((task) => task.tagIds))
+  const filters: PageFilters = { present, tag: tagFilter, onTag: setTagFilter }
   const filtered = tagFilter ? shown.filter((task) => task.tagIds.includes(tagFilter)) : shown
   const projects = views.projectsOf(ws.projects, area.id)
 
@@ -66,36 +67,47 @@ export function AreaPage({ area, focusSignal }: Props) {
 
   return (
     <section className="list-page area">
-      <header className="list-header project-header">
-        <AreaAppearance area={area} />
-        <InlineInput
-          className="title-input"
-          value={area.title}
-          placeholder={t('area.untitled')}
-          aria-label={t('area.title')}
-          autoFocus={area.title === ''}
-          onCommit={(title) => engine.mutate('area', area.id, { title })}
-        />
-        <MemberAvatars entries={access.entries} />
-        <MoreMenu
-          label={t('menu.areaActions')}
-          items={[
-            { label: t('nav.newProject'), onSelect: addProject },
-            {
-              label: t('members.title'),
-              onSelect: () => {},
-              panel: () => <MembersPanel type="area" id={area.id} access={access} />,
-            },
-            {
-              label: t('area.delete'),
-              danger: true,
-              confirm: t('area.deleteQuestion'),
-              onSelect: remove,
-            },
-          ]}
-        />
-      </header>
-      <TagFilter present={present} active={tagFilter} onChange={setTagFilter} />
+      <PageHeader
+        title={
+          <>
+            <AreaAppearance area={area} />
+            <InlineInput
+              className="title-input"
+              value={area.title}
+              placeholder={t('area.untitled')}
+              aria-label={t('area.title')}
+              autoFocus={area.title === ''}
+              onCommit={(title) => engine.mutate('area', area.id, { title })}
+            />
+            <MemberAvatars entries={access.entries} />
+          </>
+        }
+        actions={
+          <>
+            <FilterButton {...filters} />
+            <MoreMenu
+              alignEnd
+              label={t('menu.areaActions')}
+              items={[
+                { label: t('nav.newProject'), onSelect: addProject },
+                {
+                  label: t('members.title'),
+                  onSelect: () => {},
+                  panel: () => <MembersPanel type="area" id={area.id} access={access} />,
+                },
+                {
+                  label: t('area.delete'),
+                  danger: true,
+                  confirm: t('area.deleteQuestion'),
+                  onSelect: remove,
+                },
+              ]}
+            />
+          </>
+        }
+      >
+        <ActiveFilters {...filters} />
+      </PageHeader>
       {all.length === 0 && projects.length === 0 && <p className="empty">{t('area.empty')}</p>}
       <TaskGroup
         group={{ key: `area:${area.id}`, target: { kind: 'area', areaId: area.id } }}

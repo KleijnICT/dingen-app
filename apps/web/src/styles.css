@@ -236,11 +236,6 @@ button.link.danger {
   /* What the sidebar takes from the window; nothing in focus mode. */
   --sidebar-room: var(--sidebar-width, 220px);
 }
-.focus-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
 .sidebar {
   background: var(--sidebar);
   display: flex;
@@ -438,11 +433,6 @@ button.link.danger {
   font-size: 1.8rem;
   margin: 0;
   letter-spacing: -0.02em;
-}
-.list-page.today .list-header h1 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 .empty {
   color: var(--muted);
@@ -861,12 +851,6 @@ button.link.danger {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.today-date {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 4px 12px;
-}
 .meta-daypart {
   color: var(--muted);
   white-space: nowrap;
@@ -915,15 +899,6 @@ button.link.danger {
 .tag-input:focus {
   outline: none;
 }
-.tag-filter {
-  border: 0;
-  margin: 0 0 8px;
-  padding: 0 10px;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-}
 .chip.small {
   padding: 3px 9px;
   font-size: 0.8em;
@@ -942,11 +917,6 @@ button.link.danger {
 }
 
 /* --- Project and area pages --- */
-.project-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
 .project-check {
   background: none;
   color: var(--accent);
@@ -2571,8 +2541,8 @@ a.button {
   gap: 10px;
   padding: 8px 8px 8px 12px;
   border-radius: 10px;
-  background: color-mix(in srgb, var(--area-indigo) 10%, var(--surface));
-  border: 1px solid color-mix(in srgb, var(--area-indigo) 25%, transparent);
+  background: color-mix(in srgb, var(--area-indigo) 7%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--area-indigo) 16%, transparent);
 }
 .review-banner-icon {
   flex: none;
@@ -2911,19 +2881,6 @@ button.agent-main .muted {
 .assign-hint {
   padding: 6px 8px;
   font-size: 0.85em;
-}
-/* On a phone the title's … menu (with the Members panel) anchors to the header's right edge. */
-@media (max-width: 600px) {
-  .project-header {
-    position: relative;
-  }
-  .project-header > .more-menu {
-    position: static;
-  }
-  .project-header > .more-menu .menu {
-    left: auto;
-    right: 0;
-  }
 }
 
 /* --- agents-activity (plan 19): the Logbook as activity overview --- */
@@ -3307,36 +3264,6 @@ button.agent-main .muted {
 }
 
 /* --- Estimated duration (plan 25) --- */
-.list-filters {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 12px;
-  margin: 0 0 8px;
-  padding: 0 10px;
-}
-.list-filters:empty {
-  display: none;
-}
-.list-filters > .tag-filter {
-  margin: 0;
-  padding: 0;
-}
-.duration-filter {
-  position: relative;
-}
-.duration-filter-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-.duration-menu {
-  min-width: 140px;
-}
-.duration-menu.end {
-  left: auto;
-  right: 0;
-}
 .menu-item.checked {
   font-weight: 600;
 }
@@ -3469,4 +3396,128 @@ button.tag-settings-name:hover {
     height: 100%;
     border-radius: 0;
   }
+}
+
+/* --- Page header: the title, a few quiet icon buttons, one muted line --- */
+.page-header-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.page-header-title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.page-header-title h1 {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.page-header-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.page-subtitle {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+.header-button {
+  display: grid;
+  place-content: center;
+  width: 30px;
+  height: 28px;
+  padding: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--muted);
+}
+.header-button:hover,
+.header-button[aria-expanded="true"] {
+  background: var(--hover);
+  color: var(--fg);
+}
+.header-button.on,
+.header-button.on:hover {
+  color: var(--accent);
+}
+.header-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.page-header-actions .more-button {
+  height: 28px;
+}
+.filter-menu {
+  position: relative;
+  flex: none;
+}
+.filter-popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  width: max-content;
+  min-width: 200px;
+  max-width: min(320px, calc(100vw - 32px));
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.filter-title {
+  margin-bottom: 6px;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.filter-chips {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.active-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 3px 1px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.active-filter-clear {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border-radius: 50%;
+  background: none;
+  color: inherit;
+}
+.active-filter-clear:hover {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.menu-check {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 14px;
 }
