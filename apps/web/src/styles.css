@@ -2912,6 +2912,19 @@ button.agent-main .muted {
 .editor-notes:focus {
   outline: none;
 }
+.editor-notes-view {
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  cursor: text;
+}
+.editor-notes-view:focus {
+  outline: none;
+}
+.text-link {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
 .editor-notes-field {
   display: flex;
   flex-direction: column;
