@@ -12,7 +12,7 @@ import type {
   Task,
   When,
 } from './entities.js'
-import { newChecklistItem } from './factories.js'
+import { newChecklistItem, newProject, newTask } from './factories.js'
 import { ulid } from './ids.js'
 import { orderBetween } from './order.js'
 import {
@@ -278,6 +278,58 @@ export function duplicateTask(w: Writer, ws: Snapshot, task: Task): Task {
   w.create('task', copy)
   for (const item of checklist) w.create('checklistItem', item)
   return copy
+}
+
+/**
+ * The project a task becomes (see `convertTaskToProject`): the task's title,
+ * notes, tags, plan date and deadline, in the task's area (or the area of its
+ * project), below the other projects there. The Inbox becomes Anytime; a
+ * daypart, reminder, duration and assignee belong to tasks and are dropped.
+ * Each checklist item becomes a task in the project, in the same order; a
+ * ticked item becomes a completed task.
+ */
+export function projectOf(ws: Snapshot, task: Task): { project: Project; tasks: Task[] } {
+  const areaId = task.projectId
+    ? (ws.projects.find((p) => p.id === task.projectId)?.areaId ?? null)
+    : task.areaId
+  const siblings = views.projectsOf(ws.projects, areaId)
+  const project = newProject({
+    title: task.title,
+    notes: task.notes,
+    areaId,
+    when: task.when.kind === 'inbox' ? { kind: 'anytime' } : task.when,
+    deadline: task.deadline,
+    tagIds: [...task.tagIds],
+    order: orderBetween(siblings.at(-1)?.order ?? null, null),
+  })
+  const now = new Date().toISOString()
+  let order: string | null = null
+  const tasks = (ws.checklistByTask.get(task.id) ?? []).map((item) => {
+    order = orderBetween(order, null)
+    return newTask({
+      title: item.title,
+      projectId: project.id,
+      when: { kind: 'anytime' },
+      order,
+      status: item.done ? 'completed' : 'open',
+      completedAt: item.done ? now : null,
+    })
+  })
+  return { project, tasks }
+}
+
+/**
+ * Turns a task into a project (see `projectOf`) and deletes the task the
+ * normal way, so sync and the Logbook see an ordinary deletion. Returns the
+ * new project. The hidden template of a repeating task cannot be converted.
+ */
+export function convertTaskToProject(w: Writer, ws: Snapshot, task: Task): Project {
+  if (task.repeat !== null) throw new Error('A repeating task template cannot become a project')
+  const { project, tasks } = projectOf(ws, task)
+  w.create('project', project)
+  for (const t of tasks) w.create('task', t)
+  deleteTask(w, ws, task)
+  return project
 }
 
 /** Ends the repetition; the current instance stays as an ordinary task. */

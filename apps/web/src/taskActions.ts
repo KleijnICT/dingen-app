@@ -17,9 +17,15 @@ export {
   toggleTask,
 } from '@dingen/core'
 
-import { orderBetween, toggleTask } from '@dingen/core'
+import { convertTaskToProject, orderBetween, toggleTask } from '@dingen/core'
+import { navigate, projectPath } from './router.js'
 
 export { whenFields } from './dayparts.js'
+
+/** Turns `task` into a project (see `convertTaskToProject`) and opens the project's page. */
+export function convertToProject(engine: Writer, ws: Snapshot, task: Task): void {
+  navigate(projectPath(convertTaskToProject(engine, ws, task).id))
+}
 
 /** Gives `task` the order that puts it between `before` and `after` in a sorted list. */
 export function reorder(

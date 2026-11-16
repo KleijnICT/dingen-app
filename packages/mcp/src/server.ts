@@ -5,6 +5,7 @@ import {
   addDays,
   type ChecklistItem,
   commitTask,
+  convertTaskToProject,
   type Daypart,
   daysBetween,
   deleteArea,
@@ -498,6 +499,21 @@ export function createMcpServer(client: DingenClient): McpServer {
         const task = findTask(ws, id)
         deleteTask(client, ws, task)
         return { deleted: task.id }
+      }),
+  )
+
+  server.registerTool(
+    'convert_task_to_project',
+    {
+      title: 'Convert a task to a project',
+      description:
+        "Turns a task that turned out to be bigger into a project: same title, notes, tags, plan date (the Inbox becomes Anytime) and deadline, in the task's area (or the area of its project). Each checklist item becomes a task in the project, ticked items completed. The task itself is deleted. Needs edit where the task is and the right to create a project in that area. Returns the new project; consider phrasing its title as the desired outcome.",
+      inputSchema: { id: z.string() },
+    },
+    ({ id }) =>
+      run((ws) => {
+        const project = convertTaskToProject(client, ws, findTask(ws, id))
+        return projectRow(client.snapshot(), project)
       }),
   )
 

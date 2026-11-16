@@ -28,7 +28,9 @@ describe('i18n', () => {
   it('switches to Dutch on request and back', () => {
     setLocale('nl')
     expect(t('list.today')).toBe('Vandaag')
+    expect(t('task.convertToProject')).toBe('Omzetten naar project')
     setLocale('en')
     expect(t('list.today')).toBe('Today')
+    expect(t('task.convertToProject')).toBe('Convert to project')
   })
 })

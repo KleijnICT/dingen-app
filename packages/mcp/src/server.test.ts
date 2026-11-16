@@ -176,6 +176,80 @@ describe('mcp', () => {
     expect(titles.every((t: string) => t === t.toLocaleLowerCase('nl'))).toBe(true)
     expect(titles.filter((t: string) => t === 'markt 🧺')).toHaveLength(1)
   })
+
+  it('converts a task to a project', async () => {
+    const task = await call('create_task', {
+      title: 'Nieuwe keuken',
+      notes: 'Offertes vergelijken',
+      project: 'Website',
+      when: '2026-11-12',
+      daypart: 'morning',
+      deadline: '2026-12-01',
+      tags: ['waiting'],
+      checklist: ['Opmeten', 'Kiezen', 'Bestellen'],
+    })
+    const detail = await call('get_task', { id: task.id })
+    await call('update_task', {
+      id: task.id,
+      checklist: detail.checklistItems.map((i: { id: string; title: string }, n: number) => ({
+        ...i,
+        done: n === 0,
+      })),
+    })
+
+    const project = await call('convert_task_to_project', { id: task.id })
+    expect(project).toMatchObject({
+      title: 'Nieuwe keuken',
+      notes: 'Offertes vergelijken',
+      area: 'Werk',
+      status: 'open',
+      when: '2026-11-12',
+      deadline: '2026-12-01',
+      tags: ['waiting'],
+      openTasks: 2,
+    })
+    const tasks = await call('list_tasks', { project: project.id, includeCompleted: true })
+    expect(tasks.map((t: { title: string; status: string }) => [t.title, t.status])).toEqual([
+      ['Opmeten', 'completed'],
+      ['Kiezen', 'open'],
+      ['Bestellen', 'open'],
+    ])
+    await expect(call('get_task', { id: task.id })).rejects.toThrow(/No task/)
+  })
+})
+
+describe('mcp convert without the right to create a project', () => {
+  /** Refuses any push that creates or changes a project, as the server does without `manage`. */
+  class ScopedTransport extends MemoryTransport {
+    override async push(changes: Change[]) {
+      if (changes.some((c) => c.entityType === 'project'))
+        throw new Error("Outside this agent's scope: creating a project needs manage")
+      return super.push(changes)
+    }
+  }
+  const store = new ScopedTransport()
+  const agent = new Client({ name: 'test-scope', version: '0' })
+
+  async function acall(name: string, args: Record<string, unknown> = {}) {
+    const res = await agent.callTool({ name, arguments: args })
+    const text = (res.content as { type: string; text: string }[])[0]?.text ?? ''
+    if (res.isError) throw new Error(text)
+    return JSON.parse(text)
+  }
+
+  beforeAll(async () => {
+    const server = createMcpServer(new DingenClient(store, { today: () => TODAY }))
+    const [a, b] = InMemoryTransport.createLinkedPair()
+    await server.connect(a)
+    await agent.connect(b)
+  })
+
+  it('reports the refusal and leaves the task as it was', async () => {
+    const task = await acall('create_task', { title: 'Verbouwing', checklist: ['Plannen'] })
+    await expect(acall('convert_task_to_project', { id: task.id })).rejects.toThrow(/scope/)
+    expect((await acall('get_task', { id: task.id })).checklistItems).toHaveLength(1)
+    expect((await acall('overview')).counts.inbox).toBe(1)
+  })
 })
 
 describe('mcp reviews', () => {
