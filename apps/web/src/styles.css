@@ -662,17 +662,6 @@ button.link.danger {
   .toolbar {
     height: 44px;
   }
-  .settings-backdrop {
-    padding: 0;
-    align-items: stretch;
-  }
-  .settings,
-  .search {
-    width: 100%;
-    max-height: none;
-    height: 100%;
-    border-radius: 0;
-  }
   .sidebar-resize {
     display: none;
   }
@@ -3293,4 +3282,19 @@ button.tag-settings-name:hover {
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+/* Settings and Search fill the screen on phones. After their base rules, so these win. */
+@media (max-width: 720px) {
+  .settings-backdrop {
+    padding: 0;
+    align-items: stretch;
+  }
+  .settings,
+  .search {
+    width: 100%;
+    max-height: none;
+    height: 100%;
+    border-radius: 0;
+  }
 }
