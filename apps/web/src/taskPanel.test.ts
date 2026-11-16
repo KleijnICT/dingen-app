@@ -157,17 +157,22 @@ describe('fieldLayout', () => {
   it('offers every applicable empty field and shows none', () => {
     expect(fieldLayout(dated, [], true)).toEqual({
       shown: [],
-      addable: ['time', 'deadline', 'repeat', 'assignee'],
+      addable: ['time', 'deadline', 'repeat', 'duration', 'assignee'],
     })
   })
 
   it('offers a time only for a task with a date', () => {
-    expect(fieldLayout(plain, [], true).addable).toEqual(['deadline', 'repeat', 'assignee'])
+    expect(fieldLayout(plain, [], true).addable).toEqual([
+      'deadline',
+      'repeat',
+      'duration',
+      'assignee',
+    ])
     expect(fieldLayout(plain, ['time'], true).shown).toEqual([])
   })
 
   it('offers assigning only when there is someone to assign to', () => {
-    expect(fieldLayout(plain, [], false).addable).toEqual(['deadline', 'repeat'])
+    expect(fieldLayout(plain, [], false).addable).toEqual(['deadline', 'repeat', 'duration'])
     expect(fieldLayout({ ...plain, assigneeId: 'agent:a' }, [], false).shown).toEqual(['assignee'])
   })
 
@@ -178,9 +183,10 @@ describe('fieldLayout', () => {
       deadline: '2026-11-20',
       templateId: 'tpl',
       assigneeId: 'me',
+      duration: 30,
     }
     expect(fieldLayout(full, [], true)).toEqual({
-      shown: ['time', 'deadline', 'repeat', 'assignee'],
+      shown: ['time', 'deadline', 'repeat', 'duration', 'assignee'],
       addable: [],
     })
   })
@@ -188,14 +194,20 @@ describe('fieldLayout', () => {
   it('shows a just added field before it has a value', () => {
     expect(fieldLayout(plain, ['deadline'], true)).toEqual({
       shown: ['deadline'],
-      addable: ['repeat', 'assignee'],
+      addable: ['repeat', 'duration', 'assignee'],
     })
   })
 
   it('does not start repeating a completed task', () => {
     const done = { ...plain, status: 'completed' as const }
-    expect(fieldLayout(done, [], false).addable).toEqual(['deadline'])
+    expect(fieldLayout(done, [], false).addable).toEqual(['deadline', 'duration'])
     expect(fieldLayout({ ...done, templateId: 'tpl' }, [], false).shown).toEqual(['repeat'])
+  })
+
+  it('offers a duration for any task and shows it once it has one', () => {
+    expect(fieldLayout({ ...plain, duration: 15 }, [], false).shown).toEqual(['duration'])
+    expect(fieldLayout(plain, ['duration'], false).shown).toEqual(['duration'])
+    expect(stillAdded({ ...plain, duration: 15 }, ['duration'])).toEqual([])
   })
 
   it('forgets an added field once it has a value, so clearing it hides it again', () => {

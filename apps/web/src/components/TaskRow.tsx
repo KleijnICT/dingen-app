@@ -6,6 +6,7 @@ import { containerOf, describeWhen } from '../lists.js'
 import { useWorkspace } from '../store/context.js'
 import { AssigneeBadge } from './Assignee.js'
 import { DeadlineBadge } from './DeadlineField.js'
+import { DurationBadge } from './Duration.js'
 import { CheckIcon, ChecklistIcon, MoonIcon, NotesIcon, RepeatIcon } from './Icons.js'
 import { ScheduleBadge } from './ScheduleField.js'
 
@@ -122,6 +123,7 @@ export function TaskRow({
           {showWhen && task.when.kind === 'date' && (
             <span className="meta-when">{describeWhen(task.when, ws.today)}</span>
           )}
+          {!done && task.duration !== null && <DurationBadge minutes={task.duration} />}
           {done && task.completedAt && (
             <span className="meta-when">
               {formatDate(new Date(task.completedAt), { dateStyle: 'medium' })}

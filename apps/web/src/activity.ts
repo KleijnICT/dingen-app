@@ -6,6 +6,7 @@ import {
   type When,
 } from '@dingen/core'
 import type { ActivityPage } from './api.js'
+import { durationText } from './duration.js'
 import { type MessageKey, t } from './i18n/index.js'
 import { addDays, describeDate, describeWhen } from './lists.js'
 import type { Workspace } from './store/context.js'
@@ -81,6 +82,7 @@ const DESCRIBED = new Set([
   'areaId',
   'headingId',
   'assigneeId',
+  'duration',
 ])
 
 /** The words after the name: "added", or "changed When from Today to Friday". */
@@ -163,6 +165,8 @@ function valueText(
     }
     case 'assigneeId':
       return ctx.memberName(String(value)) ?? t('activity.none')
+    case 'duration':
+      return typeof value === 'number' ? durationText(value) : t('activity.none')
     default:
       return String(value)
   }

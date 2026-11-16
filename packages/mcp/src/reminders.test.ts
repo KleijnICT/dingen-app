@@ -131,3 +131,70 @@ describe('time and reminder', () => {
     })
   })
 })
+
+describe('daypart and duration', () => {
+  it('create_task takes a daypart and a duration', async () => {
+    const task = await call('create_task', {
+      title: 'Offerte nalezen',
+      when: 'tomorrow',
+      daypart: 'afternoon',
+      duration: 45,
+    })
+    expect(task).toMatchObject({ when: '2026-11-10', daypart: 'afternoon', duration: 45 })
+    expect(task.reminder).toBeUndefined()
+  })
+
+  it('update_task changes and clears them', async () => {
+    const task = await call('create_task', { title: 'Boodschappen', when: 'today' })
+    const set = await call('update_task', { id: task.id, daypart: 'evening', duration: 30 })
+    expect([set.daypart, set.duration]).toEqual(['evening', 30])
+    const cleared = await call('update_task', { id: task.id, daypart: null, duration: null })
+    expect([cleared.daypart, cleared.duration]).toEqual([undefined, undefined])
+  })
+
+  it('an explicit daypart wins over the deprecated evening and time', async () => {
+    const task = await call('create_task', {
+      title: 'Hardlopen',
+      when: 'today',
+      daypart: 'morning',
+      evening: true,
+      time: '20:00',
+    })
+    expect([task.daypart, task.reminder]).toEqual(['morning', '2026-11-09 20:00'])
+  })
+
+  it('a daypart needs a date, a duration does not', async () => {
+    await expect(call('create_task', { title: 'x', daypart: 'morning' })).rejects.toThrow(
+      /needs a date/,
+    )
+    const inbox = await call('create_task', { title: 'Idee uitwerken', duration: 120 })
+    expect([inbox.when, inbox.duration]).toEqual(['inbox', 120])
+    await expect(call('create_task', { title: 'x', duration: 0 })).rejects.toThrow()
+    await expect(call('create_task', { title: 'x', duration: 1441 })).rejects.toThrow()
+    await expect(call('create_task', { title: 'x', duration: 2.5 })).rejects.toThrow()
+  })
+
+  it('moving to a list without a date clears the daypart but keeps the duration', async () => {
+    const task = await call('create_task', {
+      title: 'Fiets maken',
+      when: 'today',
+      daypart: 'afternoon',
+      duration: 60,
+    })
+    const moved = await call('update_task', { id: task.id, when: 'anytime' })
+    expect([moved.daypart, moved.duration]).toEqual([undefined, 60])
+  })
+
+  it('list_tasks filters on max_duration and drops tasks without one', async () => {
+    await call('create_task', { title: 'Kort klusje', when: 'today', duration: 5 })
+    await call('create_task', { title: 'Lang klusje', when: 'today', duration: 90 })
+    await call('create_task', { title: 'Geen schatting', when: 'today' })
+    const titles = (rows: { title: string }[]) => rows.map((t) => t.title)
+    const short = titles(await call('list_tasks', { list: 'today', max_duration: 15 }))
+    expect(short).toContain('Kort klusje')
+    expect(short).not.toContain('Lang klusje')
+    expect(short).not.toContain('Geen schatting')
+    const all = titles(await call('list_tasks', { list: 'today' }))
+    expect(all).toEqual(expect.arrayContaining(['Kort klusje', 'Lang klusje', 'Geen schatting']))
+  })
+})

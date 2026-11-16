@@ -5,9 +5,12 @@ import {
   addDays,
   type ChecklistItem,
   commitTask,
+  type Daypart,
   daysBetween,
   deleteTask,
+  fitsDuration,
   type Heading,
+  MAX_DURATION,
   mirrorChecklist,
   moveFields,
   newArea,
@@ -79,15 +82,33 @@ const ChecklistInput = z
   )
   .describe('The whole checklist in order; items not listed are removed')
 
+// --- dagdelen en duur (plan 25) ---
+const DaypartInput = z
+  .enum(['morning', 'afternoon', 'evening'])
+  .describe(
+    "Part of the day the task is planned for: 'morning', 'afternoon' (from 12:00) or 'evening' (from 18:00); null for none. Needs a date in `when`. A task has no exact time; for a notification at an exact time use `reminder`.",
+  )
+const DurationInput = z
+  .number()
+  .int()
+  .min(1)
+  .max(MAX_DURATION)
+  .describe('Estimated duration in whole minutes (1 to 1440); null removes it')
+const EveningInput = z
+  .boolean()
+  .describe("Deprecated, use `daypart`: true is daypart 'evening', false clears an evening daypart")
+
 // --- herinneringen ---
 const TimeInput = z
   .string()
   .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'A time HH:MM')
-  .describe("Time of day HH:MM (24 h) on the task's date; null removes it. Needs a date in `when`.")
+  .describe(
+    'Deprecated, use `daypart` and `reminder`: a time HH:MM becomes the daypart it falls in and, without a reminder, a reminder at that time. Needs a date in `when`.',
+  )
 const ReminderInput = z
   .string()
   .describe(
-    "'HH:MM' on the task's date, or 'YYYY-MM-DD HH:MM' on or before it; null removes it. Setting `time` without `reminder` also sets a reminder at that time.",
+    "An exact notification moment: 'HH:MM' on the task's date, or 'YYYY-MM-DD HH:MM' on or before it; null removes it. Needs a date in `when`.",
   )
 
 const AssigneeInput = z
@@ -187,6 +208,9 @@ export function createMcpServer(client: DingenClient): McpServer {
         area: Ref.optional(),
         tag: Ref.optional(),
         assigned_to: AssignedToInput.optional(),
+        max_duration: DurationInput.optional().describe(
+          'Only tasks estimated at most this many minutes; tasks without a duration drop out',
+        ),
         includeCompleted: z.boolean().default(false),
       },
     },
@@ -216,6 +240,10 @@ export function createMcpServer(client: DingenClient): McpServer {
         if (input.assigned_to !== undefined) {
           const who = await resolveAssignee(client, input.assigned_to)
           tasks = tasks.filter((t) => t.assigneeId === who)
+        }
+        if (input.max_duration !== undefined) {
+          const max = input.max_duration
+          tasks = tasks.filter((t) => fitsDuration(t, max))
         }
         if (!input.list) tasks = tasks.sort(views.byOrder)
         return tasks.map((t) => taskRow(ws, t))
@@ -262,12 +290,14 @@ export function createMcpServer(client: DingenClient): McpServer {
     {
       title: 'Create a task',
       description:
-        'Creates a task. Without `when` and without a project or area it lands in the Inbox, which is where capture belongs. Tags must exist unless createTags is true.',
+        'Creates a task. Without `when` and without a project or area it lands in the Inbox, which is where capture belongs. Tags must exist unless createTags is true. With a date, `daypart` plans it for the morning, afternoon or evening; `duration` is the estimate in minutes.',
       inputSchema: {
         title: z.string().min(1),
         notes: z.string().default(''),
         when: WhenInput.optional(),
-        evening: z.boolean().default(false),
+        daypart: DaypartInput.nullable().optional(),
+        duration: DurationInput.nullable().optional(),
+        evening: EveningInput.optional(),
         deadline: DateInput.nullable().default(null),
         project: Ref.optional(),
         heading: Ref.optional().describe('Heading within the project'),
@@ -317,6 +347,7 @@ export function createMcpServer(client: DingenClient): McpServer {
           tagIds,
           order: orderBetween(siblings.at(-1)?.order ?? null, null),
           assigneeId,
+          duration: input.duration ?? null,
         })
         Object.assign(task, scheduleInput(task, input, ws.today))
         client.create('task', task)
@@ -339,13 +370,15 @@ export function createMcpServer(client: DingenClient): McpServer {
     {
       title: 'Update a task',
       description:
-        'Changes fields of a task. Omitted fields stay as they are. `project`, `area` or `heading` move the task; `tags` replaces all tags; `checklist` replaces the checklist; `repeat: null` stops repeating; `assignee` assigns it (null unassigns).',
+        'Changes fields of a task. Omitted fields stay as they are. `project`, `area` or `heading` move the task; `tags` replaces all tags; `checklist` replaces the checklist; `repeat: null` stops repeating; `assignee` assigns it (null unassigns); `daypart` and `duration` null clear them.',
       inputSchema: {
         id: z.string(),
         title: z.string().min(1).optional(),
         notes: z.string().optional(),
         when: WhenInput.optional(),
-        evening: z.boolean().optional(),
+        daypart: DaypartInput.nullable().optional(),
+        duration: DurationInput.nullable().optional(),
+        evening: EveningInput.optional(),
         deadline: DateInput.nullable().optional(),
         project: Ref.nullable().optional().describe('null removes the task from its project'),
         heading: Ref.nullable().optional(),
@@ -369,6 +402,9 @@ export function createMcpServer(client: DingenClient): McpServer {
         }
         if (input.title !== undefined) fields.title = input.title
         if (input.notes !== undefined) fields.notes = input.notes
+        if (input.duration !== undefined && input.duration !== task.duration) {
+          fields.duration = input.duration
+        }
         if (input.when !== undefined) fields.when = parseWhen(input.when, ws.today)
         if (input.deadline !== undefined) {
           fields.deadline = input.deadline === null ? null : parseDate(input.deadline, ws.today)
@@ -842,24 +878,31 @@ function parseWhen(input: string, today: string): When {
 
 /**
  * Daypart and reminder from tool input, as task fields; needs a date.
- * `evening` and `time` are the fields from before dayparts (plan 25),
- * converted as for an old client: evening is the evening daypart, a time
- * gives its daypart and, without a reminder, a reminder at that time.
+ * `evening` and `time` are the deprecated fields from before dayparts
+ * (plan 25), converted as for an old client: evening is the evening daypart,
+ * a time gives its daypart and, without a reminder, a reminder at that time.
+ * An explicit `daypart` or `reminder` wins over them.
  */
 function scheduleInput(
   task: Task,
   input: {
+    daypart?: Daypart | null | undefined
     evening?: boolean | undefined
     time?: string | null | undefined
     reminder?: string | null | undefined
   },
   today: string,
 ): Record<string, unknown> {
-  if (input.time === undefined && input.reminder === undefined && input.evening === undefined)
+  if (
+    input.daypart === undefined &&
+    input.time === undefined &&
+    input.reminder === undefined &&
+    input.evening === undefined
+  )
     return {}
   if (task.when.kind !== 'date') {
-    if (!input.time && !input.reminder) return {}
-    throw new ToolError('A time or reminder needs a date in `when`')
+    if (!input.daypart && !input.time && !input.reminder) return {}
+    throw new ToolError('A daypart, time or reminder needs a date in `when`')
   }
   const date = task.when.date
   let reminder: Reminder | null | undefined
@@ -875,6 +918,7 @@ function scheduleInput(
     reminder = { daysBefore, time }
   }
   const legacy: Record<string, unknown> = {}
+  if (input.daypart !== undefined) legacy.daypart = input.daypart
   if (input.evening !== undefined) legacy.evening = input.evening
   if (input.time) legacy.time = input.time
   if (reminder !== undefined) legacy.reminder = reminder

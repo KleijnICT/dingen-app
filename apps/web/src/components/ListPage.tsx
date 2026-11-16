@@ -3,6 +3,7 @@ import { useDndContext } from '@dnd-kit/core'
 import { useState } from 'react'
 import { daysWithEvents, rangeFor, useCalendarData } from '../calendar.js'
 import { listTarget, type TaskGroupInfo } from '../dnd.js'
+import { filterByDuration, hasDurationFilter, useDurationFilter } from '../duration.js'
 import { type MessageKey, useT } from '../i18n/index.js'
 import {
   addDays,
@@ -20,6 +21,7 @@ import { areaPath, navigate, projectPath } from '../router.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { type MoveTarget, useLinger } from '../taskActions.js'
 import { DayEvents } from './CalendarEvents.js'
+import { DurationFilter } from './Duration.js'
 import { ProjectRow } from './ProjectRow.js'
 import { ReviewBanner } from './ReviewBanner.js'
 import { TagFilter } from './TagFilter.js'
@@ -40,9 +42,12 @@ export function ListPage({ list, focusSignal, header }: Props) {
   const t = useT()
   const ws = useWorkspace()
   const [tagFilter, setTagFilter] = useState<string | null>(null)
+  // Tasks added on this page, kept in view by the duration filter until they have one.
+  const [added, setAdded] = useState<string[]>([])
   const draggingSomething = useDndContext().active !== null
   const todayView = useTodayView()
   const calendar = useCalendarData()
+  const maxDuration = useDurationFilter(list.id)
 
   const visible = listTasks(list.id, ws)
   const { shown: all, toggle } = useLinger(
@@ -52,7 +57,14 @@ export function ListPage({ list, focusSignal, header }: Props) {
     list.id === 'today' ? views.byTodayOrder : views.byOrder,
   )
   const present = new Set(visible.flatMap((task) => task.tagIds))
-  const shown = tagFilter ? all.filter((task) => task.tagIds.includes(tagFilter)) : all
+  const tagged = tagFilter ? all.filter((task) => task.tagIds.includes(tagFilter)) : all
+  const shown = filterByDuration(tagged, maxDuration, added)
+  // The duration filter shows once a task here has a duration, or while it is on.
+  const durationFilter =
+    hasDurationFilter(list.id) &&
+    (maxDuration !== null || visible.some((task) => task.duration !== null)) ? (
+      <DurationFilter list={list.id} active={maxDuration} />
+    ) : null
   const projects = listProjects(list.id, ws)
 
   const taskList = useTaskList(shown, toggle)
@@ -69,6 +81,7 @@ export function ListPage({ list, focusSignal, header }: Props) {
       order: orderBetween(last?.order ?? null, null),
     })
     engine.create('task', task)
+    if (maxDuration !== null) setAdded((ids) => [...ids, task.id])
     taskList.openNew(task.id)
   }
 
@@ -259,7 +272,10 @@ export function ListPage({ list, focusSignal, header }: Props) {
         </header>
       )}
       {list.id === 'today' && <ReviewBanner />}
-      <TagFilter present={present} active={tagFilter} onChange={setTagFilter} />
+      <div className="list-filters">
+        <TagFilter present={present} active={tagFilter} onChange={setTagFilter} />
+        {durationFilter}
+      </div>
       {shown.length === 0 && projects.length === 0 && (
         <p className="empty">{t(`list.empty.${list.id}` as MessageKey)}</p>
       )}

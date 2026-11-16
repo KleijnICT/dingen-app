@@ -112,14 +112,20 @@ export function taskParamOf(search: string): string | null {
 }
 
 /** The fields of the panel that only show with a value (or right after adding one). */
-export type OptionalField = 'time' | 'deadline' | 'repeat' | 'assignee'
+export type OptionalField = 'time' | 'deadline' | 'repeat' | 'duration' | 'assignee'
 
 /** In the order of the Add row: planning first, then organization. */
-export const OPTIONAL_FIELDS: readonly OptionalField[] = ['time', 'deadline', 'repeat', 'assignee']
+export const OPTIONAL_FIELDS: readonly OptionalField[] = [
+  'time',
+  'deadline',
+  'repeat',
+  'duration',
+  'assignee',
+]
 
 type FieldTask = Pick<
   Task,
-  'status' | 'when' | 'reminder' | 'deadline' | 'templateId' | 'assigneeId'
+  'status' | 'when' | 'reminder' | 'deadline' | 'templateId' | 'assigneeId' | 'duration'
 >
 
 /** Whether each optional field has a value. */
@@ -128,6 +134,7 @@ export function fieldValues(task: FieldTask): Record<OptionalField, boolean> {
     time: task.reminder !== null,
     deadline: task.deadline !== null,
     repeat: task.templateId !== null,
+    duration: task.duration !== null,
     assignee: task.assigneeId !== null,
   }
 }
@@ -154,6 +161,7 @@ export function fieldLayout(
     time: task.when.kind === 'date',
     deadline: true,
     repeat: task.status === 'open' || values.repeat,
+    duration: true,
     assignee: canAssign || values.assignee,
   }
   const shown = OPTIONAL_FIELDS.filter((f) => applies[f] && (values[f] || added.includes(f)))

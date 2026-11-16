@@ -95,4 +95,12 @@ describe('activity lines', () => {
       nextBefore: null,
     })
   })
+
+  it('describes a change of the estimated duration', () => {
+    const line = item(3, '2026-11-12T10:00:00Z', {
+      kind: 'updated',
+      fields: [{ field: 'duration', from: null, to: 90 }],
+    })
+    expect(describeLine(line, 'You', ctx)).toBe('You changed the duration from none to 1h30')
+  })
 })

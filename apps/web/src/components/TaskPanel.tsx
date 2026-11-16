@@ -34,6 +34,7 @@ import { AreaGlyph } from './AreaIcons.js'
 import { AssigneeField } from './Assignee.js'
 import { Checklist } from './Checklist.js'
 import { DeadlineField } from './DeadlineField.js'
+import { DurationField } from './Duration.js'
 import { CheckIcon, MoonIcon, ProgressCircle, TodayIcon } from './Icons.js'
 import { MoreMenu, useDismiss } from './Menu.js'
 import { MoveList } from './MoveList.js'
@@ -296,6 +297,7 @@ function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
     time: t('panel.add.time'),
     deadline: t('panel.add.deadline'),
     repeat: t('panel.add.repeat'),
+    duration: t('panel.add.duration'),
     assignee: t('panel.add.assignee'),
   }
   // What each chip of the Add row says next to its plus.
@@ -303,9 +305,10 @@ function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
     time: t('panel.time'),
     deadline: t('deadline.label'),
     repeat: t('repeat.label'),
+    duration: t('duration.label'),
     assignee: t('assign.toolbar'),
   }
-  const planning = shown.filter((f) => f !== 'assignee')
+  const planning = shown.filter((f) => f !== 'assignee' && f !== 'duration')
   const progress = checklistProgress(ws.checklistByTask.get(task.id) ?? [])
   const isToday = task.when.kind === 'date' && task.when.date <= ws.today
 
@@ -453,6 +456,15 @@ function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
                   false,
                 ),
         )}
+        {shown.includes('duration') &&
+          field(
+            'duration',
+            t('duration.label'),
+            <DurationField
+              duration={task.duration}
+              onChange={(duration) => commitTask(engine, ws, task, { duration })}
+            />,
+          )}
       </section>
 
       <section className="panel-section" aria-label={t('panel.organization')}>

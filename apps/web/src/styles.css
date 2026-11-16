@@ -3061,3 +3061,61 @@ button.agent-main .muted {
   border-color: var(--muted);
   color: var(--fg);
 }
+
+/* --- Estimated duration (plan 25) --- */
+.list-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  margin: 0 0 8px;
+  padding: 0 10px;
+}
+.list-filters:empty {
+  display: none;
+}
+.list-filters > .tag-filter {
+  margin: 0;
+  padding: 0;
+}
+.duration-filter {
+  position: relative;
+}
+.duration-filter-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.duration-menu {
+  min-width: 140px;
+}
+.duration-menu.end {
+  left: auto;
+  right: 0;
+}
+.menu-item.checked {
+  font-weight: 600;
+}
+.meta-duration {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.duration-field {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.duration-input {
+  width: 5.5em;
+  font-family: inherit;
+  text-align: center;
+}
+.duration-input::placeholder {
+  color: var(--muted);
+  font-weight: 400;
+}
+.duration-input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
