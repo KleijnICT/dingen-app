@@ -1,16 +1,19 @@
 import { type CalendarEvent, eventSpan, eventsOnDay } from '@dingen/core'
 import { useCalendarData } from '../calendar.js'
+import { type DaypartSlot, eventsByDaypart } from '../dayparts.js'
 import { useT } from '../i18n/index.js'
 import { areaColorVar } from './AreaIcons.js'
 
 /**
  * De afspraken van één dag, compact boven de taken: hele dagen eerst, dan op
  * tijd. Alleen lezen; niets is aan te klikken. Geen afspraken, geen blok.
+ * Met `slot` alleen die van één dagdeel (Vandaag): de afspraken die dan
+ * beginnen, of bij `none` de hele dagen en wat eerder begon.
  */
-export function DayEvents({ date }: { date: string }) {
+export function DayEvents({ date, slot }: { date: string; slot?: DaypartSlot }) {
   const t = useT()
   const { calendars, events } = useCalendarData()
-  const day = eventsOnDay(events, date)
+  const day = slot ? eventsByDaypart(events, date)[slot] : eventsOnDay(events, date)
   if (day.length === 0) return null
   const colorOf = new Map(calendars.map((c) => [c.id, c.color]))
   const nameOf = new Map(calendars.map((c) => [c.id, c.name]))

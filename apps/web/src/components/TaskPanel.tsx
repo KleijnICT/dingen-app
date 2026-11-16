@@ -410,11 +410,11 @@ function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
             {(done) => (
               <WhenPicker
                 when={task.when}
-                evening={task.daypart === 'evening'}
+                daypart={task.daypart}
                 today={ws.today}
-                onChange={(when, evening) => {
-                  commitTask(engine, ws, task, whenFields(task, when, evening))
-                  done()
+                onChange={(when, daypart, close) => {
+                  commitTask(engine, ws, task, whenFields(when, daypart))
+                  if (close) done()
                 }}
               />
             )}
@@ -492,13 +492,14 @@ function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
   )
 }
 
-/** "Today", "This Evening", "Fri", "Someday": the When of a task in a few words. */
+/** "Today", "Friday · afternoon", "Someday": the When of a task in a few words. */
 function whenText(task: Task, today: string, t: ReturnType<typeof useT>): string {
-  if (task.when.kind === 'date' && task.when.date <= today) {
-    return task.daypart === 'evening' ? t('when.thisEvening') : t('when.today')
-  }
-  const text = describeWhen(task.when, today)
-  return text.charAt(0).toLocaleUpperCase() + text.slice(1)
+  const base =
+    task.when.kind === 'date' && task.when.date <= today
+      ? t('when.today')
+      : describeWhen(task.when, today)
+  const text = base.charAt(0).toLocaleUpperCase() + base.slice(1)
+  return task.daypart ? `${text} · ${t(`daypart.${task.daypart}`).toLocaleLowerCase()}` : text
 }
 
 interface RowProps {

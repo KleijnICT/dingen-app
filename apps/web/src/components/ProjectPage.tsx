@@ -150,7 +150,7 @@ export function ProjectPage({ project, focusSignal }: Props) {
                 <WhenPicker
                   forProject
                   when={project.when}
-                  evening={false}
+                  daypart={null}
                   today={ws.today}
                   onChange={(when) => {
                     engine.mutate('project', project.id, { when })

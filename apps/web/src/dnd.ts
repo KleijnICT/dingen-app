@@ -1,4 +1,4 @@
-import type { Area, ChecklistItem, Project, Task } from '@dingen/core'
+import type { Area, ChecklistItem, Daypart, Project, Task } from '@dingen/core'
 import { orderBetween, placeAt, views } from '@dingen/core'
 import type { DragEndEvent } from '@dnd-kit/core'
 import type { ListId } from './lists.js'
@@ -18,6 +18,11 @@ export interface TaskGroupInfo {
   target: MoveTarget | null
   /** Which order the group is sorted by; Today has its own. */
   orderField?: 'order' | 'todayOrder'
+  /**
+   * Landing here also plans the task for today in this daypart (null: none);
+   * Today by project has a group per project within each daypart.
+   */
+  daypart?: Daypart | null | undefined
 }
 
 function orderKey(group: TaskGroupInfo): (task: Task) => string {
@@ -123,7 +128,17 @@ function dropTask(
 }
 
 function targetFields(ws: Workspace, task: Task, group: TaskGroupInfo): Record<string, unknown> {
-  return group.target ? moveFields(ws, task, group.target) : {}
+  const fields = group.target ? moveFields(ws, task, group.target) : {}
+  if (group.daypart === undefined) return fields
+  const moved = { ...task, ...fields } as Task
+  return {
+    ...fields,
+    ...moveFields(ws, moved, {
+      kind: 'when',
+      when: { kind: 'date', date: ws.today },
+      daypart: group.daypart,
+    }),
+  }
 }
 
 export function listTarget(listId: ListId, today: string): MoveTarget | null {

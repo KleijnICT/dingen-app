@@ -130,11 +130,11 @@ function WhenPopup({ task, onDone }: { task: Task; onDone: () => void }) {
     <>
       <WhenPicker
         when={task.when}
-        evening={task.daypart === 'evening'}
+        daypart={task.daypart}
         today={ws.today}
-        onChange={(when, evening) => {
-          commitTask(engine, ws, task, whenFields(task, when, evening))
-          onDone()
+        onChange={(when, daypart, close) => {
+          commitTask(engine, ws, task, whenFields(when, daypart))
+          if (close) onDone()
         }}
       />
       <ScheduleField task={task} onChange={(fields) => commitTask(engine, ws, task, fields)} />

@@ -76,6 +76,7 @@ const DESCRIBED = new Set([
   'deadline',
   'evening',
   'time',
+  'daypart',
   'tagIds',
   'projectId',
   'areaId',
@@ -150,6 +151,10 @@ function valueText(
       return typeof value === 'string' ? describeDate(value, ws.today) : t('activity.none')
     case 'evening':
       return value ? t('activity.yes') : t('activity.no')
+    case 'daypart':
+      return value === 'morning' || value === 'afternoon' || value === 'evening'
+        ? t(`daypart.${value}`).toLocaleLowerCase()
+        : String(value)
     case 'projectId':
       return ws.projectById.get(String(value))?.title || t('activity.untitled')
     case 'areaId':
