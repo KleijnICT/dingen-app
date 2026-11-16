@@ -37,7 +37,12 @@ export function useTaskList(tasks: Task[], toggle: (task: Task) => void): TaskLi
   const [focus, setFocus] = useState<PanelFocus | null>(null)
   const engine = useEngine()
   const ws = useWorkspace()
-  const openTask = param ? tasks.find((t) => t.id === param) : undefined
+  // The open task stays open when it leaves the list (moved to tomorrow, filtered out), so
+  // more fields can be filled in; only deleting or finishing it closes the panel.
+  const openTask = param
+    ? (tasks.find((t) => t.id === param) ??
+      ws.tasks.find((t) => t.id === param && !t.deleted && t.status === 'open'))
+    : undefined
   const openId = openTask?.id ?? null
 
   // A new task that is closed without a title, notes or checklist was never
@@ -65,8 +70,8 @@ export function useTaskList(tasks: Task[], toggle: (task: Task) => void): TaskLi
     })
   }, [openId])
 
-  // A task that leaves the list while open (moved elsewhere, deleted, done and gone) closes
-  // the panel and leaves the address bar.
+  // A task that goes while open (deleted, or done and gone from the list) closes the panel
+  // and leaves the address bar.
   const hadOpen = useRef<string | null>(null)
   useEffect(() => {
     if (openId) hadOpen.current = openId

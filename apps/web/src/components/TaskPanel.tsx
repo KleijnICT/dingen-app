@@ -500,6 +500,12 @@ function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
           ))}
         </fieldset>
       )}
+
+      <div className="panel-footer">
+        <button type="button" className="panel-ok" onClick={close}>
+          {t('panel.ok')}
+        </button>
+      </div>
     </div>
   )
 }

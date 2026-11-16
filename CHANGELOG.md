@@ -32,6 +32,9 @@
   (a time becomes its daypart plus a reminder); they are marked deprecated.
   The Dingen skill describes dayparts, reminders as the one exact time, and
   durations.
+- The task panel stays open when its task leaves the list, for example after
+  choosing Tomorrow in Today, so more fields can be filled in; an OK button
+  at the bottom closes it.
 
 ## 1.0.0-alpha.5
 

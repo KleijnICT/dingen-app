@@ -49,6 +49,7 @@ export const nl: Messages = {
   'task.markOpen': 'Markeer als open',
   'task.delete': 'Verwijderen',
   'panel.label': 'Taakdetails',
+  'panel.ok': 'OK',
   'panel.close': 'Sluiten',
   'panel.back': 'Terug',
   'panel.planning': 'Planning',

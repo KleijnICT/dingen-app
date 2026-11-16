@@ -3166,3 +3166,13 @@ button.agent-main .muted {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }
+
+/* OK at the bottom of the task panel: saves (everything already does) and closes. */
+.panel-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin: 24px 0 4px;
+}
+.panel-ok {
+  min-width: 88px;
+}

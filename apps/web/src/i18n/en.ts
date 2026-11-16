@@ -52,6 +52,7 @@ export const en = {
   'task.markOpen': 'Mark as open',
   'task.delete': 'Delete',
   'panel.label': 'Task details',
+  'panel.ok': 'OK',
   'panel.close': 'Close',
   'panel.back': 'Back',
   'panel.planning': 'Planning',
