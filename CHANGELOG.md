@@ -1,6 +1,14 @@
 # Changelog
 
-## Unreleased
+## 1.0.0-alpha.6
+
+Dayparts and estimated durations, a calmer task panel and page header, and a
+lot of everyday work: selecting several tasks, a drawer on phones, focus mode,
+tags in Settings and converting a task into a project. A pre-release;
+`:latest` points to it. The update runs a database migration with sync
+protocol 3 (with a backup first; if it fails the backup is put back and
+Dingen stops). Older apps and the previous MCP plugin keep working; reload
+the web app to get the new version.
 
 - A calmer page header on lists, projects and areas: the title with a few quiet icon buttons on its right (Filter, Focus on Today, and the `…` menu, which on Today holds My order / By project) and one muted line under it (on Today the date and the day total). Tag and duration filters live in one Filter popover; a filter that is on shows as a small chip with × under the title.
 - Links in notes (http, https and www.) are clickable and open in a new tab; click elsewhere on the text to edit. The notes of a project in a review show links too.
