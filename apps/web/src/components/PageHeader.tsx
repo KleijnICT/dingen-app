@@ -70,13 +70,25 @@ export interface PageFilters {
   /** The list whose duration filter shows here; null when there is none to show. */
   durationList?: DurationFilterList | null
   maxDuration?: number | null
+  /** More filters for the same popover (the Logbook's kinds, people and period). */
+  extra?: ReactNode
+  /** Whether one of those extra filters is on. */
+  extraActive?: boolean
 }
 
 /**
  * The filter button: one popover with the tag filter and the duration filter. Only there
  * when there is something to filter.
  */
-export function FilterButton({ present, tag, onTag, durationList, maxDuration }: PageFilters) {
+export function FilterButton({
+  present,
+  tag,
+  onTag,
+  durationList,
+  maxDuration,
+  extra,
+  extraActive = false,
+}: PageFilters) {
   const t = useT()
   const tags = useFilterTags(present)
   const [open, setOpen] = useState(false)
@@ -86,8 +98,8 @@ export function FilterButton({ present, tag, onTag, durationList, maxDuration }:
   useDismiss(open, close, root, button)
 
   const hasTags = tags.length > 0 || tag !== null
-  if (!hasTags && !durationList) return null
-  const active = tag !== null || (maxDuration ?? null) !== null
+  if (!hasTags && !durationList && !extra) return null
+  const active = tag !== null || (maxDuration ?? null) !== null || extraActive
   const label = t('filter.button')
 
   return (
@@ -106,6 +118,7 @@ export function FilterButton({ present, tag, onTag, durationList, maxDuration }:
       </button>
       {open && (
         <div className="popover filter-popover" role="dialog" aria-label={label}>
+          {extra && <div className="filter-section">{extra}</div>}
           {hasTags && (
             <div className="filter-section">
               <p className="filter-title">{t('tags.label')}</p>

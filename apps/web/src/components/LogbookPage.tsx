@@ -120,7 +120,13 @@ export function LogbookPage({ list, user, focusSignal }: Props) {
 
   if (kind === 'completed') {
     return (
-      <ListPage list={list} focusSignal={focusSignal} below={filters} extraActions={filterButton} />
+      <ListPage
+        list={list}
+        focusSignal={focusSignal}
+        below={filters}
+        extraFilters={filterControls}
+        extraFiltersActive={chips.length > 0}
+      />
     )
   }
   return (
