@@ -18,6 +18,7 @@ import { AreaPage } from './components/AreaPage.js'
 import { ListPage } from './components/ListPage.js'
 import { LogbookPage } from './components/LogbookPage.js'
 import { ProjectPage } from './components/ProjectPage.js'
+import { ResizeHandle } from './components/ResizeHandle.js'
 import { ReviewPage } from './components/ReviewPage.js'
 import { Search } from './components/Search.js'
 import { Sidebar } from './components/Sidebar.js'
@@ -28,8 +29,10 @@ import { UpdateNotice } from './components/UpdateNotice.js'
 import { ReviewAnchorContext } from './components/useReviews.js'
 import { type DragData, handleDragEnd } from './dnd.js'
 import { focusActive, focusKeyAction } from './focus.js'
+import { useT } from './i18n/index.js'
 import { LISTS } from './lists.js'
-import { setFocusMode, useFocusMode, useSidebarWidth } from './prefs.js'
+import { setFocusMode, setWidth, useFocusMode, usePanelWidth, useSidebarWidth } from './prefs.js'
+import { SIDEBAR_LIMITS } from './resize.js'
 import { parseReviewKind } from './reviewFlow.js'
 import { navigate, parseRoute, usePath } from './router.js'
 import { Settings } from './Settings.js'
@@ -50,7 +53,9 @@ export function Shell({ user, onSignedOut }: Props) {
   useCalendarFeed(user.id, today)
   // A weekly or monthly review never done counts from the day the account was made.
   const reviewAnchor = useMemo(() => dateOf(user.createdAt), [user.createdAt])
+  const t = useT()
   const sidebarWidth = useSidebarWidth()
+  const panelWidth = usePanelWidth()
   const focusPref = useFocusMode()
   const route = parseRoute(path)
   const [dragging, setDragging] = useState<DragData | null>(null)
@@ -187,7 +192,12 @@ export function Shell({ user, onSignedOut }: Props) {
           >
             <div
               className={focus ? 'app focus-mode' : 'app'}
-              style={{ '--sidebar-width': `${sidebarWidth}px` } as CSSProperties}
+              style={
+                {
+                  '--sidebar-width': `${sidebarWidth}px`,
+                  '--panel-width': `${panelWidth}px`,
+                } as CSSProperties
+              }
             >
               {narrow ? (
                 <SidebarDrawer
@@ -200,6 +210,17 @@ export function Shell({ user, onSignedOut }: Props) {
                 </SidebarDrawer>
               ) : (
                 sidebar
+              )}
+              {!narrow && !focus && (
+                <ResizeHandle
+                  className="sidebar-resize"
+                  label={t('nav.resize')}
+                  width={sidebarWidth}
+                  limits={SIDEBAR_LIMITS}
+                  edge="right"
+                  room={sidebarRoom}
+                  onChange={setSidebarWidth}
+                />
               )}
               <main className="content-pane">
                 {narrow && (
@@ -241,6 +262,16 @@ const collision: CollisionDetection = (args) => {
   const isGroup = (c: (typeof hits)[number]) =>
     (c.data?.droppableContainer?.data?.current as { type?: string } | undefined)?.type === 'group'
   return [...hits].sort((a, b) => Number(isGroup(a)) - Number(isGroup(b)))
+}
+
+/** Room for the sidebar: the window, less a task panel open beside the list. */
+function sidebarRoom(): number {
+  const panel = document.querySelector('.task-panel.side')
+  return window.innerWidth - (panel?.getBoundingClientRect().width ?? 0)
+}
+
+function setSidebarWidth(width: number | null): void {
+  setWidth('sidebar', width)
 }
 
 function ghostTitle(d: DragData): string {

@@ -1,17 +1,11 @@
 import { newArea, newProject, orderBetween, type Project, views } from '@dingen/core'
 import { useDraggable, useDroppable } from '@dnd-kit/core'
 import { ListPlus, ListRestart, Settings } from 'lucide-react'
-import { type PointerEvent, type ReactElement, type ReactNode, useRef, useState } from 'react'
+import { type ReactElement, type ReactNode, useRef, useState } from 'react'
 import type { DragData, DropData } from '../dnd.js'
 import { useT } from '../i18n/index.js'
 import { countFor, LISTS, type ListId } from '../lists.js'
-import {
-  clampSidebar,
-  setSidebarWidth,
-  toggleAreaCollapsed,
-  useCollapsedAreas,
-  useSidebarWidth,
-} from '../prefs.js'
+import { toggleAreaCollapsed, useCollapsedAreas } from '../prefs.js'
 import { showReviewDot } from '../reviewFlow.js'
 import { appHref, areaPath, navigate, projectPath } from '../router.js'
 import { useEngine, useWorkspace } from '../store/context.js'
@@ -55,31 +49,10 @@ export function Sidebar({ path, status, onOpenSettings }: Props) {
   const [adding, setAdding] = useState(false)
   const statusText = t(`sync.${status}`)
   const collapsed = useCollapsedAreas()
-  const width = useSidebarWidth()
   const addRoot = useRef<HTMLDivElement>(null)
   const addButton = useRef<HTMLButtonElement>(null)
   const closeAdd = useRef(() => setAdding(false)).current
   useDismiss(adding, closeAdd, addRoot, addButton)
-
-  // Dragging the right edge resizes the sidebar; the pointer is captured so
-  // the drag keeps working when it leaves the thin handle.
-  function startResize(e: PointerEvent<HTMLDivElement>) {
-    e.preventDefault()
-    e.currentTarget.setPointerCapture(e.pointerId)
-    const startX = e.clientX
-    const startWidth = width
-    const handle = e.currentTarget
-    const move = (ev: globalThis.PointerEvent) =>
-      setSidebarWidth(clampSidebar(startWidth + ev.clientX - startX))
-    const stop = () => {
-      handle.removeEventListener('pointermove', move)
-      handle.removeEventListener('pointerup', stop)
-      handle.removeEventListener('pointercancel', stop)
-    }
-    handle.addEventListener('pointermove', move)
-    handle.addEventListener('pointerup', stop)
-    handle.addEventListener('pointercancel', stop)
-  }
 
   function addProject(areaId: string | null) {
     const last = views.projectsOf(ws.projects, areaId).at(-1)
@@ -255,17 +228,6 @@ export function Sidebar({ path, status, onOpenSettings }: Props) {
           <span className="app-version">{APP_VERSION_LABEL}</span>
         </p>
       </div>
-      {/* biome-ignore lint/a11y/useSemanticElements: an <hr> cannot be dragged */}
-      <div
-        className="sidebar-resize"
-        role="separator"
-        aria-orientation="vertical"
-        aria-label={t('nav.resize')}
-        aria-valuenow={width}
-        tabIndex={-1}
-        onPointerDown={startResize}
-        onDoubleClick={() => setSidebarWidth(null)}
-      />
     </nav>
   )
 }

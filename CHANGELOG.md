@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Drag the edge of the sidebar or the task panel (beside the list) to make it wider or narrower, with mouse, finger or pen; double-click or double-tap puts the default back, and the arrow keys move a focused edge in steps. The widths are kept per device, and the list always keeps room.
 - Settings → Calendars: removing a calendar now goes through a `…` menu with a confirmation, like deleting a project.
 - MCP tools `delete_project` and `delete_area`, only for an agent with Manage
   on that project or area (or on Everything): they delete like the app does,
