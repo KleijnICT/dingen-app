@@ -107,6 +107,8 @@ export function ListPage({
   ): RowProps =>
     taskList.rowProps(task, {
       showCaption,
+      // In the Inbox a task can already have a date; show it.
+      showWhen: inbox,
       showDaypart: list.id === 'upcoming',
       processed: kept.processed.has(task.id),
     })
