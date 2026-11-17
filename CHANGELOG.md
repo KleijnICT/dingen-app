@@ -1,6 +1,12 @@
 # Changelog
 
-## Unreleased
+## 1.0.0-alpha.7
+
+The Inbox now holds everything that is not processed yet, and the weekly
+review walks areas and projects together. A pre-release; `:latest` points to
+it. No database migration. After the update, existing tasks without a project
+or area show in the Inbox. Reload the web app and update the MCP plugin to
+get the new version.
 
 - The Inbox holds every task that is not processed yet: a task leaves it once
   it has a project or area and a When. A task with only a date stays in the
