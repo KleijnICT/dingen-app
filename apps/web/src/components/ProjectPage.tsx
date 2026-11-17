@@ -13,7 +13,7 @@ import { describeWhen } from '../lists.js'
 import { navigate } from '../router.js'
 import { projectSections } from '../sections.js'
 import { useEngine, useWorkspace } from '../store/context.js'
-import { createInboxTask, deleteProject, toggleProject, useLinger } from '../taskActions.js'
+import { createListTask, deleteProject, toggleProject, useLinger } from '../taskActions.js'
 import { AreaGlyph } from './AreaIcons.js'
 import { CompletedSection } from './CompletedSection.js'
 import { DeadlineBadge, DeadlineField } from './DeadlineField.js'
@@ -56,9 +56,9 @@ export function ProjectPage({ project, focusSignal }: Props) {
 
   const taskList = useTaskList([...shownOpen, ...sections.completed], toggle)
 
-  // A new task goes to the Inbox, also from here: List or When in the panel moves it on.
+  // A new task goes into this project, after its last task without a heading.
   function addNew() {
-    taskList.openNew(createInboxTask(engine, ws, tagFilter).id)
+    taskList.openNew(createListTask(engine, { projectId: project.id }, all, tagFilter).id)
   }
   useOnSignal(focusSignal, addNew)
 

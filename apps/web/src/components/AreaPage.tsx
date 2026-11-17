@@ -5,7 +5,7 @@ import { useT } from '../i18n/index.js'
 import { navigate, projectPath } from '../router.js'
 import { completedSection } from '../sections.js'
 import { useEngine, useWorkspace } from '../store/context.js'
-import { createInboxTask, deleteArea, useLinger } from '../taskActions.js'
+import { createListTask, deleteArea, useLinger } from '../taskActions.js'
 import { AreaAppearance } from './AreaAppearance.js'
 import { CompletedSection } from './CompletedSection.js'
 import { InlineInput } from './InlineInput.js'
@@ -41,9 +41,9 @@ export function AreaPage({ area, focusSignal }: Props) {
 
   const taskList = useTaskList([...shown, ...completed], toggle)
 
-  // A new task goes to the Inbox, also from here: List or When in the panel moves it on.
+  // A new task goes into this area, after its last open task.
   function addNew() {
-    taskList.openNew(createInboxTask(engine, ws, tagFilter).id)
+    taskList.openNew(createListTask(engine, { areaId: area.id }, all, tagFilter).id)
   }
   useOnSignal(focusSignal, addNew)
 

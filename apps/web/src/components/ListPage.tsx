@@ -90,7 +90,7 @@ export function ListPage({
 
   const taskList = useTaskList(shown, toggle)
 
-  // A new task goes to the Inbox, from any list; the panel keeps it open here.
+  // A new task goes to the Inbox, from any list (a project or area page adds to itself); the panel keeps it open here.
   function addNew() {
     taskList.openNew(createInboxTask(engine, ws, tagFilter).id)
   }

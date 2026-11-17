@@ -41,7 +41,7 @@ export function reorder(
 }
 
 /**
- * A new, empty task, always in the Inbox wherever it was made: after the last task there, with
+ * A new, empty task, in the Inbox (made from a list; a project or area page uses `createListTask`): after the last task there, with
  * the tag of the active tag filter. Filling in List or When in the panel moves it on.
  */
 export function newInboxTask(ws: Pick<Snapshot, 'tasks'>, tagId: string | null = null): Task {
@@ -52,6 +52,34 @@ export function newInboxTask(ws: Pick<Snapshot, 'tasks'>, tagId: string | null =
     tagIds: tagId ? [tagId] : [],
     order: orderBetween(last?.order ?? null, null),
   })
+}
+
+/**
+ * Creates a new, empty task in a project (without a heading) or an area, and returns it. It is
+ * Anytime, so it is processed; it goes after the last open task in `siblings` and carries the
+ * tag of the active tag filter.
+ */
+export function createListTask(
+  engine: Writer,
+  list: { projectId: string } | { areaId: string },
+  siblings: Task[],
+  tagId: string | null = null,
+): Task {
+  const last = siblings
+    .filter((task) => task.status === 'open' && task.headingId === null)
+    .reduce<string | null>(
+      (max, task) => (max === null || task.order > max ? task.order : max),
+      null,
+    )
+  const task = newTask({
+    title: '',
+    ...list,
+    when: { kind: 'anytime' },
+    tagIds: tagId ? [tagId] : [],
+    order: orderBetween(last, null),
+  })
+  engine.create('task', task)
+  return task
 }
 
 /** Creates a new, empty task in the Inbox (see `newInboxTask`) and returns it. */

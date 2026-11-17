@@ -6,6 +6,9 @@
   it has a project or area and a When. A task with only a date stays in the
   Inbox and also shows on its date in Today and Upcoming. Existing tasks
   without a project or area now show in the Inbox.
+- A new task made on a project's or area's page goes into that project or
+  area (Anytime), after its last task; from the other lists it still goes to
+  the Inbox.
 - Weekly review: Projects and Areas are one step, "Areas and projects": per
   area a card for the area itself, then one for each of its projects. The
   "Loose tasks" step is gone; those tasks are in the Inbox now.
