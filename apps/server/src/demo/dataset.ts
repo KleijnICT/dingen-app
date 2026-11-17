@@ -6,9 +6,7 @@ const WEEKLY_STEPS = [
   'mindSweep',
   'weekLookBack',
   'dueSoon',
-  'projects',
-  'areas',
-  'looseTasks',
+  'areasAndProjects',
   'somedayScan',
   'triggers',
 ]
@@ -334,10 +332,15 @@ function sam(ctx: DemoContext): ImportRecord[] {
     checklist: ['Passports', 'Chargers', 'Walking shoes', 'Camera', 'Euros for the tram'],
   })
   b.task('Call Mum', { area: family, when: 0, daypart: 'evening', tags: ['calls'] })
+  b.task('Check the passport expiry dates', {
+    area: family,
+    when: 'anytime',
+    duration: 15,
+    created: 3,
+  })
   b.task("Birthday present for Alex's little one", { area: family, done: 4 })
 
   // --- No area ---
-  b.task('Check the passport expiry dates', { when: 'anytime', duration: 15, created: 3 })
   b.project('Learn basic Portuguese', { when: 'someday', created: 30, reviewed: 25 })
 
   // --- Reviews: the weekly one is due again, the monthly one is not ---
@@ -345,7 +348,7 @@ function sam(ctx: DemoContext): ImportRecord[] {
     'Weekly review',
     { unit: 'week', every: 1, basis: 'completion', start: b.day(-22) },
     0,
-    { daypart: 'afternoon', reminder: [0, '15:45'], doneAt: '16:40' },
+    { area: business, daypart: 'afternoon', reminder: [0, '15:45'], doneAt: '16:40' },
     [15, 8],
   )
   b.review('weekly', 15, WEEKLY_STEPS)

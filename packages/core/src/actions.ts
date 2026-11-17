@@ -400,9 +400,19 @@ export function moveFields(ws: Snapshot, task: Task, target: MoveTarget): Record
             ? task.daypart
             : target.daypart
           : null
-      if (sameWhen(task.when, target.when) && task.daypart === daypart) return fields
-      fields.when = target.when
-      fields.daypart = daypart
+      // Back to the Inbox means unprocessed again: no list either.
+      const toInbox =
+        target.when.kind === 'inbox' && (task.projectId !== null || task.areaId !== null)
+      if (sameWhen(task.when, target.when) && task.daypart === daypart && !toInbox) return fields
+      if (!sameWhen(task.when, target.when) || task.daypart !== daypart) {
+        fields.when = target.when
+        fields.daypart = daypart
+      }
+      if (toInbox) {
+        fields.projectId = null
+        fields.areaId = null
+        fields.headingId = null
+      }
       break
     }
     case 'project': {

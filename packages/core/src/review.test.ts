@@ -208,9 +208,7 @@ describe('reviewSteps', () => {
       'inbox',
       'weekLookBack',
       'dueSoon',
-      'projects',
-      'areas',
-      'looseTasks',
+      'areasAndProjects',
       'somedayScan',
       'triggers',
     ])
@@ -325,9 +323,15 @@ describe('reviewItems', () => {
   })
   const titles = (items: { title: string }[]) => items.map((i) => i.title)
 
-  it('inbox', () => {
+  it('inbox: every open task without a project or area, whatever its When', () => {
     const items = reviewItems('inbox', ws, TODAY)
-    expect(items.kind === 'tasks' && titles(items.tasks)).toEqual(['inbox'])
+    expect(items.kind === 'tasks' && titles(items.tasks).sort()).toEqual([
+      '14 days',
+      '21 days',
+      'inbox',
+      'loose',
+      'loose someday',
+    ])
   })
 
   it('weekly look back: last 7 days, tasks and projects, counted per area', () => {
@@ -357,28 +361,27 @@ describe('reviewItems', () => {
     expect(titles(items.tasks)).toEqual(['overdue', '14 days'])
   })
 
-  it('projects: open and not Someday, by area order with no area first', () => {
-    const items = reviewItems('projects', ws, TODAY)
-    expect(items.kind === 'projects' && titles(items.projects)).toEqual(['No area', 'Active'])
+  it('areas and projects: per area its tasks and active projects, no area last', () => {
+    const items = reviewItems('areasAndProjects', ws, TODAY)
+    if (items.kind !== 'areaProjects') throw new Error(items.kind)
+    expect(items.groups.map((g) => [g.area?.title ?? null, titles(g.projects)])).toEqual([
+      ['Work', []],
+      ['Home', ['Active']],
+      [null, ['No area']],
+    ])
+    expect(titles(items.groups[0]?.allProjects ?? [])).toEqual(['Dream'])
+    expect(titles(items.groups[1]?.tasks ?? []).sort()).toEqual(['home someday', 'home task'])
+    expect(items.groups[2]?.tasks).toEqual([])
   })
 
-  it('areas: open loose tasks and open projects per area', () => {
-    const items = reviewItems('areas', ws, TODAY)
+  it('areas in depth: open loose tasks and open projects per area', () => {
+    const items = reviewItems('areasDeep', ws, TODAY)
     if (items.kind !== 'areas') throw new Error(items.kind)
     expect(items.areas.map((a) => a.area.title)).toEqual(['Work', 'Home'])
     const homeItem = items.areas[1]
     expect(titles(homeItem?.tasks ?? []).sort()).toEqual(['home someday', 'home task'])
     expect(titles(homeItem?.projects ?? [])).toEqual(['Active'])
     expect(titles(items.areas[0]?.projects ?? [])).toEqual(['Dream'])
-  })
-
-  it('loose tasks: no project, no area, not Inbox or Someday, no templates', () => {
-    const items = reviewItems('looseTasks', ws, TODAY)
-    expect(items.kind === 'tasks' && titles(items.tasks).sort()).toEqual([
-      '14 days',
-      '21 days',
-      'loose',
-    ])
   })
 
   it('someday scan: Someday projects, and Someday tasks outside them', () => {
@@ -404,7 +407,7 @@ describe('reviewItems', () => {
   })
 
   it('tasks of a closed project and completed tasks stay out of every list', () => {
-    for (const step of ['inbox', 'dueSoon', 'looseTasks', 'somedayScan'] as const) {
+    for (const step of ['inbox', 'dueSoon', 'somedayScan'] as const) {
       const items = reviewItems(step, ws, TODAY)
       const tasks = 'tasks' in items ? items.tasks : []
       expect(titles(tasks)).not.toContain('in finished')
@@ -440,18 +443,20 @@ describe('progress within a review', () => {
     expect(isStepDone({ ...review, doneSteps: ['mindSweep'] }, step, snap({}), TODAY)).toBe(true)
   })
 
-  it('the projects step is done when every listed project is reviewed in this review', () => {
-    const step = { id: 'projects', check: 'perItem' } as const
-    const a = newProject({ title: 'a' })
+  it('the areas and projects step is done when every area and active project is reviewed', () => {
+    const step = { id: 'areasAndProjects', check: 'perItem' } as const
+    const area = newArea({ title: 'area' })
+    const a = newProject({ title: 'a', areaId: area.id })
     const b = newProject({ title: 'b', reviewedAt: at(TODAY) })
     const someday = newProject({ title: 's', when: { kind: 'someday' } })
-    expect(isStepDone(review, step, snap({ projects: [a, b, someday] }), TODAY)).toBe(false)
+    const seen = { ...area, reviewedAt: at(TODAY) }
+    const ws = (areas = [area], projects = [a, b, someday]) => snap({ areas, projects })
+    expect(isStepDone(review, step, ws(), TODAY)).toBe(false)
     const handled = { ...a, status: 'completed' as const, completedAt: at(TODAY) }
-    expect(isStepDone(review, step, snap({ projects: [handled, b, someday] }), TODAY)).toBe(true)
-    expect(isStepDone(review, step, snap({ projects: [] }), TODAY)).toBe(true)
-    expect(
-      isStepDone({ ...review, doneSteps: ['projects'] }, step, snap({ projects: [a] }), TODAY),
-    ).toBe(true)
+    expect(isStepDone(review, step, ws([area], [handled, b, someday]), TODAY)).toBe(false)
+    expect(isStepDone(review, step, ws([seen], [handled, b, someday]), TODAY)).toBe(true)
+    expect(isStepDone(review, step, ws([], []), TODAY)).toBe(true)
+    expect(isStepDone({ ...review, doneSteps: ['areasAndProjects'] }, step, ws(), TODAY)).toBe(true)
   })
 
   it('the monthly someday step needs the projects and every group', () => {

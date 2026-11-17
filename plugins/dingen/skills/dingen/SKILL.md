@@ -11,7 +11,10 @@ structure: the user trusts the app because every task is filed the same way.
 
 ## The model
 
-- **Inbox**: everything not yet decided. Capture goes here.
+- **Inbox**: everything not yet processed: every open task without a project
+  or area, whatever its `when`. Capture goes here. A task leaves the Inbox
+  once it has a project or area (which makes an Inbox task Anytime); one with
+  a date but no list also shows on that date in Today and Upcoming.
 - **Today**: tasks with a when-date of today or earlier, or a deadline of
   today or earlier, grouped by daypart: first the tasks without one, then
   Morning, Afternoon and Evening.
@@ -68,7 +71,9 @@ week" is usually after completion, "pay rent on the 1st" on a schedule.
    asks for it. `tags` on `update_task` replaces the whole set, so include the
    tags that should stay.
 4. **Processing the inbox is the user's decision.** Propose, per item, a title,
-   destination (project, area, Someday), tags and date, in one compact list.
+   project or area, when (date, Anytime or Someday), tags and deadline, in one
+   compact list. A task is processed only with both a project or area and a
+   when.
    Apply only what the user approves.
 5. **"What's on today?"**: `list_tasks` with `list: "today"`. Mention overdue
    deadlines explicitly. Do not move dates without asking.
@@ -122,8 +127,9 @@ keeping your own list.
 
 - **Daily**: one step, the Inbox empty.
 - **Weekly** (due 7 days after the last one): mind sweep, Inbox, look back on
-  the last 7 days, overdue and due soon, every active project, every area,
-  loose tasks, a Someday scan, and a last "anything forgotten?" sweep.
+  the last 7 days, overdue and due soon, areas and projects (per area the area
+  itself, then each of its active projects; projects without an area last), a
+  Someday scan, and a last "anything forgotten?" sweep.
 - **Monthly** (same day next month): look back, every area in depth, Someday
   in depth.
 

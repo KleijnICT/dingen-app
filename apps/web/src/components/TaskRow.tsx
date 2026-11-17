@@ -24,6 +24,8 @@ export interface RowProps {
   showCaption: boolean
   /** Text under the title in place of the project or area (a heading name, for instance). */
   caption?: string
+  /** Processed in the Inbox (it has a list and a When), but still shown until you leave. */
+  processed?: boolean
   /**
    * A click: selects the task (with a mouse) or opens it in the panel (on a touch screen,
    * or when the panel is already open, it then shows this task). With Shift it selects a
@@ -57,6 +59,7 @@ export function TaskRow({
   showDaypart = false,
   showCaption,
   caption,
+  processed = false,
   onSelect,
   onOpen,
   onToggle,
@@ -79,8 +82,8 @@ export function TaskRow({
       style={drag?.style}
       data-task-id={task.id}
       className={`task ${done ? 'done' : ''} ${selected ? 'selected' : ''} ${open ? 'open' : ''} ${
-        drag?.dragging ? 'dragging' : ''
-      }`}
+        processed ? 'processed' : ''
+      } ${drag?.dragging ? 'dragging' : ''}`}
       {...drag?.listeners}
     >
       <button
@@ -117,6 +120,7 @@ export function TaskRow({
           ) : (
             container && (
               <span className="task-caption">
+                {processed && <span className="processed-mark">{t('task.processed')} </span>}
                 {container.title}
                 {heading && !showCaption ? ` › ${heading.title}` : ''}
               </span>

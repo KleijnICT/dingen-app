@@ -47,6 +47,7 @@ export const en = {
 
   // Tasks
   'task.untitled': 'Untitled',
+  'task.processed': '✓ To',
   'task.title': 'Title',
   'task.notes': 'Notes',
   'task.markDone': 'Mark as done',
@@ -401,19 +402,15 @@ export const en = {
     'Write down everything on your mind. Each line goes straight to the Inbox.',
   'review.step.inbox': 'Empty the Inbox',
   'review.step.inbox.intro':
-    'Give every task a place: a date, Anytime, Someday, a project or an area. Or delete it.',
+    'Give every task a project or area and a When (a date, Anytime or Someday). Or delete it.',
   'review.step.weekLookBack': 'Look back',
   'review.step.weekLookBack.intro': 'What you completed in the past 7 days.',
   'review.step.dueSoon': 'Overdue and upcoming',
   'review.step.dueSoon.intro':
     'Tasks and projects with a date or deadline that has passed or falls in the next 14 days.',
-  'review.step.projects': 'Projects',
-  'review.step.projects.intro':
-    'One by one: is the project still current, and does it have a next action?',
-  'review.step.areas': 'Areas',
-  'review.step.areas.intro': 'Each area with its own tasks and its projects.',
-  'review.step.looseTasks': 'Loose tasks',
-  'review.step.looseTasks.intro': 'Open tasks without a project or area.',
+  'review.step.areasAndProjects': 'Areas and projects',
+  'review.step.areasAndProjects.intro':
+    'Per area: first the area itself, then each project. Is it still current, and does it have a next action?',
   'review.step.somedayScan': 'Scan Someday',
   'review.step.somedayScan.intro': 'A quick look: is there anything you want to start now?',
   'review.step.triggers': 'Anything forgotten?',
@@ -439,7 +436,6 @@ export const en = {
   'review.trigger.9': 'Work: meetings, reports, colleagues',
   'review.trigger.10': 'Things to learn, try or buy',
   'review.inbox.empty': 'The Inbox is empty.',
-  'review.loose.none': 'No loose tasks.',
   'review.lookBack.none': 'Nothing completed in this period.',
   'review.lookBack.tasks': 'Tasks ({n})',
   'review.dueSoon.none': 'Nothing overdue or coming up.',
@@ -447,8 +443,9 @@ export const en = {
   'review.markReviewed': 'Reviewed',
   'review.shortcut': 'or press R',
   'review.reviewedCount': 'Reviewed {n} of {total}',
-  'review.projects.none': 'No open projects.',
-  'review.projects.allDone': 'All projects reviewed.',
+  'review.areasAndProjects.none': 'No areas or projects.',
+  'review.areasAndProjects.allDone': 'All areas and projects reviewed.',
+  'review.noArea': 'No area',
   'review.areas.none': 'No areas.',
   'review.areas.allDone': 'All areas reviewed.',
   'review.areasDeep.question':

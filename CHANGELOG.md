@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+- The Inbox holds every task that is not processed yet: a task leaves it once
+  it has a project or area and a When. A task with only a date stays in the
+  Inbox and also shows on its date in Today and Upcoming. Existing tasks
+  without a project or area now show in the Inbox.
+- In the Inbox, and in the Inbox step of a review, a task you process stays in
+  place (marked with where it went) until you leave the list.
+- Weekly review: Projects and Areas are one step, "Areas and projects": per
+  area a card for the area itself, then one for each of its projects. The
+  "Loose tasks" step is gone; those tasks are in the Inbox now.
+- A project in the weekly review shows its headings and the same order as the
+  project's page, and its tasks can be dragged.
+
 ## 1.0.0-alpha.6
 
 Dayparts and estimated durations, a calmer task panel and page header, and a

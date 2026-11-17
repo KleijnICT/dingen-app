@@ -295,7 +295,7 @@ export function createMcpServer(client: DingenClient): McpServer {
     {
       title: 'Create a task',
       description:
-        'Creates a task. Without `when` and without a project or area it lands in the Inbox, which is where capture belongs. Tags must exist unless createTags is true. With a date, `daypart` plans it for the morning, afternoon or evening; `duration` is the estimate in minutes.',
+        'Creates a task. Without a project or area it lands in the Inbox, which is where capture belongs; it stays there (and with a date also shows on that date) until it has a project or area. Tags must exist unless createTags is true. With a date, `daypart` plans it for the morning, afternoon or evening; `duration` is the estimate in minutes.',
       inputSchema: {
         title: z.string().min(1),
         notes: z.string().default(''),

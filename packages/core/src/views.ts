@@ -13,8 +13,13 @@ export function isOpen(item: Task | Project): boolean {
   return !item.deleted && item.status === 'open' && !('repeat' in item && item.repeat !== null)
 }
 
+/**
+ * The Inbox holds every open task that is not processed yet: one without a
+ * project or area. A task needs both a list and a When (a date, Anytime or
+ * Someday) to leave it; one with a date but no list also shows on that date.
+ */
 export function isInbox(task: Task): boolean {
-  return isOpen(task) && task.when.kind === 'inbox'
+  return isOpen(task) && task.projectId === null && task.areaId === null
 }
 
 /** Vandaag: gepland voor vandaag of eerder, of een deadline die vandaag of eerder is. */

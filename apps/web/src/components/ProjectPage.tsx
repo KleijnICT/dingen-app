@@ -292,7 +292,7 @@ interface HeadingProps {
   onRemove: () => void
 }
 
-function HeadingRow({ heading, onRemove }: HeadingProps) {
+export function HeadingRow({ heading, onRemove }: HeadingProps) {
   const engine = useEngine()
   const t = useT()
   return (

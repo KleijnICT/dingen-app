@@ -71,8 +71,8 @@ describe('steps', () => {
       ['inbox', false],
       ['weekLookBack', false],
     ])
-    // No projects or areas: those steps are done by themselves.
-    expect(states.find((s) => s.step.id === 'projects')?.done).toBe(true)
+    // No projects or areas: that step is done by itself.
+    expect(states.find((s) => s.step.id === 'areasAndProjects')?.done).toBe(true)
   })
 
   it('completes only when every step is done, moving on ticks off a once-step', () => {
@@ -84,7 +84,7 @@ describe('steps', () => {
       tags: [],
       checklist: [],
     })
-    const all = ['mindSweep', 'weekLookBack', 'dueSoon', 'looseTasks', 'somedayScan']
+    const all = ['mindSweep', 'weekLookBack', 'dueSoon', 'somedayScan']
     const review = newReview({ kind: 'weekly', doneSteps: all })
     // The Inbox is not empty: it cannot be ticked off, only emptied.
     expect(openStepsAfter(stepStates(review, ws), 'triggers')).toEqual(['inbox'])

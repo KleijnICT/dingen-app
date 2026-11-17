@@ -26,8 +26,17 @@ describe('views', () => {
   const deleted = newTask({ title: 'weg', deleted: true })
   const all = [inbox, todayTask, overdue, future, later, anytime, someday, done, doneLater, deleted]
 
-  it('Inbox', () => {
-    expect(views.inbox(all).map((t) => t.title)).toEqual(['inbox'])
+  it('Inbox: open tasks without a project or area, also with a When', () => {
+    expect(
+      views
+        .inbox(all)
+        .map((t) => t.title)
+        .sort(),
+    ).toEqual(['anytime', 'gisteren', 'inbox', 'later', 'morgen', 'ooit', 'vandaag'])
+    const inProject = newTask({ title: 'p', when: { kind: 'anytime' }, projectId: 'x' })
+    const inArea = newTask({ title: 'a', when: { kind: 'date', date: TODAY }, areaId: 'y' })
+    expect(views.isInbox(inProject)).toBe(false)
+    expect(views.isInbox(inArea)).toBe(false)
   })
   it('Vandaag bevat ook verlopen datums', () => {
     expect(

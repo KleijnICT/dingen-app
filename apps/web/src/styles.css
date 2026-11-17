@@ -802,6 +802,14 @@ button.link.danger {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Processed in the Inbox: stays until you leave, quieter, with where it went. */
+.task.processed .task-title {
+  color: var(--muted);
+}
+.task.processed .processed-mark {
+  color: var(--ok);
+  font-weight: 600;
+}
 .project-row .task-main {
   gap: 10px;
   padding-left: 0;
@@ -3543,4 +3551,9 @@ textarea.title-input {
 }
 .filter-popover .activity-selects {
   flex-direction: column;
+}
+
+/* Areas and projects step: a project sits under its area in the index. */
+.review-index li.nested .review-index-item {
+  padding-left: 28px;
 }

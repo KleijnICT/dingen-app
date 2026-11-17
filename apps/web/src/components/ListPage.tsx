@@ -19,7 +19,7 @@ import {
 import { setFocusMode, setTodayView, useFocusMode, useTodayView } from '../prefs.js'
 import { areaPath, navigate, projectPath } from '../router.js'
 import { useEngine, useWorkspace } from '../store/context.js'
-import { createInboxTask, type MoveTarget, useLinger } from '../taskActions.js'
+import { createInboxTask, type MoveTarget, useKeepProcessed, useLinger } from '../taskActions.js'
 import { DayEvents } from './CalendarEvents.js'
 import { MoreMenu } from './Menu.js'
 import {
@@ -63,7 +63,11 @@ export function ListPage({
   const calendar = useCalendarData()
   const maxDuration = useDurationFilter(list.id)
 
-  const visible = listTasks(list.id, ws)
+  const listed = listTasks(list.id, ws)
+  // In the Inbox a task you process stays in place until you leave.
+  const inbox = list.id === 'inbox'
+  const kept = useKeepProcessed(inbox ? listed : [], ws.tasks, list.id)
+  const visible = inbox ? kept.shown : listed
   const { shown: all, toggle } = useLinger(
     visible,
     ws,
@@ -100,7 +104,12 @@ export function ListPage({
   const rowProps = (
     task: Task,
     showCaption = list.id !== 'anytime' && list.id !== 'someday',
-  ): RowProps => taskList.rowProps(task, { showCaption, showDaypart: list.id === 'upcoming' })
+  ): RowProps =>
+    taskList.rowProps(task, {
+      showCaption,
+      showDaypart: list.id === 'upcoming',
+      processed: kept.processed.has(task.id),
+    })
   const group = (
     key: string,
     target: MoveTarget | null,

@@ -107,9 +107,7 @@ export type ReviewStepId =
   | 'inbox'
   | 'weekLookBack'
   | 'dueSoon'
-  | 'projects'
-  | 'areas'
-  | 'looseTasks'
+  | 'areasAndProjects'
   | 'somedayScan'
   | 'triggers'
   | 'monthLookBack'
@@ -136,9 +134,7 @@ const STEPS: Record<ReviewKind, ReviewStep[]> = {
     { id: 'inbox', check: 'inboxEmpty' },
     { id: 'weekLookBack', check: 'once' },
     { id: 'dueSoon', check: 'once' },
-    { id: 'projects', check: 'perItem' },
-    { id: 'areas', check: 'perItem' },
-    { id: 'looseTasks', check: 'once' },
+    { id: 'areasAndProjects', check: 'perItem' },
     { id: 'somedayScan', check: 'once' },
     { id: 'triggers', check: 'once' },
   ],
@@ -173,12 +169,27 @@ export interface AreaItem {
   projects: Project[]
 }
 
+/**
+ * One area in the "Areas and projects" step: the area itself (null for the
+ * projects without an area, which come last), its own open tasks and its
+ * active projects, each reviewed on its own card.
+ */
+export interface AreaProjects {
+  area: Area | null
+  /** Open tasks directly in the area; empty for the group without an area. */
+  tasks: Task[]
+  /** Open projects not on Someday, in their order. */
+  projects: Project[]
+  /** All open projects of the area, Someday included, for the area's card. */
+  allProjects: Project[]
+}
+
 export type ReviewItems =
   | { kind: 'none' }
   | { kind: 'tasks'; tasks: Task[] }
   | { kind: 'logbook'; tasks: Task[]; projects: Project[]; perArea: AreaCount[] }
   | { kind: 'dated'; tasks: Task[]; projects: Project[] }
-  | { kind: 'projects'; projects: Project[] }
+  | { kind: 'areaProjects'; groups: AreaProjects[] }
   | { kind: 'areas'; areas: AreaItem[] }
   | { kind: 'someday'; tasks: Task[]; projects: Project[] }
   | { kind: 'somedayGroups'; projects: Project[]; groups: AreaGroup[] }
@@ -250,12 +261,22 @@ function dated(ws: Snapshot, today: CalendarDate): ReviewItems {
   return { kind: 'dated', tasks: pick(liveTasks(ws)), projects: pick(liveProjects(ws)) }
 }
 
-/** Open projects not on Someday, grouped by area (no area first), then by order. */
-function activeProjects(ws: Snapshot): Project[] {
-  const order = byAreaOrder(ws.areas)
-  return liveProjects(ws)
-    .filter((p) => views.isOpen(p) && !views.isSomeday(p))
-    .sort((a, b) => order(a.areaId, b.areaId) || views.byOrder(a, b))
+/**
+ * Per open area (in area order) its own tasks and projects, then the projects
+ * without an area when there are any.
+ */
+function areaProjects(ws: Snapshot): AreaProjects[] {
+  const active = (areaId: string | null) =>
+    views.projectsOf(liveProjects(ws), areaId).filter((p) => !views.isSomeday(p))
+  const groups: AreaProjects[] = areaItems(ws).map((i) => ({
+    area: i.area,
+    tasks: i.tasks,
+    projects: i.projects.filter((p) => !views.isSomeday(p)),
+    allProjects: i.projects,
+  }))
+  const loose = active(null)
+  if (loose.length > 0) groups.push({ area: null, tasks: [], projects: loose, allProjects: loose })
+  return groups
 }
 
 function areaItems(ws: Snapshot): AreaItem[] {
@@ -300,25 +321,10 @@ export function reviewItems(step: ReviewStepId, ws: Snapshot, today: CalendarDat
       return logbookSince(ws, addMonths(today, -1), today)
     case 'dueSoon':
       return dated(ws, today)
-    case 'projects':
-      return { kind: 'projects', projects: activeProjects(ws) }
-    case 'areas':
+    case 'areasAndProjects':
+      return { kind: 'areaProjects', groups: areaProjects(ws) }
     case 'areasDeep':
       return { kind: 'areas', areas: areaItems(ws) }
-    case 'looseTasks':
-      return {
-        kind: 'tasks',
-        tasks: liveTasks(ws)
-          .filter(
-            (t) =>
-              views.isOpen(t) &&
-              t.projectId === null &&
-              t.areaId === null &&
-              t.when.kind !== 'inbox' &&
-              t.when.kind !== 'someday',
-          )
-          .sort(views.byOrder),
-      }
     case 'somedayScan':
       return { kind: 'someday', tasks: somedayTasks(ws), projects: somedayProjects(ws) }
     case 'somedayDeep':
@@ -354,7 +360,13 @@ export function isStepDone(
   if (review.doneSteps.includes(step.id)) return true
   if (step.check === 'once') return false
   const items = reviewItems(step.id, ws, today)
-  if (items.kind === 'projects') return items.projects.every((p) => isReviewedIn(p, review))
+  if (items.kind === 'areaProjects') {
+    return items.groups.every(
+      (g) =>
+        (g.area === null || isReviewedIn(g.area, review)) &&
+        g.projects.every((p) => isReviewedIn(p, review)),
+    )
+  }
   if (items.kind === 'areas') return items.areas.every((a) => isReviewedIn(a.area, review))
   if (items.kind === 'somedayGroups') {
     return (

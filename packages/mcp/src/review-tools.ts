@@ -175,7 +175,7 @@ export function registerReviewTools(
     {
       title: 'Complete a review step',
       description:
-        "Ticks off a step of the running review. Steps checked 'once' (mind sweep, look back, due soon, loose tasks, Someday scan, triggers) are ticked as a whole. The Inbox step cannot be ticked: it is done when the Inbox is empty. Steps checked 'perItem' (projects, areas) are done by mark_reviewed on every item; ticking one here skips the items not yet reviewed, so only do that when the user says so. For the monthly 'somedayDeep' step pass `group` (an area id, or 'none') to tick one group of Someday tasks.",
+        "Ticks off a step of the running review. Steps checked 'once' (mind sweep, look back, due soon, Someday scan, triggers) are ticked as a whole. The Inbox step cannot be ticked: it is done when the Inbox is empty. Steps checked 'perItem' (areasAndProjects: every area and every active project; areasDeep) are done by mark_reviewed on every item; ticking one here skips the items not yet reviewed, so only do that when the user says so. For the monthly 'somedayDeep' step pass `group` (an area id, or 'none') to tick one group of Someday tasks.",
       inputSchema: {
         kind: ReviewKind.describe(KIND_DESCRIPTION),
         step: z.string().describe('A step id from get_review'),
@@ -278,8 +278,16 @@ function describeItems(ws: Snapshot, review: Review, items: ReviewItems, deps: R
       }
     case 'dated':
       return { kind: 'dated', projects: items.projects.map(project), tasks: tasks(items.tasks) }
-    case 'projects':
-      return { kind: 'projects', projects: items.projects.map(project) }
+    case 'areaProjects':
+      return {
+        kind: 'areaProjects',
+        groups: items.groups.map((g) => ({
+          area: g.area ? { ...areaRow(ws, g.area), reviewed: isReviewedIn(g.area, review) } : null,
+          tasks: tasks(g.tasks),
+          projects: g.projects.map(project),
+          somedayProjects: g.allProjects.filter((p) => !g.projects.includes(p)).map((p) => p.title),
+        })),
+      }
     case 'areas':
       return {
         kind: 'areas',

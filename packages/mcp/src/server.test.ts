@@ -299,13 +299,17 @@ describe('mcp reviews', () => {
     await expect(rcall('complete_review_step', { kind: 'weekly', step: 'nope' })).rejects.toThrow(
       /No step/,
     )
+    // A When alone does not process it: it needs a list too.
     await rcall('update_task', { id: task.id, when: 'anytime' })
+    const still = await rcall('get_review', { kind: 'weekly' })
+    expect(still.reviews[0].running.currentStep).toBe('inbox')
+    await rcall('complete_task', { id: task.id })
     const r = await rcall('get_review', { kind: 'weekly' })
     expect(r.reviews[0].running.currentStep).toBe('weekLookBack')
     await rcall('complete_review_step', { kind: 'weekly', step: 'weekLookBack' })
     const due = await rcall('complete_review_step', { kind: 'weekly', step: 'dueSoon' })
-    // No projects or areas yet: those steps are done by an empty list.
-    expect(due.currentStep).toBe('looseTasks')
+    // No projects or areas yet: that step is done by an empty list.
+    expect(due.currentStep).toBe('somedayScan')
   })
 
   it('deletes a project with its headings and tasks, and an area with everything in it', async () => {
@@ -333,8 +337,10 @@ describe('mcp reviews', () => {
     expect(project).toMatchObject({ reviewedAt: null, signals: ['noNextAction'] })
     const r = await rcall('get_review', { kind: 'weekly' })
     const items = r.reviews[0].running.items
-    expect(items.kind).toBe('projects')
-    expect(items.projects).toEqual([
+    expect(items.kind).toBe('areaProjects')
+    expect(items.groups).toHaveLength(1)
+    expect(items.groups[0].area).toMatchObject({ id: area.id, reviewed: false })
+    expect(items.groups[0].projects).toEqual([
       expect.objectContaining({ id: project.id, reviewed: false, signals: ['noNextAction'] }),
     ])
     await expect(rcall('mark_reviewed', {})).rejects.toThrow(/exactly one/)
@@ -344,11 +350,10 @@ describe('mcp reviews', () => {
     const marked = await rcall('mark_reviewed', { project: 'zolder opruimen' })
     expect(marked.reviewed.project).toBe(project.id)
     const after = await rcall('get_review', { kind: 'weekly' })
-    expect(after.reviews[0].running.currentStep).toBe('areas')
-    expect(after.reviews[0].running.items.areas[0]).toMatchObject({
-      id: area.id,
-      reviewed: false,
-      projects: ['Zolder opruimen'],
+    expect(after.reviews[0].running.currentStep).toBe('areasAndProjects')
+    expect(after.reviews[0].running.items.groups[0].projects[0]).toMatchObject({
+      id: project.id,
+      reviewed: true,
     })
     const o = await rcall('overview')
     expect(o.areas[0]).toMatchObject({ id: area.id, reviewedAt: null })
@@ -358,7 +363,7 @@ describe('mcp reviews', () => {
   it('refuses to complete with open steps, then completes', async () => {
     await expect(rcall('complete_review', { kind: 'weekly' })).rejects.toThrow(/Steps still open/)
     await rcall('mark_reviewed', { area: 'Thuis' })
-    for (const step of ['looseTasks', 'somedayScan', 'triggers']) {
+    for (const step of ['somedayScan', 'triggers']) {
       await rcall('complete_review_step', { kind: 'weekly', step })
     }
     const r = await rcall('get_review', { kind: 'weekly' })

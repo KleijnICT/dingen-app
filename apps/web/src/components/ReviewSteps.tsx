@@ -3,6 +3,8 @@ import {
   type AreaCount,
   type AreaGroup,
   type AreaItem,
+  type AreaProjects,
+  type Heading,
   isReviewedIn,
   newTask,
   orderBetween,
@@ -22,12 +24,14 @@ import { type ReactNode, useEffect, useState } from 'react'
 import { type MessageKey, useT } from '../i18n/index.js'
 import { nextToReview, withDoneStep, withoutDoneStep } from '../reviewFlow.js'
 import { areaPath, navigate, projectPath } from '../router.js'
+import { projectSections } from '../sections.js'
 import { useEngine, useWorkspace } from '../store/context.js'
-import { deleteProject, toggleProject, useLinger } from '../taskActions.js'
+import { deleteProject, toggleProject, useKeepProcessed, useLinger } from '../taskActions.js'
 import { AreaGlyph } from './AreaIcons.js'
 import { ProgressCircle } from './Icons.js'
 import { LinkedText } from './LinkedText.js'
 import { MoreMenu } from './Menu.js'
+import { HeadingRow } from './ProjectPage.js'
 import { ProjectRow } from './ProjectRow.js'
 import { TaskGroup } from './TaskGroup.js'
 import type { RowProps } from './TaskRow.js'
@@ -47,19 +51,13 @@ export function ReviewStepView({ review, stepId }: StepProps) {
     case 'none':
       return <CaptureStep triggers={stepId === 'triggers'} />
     case 'tasks':
-      return (
-        <TasksStep
-          tasks={items.tasks}
-          emptyKey={stepId === 'inbox' ? 'review.inbox.empty' : 'review.loose.none'}
-          showWhen={stepId !== 'inbox'}
-        />
-      )
+      return <InboxStep tasks={items.tasks} />
     case 'logbook':
       return <LookBackStep tasks={items.tasks} projects={items.projects} perArea={items.perArea} />
     case 'dated':
       return <DueSoonStep tasks={items.tasks} projects={items.projects} />
-    case 'projects':
-      return <ProjectsStep review={review} projects={items.projects} />
+    case 'areaProjects':
+      return <AreasAndProjectsStep review={review} groups={items.groups} />
     case 'areas':
       return <AreasStep review={review} areas={items.areas} deep={stepId === 'areasDeep'} />
     case 'someday':
@@ -90,17 +88,31 @@ function useStepTasks(visible: Task[]) {
   return { shown, taskList, group, where }
 }
 
-function TasksStep(props: { tasks: Task[]; emptyKey: MessageKey; showWhen: boolean }) {
+/** The Inbox: a task you process (a list and a When) stays in place until you leave the step. */
+function InboxStep(props: { tasks: Task[] }) {
   const t = useT()
-  const { shown, taskList, group } = useStepTasks(props.tasks)
+  const ws = useWorkspace()
+  const kept = useKeepProcessed(props.tasks, ws.tasks, 'review:inbox')
+  const { shown, taskList } = useStepTasks(kept.shown)
   return (
     <>
       {shown.length === 0 ? (
         <p className="empty review-empty">
-          <Check size={16} className="review-ok" aria-hidden="true" /> {t(props.emptyKey)}
+          <Check size={16} className="review-ok" aria-hidden="true" /> {t('review.inbox.empty')}
         </p>
       ) : (
-        group('tasks', shown, { showWhen: props.showWhen, showCaption: true })
+        <TaskGroup
+          group={{ key: 'review:inbox', target: null }}
+          tasks={shown}
+          rowProps={(task) =>
+            taskList.rowProps(task, {
+              showWhen: true,
+              showCaption: true,
+              processed: kept.processed.has(task.id),
+            })
+          }
+          frozen
+        />
       )}
       <TaskToolbar list={taskList} />
       {taskList.panel}
@@ -260,11 +272,13 @@ function SignalChips({ list }: { list: Signal[] }) {
 
 interface CardsProps<T extends { id: string; title: string }> {
   items: T[]
+  /** Shown indented in the index, under the item before it (a project under its area). */
+  nested?: (item: T) => boolean
   isDone: (item: T) => boolean
   onReviewed: (item: T) => void
   card: (item: T) => ReactNode
   icon: (item: T) => ReactNode
-  untitled: string
+  untitled: string | ((item: T) => string)
   noneKey: MessageKey
   allDoneKey: MessageKey
 }
@@ -330,7 +344,7 @@ function ReviewCards<T extends { id: string; title: string }>(props: CardsProps<
       </h2>
       <ol className="review-index">
         {items.map((item) => (
-          <li key={item.id}>
+          <li key={item.id} className={props.nested?.(item) ? 'nested' : undefined}>
             <button
               type="button"
               className={`review-index-item ${item.id === current?.id ? 'current' : ''} ${
@@ -342,7 +356,10 @@ function ReviewCards<T extends { id: string; title: string }>(props: CardsProps<
                 {isDone(item) && <Check size={12} strokeWidth={3} />}
               </span>
               {props.icon(item)}
-              <span className="review-index-title">{item.title || props.untitled}</span>
+              <span className="review-index-title">
+                {item.title ||
+                  (typeof props.untitled === 'string' ? props.untitled : props.untitled(item))}
+              </span>
             </button>
           </li>
         ))}
@@ -353,20 +370,59 @@ function ReviewCards<T extends { id: string; title: string }>(props: CardsProps<
 
 const now = () => new Date().toISOString()
 
-function ProjectsStep({ review, projects }: { review: Review; projects: Project[] }) {
+type StepItem =
+  | { kind: 'area'; id: string; title: string; area: Area; group: AreaProjects }
+  | { kind: 'project'; id: string; title: string; project: Project; nested: boolean }
+
+/**
+ * Areas and projects in one walk: per area a card for the area itself, then a card for each
+ * of its projects; the projects without an area come last.
+ */
+function AreasAndProjectsStep({ review, groups }: { review: Review; groups: AreaProjects[] }) {
   const t = useT()
   const engine = useEngine()
   const ws = useWorkspace()
+  const items: StepItem[] = groups.flatMap((g): StepItem[] => [
+    ...(g.area
+      ? [{ kind: 'area' as const, id: g.area.id, title: g.area.title, area: g.area, group: g }]
+      : []),
+    ...g.projects.map((p) => ({
+      kind: 'project' as const,
+      id: p.id,
+      title: p.title,
+      project: p,
+      nested: g.area !== null,
+    })),
+  ])
+  const untitled = (item: StepItem) =>
+    item.kind === 'area' ? t('area.untitled') : t('project.untitled')
   return (
     <ReviewCards
-      items={projects}
-      isDone={(p) => isReviewedIn(p, review)}
-      onReviewed={(p) => engine.mutate('project', p.id, { reviewedAt: now() })}
-      card={(p) => <ProjectCard key={p.id} project={p} />}
-      icon={(p) => <ProgressCircle value={views.progress(p.id, ws.tasks)} size={14} />}
-      untitled={t('project.untitled')}
-      noneKey="review.projects.none"
-      allDoneKey="review.projects.allDone"
+      items={items}
+      nested={(item) => item.kind === 'project' && item.nested}
+      isDone={(item) => isReviewedIn(item.kind === 'area' ? item.area : item.project, review)}
+      onReviewed={(item) => engine.mutate(item.kind, item.id, { reviewedAt: now() })}
+      card={(item) =>
+        item.kind === 'area' ? (
+          <AreaCard
+            key={item.id}
+            item={{ area: item.area, tasks: item.group.tasks, projects: item.group.allProjects }}
+            deep={false}
+          />
+        ) : (
+          <ProjectCard key={item.id} project={item.project} />
+        )
+      }
+      icon={(item) =>
+        item.kind === 'area' ? (
+          <AreaGlyph icon={item.area.icon} color={item.area.color} size={14} />
+        ) : (
+          <ProgressCircle value={views.progress(item.id, ws.tasks)} size={14} />
+        )
+      }
+      untitled={(item) => untitled(item)}
+      noneKey="review.areasAndProjects.none"
+      allDoneKey="review.areasAndProjects.allDone"
     />
   )
 }
@@ -375,16 +431,38 @@ function ProjectCard({ project }: { project: Project }) {
   const t = useT()
   const engine = useEngine()
   const ws = useWorkspace()
-  const open = views.projectTasks(ws.tasks, project.id).filter((task) => task.status === 'open')
-  const { shown, taskList, group } = useStepTasks(open)
+  const all = views.projectTasks(ws.tasks, project.id)
+  const open = all.filter((task) => task.status === 'open')
+  const { shown, taskList } = useStepTasks(open)
   const area = project.areaId ? ws.areaById.get(project.areaId) : undefined
+  // The same order as the project's page: loose tasks first, then per heading.
+  const headings = views.headingsOf(ws.headings, project.id)
+  const sections = projectSections(all, shown, headings)
+  const group = (headingId: string | null, tasks: Task[], header?: ReactNode) => (
+    <TaskGroup
+      group={{
+        key: `review:project:${project.id}:${headingId ?? 'root'}`,
+        target: { kind: 'project', projectId: project.id, headingId },
+      }}
+      tasks={tasks}
+      rowProps={(task) => taskList.rowProps(task, { showWhen: true })}
+      header={header}
+    />
+  )
+
+  function removeHeading(heading: Heading) {
+    for (const task of all) {
+      if (task.headingId === heading.id) engine.mutate('task', task.id, { headingId: null })
+    }
+    engine.mutate('heading', heading.id, { deleted: true })
+  }
 
   function addTask() {
     const task = newTask({
       title: '',
       projectId: project.id,
       when: { kind: 'anytime' },
-      order: orderBetween(open.at(-1)?.order ?? null, null),
+      order: orderBetween(sections.loose.at(-1)?.order ?? null, null),
     })
     engine.create('task', task)
     taskList.openNew(task.id)
@@ -426,11 +504,19 @@ function ProjectCard({ project }: { project: Project }) {
           <LinkedText text={project.notes} />
         </p>
       )}
-      {shown.length === 0 ? (
+      {shown.length === 0 && headings.length === 0 && (
         <p className="empty">{t('review.card.noTasks')}</p>
-      ) : (
-        group(`project:${project.id}`, shown, { showWhen: true })
       )}
+      {group(null, sections.loose)}
+      {sections.headings.map(({ heading, tasks }) => (
+        <div key={heading.id} className="group heading-group">
+          {group(
+            heading.id,
+            tasks,
+            <HeadingRow heading={heading} onRemove={() => removeHeading(heading)} />,
+          )}
+        </div>
+      ))}
       <TaskToolbar onNew={addTask} list={taskList} />
       {taskList.panel}
     </>
@@ -460,7 +546,7 @@ function AreaCard({ item, deep }: { item: AreaItem; deep: boolean }) {
   const engine = useEngine()
   const ws = useWorkspace()
   const { area } = item
-  const { shown, taskList, group } = useStepTasks(item.tasks)
+  const { shown, taskList } = useStepTasks(item.tasks)
 
   function addTask() {
     const task = newTask({
@@ -504,7 +590,11 @@ function AreaCard({ item, deep }: { item: AreaItem; deep: boolean }) {
         {shown.length === 0 ? (
           <p className="empty">{t('review.card.noTasks')}</p>
         ) : (
-          group(`area:${area.id}`, shown, { showWhen: true })
+          <TaskGroup
+            group={{ key: `review:area:${area.id}`, target: { kind: 'area', areaId: area.id } }}
+            tasks={shown}
+            rowProps={(task) => taskList.rowProps(task, { showWhen: true })}
+          />
         )}
       </div>
       <TaskToolbar onNew={addTask} list={taskList} />

@@ -4,6 +4,7 @@ import {
   convertTaskToProject,
   duplicateOf,
   duplicateTask,
+  moveFields,
   type Writer,
 } from './actions.js'
 import { type Entity, type EntityType, Project, Task } from './entities.js'
@@ -226,5 +227,36 @@ describe('convert a task to a project', () => {
       },
     })
     expect(() => convert(snapshot([template]), template)).toThrow()
+  })
+})
+
+describe('move fields and the Inbox', () => {
+  const ws = snapshot([])
+
+  it('a list makes an Inbox task Anytime', () => {
+    const task = newTask({ title: 't' })
+    expect(moveFields(ws, task, { kind: 'area', areaId: 'a' })).toMatchObject({
+      areaId: 'a',
+      when: { kind: 'anytime' },
+    })
+  })
+
+  it('a date alone keeps the task without a list', () => {
+    const task = newTask({ title: 't' })
+    const fields = moveFields(ws, task, { kind: 'when', when: { kind: 'date', date: today } })
+    expect(fields).toEqual({ when: { kind: 'date', date: today }, daypart: null })
+  })
+
+  it('back to the Inbox drops the list too', () => {
+    const task = newTask({ title: 't', when: { kind: 'anytime' }, areaId: 'a' })
+    expect(moveFields(ws, task, { kind: 'when', when: { kind: 'inbox' } })).toEqual({
+      when: { kind: 'inbox' },
+      daypart: null,
+      projectId: null,
+      areaId: null,
+      headingId: null,
+    })
+    const inInbox = newTask({ title: 't' })
+    expect(moveFields(ws, inInbox, { kind: 'when', when: { kind: 'inbox' } })).toEqual({})
   })
 })
