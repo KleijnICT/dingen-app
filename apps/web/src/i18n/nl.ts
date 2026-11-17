@@ -44,7 +44,6 @@ export const nl: Messages = {
   'sync.unauthorized': 'Uitgelogd',
 
   'task.untitled': 'Zonder titel',
-  'task.processed': '✓ Naar',
   'task.title': 'Titel',
   'task.notes': 'Notities',
   'task.markDone': 'Markeer als klaar',

@@ -26,7 +26,7 @@ import { nextToReview, withDoneStep, withoutDoneStep } from '../reviewFlow.js'
 import { areaPath, navigate, projectPath } from '../router.js'
 import { projectSections } from '../sections.js'
 import { useEngine, useWorkspace } from '../store/context.js'
-import { deleteProject, toggleProject, useKeepProcessed, useLinger } from '../taskActions.js'
+import { deleteProject, toggleProject, useLinger } from '../taskActions.js'
 import { AreaGlyph } from './AreaIcons.js'
 import { ProgressCircle } from './Icons.js'
 import { LinkedText } from './LinkedText.js'
@@ -88,12 +88,10 @@ function useStepTasks(visible: Task[]) {
   return { shown, taskList, group, where }
 }
 
-/** The Inbox: a task you process (a list and a When) stays in place until you leave the step. */
+/** The Inbox: a task leaves the step once it is processed (a list and a When). */
 function InboxStep(props: { tasks: Task[] }) {
   const t = useT()
-  const ws = useWorkspace()
-  const kept = useKeepProcessed(props.tasks, ws.tasks, 'review:inbox')
-  const { shown, taskList } = useStepTasks(kept.shown)
+  const { shown, taskList } = useStepTasks(props.tasks)
   return (
     <>
       {shown.length === 0 ? (
@@ -104,13 +102,7 @@ function InboxStep(props: { tasks: Task[] }) {
         <TaskGroup
           group={{ key: 'review:inbox', target: null }}
           tasks={shown}
-          rowProps={(task) =>
-            taskList.rowProps(task, {
-              showWhen: true,
-              showCaption: true,
-              processed: kept.processed.has(task.id),
-            })
-          }
+          rowProps={(task) => taskList.rowProps(task, { showWhen: true, showCaption: true })}
           frozen
         />
       )}

@@ -61,38 +61,6 @@ export function createInboxTask(engine: Writer, ws: Snapshot, tagId: string | nu
   return task
 }
 
-/**
- * The Inbox while you work through it: a task that gets processed (a list and a When) stays
- * where it was until you leave, so it does not jump away under your hands. `scope` names the
- * visit; a new scope starts over. Returns the tasks to show and which of them are processed.
- */
-export function useKeepProcessed(
-  visible: Task[],
-  all: Task[],
-  scope: string,
-): { shown: Task[]; processed: Set<string> } {
-  // Where each task stood while it was in the list (its order then).
-  const seen = useRef({ scope, order: new Map<string, string>() })
-  if (seen.current.scope !== scope) seen.current = { scope, order: new Map() }
-  const order = seen.current.order
-  for (const task of visible) order.set(task.id, task.order)
-  const ids = new Set(visible.map((task) => task.id))
-  const processed = new Set<string>()
-  const kept = all.filter((task) => {
-    if (ids.has(task.id) || !order.has(task.id) || task.deleted || task.status !== 'open') {
-      return false
-    }
-    processed.add(task.id)
-    return true
-  })
-  if (kept.length === 0) return { shown: visible, processed }
-  const key = (task: Task) => order.get(task.id) ?? task.order
-  const shown = [...visible, ...kept].sort((a, b) =>
-    key(a) < key(b) ? -1 : key(a) > key(b) ? 1 : a.id.localeCompare(b.id),
-  )
-  return { shown, processed }
-}
-
 const LINGER_MS = 1200
 
 /**

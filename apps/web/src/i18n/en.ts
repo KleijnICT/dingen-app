@@ -47,7 +47,6 @@ export const en = {
 
   // Tasks
   'task.untitled': 'Untitled',
-  'task.processed': '✓ To',
   'task.title': 'Title',
   'task.notes': 'Notes',
   'task.markDone': 'Mark as done',
