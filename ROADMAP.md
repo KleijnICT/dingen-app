@@ -18,10 +18,12 @@ Home Assistant sidebar.
 ## 2. Self-hosted 1.0
 
 - A stable, versioned sync protocol and MCP server
-- PostgreSQL as an alternative to SQLite
 - Administration in the app: users, registration, backups, password reset
 - Two-factor authentication (TOTP)
 - A website with documentation
+
+When phases 1 and 2 are done, Dingen goes to beta (1.0.0-beta.1): from then on
+the sync protocol stays compatible. Version 1.0.0 follows after the beta.
 
 ## 3. Home Assistant
 
@@ -32,6 +34,7 @@ Home Assistant sidebar.
 ## 4. Hosted
 
 - A hosted service in the EU, next to self-hosting, with a free trial
+- PostgreSQL as an alternative to SQLite
 - The same features as self-hosted; you pay for not having to run it
 - Moving between hosted and self-hosted in both directions via export
 - OAuth for the MCP server, so Dingen works as a connector in Claude
