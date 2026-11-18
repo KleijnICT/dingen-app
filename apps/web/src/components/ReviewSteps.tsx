@@ -4,6 +4,7 @@ import {
   type AreaGroup,
   type AreaItem,
   type AreaProjects,
+  eventsOnDay,
   type Heading,
   isReviewedIn,
   lastCompletedReview,
@@ -23,6 +24,7 @@ import {
 } from '@dingen/core'
 import { Check, CircleCheck, List, SkipForward, SquarePen, Trash2 } from 'lucide-react'
 import { type ReactNode, useEffect, useState } from 'react'
+import { useCalendarData } from '../calendar.js'
 import { type MessageKey, useT } from '../i18n/index.js'
 import { setInboxStepView, useInboxStepView } from '../prefs.js'
 import { nextToReview, withDoneStep, withoutDoneStep } from '../reviewFlow.js'
@@ -123,6 +125,7 @@ function DayOverviewStep({ items }: { items: DayItems }) {
   const t = useT()
   const ws = useWorkspace()
   const { members } = useMembers()
+  const calendar = useCalendarData()
   const me = members.find((m) => m.kind === 'user')?.id ?? null
   const assigned =
     me === null
@@ -176,7 +179,11 @@ function DayOverviewStep({ items }: { items: DayItems }) {
     <>
       <div className="group">
         <h2 className="group-title">{t('review.day.events')}</h2>
-        <DayEvents date={ws.today} />
+        {eventsOnDay(calendar.events, ws.today).length > 0 ? (
+          <DayEvents date={ws.today} />
+        ) : (
+          <p className="muted review-day-none">{t('review.day.noEvents')}</p>
+        )}
       </div>
       {section('overdue', t('review.day.overdue'), items.overdue.tasks, items.overdue.projects)}
       {section(
@@ -253,7 +260,7 @@ function InboxCards({ tasks }: { tasks: Task[] }) {
           <List size={14} aria-hidden="true" /> {t('review.inbox.asList')}
         </button>
       </p>
-      <article className="review-card inbox-card">
+      <article key={task.id} className="review-card inbox-card">
         <p className="review-card-count muted">
           {t('review.inbox.count', { n: index, total: tasks.length })}
         </p>

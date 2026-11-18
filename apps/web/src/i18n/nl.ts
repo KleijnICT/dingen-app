@@ -371,7 +371,7 @@ export const nl: Messages = {
   'review.kind.daily': 'Dagreview',
   'review.kind.weekly': 'Weekreview',
   'review.kind.monthly': 'Maandreview',
-  'review.kind.daily.about': 'Maak de Inbox leeg.',
+  'review.kind.daily.about': 'Bekijk je dag en maak de Inbox leeg.',
   'review.kind.weekly.about':
     'Hoofd leeg, alles bij en vooruitkijken: elk open project en gebied komt langs.',
   'review.kind.monthly.about':
@@ -394,6 +394,7 @@ export const nl: Messages = {
   'review.step.dayOverview.intro':
     'Een blik op vandaag voordat je begint: afspraken, deadlines en wat er binnenkwam.',
   'review.day.events': 'Afspraken vandaag',
+  'review.day.noEvents': 'Geen afspraken vandaag.',
   'review.day.overdue': 'Te laat',
   'review.day.deadlines': 'Deadline vandaag of morgen',
   'review.day.newInbox': 'Nieuw in de Inbox',

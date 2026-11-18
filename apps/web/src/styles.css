@@ -3602,3 +3602,14 @@ textarea.title-input {
   font-style: italic;
   color: var(--muted);
 }
+
+.inbox-card .review-card-notes {
+  margin-left: 10px;
+}
+.inbox-card-part .when-picker {
+  padding-left: 0;
+}
+.review-day-none {
+  margin: 0 0 0 10px;
+  font-size: 0.9em;
+}

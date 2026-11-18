@@ -378,7 +378,7 @@ export const en = {
   'review.kind.daily': 'Daily Review',
   'review.kind.weekly': 'Weekly Review',
   'review.kind.monthly': 'Monthly Review',
-  'review.kind.daily.about': 'Empty the Inbox.',
+  'review.kind.daily.about': 'Look at your day, then empty the Inbox.',
   'review.kind.weekly.about':
     'Clear your head, get current and look ahead: every open project and area comes along.',
   'review.kind.monthly.about':
@@ -401,6 +401,7 @@ export const en = {
   'review.step.dayOverview.intro':
     'A look at today before you start: events, deadlines and what came in.',
   'review.day.events': 'Events today',
+  'review.day.noEvents': 'No events today.',
   'review.day.overdue': 'Overdue',
   'review.day.deadlines': 'Deadline today or tomorrow',
   'review.day.newInbox': 'New in the Inbox',
