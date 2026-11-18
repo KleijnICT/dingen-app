@@ -196,3 +196,29 @@ export function setFocusMode(on: boolean): void {
 export function useFocusMode(): boolean {
   return useSyncExternalStore(subscribe, readFocus, () => false)
 }
+
+/** The Inbox step of a review: one task at a time (the default) or the whole list. */
+export type InboxStepView = 'cards' | 'list'
+const INBOX_VIEW_KEY = 'dingen.reviewInboxView'
+
+function readInboxView(): InboxStepView {
+  try {
+    return localStorage.getItem(INBOX_VIEW_KEY) === 'list' ? 'list' : 'cards'
+  } catch {
+    return 'cards'
+  }
+}
+
+export function setInboxStepView(view: InboxStepView): void {
+  try {
+    if (view === 'cards') localStorage.removeItem(INBOX_VIEW_KEY)
+    else localStorage.setItem(INBOX_VIEW_KEY, view)
+  } catch {
+    // Private windows may refuse storage; the choice then lasts until reload.
+  }
+  for (const l of listeners) l()
+}
+
+export function useInboxStepView(): InboxStepView {
+  return useSyncExternalStore(subscribe, readInboxView, () => 'cards')
+}

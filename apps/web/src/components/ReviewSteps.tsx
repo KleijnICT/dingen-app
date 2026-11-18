@@ -6,10 +6,12 @@ import {
   type AreaProjects,
   type Heading,
   isReviewedIn,
+  lastCompletedReview,
   newTask,
   orderBetween,
   type Project,
   type Review,
+  type ReviewItems,
   type ReviewStepId,
   reviewItems,
   type Signal,
@@ -19,24 +21,40 @@ import {
   views,
   type When,
 } from '@dingen/core'
-import { Check } from 'lucide-react'
+import { Check, CircleCheck, List, SkipForward, SquarePen, Trash2 } from 'lucide-react'
 import { type ReactNode, useEffect, useState } from 'react'
 import { type MessageKey, useT } from '../i18n/index.js'
+import { setInboxStepView, useInboxStepView } from '../prefs.js'
 import { nextToReview, withDoneStep, withoutDoneStep } from '../reviewFlow.js'
-import { areaPath, navigate, projectPath } from '../router.js'
+import { areaPath, navigate, projectPath, setTaskParam } from '../router.js'
 import { projectSections } from '../sections.js'
 import { useEngine, useWorkspace } from '../store/context.js'
-import { deleteProject, toggleProject, useLinger } from '../taskActions.js'
+import { tagForName } from '../tags.js'
+import {
+  commitTask,
+  deleteProject,
+  deleteTask,
+  toggleProject,
+  toggleTask,
+  useLinger,
+  whenFields,
+} from '../taskActions.js'
 import { AreaGlyph } from './AreaIcons.js'
+import { useAssignChoices } from './Assignee.js'
+import { DayEvents } from './CalendarEvents.js'
 import { ProgressCircle } from './Icons.js'
 import { LinkedText } from './LinkedText.js'
+import { MemberAvatar, useMembers } from './MemberAvatar.js'
 import { MoreMenu } from './Menu.js'
+import { MoveList } from './MoveList.js'
 import { HeadingRow } from './ProjectPage.js'
 import { ProjectRow } from './ProjectRow.js'
 import { TaskGroup } from './TaskGroup.js'
 import type { RowProps } from './TaskRow.js'
 import { TaskToolbar } from './Toolbar.js'
+import { useReviews } from './useReviews.js'
 import { useTaskList } from './useTaskList.js'
+import { WhenPicker } from './WhenPicker.js'
 
 interface StepProps {
   review: Review
@@ -46,10 +64,14 @@ interface StepProps {
 /** The body of one review step; what it shows comes from `reviewItems` in core. */
 export function ReviewStepView({ review, stepId }: StepProps) {
   const ws = useWorkspace()
-  const items = reviewItems(stepId, ws, ws.today)
+  const reviews = useReviews()
+  const since = lastCompletedReview(reviews, 'daily')?.completedAt ?? null
+  const items = reviewItems(stepId, ws, ws.today, { since })
   switch (items.kind) {
     case 'none':
       return <CaptureStep triggers={stepId === 'triggers'} />
+    case 'day':
+      return <DayOverviewStep items={items} />
     case 'tasks':
       return <InboxStep tasks={items.tasks} />
     case 'logbook':
@@ -88,10 +110,98 @@ function useStepTasks(visible: Task[]) {
   return { shown, taskList, group, where }
 }
 
+// --- Day overview (daily review) ---
+
+type DayItems = Extract<ReviewItems, { kind: 'day' }>
+
+/**
+ * How the day looks, read only: today's events, what is overdue, deadlines today and
+ * tomorrow, what came into the Inbox since the previous daily review and what is
+ * assigned to you.
+ */
+function DayOverviewStep({ items }: { items: DayItems }) {
+  const t = useT()
+  const ws = useWorkspace()
+  const { members } = useMembers()
+  const me = members.find((m) => m.kind === 'user')?.id ?? null
+  const assigned =
+    me === null
+      ? []
+      : ws.tasks
+          .filter((x) => !x.deleted && x.repeat === null && views.isOpen(x) && x.assigneeId === me)
+          .sort(views.byOrder)
+  const unique = [
+    ...new Map(
+      [...items.overdue.tasks, ...items.deadlines.tasks, ...items.newInbox, ...assigned].map(
+        (x) => [x.id, x],
+      ),
+    ).values(),
+  ]
+  const { taskList, where } = useStepTasks(unique)
+  const ids = (list: Task[]) => new Set(list.map((x) => x.id))
+  const section = (
+    key: string,
+    title: string,
+    tasks: Task[],
+    projects: Project[] = [],
+    extra: Partial<RowProps> = {},
+  ) => {
+    if (tasks.length === 0 && projects.length === 0) return null
+    const inSection = ids(tasks)
+    return (
+      <div className="group">
+        <h2 className="group-title">{title}</h2>
+        {projects.length > 0 && (
+          <ul className="tasks">
+            {projects.map((p) => (
+              <ProjectRow key={p.id} project={p} />
+            ))}
+          </ul>
+        )}
+        <TaskGroup
+          group={{ key: `review:day:${key}`, target: null }}
+          tasks={where((x) => inSection.has(x.id))}
+          rowProps={(task) => taskList.rowProps(task, { showCaption: true, ...extra })}
+          frozen
+        />
+      </div>
+    )
+  }
+  const quiet =
+    unique.length === 0 &&
+    items.overdue.projects.length === 0 &&
+    items.deadlines.projects.length === 0
+
+  return (
+    <>
+      <div className="group">
+        <h2 className="group-title">{t('review.day.events')}</h2>
+        <DayEvents date={ws.today} />
+      </div>
+      {section('overdue', t('review.day.overdue'), items.overdue.tasks, items.overdue.projects)}
+      {section(
+        'deadlines',
+        t('review.day.deadlines'),
+        items.deadlines.tasks,
+        items.deadlines.projects,
+      )}
+      {section('new', t('review.day.newInbox'), items.newInbox, [], { showWhen: true })}
+      {section('assigned', t('review.day.assigned'), assigned, [], { showWhen: true })}
+      {quiet && <p className="empty">{t('review.day.quiet')}</p>}
+      <TaskToolbar list={taskList} />
+      {taskList.panel}
+    </>
+  )
+}
+
+// --- The Inbox, one at a time or as a list ---
+
 /** The Inbox: a task leaves the step once it is processed (a list and a When). */
 function InboxStep(props: { tasks: Task[] }) {
   const t = useT()
+  const view = useInboxStepView()
   const { shown, taskList } = useStepTasks(props.tasks)
+  if (shown.length > 0 && view === 'cards') return <InboxCards tasks={props.tasks} />
   return (
     <>
       {shown.length === 0 ? (
@@ -99,16 +209,159 @@ function InboxStep(props: { tasks: Task[] }) {
           <Check size={16} className="review-ok" aria-hidden="true" /> {t('review.inbox.empty')}
         </p>
       ) : (
-        <TaskGroup
-          group={{ key: 'review:inbox', target: null }}
-          tasks={shown}
-          rowProps={(task) => taskList.rowProps(task, { showWhen: true, showCaption: true })}
-          frozen
-        />
+        <>
+          <p className="review-view-switch">
+            <button type="button" className="link" onClick={() => setInboxStepView('cards')}>
+              {t('review.inbox.oneByOne')}
+            </button>
+          </p>
+          <TaskGroup
+            group={{ key: 'review:inbox', target: null }}
+            tasks={shown}
+            rowProps={(task) => taskList.rowProps(task, { showWhen: true, showCaption: true })}
+            frozen
+          />
+        </>
       )}
       <TaskToolbar list={taskList} />
       {taskList.panel}
     </>
+  )
+}
+
+/**
+ * One Inbox task at a time, with the GTD choices: done in two minutes, delete, when, where
+ * and delegate. Once it has a list and a When it leaves the Inbox and the next one shows.
+ * Skip puts a task at the back for this visit.
+ */
+function InboxCards({ tasks }: { tasks: Task[] }) {
+  const t = useT()
+  const engine = useEngine()
+  const ws = useWorkspace()
+  const [skipped, setSkipped] = useState<string[]>([])
+  const { taskList } = useStepTasks(tasks)
+  const back = skipped.flatMap((id) => tasks.filter((x) => x.id === id))
+  const queue = [...tasks.filter((x) => !skipped.includes(x.id)), ...back]
+  const task = queue[0]
+  if (!task) return null
+  const index = tasks.length - queue.length + 1
+
+  return (
+    <>
+      <p className="review-view-switch">
+        <button type="button" className="link" onClick={() => setInboxStepView('list')}>
+          <List size={14} aria-hidden="true" /> {t('review.inbox.asList')}
+        </button>
+      </p>
+      <article className="review-card inbox-card">
+        <p className="review-card-count muted">
+          {t('review.inbox.count', { n: index, total: tasks.length })}
+        </p>
+        <header className="review-card-head">
+          <div className="review-card-title">
+            <button type="button" className="link" onClick={() => setTaskParam(task.id)}>
+              {task.title || t('task.untitled')}
+            </button>
+          </div>
+        </header>
+        {task.notes && (
+          <p className="review-card-notes">
+            <LinkedText text={task.notes} />
+          </p>
+        )}
+        <div className="inbox-card-actions">
+          <button type="button" className="chip" onClick={() => toggleTask(engine, ws, task)}>
+            <CircleCheck size={15} aria-hidden="true" /> {t('review.inbox.done')}
+          </button>
+          <button type="button" className="chip" onClick={() => deleteTask(engine, ws, task)}>
+            <Trash2 size={15} aria-hidden="true" /> {t('review.inbox.delete')}
+          </button>
+          <button type="button" className="chip" onClick={() => setTaskParam(task.id)}>
+            <SquarePen size={15} aria-hidden="true" /> {t('review.inbox.open')}
+          </button>
+          {queue.length > 1 && (
+            <button
+              type="button"
+              className="chip"
+              onClick={() => setSkipped((s) => [...s.filter((id) => id !== task.id), task.id])}
+            >
+              <SkipForward size={15} aria-hidden="true" /> {t('review.inbox.skip')}
+            </button>
+          )}
+        </div>
+        <section className="inbox-card-part">
+          <h3 className="inbox-card-label">{t('review.inbox.when')}</h3>
+          <WhenPicker
+            when={task.when}
+            daypart={task.daypart}
+            today={ws.today}
+            onChange={(when, daypart) => commitTask(engine, ws, task, whenFields(when, daypart))}
+          />
+        </section>
+        <section className="inbox-card-part">
+          <h3 className="inbox-card-label">{t('review.inbox.where')}</h3>
+          <div className="inbox-card-where">
+            <MoveList task={task} onDone={() => {}} />
+          </div>
+        </section>
+        <Delegate task={task} />
+      </article>
+      {taskList.panel}
+    </>
+  )
+}
+
+const WAITING = 'waiting'
+
+/** Delegate: assign to a member (an agent), or tag the task `waiting` for someone else. */
+function Delegate({ task }: { task: Task }) {
+  const t = useT()
+  const engine = useEngine()
+  const ws = useWorkspace()
+  const { agents } = useAssignChoices(task)
+  const waiting = ws.tags.find((x) => !x.deleted && x.title === WAITING)
+  const isWaiting = waiting !== undefined && task.tagIds.includes(waiting.id)
+
+  function toggleWaiting() {
+    if (isWaiting && waiting) {
+      commitTask(engine, ws, task, { tagIds: task.tagIds.filter((id) => id !== waiting.id) })
+      return
+    }
+    const found = tagForName(ws.tags, WAITING)
+    if (!found) return
+    if (found.created) engine.create('tag', found.tag)
+    commitTask(engine, ws, task, { tagIds: [...task.tagIds, found.tag.id] })
+  }
+
+  return (
+    <section className="inbox-card-part">
+      <h3 className="inbox-card-label">{t('review.inbox.delegate')}</h3>
+      <div className="when-picker">
+        {agents.map((m) => (
+          <button
+            type="button"
+            key={m.id}
+            className={`chip ${task.assigneeId === m.id ? 'active' : ''}`}
+            aria-pressed={task.assigneeId === m.id}
+            onClick={() =>
+              commitTask(engine, ws, task, {
+                assigneeId: task.assigneeId === m.id ? null : m.id,
+              })
+            }
+          >
+            <MemberAvatar member={m} size={16} title={false} /> {m.name}
+          </button>
+        ))}
+        <button
+          type="button"
+          className={`chip ${isWaiting ? 'active' : ''}`}
+          aria-pressed={isWaiting}
+          onClick={toggleWaiting}
+        >
+          {t('review.inbox.someoneElse')}
+        </button>
+      </div>
+    </section>
   )
 }
 
@@ -490,6 +743,7 @@ function ProjectCard({ project }: { project: Project }) {
           ]}
         />
       </header>
+      <p className="review-card-question">{t('review.project.outcome')}</p>
       <SignalChips list={signals(project, ws, ws.today)} />
       {project.notes && (
         <p className="review-card-notes">

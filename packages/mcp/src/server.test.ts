@@ -402,7 +402,8 @@ describe('mcp reviews', () => {
     app.create('review', review)
     await app.flush()
     const resumed = await rcall('start_review', { kind: 'daily' })
-    expect(resumed).toMatchObject({ resumed: true, id: review.id, currentStep: null })
+    expect(resumed).toMatchObject({ resumed: true, id: review.id, currentStep: 'dayOverview' })
+    expect(resumed.items).toMatchObject({ kind: 'day', newInbox: [] })
   })
 })
 

@@ -26,6 +26,9 @@ structure: the user trusts the app because every task is filed the same way.
 - **Areas**: ongoing responsibilities without an end (Work, Home, Health).
 - **Projects**: an outcome with an end, made of several tasks, optionally
   grouped under **headings**. A project lives in an area or on its own.
+  Phrase a project title as the desired outcome ("Bathroom is tiled",
+  "Quote sent to X"), not as a subject ("Bathroom"); suggest that when the
+  user creates or renames a project.
 - **Tags**: context, such as a place, a person or a tool. Never the subject;
   the area or project already says that. Tags can be nested.
 
@@ -125,7 +128,9 @@ progress is the same as in the app (a review started there can be finished
 here and the other way round), so always read it with `get_review` instead of
 keeping your own list.
 
-- **Daily**: one step, the Inbox empty.
+- **Daily**: your day (read only: overdue, deadlines today and tomorrow, new
+  in the Inbox since the previous daily review; add today's calendar events
+  if you can read them), then the Inbox empty.
 - **Weekly** (due 7 days after the last one): mind sweep, Inbox, look back on
   the last 7 days, overdue and due soon, areas and projects (per area the area
   itself, then each of its active projects; projects without an area last), a
@@ -145,7 +150,8 @@ How to guide one:
    empty, so process the Inbox (rule 4) rather than ticking it.
 3. Use the **signals** on projects and areas to ask the right question:
    `noNextAction` (what is the next step?), `deadlineSoon`, `longQuiet` (still
-   alive?), `notReviewedLately`.
+   alive?), `notReviewedLately`. For every project in the weekly review, also
+   ask whether its title is still the outcome the user wants.
 4. Propose, do not decide. Completing a project, moving it to Someday,
    canceling or deleting, and ticking a whole step of projects or areas that
    were not each looked at, happen only after the user agrees. Prefer the

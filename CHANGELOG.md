@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- The daily review starts with "Your day": today's events, what is overdue,
+  deadlines today and tomorrow, what came into the Inbox since the previous
+  daily review and what is assigned to you. Read only.
+- The Inbox step of a review shows one task at a time, with Done (2 minutes),
+  Delete, Open, Skip, When, Where and Delegate (assign to an agent, or tag it
+  `waiting` for someone else). Once it has a When and a list, the next one
+  shows. "Show as list" goes back to the list.
+- A new project's title asks for the desired outcome, and each project card
+  in the weekly review asks whether that outcome is still right.
+
 ## 1.0.0-alpha.7
 
 The Inbox now holds everything that is not processed yet, and the weekly

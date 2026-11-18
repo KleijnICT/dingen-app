@@ -103,6 +103,7 @@ export function dueReviews(
 // --- Steps ---
 
 export type ReviewStepId =
+  | 'dayOverview'
   | 'mindSweep'
   | 'inbox'
   | 'weekLookBack'
@@ -128,7 +129,10 @@ export interface ReviewStep {
 }
 
 const STEPS: Record<ReviewKind, ReviewStep[]> = {
-  daily: [{ id: 'inbox', check: 'inboxEmpty' }],
+  daily: [
+    { id: 'dayOverview', check: 'once' },
+    { id: 'inbox', check: 'inboxEmpty' },
+  ],
   weekly: [
     { id: 'mindSweep', check: 'once' },
     { id: 'inbox', check: 'inboxEmpty' },
@@ -184,8 +188,29 @@ export interface AreaProjects {
   allProjects: Project[]
 }
 
+/** Open tasks and projects, for the day overview. */
+export interface TasksAndProjects {
+  tasks: Task[]
+  projects: Project[]
+}
+
+/** What a step can know beyond the workspace. */
+export interface ReviewContext {
+  /** When the previous daily review was completed (the day overview's "new in the Inbox"). */
+  since?: string | null
+}
+
 export type ReviewItems =
   | { kind: 'none' }
+  | {
+      kind: 'day'
+      /** A deadline before today. */
+      overdue: TasksAndProjects
+      /** A deadline today or tomorrow. */
+      deadlines: TasksAndProjects
+      /** Inbox tasks made since the previous daily review (all of them without one). */
+      newInbox: Task[]
+    }
   | { kind: 'tasks'; tasks: Task[] }
   | { kind: 'logbook'; tasks: Task[]; projects: Project[]; perArea: AreaCount[] }
   | { kind: 'dated'; tasks: Task[]; projects: Project[] }
@@ -261,6 +286,28 @@ function dated(ws: Snapshot, today: CalendarDate): ReviewItems {
   return { kind: 'dated', tasks: pick(liveTasks(ws)), projects: pick(liveProjects(ws)) }
 }
 
+function dayOverview(ws: Snapshot, today: CalendarDate, since: string | null): ReviewItems {
+  const tomorrow = addDays(today, 1)
+  const pick = (test: (deadline: CalendarDate) => boolean): TasksAndProjects => {
+    const has = (i: Task | Project) => views.isOpen(i) && i.deadline !== null && test(i.deadline)
+    const byDeadline = (a: Task | Project, b: Task | Project) =>
+      (a.deadline as string).localeCompare(b.deadline as string) || views.byOrder(a, b)
+    return {
+      tasks: liveTasks(ws).filter(has).sort(byDeadline),
+      projects: liveProjects(ws).filter(has).sort(byDeadline),
+    }
+  }
+  const after = since === null ? null : Date.parse(since)
+  return {
+    kind: 'day',
+    overdue: pick((d) => d < today),
+    deadlines: pick((d) => d >= today && d <= tomorrow),
+    newInbox: views
+      .inbox(liveTasks(ws))
+      .filter((t) => after === null || Date.parse(t.createdAt) > after),
+  }
+}
+
 /**
  * Per open area (in area order) its own tasks and projects, then the projects
  * without an area when there are any.
@@ -311,8 +358,15 @@ function somedayGroups(ws: Snapshot): AreaGroup[] {
 }
 
 /** What a step shows. Steps without a list (mind sweep, triggers) give `none`. */
-export function reviewItems(step: ReviewStepId, ws: Snapshot, today: CalendarDate): ReviewItems {
+export function reviewItems(
+  step: ReviewStepId,
+  ws: Snapshot,
+  today: CalendarDate,
+  context: ReviewContext = {},
+): ReviewItems {
   switch (step) {
+    case 'dayOverview':
+      return dayOverview(ws, today, context.since ?? null)
     case 'inbox':
       return { kind: 'tasks', tasks: views.inbox(liveTasks(ws)) }
     case 'weekLookBack':

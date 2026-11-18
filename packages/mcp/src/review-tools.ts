@@ -4,6 +4,7 @@ import {
   dueReviews,
   isReviewedIn,
   isStepDone,
+  lastCompletedReview,
   newReview,
   nextReviewDate,
   type Project,
@@ -44,7 +45,7 @@ export interface ReviewToolDeps {
 }
 
 const KIND_DESCRIPTION =
-  "'daily' (Inbox empty), 'weekly' (the full GTD weekly review) or 'monthly' (areas and Someday in depth)"
+  "'daily' (a day overview, then the Inbox empty), 'weekly' (the full GTD weekly review) or 'monthly' (areas and Someday in depth)"
 
 export function registerReviewTools(
   server: McpServer,
@@ -54,6 +55,8 @@ export function registerReviewTools(
   const { run, fail } = deps
   const reviews = () => client.entities<Review>('review')
   const now = () => new Date().toISOString()
+  /** The day overview counts new Inbox tasks from the previous daily review. */
+  const context = () => ({ since: lastCompletedReview(reviews(), 'daily')?.completedAt ?? null })
 
   const requireRunning = (kind: ReviewKind): Review => {
     const review = runningReview(reviews(), kind)
@@ -74,7 +77,14 @@ export function registerReviewTools(
       })),
       currentStep: current?.id ?? null,
       ...(withItems && current
-        ? { items: describeItems(ws, review, reviewItems(current.id, ws, ws.today), deps) }
+        ? {
+            items: describeItems(
+              ws,
+              review,
+              reviewItems(current.id, ws, ws.today, context()),
+              deps,
+            ),
+          }
         : {}),
     }
   }
@@ -115,7 +125,12 @@ export function registerReviewTools(
               ...base,
               running: {
                 ...state,
-                items: describeItems(ws, review, reviewItems(stepId, ws, ws.today), deps),
+                items: describeItems(
+                  ws,
+                  review,
+                  reviewItems(stepId, ws, ws.today, context()),
+                  deps,
+                ),
               },
             }
           }),
@@ -175,7 +190,7 @@ export function registerReviewTools(
     {
       title: 'Complete a review step',
       description:
-        "Ticks off a step of the running review. Steps checked 'once' (mind sweep, look back, due soon, Someday scan, triggers) are ticked as a whole. The Inbox step cannot be ticked: it is done when the Inbox is empty. Steps checked 'perItem' (areasAndProjects: every area and every active project; areasDeep) are done by mark_reviewed on every item; ticking one here skips the items not yet reviewed, so only do that when the user says so. For the monthly 'somedayDeep' step pass `group` (an area id, or 'none') to tick one group of Someday tasks.",
+        "Ticks off a step of the running review. Steps checked 'once' (the daily day overview, mind sweep, look back, due soon, Someday scan, triggers) are ticked as a whole. The Inbox step cannot be ticked: it is done when the Inbox is empty. Steps checked 'perItem' (areasAndProjects: every area and every active project; areasDeep) are done by mark_reviewed on every item; ticking one here skips the items not yet reviewed, so only do that when the user says so. For the monthly 'somedayDeep' step pass `group` (an area id, or 'none') to tick one group of Someday tasks.",
       inputSchema: {
         kind: ReviewKind.describe(KIND_DESCRIPTION),
         step: z.string().describe('A step id from get_review'),
@@ -269,6 +284,20 @@ function describeItems(ws: Snapshot, review: Review, items: ReviewItems, deps: R
       return { kind: 'none' }
     case 'tasks':
       return { kind: 'tasks', tasks: tasks(items.tasks) }
+    case 'day':
+      return {
+        kind: 'day',
+        overdue: {
+          projects: items.overdue.projects.map(project),
+          tasks: tasks(items.overdue.tasks),
+        },
+        deadlines: {
+          projects: items.deadlines.projects.map(project),
+          tasks: tasks(items.deadlines.tasks),
+        },
+        newInbox: tasks(items.newInbox),
+        note: "Also tell the user today's calendar events if you can read them; this tool has none.",
+      }
     case 'logbook':
       return {
         kind: 'logbook',

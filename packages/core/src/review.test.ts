@@ -199,8 +199,8 @@ describe('dueReviews with an account anchor', () => {
 })
 
 describe('reviewSteps', () => {
-  it('daily has only the inbox', () => {
-    expect(reviewSteps('daily').map((s) => s.id)).toEqual(['inbox'])
+  it('daily: the day overview, then the inbox', () => {
+    expect(reviewSteps('daily').map((s) => s.id)).toEqual(['dayOverview', 'inbox'])
   })
   it('weekly follows the GTD steps of the plan', () => {
     expect(reviewSteps('weekly').map((s) => s.id)).toEqual([
@@ -479,7 +479,8 @@ describe('progress within a review', () => {
     expect(currentStep(review, ws, TODAY)?.id).toBe('mindSweep')
     expect(currentStep({ ...review, doneSteps: ['mindSweep'] }, ws, TODAY)?.id).toBe('inbox')
     const daily = newReview({ kind: 'daily', startedAt: start })
-    expect(currentStep(daily, snap({}), TODAY)).toBeNull()
+    expect(currentStep(daily, snap({}), TODAY)?.id).toBe('dayOverview')
+    expect(currentStep({ ...daily, doneSteps: ['dayOverview'] }, snap({}), TODAY)).toBeNull()
   })
 })
 
@@ -623,5 +624,59 @@ describe('signals', () => {
       ])
       expect(signals(a({ reviewedAt: at('2026-10-29') }), snap({}), TODAY)).toEqual([])
     })
+  })
+})
+
+describe('day overview', () => {
+  const earlier = at('2026-11-09')
+  const later = at('2026-11-11')
+  const area = newArea({ title: 'Home' })
+  const late = newTask({
+    title: 'late',
+    areaId: area.id,
+    when: { kind: 'anytime' },
+    deadline: '2026-11-10',
+  })
+  const dueToday = newTask({
+    title: 'today',
+    areaId: area.id,
+    when: { kind: 'anytime' },
+    deadline: TODAY,
+  })
+  const dueTomorrow = newTask({ title: 'tomorrow', deadline: '2026-11-12', createdAt: earlier })
+  const dueLater = newTask({
+    title: 'later',
+    areaId: area.id,
+    when: { kind: 'anytime' },
+    deadline: '2026-11-13',
+  })
+  const doneLate = newTask({
+    title: 'done',
+    deadline: '2026-11-01',
+    status: 'completed',
+    createdAt: earlier,
+  })
+  const lateProject = newProject({ title: 'late project', deadline: '2026-11-05' })
+  const fresh = newTask({ title: 'fresh', createdAt: later })
+  const ws = snap({
+    areas: [area],
+    projects: [lateProject],
+    tasks: [late, dueToday, dueTomorrow, dueLater, doneLate, fresh],
+  })
+  const titles = (items: { title: string }[]) => items.map((i) => i.title)
+
+  it('overdue and deadlines today and tomorrow, open only', () => {
+    const items = reviewItems('dayOverview', ws, TODAY)
+    if (items.kind !== 'day') throw new Error(items.kind)
+    expect(titles(items.overdue.tasks)).toEqual(['late'])
+    expect(titles(items.overdue.projects)).toEqual(['late project'])
+    expect(titles(items.deadlines.tasks)).toEqual(['today', 'tomorrow'])
+  })
+
+  it('new in the Inbox since the previous daily review', () => {
+    const all = reviewItems('dayOverview', ws, TODAY)
+    expect(all.kind === 'day' && titles(all.newInbox).sort()).toEqual(['fresh', 'tomorrow'])
+    const since = reviewItems('dayOverview', ws, TODAY, { since: at('2026-11-10') })
+    expect(since.kind === 'day' && titles(since.newInbox)).toEqual(['fresh'])
   })
 })

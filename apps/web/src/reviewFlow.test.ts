@@ -92,7 +92,9 @@ describe('steps', () => {
     expect(openStepsAfter(stepStates(review, empty), 'triggers')).toEqual([])
     expect(openStepsAfter(stepStates(review, empty), 'inbox')).toEqual(['triggers'])
     const daily = newReview({ kind: 'daily' })
-    expect(openStepsAfter(stepStates(daily, ws), 'inbox')).toEqual(['inbox'])
+    expect(openStepsAfter(stepStates(daily, ws), 'inbox')).toEqual(['dayOverview', 'inbox'])
+    const seen = newReview({ kind: 'daily', doneSteps: ['dayOverview'] })
+    expect(openStepsAfter(stepStates(seen, ws), 'inbox')).toEqual(['inbox'])
   })
 
   it('adds and removes done keys without duplicates', () => {

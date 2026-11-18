@@ -3549,3 +3549,56 @@ textarea.title-input {
 .review-index li.nested .review-index-item {
   padding-left: 28px;
 }
+
+/* The Inbox step one task at a time (plan 28). */
+.review-view-switch {
+  margin: 0 0 10px;
+  text-align: right;
+  font-size: 0.85em;
+}
+.review-view-switch .link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.inbox-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 10px 4px;
+}
+.inbox-card-actions .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.inbox-card-part {
+  margin: 14px 10px 0;
+}
+.inbox-card-label {
+  margin: 0 0 6px;
+  font-size: 0.8em;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.inbox-card-where {
+  max-height: 240px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.inbox-card-part .when-picker .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* The weekly question on a project card: is the outcome still right? */
+.review-card-question {
+  margin: 6px 10px 0 42px;
+  font-size: 0.9em;
+  font-style: italic;
+  color: var(--muted);
+}

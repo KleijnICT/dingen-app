@@ -206,7 +206,7 @@ export function ProjectPage({ project, focusSignal }: Props) {
               className="title-input"
               wrap
               value={project.title}
-              placeholder={t('project.untitled')}
+              placeholder={t('project.outcomePlaceholder')}
               aria-label={t('project.title')}
               autoFocus={project.title === ''}
               onCommit={(title) => engine.mutate('project', project.id, { title })}
