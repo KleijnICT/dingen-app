@@ -35,6 +35,7 @@ import {
 import { type ReactNode, useEffect, useState } from 'react'
 import { useCalendarData } from '../calendar.js'
 import { type MessageKey, useT } from '../i18n/index.js'
+import { listProjects, listTasks } from '../lists.js'
 import { setInboxStepView, useInboxStepView } from '../prefs.js'
 import { nextToReview, withDoneStep, withoutDoneStep } from '../reviewFlow.js'
 import { areaPath, navigate, projectPath, setTaskParam } from '../router.js'
@@ -52,7 +53,6 @@ import {
 } from '../taskActions.js'
 import { AreaGlyph } from './AreaIcons.js'
 import { useAssignChoices } from './Assignee.js'
-import { DayEvents } from './CalendarEvents.js'
 import { ProgressCircle } from './Icons.js'
 import { LinkedText } from './LinkedText.js'
 import { MemberAvatar, useMembers } from './MemberAvatar.js'
@@ -62,6 +62,7 @@ import { ProjectRow } from './ProjectRow.js'
 import { TaskGroup } from './TaskGroup.js'
 import { ListButton, PopoverButton, whenText } from './TaskPanel.js'
 import type { RowProps } from './TaskRow.js'
+import { TodayBody } from './TodayBody.js'
 import { TaskToolbar } from './Toolbar.js'
 import { useReviews } from './useReviews.js'
 import { useTaskList } from './useTaskList.js'
@@ -142,9 +143,22 @@ function DayOverviewStep({ items }: { items: DayItems }) {
       : ws.tasks
           .filter((x) => !x.deleted && x.repeat === null && views.isOpen(x) && x.assigneeId === me)
           .sort(views.byOrder)
+  // Today as on the Today page; the other sections leave out what is already there.
+  const todayTasks = listTasks('today', ws)
+  const todayProjects = listProjects('today', ws)
+  const inToday = new Set([...todayTasks, ...todayProjects].map((x) => x.id))
+  const notToday = <T extends { id: string }>(list: T[]) => list.filter((x) => !inToday.has(x.id))
+  const overdue = {
+    tasks: notToday(items.overdue.tasks),
+    projects: notToday(items.overdue.projects),
+  }
+  const deadlines = {
+    tasks: notToday(items.deadlines.tasks),
+    projects: notToday(items.deadlines.projects),
+  }
   const unique = [
     ...new Map(
-      [...items.overdue.tasks, ...items.deadlines.tasks, ...items.newInbox, ...assigned].map(
+      [...todayTasks, ...overdue.tasks, ...deadlines.tasks, ...items.newInbox, ...assigned].map(
         (x) => [x.id, x],
       ),
     ).values(),
@@ -180,27 +194,47 @@ function DayOverviewStep({ items }: { items: DayItems }) {
     )
   }
   const quiet =
-    unique.length === 0 &&
-    items.overdue.projects.length === 0 &&
-    items.deadlines.projects.length === 0
+    unique.length === todayTasks.length &&
+    overdue.projects.length === 0 &&
+    deadlines.projects.length === 0
+  const todayIds = ids(todayTasks)
 
   return (
     <>
       <div className="group">
-        <h2 className="group-title">{t('review.day.events')}</h2>
-        {eventsOnDay(calendar.events, ws.today).length > 0 ? (
-          <DayEvents date={ws.today} />
+        <h2 className="group-title">{t('review.day.today')}</h2>
+        {todayTasks.length === 0 &&
+        todayProjects.length === 0 &&
+        eventsOnDay(calendar.events, ws.today).length === 0 ? (
+          <p className="muted review-day-none">{t('review.day.nothingToday')}</p>
         ) : (
-          <p className="muted review-day-none">{t('review.day.noEvents')}</p>
+          <TodayBody
+            today={ws.today}
+            tasks={where((x) => todayIds.has(x.id))}
+            view="manual"
+            projects={
+              todayProjects.length > 0 && (
+                <ul className="tasks">
+                  {todayProjects.map((p) => (
+                    <ProjectRow key={p.id} project={p} />
+                  ))}
+                </ul>
+              )
+            }
+            group={(key, _target, tasks) => (
+              <TaskGroup
+                group={{ key: `review:day:today:${key}`, target: null }}
+                tasks={tasks}
+                rowProps={(task) => taskList.rowProps(task, { showCaption: true })}
+                frozen
+              />
+            )}
+            groupByContainer={() => []}
+          />
         )}
       </div>
-      {section('overdue', t('review.day.overdue'), items.overdue.tasks, items.overdue.projects)}
-      {section(
-        'deadlines',
-        t('review.day.deadlines'),
-        items.deadlines.tasks,
-        items.deadlines.projects,
-      )}
+      {section('overdue', t('review.day.overdue'), overdue.tasks, overdue.projects)}
+      {section('deadlines', t('review.day.deadlines'), deadlines.tasks, deadlines.projects)}
       {section('new', t('review.day.newInbox'), items.newInbox, [], { showWhen: true })}
       {section('assigned', t('review.day.assigned'), assigned, [], { showWhen: true })}
       {quiet && <p className="empty">{t('review.day.quiet')}</p>}

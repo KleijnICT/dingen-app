@@ -2551,6 +2551,22 @@ a.button {
 .review-banner-text {
   flex: 1;
 }
+.today-new-banner {
+  margin-bottom: 12px;
+  background: color-mix(in srgb, var(--today) 9%, var(--surface));
+  border-color: color-mix(in srgb, var(--today) 28%, transparent);
+}
+/* A task that came into Today by itself and was not seen yet (like Things). */
+.task-new-dot {
+  display: inline-block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--today);
+  vertical-align: 0.1em;
+}
 .review-banner-close {
   flex: none;
   display: grid;

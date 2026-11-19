@@ -19,6 +19,8 @@ export interface User {
   homeAssistant: boolean
   /** False for a Home Assistant account that has not set a password yet. */
   hasPassword: boolean
+  /** The day the user last dismissed Today's "new tasks" banner; null = never. */
+  todaySeenOn: string | null
 }
 
 /** The Home Assistant user behind an ingress request (Supervisor headers). */
@@ -44,6 +46,7 @@ function toUser(row: UserRow): User {
     isAdmin: row.isAdmin,
     homeAssistant: row.haUserId !== null,
     hasPassword: hasUsablePassword(row.passwordHash),
+    todaySeenOn: row.todaySeenOn ?? null,
   }
 }
 
@@ -134,6 +137,7 @@ export class AuthService {
         isAdmin: first,
         homeAssistant: false,
         hasPassword: true,
+        todaySeenOn: null,
       }
       tx.insert(users)
         .values({ id: user.id, email, createdAt: now, isAdmin: first, passwordHash })
@@ -218,6 +222,7 @@ export class AuthService {
         createdAt: new Date().toISOString(),
         isAdmin: first,
         haUserId: identity.id,
+        todaySeenOn: null,
       }
       tx.insert(users).values(row).run()
       createPersonalSpace(tx, row.id, row.createdAt)
@@ -229,6 +234,11 @@ export class AuthService {
    * Sets a new password. The current one is required, except for an account
    * that has none yet (a Home Assistant account). Other sessions stay valid.
    */
+  /** Remembers that the user saw Today's new tasks on `date`. */
+  markTodaySeen(userId: string, date: string): void {
+    this.db.update(users).set({ todaySeenOn: date }).where(eq(users.id, userId)).run()
+  }
+
   async setPassword(
     userId: string,
     newPassword: string,

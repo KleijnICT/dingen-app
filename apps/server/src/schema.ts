@@ -71,6 +71,8 @@ export const users = sqliteTable('users', {
    * account starts without a usable password; see `NO_PASSWORD` in auth/password.ts.
    */
   haUserId: text('ha_user_id').unique(),
+  /** The day the user last saw Today's new tasks (OK on the banner); YYYY-MM-DD or null. */
+  todaySeenOn: text('today_seen_on'),
 })
 
 export type SpaceKind = 'personal' | 'shared'

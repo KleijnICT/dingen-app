@@ -1,3 +1,4 @@
+import { CalendarDate } from '@dingen/core'
 import { type Context, Hono } from 'hono'
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
 import { z } from 'zod'
@@ -16,6 +17,8 @@ const NewPassword = z.object({
   currentPassword: z.string().min(1).max(1024).optional(),
   password: z.string().min(8).max(1024),
 })
+
+const TodaySeen = z.object({ date: CalendarDate })
 
 const Registration = Credentials.extend({ invite: z.string().min(1).max(200).optional() })
 
@@ -139,6 +142,16 @@ export function authRoutes(options: { demo?: boolean } = {}) {
       ingress: c.get('ingressUser') !== undefined,
     }),
   )
+
+  // OK on Today's "new tasks" banner: seen for this day, on every device.
+  app.post('/today-seen', requireAuth, async (c) => {
+    const parsed = TodaySeen.safeParse(await c.req.json().catch(() => null))
+    if (!parsed.success) return c.json({ error: 'invalid_body', issues: parsed.error.issues }, 400)
+    const user = c.get('user')
+    if (!user) return c.json({ error: 'unauthorized' }, 401)
+    c.get('auth').markTodaySeen(user.id, parsed.data.date)
+    return c.json({ ok: true })
+  })
 
   // Change the password, or set the first one for an account without one.
   app.post('/password', requireSession, async (c) => {

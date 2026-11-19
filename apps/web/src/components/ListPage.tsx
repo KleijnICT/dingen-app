@@ -20,6 +20,7 @@ import { setFocusMode, setTodayView, useFocusMode, useTodayView } from '../prefs
 import { areaPath, navigate, projectPath } from '../router.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { createInboxTask, type MoveTarget, useLinger } from '../taskActions.js'
+import { markTodaySeen, newInToday, useTodaySeen, whenSetOn } from '../todaySeen.js'
 import { DayEvents } from './CalendarEvents.js'
 import { MoreMenu } from './Menu.js'
 import {
@@ -64,6 +65,10 @@ export function ListPage({
   const maxDuration = useDurationFilter(list.id)
 
   const visible = listTasks(list.id, ws)
+  const seen = useTodaySeen()
+  const fresh =
+    list.id === 'today' ? newInToday(visible, (x) => whenSetOn(engine, x), ws.today, seen) : []
+  const freshIds = new Set(fresh.map((x) => x.id))
   const inbox = list.id === 'inbox'
   const { shown: all, toggle } = useLinger(
     visible,
@@ -104,6 +109,7 @@ export function ListPage({
   ): RowProps =>
     taskList.rowProps(task, {
       showCaption,
+      isNew: freshIds.has(task.id),
       // In the Inbox a task can already have a date; show it.
       showWhen: inbox,
       showDaypart: list.id === 'upcoming',
@@ -282,6 +288,17 @@ export function ListPage({
         {below}
       </PageHeader>
       {isToday && !focus && <ReviewBanner />}
+      {isToday && fresh.length > 0 && (
+        <div className="review-banner today-new-banner">
+          <span className="task-new-dot" aria-hidden="true" />
+          <span className="review-banner-text">
+            {fresh.length === 1 ? t('today.new.one') : t('today.new.other', { n: fresh.length })}
+          </span>
+          <button type="button" className="chip small" onClick={() => void markTodaySeen(ws.today)}>
+            {t('today.new.ok')}
+          </button>
+        </div>
+      )}
       {shown.length === 0 && projects.length === 0 && (
         <p className="empty">{t(`list.empty.${list.id}` as MessageKey)}</p>
       )}

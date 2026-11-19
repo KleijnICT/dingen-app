@@ -201,3 +201,28 @@ describe('API-tokens en scheiding', () => {
     expect(bobPull.changes).toHaveLength(0)
   })
 })
+
+describe("Today's new tasks seen", () => {
+  it('remembers the day on the account and rejects a bad date', async () => {
+    const own = openDatabase(':memory:')
+    const app = createApp({ db: own.db, version: 'test', sqliteVersion: own.sqliteVersion })
+    const reg = await app.request(
+      '/api/auth/register',
+      json({ email: 'vandaag@example.com', password: 'wachtwoord123' }),
+    )
+    const cookie = reg.headers.get('set-cookie') ?? ''
+    const before = await (await app.request('/api/auth/me', { headers: { cookie } })).json()
+    expect(before.user.todaySeenOn).toBeNull()
+
+    const ok = await app.request('/api/auth/today-seen', json({ date: '2026-11-19' }, { cookie }))
+    expect(ok.status).toBe(200)
+    const after = await (await app.request('/api/auth/me', { headers: { cookie } })).json()
+    expect(after.user.todaySeenOn).toBe('2026-11-19')
+
+    const bad = await app.request('/api/auth/today-seen', json({ date: 'morgen' }, { cookie }))
+    expect(bad.status).toBe(400)
+    const anonymous = await app.request('/api/auth/today-seen', json({ date: '2026-11-19' }))
+    expect(anonymous.status).toBe(401)
+    own.close()
+  })
+})

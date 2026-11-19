@@ -37,6 +37,7 @@ import { parseReviewKind } from './reviewFlow.js'
 import { navigate, parseRoute, usePath } from './router.js'
 import { Settings } from './Settings.js'
 import { useBuildWorkspace, useEngine, WorkspaceContext } from './store/context.js'
+import { initTodaySeen, refreshTodaySeen } from './todaySeen.js'
 
 interface Props {
   user: User
@@ -51,6 +52,14 @@ export function Shell({ user, onSignedOut }: Props) {
   const [focusSignal, setFocusSignal] = useState(0)
   const ws = useBuildWorkspace(today)
   useCalendarFeed(user.id, today)
+  useState(() => initTodaySeen(user))
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void refreshTodaySeen()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [])
   // A weekly or monthly review never done counts from the day the account was made.
   const reviewAnchor = useMemo(() => dateOf(user.createdAt), [user.createdAt])
   const t = useT()

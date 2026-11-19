@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `today_seen_on` text;

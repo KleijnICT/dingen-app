@@ -62,6 +62,8 @@ export interface User {
   homeAssistant?: boolean
   /** False for an account without a password yet (a Home Assistant account). */
   hasPassword?: boolean
+  /** The day Today's "new tasks" banner was last dismissed; null = never. */
+  todaySeenOn?: string | null
 }
 
 export type RegistrationMode = 'closed' | 'open' | 'invite'

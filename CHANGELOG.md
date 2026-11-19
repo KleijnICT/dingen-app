@@ -2,9 +2,14 @@
 
 ## Unreleased
 
-- The daily review starts with "Your day": today's events, what is overdue,
-  deadlines today and tomorrow, what came into the Inbox since the previous
-  daily review and what is assigned to you. Read only.
+- The daily review starts with "Your day": Today as on the Today page (events,
+  tasks and projects by daypart), what else is overdue, deadlines today and
+  tomorrow, what came into the Inbox since the previous daily review and what
+  is assigned to you. Read only.
+- Today shows a banner when tasks came in by themselves, because the date
+  they were planned for arrived: "3 new tasks in Today", with a dot on each.
+  What you move to Today yourself does not count. OK hides it on every device.
+  Database migration: a column on `users`.
 - The Inbox step of a review shows one task at a time. When, Where and
   Delegate (assign to an agent, or tag it `waiting` for someone else) are
   buttons that open a small popover, like in the task panel; below them are

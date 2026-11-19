@@ -22,6 +22,8 @@ export interface RowProps {
   showDaypart?: boolean
   /** Show the project or area under the title (off inside that project or area). */
   showCaption: boolean
+  /** Came into Today by itself and not seen yet: a dot before the title. */
+  isNew?: boolean
   /** Text under the title in place of the project or area (a heading name, for instance). */
   caption?: string
   /**
@@ -56,6 +58,7 @@ export function TaskRow({
   showWhen,
   showDaypart = false,
   showCaption,
+  isNew = false,
   caption,
   onSelect,
   onOpen,
@@ -109,7 +112,10 @@ export function TaskRow({
         }}
       >
         <span className="task-text">
-          <span className="task-title">{task.title || <em>{t('task.untitled')}</em>}</span>
+          <span className="task-title">
+            {isNew && <span className="task-new-dot" title={t('today.new.dot')} />}
+            {task.title || <em>{t('task.untitled')}</em>}
+          </span>
           {caption ? (
             <span className="task-caption">{caption}</span>
           ) : (
