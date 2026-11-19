@@ -3561,38 +3561,44 @@ textarea.title-input {
   align-items: center;
   gap: 4px;
 }
+.inbox-card-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 10px 0;
+}
+.inbox-card-fields .panel-popover-anchor {
+  position: relative;
+  max-width: 100%;
+  margin-left: 0;
+}
+.inbox-card-fields .field-button {
+  border: 1px solid var(--line);
+}
+.inbox-card-fields .field-button-icon {
+  color: var(--muted);
+}
+.inbox-card-fields .panel-popover {
+  right: auto;
+  z-index: 20;
+  width: min(360px, calc(100vw - 32px));
+}
 .inbox-card-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
-  margin: 12px 10px 4px;
+  margin: 16px 10px 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
 }
 .inbox-card-actions .chip {
   display: inline-flex;
   align-items: center;
   gap: 5px;
 }
-.inbox-card-part {
-  margin: 14px 10px 0;
-}
-.inbox-card-label {
-  margin: 0 0 6px;
-  font-size: 0.8em;
-  font-weight: 600;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-.inbox-card-where {
-  max-height: 240px;
-  overflow-y: auto;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-}
-.inbox-card-part .when-picker .chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
+.inbox-card-actions .inbox-card-skip {
+  margin-left: auto;
 }
 
 /* The weekly question on a project card: is the outcome still right? */
@@ -3605,9 +3611,6 @@ textarea.title-input {
 
 .inbox-card .review-card-notes {
   margin-left: 10px;
-}
-.inbox-card-part .when-picker {
-  padding-left: 0;
 }
 .review-day-none {
   margin: 0 0 0 10px;

@@ -652,7 +652,7 @@ function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
 }
 
 /** "Today", "Friday · afternoon", "Someday": the When of a task in a few words. */
-function whenText(task: Task, today: string, t: ReturnType<typeof useT>): string {
+export function whenText(task: Task, today: string, t: ReturnType<typeof useT>): string {
   const base =
     task.when.kind === 'date' && task.when.date <= today
       ? t('when.today')
@@ -681,7 +681,7 @@ function FieldRow({ label, field, onBlur, onKeyDown, children }: RowProps) {
   )
 }
 
-interface PopoverProps {
+export interface PopoverProps {
   label: string
   /** Opens right away (the field was just added). */
   autoOpen?: boolean
@@ -696,7 +696,7 @@ interface PopoverProps {
  * A field's value as a button that opens its choices in a small popover. Escape or a click
  * outside closes the popover (not the panel); choosing closes it and returns focus.
  */
-function PopoverButton({ label, autoOpen = false, value, text, children }: PopoverProps) {
+export function PopoverButton({ label, autoOpen = false, value, text, children }: PopoverProps) {
   const t = useT()
   const [open, setOpen] = useState(autoOpen)
   const root = useRef<HTMLDivElement>(null)
@@ -749,7 +749,16 @@ function PopoverButton({ label, autoOpen = false, value, text, children }: Popov
 }
 
 /** The task's project or area (with its heading) as a button that opens the Move choices. */
-function ListButton({ task, autoOpen }: { task: Task; autoOpen: boolean }) {
+export function ListButton({
+  task,
+  autoOpen = false,
+  emptyLabel,
+}: {
+  task: Task
+  autoOpen?: boolean
+  /** Shown instead of "No list" when the task has none. */
+  emptyLabel?: string
+}) {
   const ws = useWorkspace()
   const t = useT()
   const project = task.projectId ? ws.projectById.get(task.projectId) : undefined
@@ -759,7 +768,7 @@ function ListButton({ task, autoOpen }: { task: Task; autoOpen: boolean }) {
     ? project.title || t('project.untitled')
     : area
       ? area.title || t('area.untitled')
-      : t('task.noContainer')
+      : (emptyLabel ?? t('task.noContainer'))
   const headingName = project && heading ? heading.title || t('project.newHeading') : null
   const icon = project ? (
     <ProgressCircle value={views.progress(project.id, ws.tasks)} size={14} />

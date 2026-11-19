@@ -22,7 +22,16 @@ import {
   views,
   type When,
 } from '@dingen/core'
-import { Check, CircleCheck, List, SkipForward, SquarePen, Trash2 } from 'lucide-react'
+import {
+  CalendarDays,
+  Check,
+  CircleCheck,
+  List,
+  SkipForward,
+  SquarePen,
+  Trash2,
+  UserRound,
+} from 'lucide-react'
 import { type ReactNode, useEffect, useState } from 'react'
 import { useCalendarData } from '../calendar.js'
 import { type MessageKey, useT } from '../i18n/index.js'
@@ -48,10 +57,10 @@ import { ProgressCircle } from './Icons.js'
 import { LinkedText } from './LinkedText.js'
 import { MemberAvatar, useMembers } from './MemberAvatar.js'
 import { MoreMenu } from './Menu.js'
-import { MoveList } from './MoveList.js'
 import { HeadingRow } from './ProjectPage.js'
 import { ProjectRow } from './ProjectRow.js'
 import { TaskGroup } from './TaskGroup.js'
+import { ListButton, PopoverButton, whenText } from './TaskPanel.js'
 import type { RowProps } from './TaskRow.js'
 import { TaskToolbar } from './Toolbar.js'
 import { useReviews } from './useReviews.js'
@@ -276,6 +285,11 @@ function InboxCards({ tasks }: { tasks: Task[] }) {
             <LinkedText text={task.notes} />
           </p>
         )}
+        <div className="inbox-card-fields">
+          <WhenButton task={task} />
+          <ListButton task={task} emptyLabel={t('review.inbox.where')} />
+          <Delegate task={task} />
+        </div>
         <div className="inbox-card-actions">
           <button type="button" className="chip" onClick={() => toggleTask(engine, ws, task)}>
             <CircleCheck size={15} aria-hidden="true" /> {t('review.inbox.done')}
@@ -289,32 +303,48 @@ function InboxCards({ tasks }: { tasks: Task[] }) {
           {queue.length > 1 && (
             <button
               type="button"
-              className="chip"
+              className="chip inbox-card-skip"
               onClick={() => setSkipped((s) => [...s.filter((id) => id !== task.id), task.id])}
             >
-              <SkipForward size={15} aria-hidden="true" /> {t('review.inbox.skip')}
+              {t('review.inbox.skip')} <SkipForward size={15} aria-hidden="true" />
             </button>
           )}
         </div>
-        <section className="inbox-card-part">
-          <h3 className="inbox-card-label">{t('review.inbox.when')}</h3>
-          <WhenPicker
-            when={task.when}
-            daypart={task.daypart}
-            today={ws.today}
-            onChange={(when, daypart) => commitTask(engine, ws, task, whenFields(when, daypart))}
-          />
-        </section>
-        <section className="inbox-card-part">
-          <h3 className="inbox-card-label">{t('review.inbox.where')}</h3>
-          <div className="inbox-card-where">
-            <MoveList task={task} onDone={() => {}} />
-          </div>
-        </section>
-        <Delegate task={task} />
       </article>
       {taskList.panel}
     </>
+  )
+}
+
+/** When as a button that opens the usual picker; a task still in the Inbox shows "When". */
+function WhenButton({ task }: { task: Task }) {
+  const t = useT()
+  const engine = useEngine()
+  const ws = useWorkspace()
+  const text = task.when.kind === 'inbox' ? t('review.inbox.when') : whenText(task, ws.today, t)
+  return (
+    <PopoverButton
+      label={t('when.label')}
+      text={text}
+      value={
+        <>
+          <CalendarDays size={15} className="field-button-icon" aria-hidden="true" />
+          <span className="field-button-text">{text}</span>
+        </>
+      }
+    >
+      {(done) => (
+        <WhenPicker
+          when={task.when}
+          daypart={task.daypart}
+          today={ws.today}
+          onChange={(when, daypart, close) => {
+            commitTask(engine, ws, task, whenFields(when, daypart))
+            if (close) done()
+          }}
+        />
+      )}
+    </PopoverButton>
   )
 }
 
@@ -328,6 +358,7 @@ function Delegate({ task }: { task: Task }) {
   const { agents } = useAssignChoices(task)
   const waiting = ws.tags.find((x) => !x.deleted && x.title === WAITING)
   const isWaiting = waiting !== undefined && task.tagIds.includes(waiting.id)
+  const assignee = agents.find((m) => m.id === task.assigneeId)
 
   function toggleWaiting() {
     if (isWaiting && waiting) {
@@ -340,35 +371,58 @@ function Delegate({ task }: { task: Task }) {
     commitTask(engine, ws, task, { tagIds: [...task.tagIds, found.tag.id] })
   }
 
+  const text = assignee
+    ? assignee.name
+    : isWaiting
+      ? t('review.inbox.someoneElse')
+      : t('review.inbox.delegate')
   return (
-    <section className="inbox-card-part">
-      <h3 className="inbox-card-label">{t('review.inbox.delegate')}</h3>
-      <div className="when-picker">
-        {agents.map((m) => (
+    <PopoverButton
+      label={t('review.inbox.delegate')}
+      text={text}
+      value={
+        <>
+          {assignee ? (
+            <MemberAvatar member={assignee} size={16} title={false} />
+          ) : (
+            <UserRound size={15} className="field-button-icon" aria-hidden="true" />
+          )}
+          <span className="field-button-text">{text}</span>
+        </>
+      }
+    >
+      {(done) => (
+        <div className="when-picker">
+          {agents.map((m) => (
+            <button
+              type="button"
+              key={m.id}
+              className={`chip ${task.assigneeId === m.id ? 'active' : ''}`}
+              aria-pressed={task.assigneeId === m.id}
+              onClick={() => {
+                commitTask(engine, ws, task, {
+                  assigneeId: task.assigneeId === m.id ? null : m.id,
+                })
+                done()
+              }}
+            >
+              <MemberAvatar member={m} size={16} title={false} /> {m.name}
+            </button>
+          ))}
           <button
             type="button"
-            key={m.id}
-            className={`chip ${task.assigneeId === m.id ? 'active' : ''}`}
-            aria-pressed={task.assigneeId === m.id}
-            onClick={() =>
-              commitTask(engine, ws, task, {
-                assigneeId: task.assigneeId === m.id ? null : m.id,
-              })
-            }
+            className={`chip ${isWaiting ? 'active' : ''}`}
+            aria-pressed={isWaiting}
+            onClick={() => {
+              toggleWaiting()
+              done()
+            }}
           >
-            <MemberAvatar member={m} size={16} title={false} /> {m.name}
+            {t('review.inbox.someoneElse')}
           </button>
-        ))}
-        <button
-          type="button"
-          className={`chip ${isWaiting ? 'active' : ''}`}
-          aria-pressed={isWaiting}
-          onClick={toggleWaiting}
-        >
-          {t('review.inbox.someoneElse')}
-        </button>
-      </div>
-    </section>
+        </div>
+      )}
+    </PopoverButton>
   )
 }
 
