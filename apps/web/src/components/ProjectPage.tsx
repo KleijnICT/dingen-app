@@ -10,7 +10,7 @@ import { Heading as HeadingIcon } from 'lucide-react'
 import { type ReactNode, useState } from 'react'
 import { useT } from '../i18n/index.js'
 import { describeWhen } from '../lists.js'
-import { navigate } from '../router.js'
+import { areaPath, navigate } from '../router.js'
 import { projectSections } from '../sections.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { createListTask, deleteProject, toggleProject, useLinger } from '../taskActions.js'
@@ -22,6 +22,7 @@ import { InlineInput } from './InlineInput.js'
 import { MemberAvatars, MembersPanel, useAccess } from './MembersPanel.js'
 import { type MenuItem, MoreMenu } from './Menu.js'
 import { ActiveFilters, FilterButton, type PageFilters, PageHeader } from './PageHeader.js'
+import { Crumb, HeadPortal } from './Pane.js'
 import { ReviewEveryField } from './ReviewEveryField.js'
 import { TagEditor } from './TagEditor.js'
 import { TaskGroup } from './TaskGroup.js'
@@ -56,6 +57,7 @@ export function ProjectPage({ project, focusSignal, headerExtra }: Props) {
     tagFilter ? task.tagIds.includes(tagFilter) : true,
   )
   const progress = views.progress(project.id, ws.tasks)
+  const area = project.areaId ? ws.areaById.get(project.areaId) : undefined
 
   const taskList = useTaskList([...shownOpen, ...sections.completed], toggle)
 
@@ -198,6 +200,20 @@ export function ProjectPage({ project, focusSignal, headerExtra }: Props) {
 
   return (
     <section className="list-page project">
+      {area && !area.deleted && (
+        <HeadPortal slot="crumb">
+          <Crumb
+            steps={[
+              {
+                key: area.id,
+                icon: <AreaGlyph icon={area.icon} color={area.color} size={14} />,
+                label: area.title || t('area.untitled'),
+                onClick: () => navigate(areaPath(area.id)),
+              },
+            ]}
+          />
+        </HeadPortal>
+      )}
       <PageHeader
         title={
           <>

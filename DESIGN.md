@@ -111,7 +111,9 @@ things going out. Every animation has a `prefers-reduced-motion` fallback.
 | `--control-touch`                                       | 32px            | Icon button on touch screens              |
 | `--pane-head`                                           | 48px            | The head of every pane (see "Panes")      |
 | `--pane-pad-x`, `--pane-pad-y`                          | 16px, 12px      | A pane's inner margins                    |
+| `--pane-inset`                                          | 6px             | A list of rows inside a pane              |
 | `--rail`                                                | 56px            | The sidebar folded to icons               |
+| `--rail-item`                                           | 36px            | One icon in the rail                      |
 | `--sidebar-default`, `--panel-default`, `--content-max` | 220, 420, 640px | Default column widths                     |
 
 ## Components
@@ -177,14 +179,58 @@ Menus use `.menu` inside a `.more-menu` with `.menu-item` rows.
 A title and one sentence, in `--muted`, nothing more. No illustrations, no
 buttons that repeat what the toolbar already offers.
 
-## Panes (coming)
+## Panes
 
-_Placeholder._ Every pane (sidebar, review queue, task panel, settings,
-search) will share one grammar: a head of `--pane-head` with a title, an
-optional count and icon buttons on the right, a hairline, and the content
-with `--pane-pad-x` / `--pane-pad-y` margins. In the review the sidebar
-folds to a `--rail` of icons. This section is filled in when the pane
-components land.
+Every pane shares one grammar, from `components/Pane.tsx`:
+
+- **`PaneHeader`** (`.pane-head`): one row of `--pane-head` (48px), the
+  title in `--text-sm` / `--weight-strong` at `--pane-pad-x` from the left,
+  an optional count (`.pane-count`, a quiet pill), then `.icon-button`s on
+  the right, and a hairline under it. All heads have the same height, so
+  the first lines of the panes line up across the window. A head can hold
+  something else in place of the title: a breadcrumb, a back button, the
+  search field.
+- **`Pane`** (`.pane`): the head, then `.pane-body` with `--pane-pad-y` /
+  `--pane-pad-x` margins, scrolling on its own. A list of rows (the sidebar,
+  the review list) uses `--pane-inset` instead, so the rows' icons line up
+  with the head's title.
+
+Where it is used:
+
+| Pane        | Head                                                                                     |
+| ----------- | ---------------------------------------------------------------------------------------- |
+| Sidebar     | "Dingen", Search                                                                         |
+| Review list | "Review" with the count                                                                  |
+| Content     | Breadcrumb on the left; the list's actions, a hairline, the page's own actions (desktop) |
+| Task panel  | Where the task lives (project › heading, or area); `…` and Close. Back on a phone        |
+| Settings    | The tab's name; Close                                                                    |
+| Search      | The search field                                                                         |
+
+**Actions live in the head on a desktop.** The content pane's head holds
+the list's buttons (new task, new heading or project, When, Move, Tags,
+Assign; with a selection the count and Delete) and, after a hairline, the
+page's own (filter, focus, `…`, the review's "Mark reviewed"). Pages put
+them there through `TaskToolbar` and `PageHeader`; what those buttons open
+hangs under the head against its right edge. On a phone (≤720px) there is
+no content head: the list's buttons stay in the toolbar at the bottom (with
+Search), and the page's buttons sit on the title row.
+
+**Breadcrumb.** `Crumb`, quiet (`--text-sm`, `--muted`), only where there
+is a path: a project in an area shows "Area ›" (clicking goes there). Top
+level lists and areas have none; the big title stays in the content.
+
+**The rail.** On `/review` on a desktop the sidebar folds to a `--rail` of
+icons (`--rail-item` squares): the lists, then the projects (their progress
+circle) and areas. An area with the default icon shows its first letter in
+its colour, so areas stay apart. Every icon has its name as `title` and
+`aria-label`, and still takes drops. The review list takes the sidebar's
+place at the sidebar's width (the resize handle sizes it), so the window
+keeps its layout. The columns move with `--dur`; with reduced motion they
+switch at once. Leaving the review brings the full sidebar back.
+
+Review items have a second line in `--text-xs` / `--muted`: when the item
+was last reviewed and how many tasks are open in it ("last reviewed 3 weeks
+ago · 4 open"); it breaks at the dot rather than losing the count.
 
 ## Sheets (coming)
 

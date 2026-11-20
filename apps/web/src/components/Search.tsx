@@ -64,7 +64,7 @@ export function Search({ onClose }: { onClose: () => void }) {
       }}
     >
       <div className="search" role="dialog" aria-modal="true" aria-label={t('toolbar.search')}>
-        <div className="search-field">
+        <div className="pane-head search-field">
           <SearchIcon size={18} aria-hidden="true" />
           <input
             ref={input}

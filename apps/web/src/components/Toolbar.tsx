@@ -20,16 +20,20 @@ import { useDismiss } from './Menu.js'
 import { MoveList } from './MoveList.js'
 import { ScheduleField } from './ScheduleField.js'
 import { BulkTags, DeleteQuestion } from './SelectionTools.js'
+import { useNarrow } from './SidebarDrawer.js'
 import type { TaskList } from './useTaskList.js'
 import { WhenPicker } from './WhenPicker.js'
 
-/** The element at the bottom of the content pane that pages fill with their buttons. */
+/**
+ * Where a page's list buttons go: the head of the content pane on a desktop, the bar at the
+ * bottom of the screen on a phone.
+ */
 export const ToolbarSlot = createContext<HTMLElement | null>(null)
 
 /** Window-level actions a page can start. */
 export const ShellActions = createContext<{ openSearch: () => void }>({ openSearch: () => {} })
 
-/** Renders a page's buttons into the bar at the bottom of the content pane. */
+/** Renders a page's buttons into the content pane's head, or the bottom bar on a phone. */
 export function PageToolbar({ children }: { children: ReactNode }) {
   const slot = useContext(ToolbarSlot)
   return slot ? createPortal(children, slot) : null
@@ -43,18 +47,20 @@ interface ButtonProps {
   expanded?: boolean
 }
 
+/** A list action: an icon button in the pane head, a wider touch target in the bottom bar. */
 export function ToolbarButton({ icon: Icon, label, onClick, disabled, expanded }: ButtonProps) {
+  const narrow = useNarrow()
   return (
     <button
       type="button"
-      className="toolbar-button"
+      className={narrow ? 'toolbar-button' : 'icon-button'}
       aria-label={label}
       title={label}
       disabled={disabled}
       aria-expanded={expanded}
       onClick={onClick}
     >
-      <Icon size={18} aria-hidden="true" />
+      <Icon size={narrow ? 18 : 16} aria-hidden="true" />
     </button>
   )
 }
@@ -78,6 +84,8 @@ type Popup = 'when' | 'move' | 'tags' | 'assign'
 export function TaskToolbar({ onNew, extra, list }: TaskToolbarProps) {
   const t = useT()
   const { openSearch } = useContext(ShellActions)
+  // On a desktop Search sits in the sidebar's head; on a phone it stays in this bar.
+  const narrow = useNarrow()
   const [chosen, setPopup] = useState<Popup | null>(null)
   // Assigning only shows once there is an agent to assign to.
   const hasAgents = useAgents().length > 0
@@ -158,7 +166,7 @@ export function TaskToolbar({ onNew, extra, list }: TaskToolbarProps) {
             }}
           />
         )}
-        {!compact && (
+        {!compact && narrow && (
           <ToolbarButton icon={TextSearch} label={t('toolbar.search')} onClick={openSearch} />
         )}
         {popup && first && (

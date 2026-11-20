@@ -21,6 +21,7 @@ import { useT } from '../i18n/index.js'
 import { describeWhen } from '../lists.js'
 import { setWidth, usePanelWidth } from '../prefs.js'
 import { PANEL_LIMITS } from '../resize.js'
+import { areaPath, navigate, projectPath } from '../router.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import {
   commitTask,
@@ -47,6 +48,7 @@ import { CheckIcon, MoonIcon, ProgressCircle, TodayIcon } from './Icons.js'
 import { LinkedNotes } from './LinkedText.js'
 import { MoreMenu, useDismiss } from './Menu.js'
 import { MoveList } from './MoveList.js'
+import { Crumb, type CrumbStep, PaneHeader } from './Pane.js'
 import { RepeatEditor } from './RepeatEditor.js'
 import { ResizeHandle } from './ResizeHandle.js'
 import { ScheduleField } from './ScheduleField.js'
@@ -96,6 +98,8 @@ export function TaskPanel({ task, focus, onClose, onToggle, onOpen }: Props) {
   const panelWidth = usePanelWidth()
   const t = useT()
   const root = useRef<HTMLDivElement>(null)
+  // The head's right side, where the editor puts its `…` menu and Close.
+  const [headActions, setHeadActions] = useState<HTMLDivElement | null>(null)
   // The last task shown, so the panel can slide out after it closed.
   const [leaving, setLeaving] = useState<Task | null>(null)
   const last = useRef<Task | undefined>(task)
@@ -158,19 +162,25 @@ export function TaskPanel({ task, focus, onClose, onToggle, onOpen }: Props) {
         />
       )}
       <div ref={root} className={`task-panel ${mode}`} {...a11y} tabIndex={-1} inert={closing}>
-        {mode === 'full' && (
-          <div className="panel-head">
+        <PaneHeader
+          className="panel-head"
+          actions={<div className="panel-head-actions" ref={setHeadActions} />}
+        >
+          {mode === 'full' ? (
             <button type="button" className="panel-back" onClick={onClose}>
               <ChevronLeft size={18} aria-hidden="true" />
               {t('panel.back')}
             </button>
-          </div>
-        )}
+          ) : (
+            <TaskCrumb task={shown} />
+          )}
+        </PaneHeader>
         <div className="panel-body">
           <TaskEditor
             key={shown.id}
             task={shown}
             mode={mode}
+            headActions={headActions}
             onClose={onClose}
             onToggle={() => onToggle(shown)}
             onOpen={onOpen}
@@ -182,10 +192,49 @@ export function TaskPanel({ task, focus, onClose, onToggle, onOpen }: Props) {
   )
 }
 
-/** Room for the panel: the window, less the sidebar (gone in focus mode). */
+/** Where the task lives, in the panel's head: its project (and heading) or its area. */
+function TaskCrumb({ task }: { task: Task }) {
+  const ws = useWorkspace()
+  const project = task.projectId ? ws.projectById.get(task.projectId) : undefined
+  const area = !project && task.areaId ? ws.areaById.get(task.areaId) : undefined
+  const heading = task.headingId ? ws.headingById.get(task.headingId) : undefined
+  const steps: CrumbStep[] = []
+  if (project && !project.deleted) {
+    steps.push({
+      key: project.id,
+      icon: (
+        <ProgressCircle
+          value={views.progress(project.id, ws.tasks)}
+          someday={views.isSomeday(project)}
+          size={14}
+        />
+      ),
+      label: project.title,
+      onClick: () => navigate(projectPath(project.id)),
+    })
+    if (heading && !heading.deleted && heading.title) {
+      steps.push({ key: heading.id, label: heading.title })
+    }
+  } else if (area && !area.deleted) {
+    steps.push({
+      key: area.id,
+      icon: <AreaGlyph icon={area.icon} color={area.color} size={14} />,
+      label: area.title,
+      onClick: () => navigate(areaPath(area.id)),
+    })
+  }
+  return <Crumb steps={steps} trailing={false} />
+}
+
+/** Room for the panel: the window, less the sidebar (gone in focus mode) and the review list. */
 function panelRoom(): number {
   const sidebar = document.querySelector('.app > .sidebar')
-  return window.innerWidth - (sidebar?.getBoundingClientRect().width ?? 0)
+  const side = document.querySelector('.side-slot')
+  return (
+    window.innerWidth -
+    (sidebar?.getBoundingClientRect().width ?? 0) -
+    (side?.getBoundingClientRect().width ?? 0)
+  )
 }
 
 function setPanelWidth(width: number | null): void {
@@ -206,6 +255,8 @@ function useAutoGrow(ref: RefObject<HTMLTextAreaElement | null>, value: string, 
 interface EditorProps {
   task: Task
   mode: PanelMode
+  /** The panel head's right side, for the `…` menu and Close. */
+  headActions: HTMLElement | null
   onClose: () => void
   onToggle: () => void
   onOpen: (id: string) => void
@@ -222,7 +273,7 @@ const FOCUS_ON_ADD: Partial<Record<OptionalField, string>> = {
  * Every field of a task, saved as it changes. Only the header and OK always show; every other
  * field shows with a value, while it has focus, or right after adding it from the Add row.
  */
-function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
+function TaskEditor({ task, mode, headActions, onClose, onToggle, onOpen }: EditorProps) {
   const engine = useEngine()
   const ws = useWorkspace()
   const t = useT()
@@ -402,6 +453,55 @@ function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
   const isToday = task.when.kind === 'date' && task.when.date <= ws.today
   const whenValue = whenText(task, ws.today, t)
 
+  // The `…` menu and Close live in the panel head.
+  const headButtons = (
+    <>
+      <MoreMenu
+        alignEnd
+        label={t('menu.taskActions')}
+        items={[
+          {
+            label: t('task.duplicate'),
+            onSelect: () => {
+              commit()
+              onOpen(duplicateTask(engine, ws, { ...task, title, notes }).id)
+            },
+          },
+          // Not for a finished task or one occurrence of a repeating task: converting
+          // would skip that occurrence and bring the next one straight back.
+          ...(task.status === 'open' && task.templateId === null
+            ? [
+                {
+                  label: t('task.convertToProject'),
+                  onSelect: () => convertToProject(engine, ws, { ...task, title, notes }),
+                },
+              ]
+            : []),
+          {
+            label: t('task.delete'),
+            danger: true,
+            confirm: t('task.deleteQuestion'),
+            onSelect: () => {
+              deleteTask(engine, ws, task)
+              onClose()
+            },
+          },
+        ]}
+      />
+      {mode !== 'full' && (
+        <button
+          type="button"
+          className="icon-button"
+          aria-label={t('panel.close')}
+          title={t('panel.close')}
+          onClick={close}
+        >
+          <X size={16} aria-hidden="true" />
+        </button>
+      )}
+    </>
+  )
+
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: follows focus, not an action of its own
     <div
@@ -431,50 +531,8 @@ function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
           placeholder={t('task.title')}
           aria-label={t('task.title')}
         />
-        <MoreMenu
-          alignEnd
-          label={t('menu.taskActions')}
-          items={[
-            {
-              label: t('task.duplicate'),
-              onSelect: () => {
-                commit()
-                onOpen(duplicateTask(engine, ws, { ...task, title, notes }).id)
-              },
-            },
-            // Not for a finished task or one occurrence of a repeating task: converting
-            // would skip that occurrence and bring the next one straight back.
-            ...(task.status === 'open' && task.templateId === null
-              ? [
-                  {
-                    label: t('task.convertToProject'),
-                    onSelect: () => convertToProject(engine, ws, { ...task, title, notes }),
-                  },
-                ]
-              : []),
-            {
-              label: t('task.delete'),
-              danger: true,
-              confirm: t('task.deleteQuestion'),
-              onSelect: () => {
-                deleteTask(engine, ws, task)
-                onClose()
-              },
-            },
-          ]}
-        />
-        {mode !== 'full' && (
-          <button
-            type="button"
-            className="icon-button"
-            aria-label={t('panel.close')}
-            title={t('panel.close')}
-            onClick={close}
-          >
-            <X size={16} aria-hidden="true" />
-          </button>
-        )}
       </div>
+      {headActions && createPortal(headButtons, headActions)}
       {has('notes') && (
         // biome-ignore lint/a11y/noStaticElementInteractions: focus and Escape in the notes, not an action of their own
         <div

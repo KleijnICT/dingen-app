@@ -1,10 +1,12 @@
 import { ListFilter, type LucideIcon, X } from 'lucide-react'
-import { type ReactNode, useCallback, useRef, useState } from 'react'
+import { type ReactNode, useCallback, useContext, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { type DurationFilterList, setDurationFilter, useDurationText } from '../duration.js'
 import { useT } from '../i18n/index.js'
 import { useWorkspace } from '../store/context.js'
 import { DurationFilter } from './Duration.js'
 import { useDismiss } from './Menu.js'
+import { ContentHead } from './Pane.js'
 import { TagFilter, useFilterTags } from './TagFilter.js'
 
 interface Props {
@@ -20,15 +22,18 @@ interface Props {
 }
 
 /**
- * The calm top of every list, project and area page: the title with a few quiet icon
- * buttons on its right, one muted line under it, and only the filters that are on.
+ * The calm top of every list, project and area page: the title, one muted line under it, and
+ * only the filters that are on. The page's quiet icon buttons sit in the content pane's head
+ * on a desktop, and on the title row on a phone.
  */
 export function PageHeader({ title, subtitle, actions, children, className = '' }: Props) {
+  const headSlot = useContext(ContentHead).page
+  const buttons = actions && <div className="page-header-actions">{actions}</div>
   return (
     <header className={`list-header page-header ${className}`}>
       <div className="page-header-row">
         <div className="page-header-title">{title}</div>
-        {actions && <div className="page-header-actions">{actions}</div>}
+        {headSlot ? buttons && createPortal(buttons, headSlot) : buttons}
       </div>
       {subtitle && <p className="page-subtitle">{subtitle}</p>}
       {children}

@@ -83,4 +83,9 @@ const BCP47: Record<Locale, string> = { en: 'en-GB', nl: 'nl-NL' }
 export function formatDate(date: Date, options: Intl.DateTimeFormatOptions): string {
   return new Intl.DateTimeFormat(BCP47[locale], options).format(date)
 }
+/** "3 weeks ago" in the current language. */
+export function formatAgo(n: number, unit: Intl.RelativeTimeFormatUnit): string {
+  return new Intl.RelativeTimeFormat(BCP47[locale], { numeric: 'always' }).format(-n, unit)
+}
+
 export type { MessageKey, Messages } from './en.js'

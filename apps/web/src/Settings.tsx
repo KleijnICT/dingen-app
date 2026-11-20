@@ -16,6 +16,7 @@ import { underPrefix, withBase } from './base.js'
 import { AgentSettings } from './components/AgentSettings.js'
 import { CalendarSettings } from './components/CalendarSettings.js'
 import { InvitationSettings } from './components/InvitationSettings.js'
+import { PaneHeader } from './components/Pane.js'
 import { ReminderSettings } from './components/ReminderSettings.js'
 import { TagSettings } from './components/TagSettings.js'
 import { LOCALES, type Locale, setLocale, useLocale, useT } from './i18n/index.js'
@@ -69,18 +70,22 @@ export function Settings({ user, onSignedOut, onClose }: Props) {
         aria-label={t('settings.title')}
         tabIndex={-1}
       >
-        <header className="settings-head">
-          <h1>{t(`settings.tab.${tab}`)}</h1>
-          <button
-            type="button"
-            className="icon-button settings-close"
-            aria-label={t('settings.close')}
-            title={t('settings.close')}
-            onClick={onClose}
-          >
-            <X size={16} aria-hidden="true" />
-          </button>
-        </header>
+        <PaneHeader
+          as="h1"
+          className="settings-head"
+          title={t(`settings.tab.${tab}`)}
+          actions={
+            <button
+              type="button"
+              className="icon-button"
+              aria-label={t('settings.close')}
+              title={t('settings.close')}
+              onClick={onClose}
+            >
+              <X size={16} aria-hidden="true" />
+            </button>
+          }
+        />
         <div className="settings-tabs" role="tablist">
           {TABS.filter((tab) => !('adminOnly' in tab) || user.isAdmin).map(({ id, icon: Icon }) => (
             <button

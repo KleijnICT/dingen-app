@@ -7,6 +7,16 @@
   theme, quiet buttons with one primary per screen, one icon button, one
   style for the active item, soft menu hovers and section headings without
   capitals. The rules are in `DESIGN.md`.
+- One layout for every pane: the sidebar, the review list, the content, the
+  task panel, Settings and Search each have the same 48px head with a title
+  and icon buttons on the right, so their first lines line up. On a desktop
+  the list's actions (new task, When, Move, Tags, …) and the page's own
+  (filter, focus, `…`) move from the bottom bar into the content's head; on
+  a phone the bottom bar stays. Search sits in the sidebar's head. A project
+  in an area shows a quiet "Area ›" path in the head, and the task panel
+  shows where its task lives. In the Review the sidebar folds to a rail of
+  icons and the review list takes its place; each item says when it was last
+  reviewed and how many tasks are open.
 - Push notifications arrive in the language of the device: when you turn on
   reminders, the device sends its app language along, and again when you
   change the language. Reminders and "an agent assigned you a task" then come

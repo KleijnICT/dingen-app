@@ -2,12 +2,13 @@ import { type Area, type Project, type ReviewEntry, reviewQueue, views } from '@
 import { Check, ChevronLeft } from 'lucide-react'
 import { useContext, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useT } from '../i18n/index.js'
-import { selectAfterReviewed } from '../reviewList.js'
+import { formatAgo, useT } from '../i18n/index.js'
+import { openCount, reviewAge, selectAfterReviewed } from '../reviewList.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { AreaGlyph } from './AreaIcons.js'
 import { AreaPage } from './AreaPage.js'
 import { ProgressCircle } from './Icons.js'
+import { Pane, PaneHeader } from './Pane.js'
 import { ProjectPage } from './ProjectPage.js'
 import { useNarrow } from './SidebarDrawer.js'
 import { SideSlot } from './SideSlot.js'
@@ -55,7 +56,12 @@ export function ReviewPage({ focusSignal }: Props) {
   }
 
   const list = (
-    <ReviewQueue queue={queue} selectedId={selected?.item.id ?? null} onSelect={select} />
+    <ReviewQueue
+      queue={queue}
+      selectedId={selected?.item.id ?? null}
+      onSelect={select}
+      inline={narrow}
+    />
   )
 
   if (!selected) {
@@ -116,11 +122,11 @@ export function ReviewPage({ focusSignal }: Props) {
     )
   }
 
-  // Wide: the list slides out beside the sidebar (into the shell's side slot), the item fills
-  // the content area as its own page would.
+  // Wide: the list takes the sidebar's place (the sidebar folds to a rail of icons), the item
+  // fills the content area as its own page would.
   return (
     <>
-      {sideSlot && createPortal(<div className="review-side">{list}</div>, sideSlot)}
+      {sideSlot && createPortal(list, sideSlot)}
       {detail}
     </>
   )
@@ -130,18 +136,30 @@ interface QueueProps {
   queue: ReviewEntry[]
   selectedId: string | null
   onSelect: (id: string) => void
+  /** On a phone the list is the page: a page title instead of a pane head. */
+  inline: boolean
 }
 
-/** The list of what is due, under a heading per review date. */
-function ReviewQueue({ queue, selectedId, onSelect }: QueueProps) {
+/** The list of what is due, in sidebar order, each with when it was last reviewed. */
+function ReviewQueue({ queue, selectedId, onSelect, inline }: QueueProps) {
   const t = useT()
   const ws = useWorkspace()
   const dueAreas = new Set(queue.filter((e) => e.kind === 'area').map((e) => e.item.id))
   return (
-    <nav className="review-queue" aria-label={t('review.queue')}>
-      <header className="list-header">
-        <h1>{t('review.title')}</h1>
-      </header>
+    <Pane
+      as="nav"
+      className="review-queue"
+      label={t('review.queue')}
+      header={
+        inline ? (
+          <header className="list-header">
+            <h1>{t('review.title')}</h1>
+          </header>
+        ) : (
+          <PaneHeader title={t('review.title')} count={queue.length} />
+        )
+      }
+    >
       {queue.length === 0 && <p className="empty">{t('review.empty')}</p>}
       {queue.length > 0 && (
         <ul className="nav">
@@ -171,10 +189,13 @@ function ReviewQueue({ queue, selectedId, onSelect }: QueueProps) {
                       className="nav-icon"
                     />
                   )}
-                  <span className="nav-title">
-                    {item.title || (
-                      <em>{t(entry.kind === 'area' ? 'area.untitled' : 'project.untitled')}</em>
-                    )}
+                  <span className="review-item-text">
+                    <span className="nav-title">
+                      {item.title || (
+                        <em>{t(entry.kind === 'area' ? 'area.untitled' : 'project.untitled')}</em>
+                      )}
+                    </span>
+                    <ReviewNote entry={entry} />
                   </span>
                 </button>
               </li>
@@ -182,6 +203,27 @@ function ReviewQueue({ queue, selectedId, onSelect }: QueueProps) {
           })}
         </ul>
       )}
-    </nav>
+    </Pane>
+  )
+}
+
+/** "last reviewed 3 weeks ago · 4 open"; in a narrow list it breaks at the dot. */
+function ReviewNote({ entry }: { entry: ReviewEntry }) {
+  const t = useT()
+  const ws = useWorkspace()
+  const age = reviewAge(entry.item.reviewedAt, ws.today)
+  const last =
+    age === null
+      ? t('review.never')
+      : age.unit === 'day' && age.n === 0
+        ? t('review.lastToday')
+        : t('review.last', { when: formatAgo(age.n, age.unit) })
+  return (
+    <span className="review-item-note">
+      <span className="review-note-part">{last}</span> ·{' '}
+      <span className="review-note-part">
+        {t('review.open', { n: openCount(entry, ws.tasks) })}
+      </span>
+    </span>
   )
 }

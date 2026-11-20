@@ -17,6 +17,7 @@ import { useCalendarFeed } from './calendar.js'
 import { AreaPage } from './components/AreaPage.js'
 import { ListPage } from './components/ListPage.js'
 import { LogbookPage } from './components/LogbookPage.js'
+import { ContentHead } from './components/Pane.js'
 import { ProjectPage } from './components/ProjectPage.js'
 import { ResizeHandle } from './components/ResizeHandle.js'
 import { ReviewPage } from './components/ReviewPage.js'
@@ -70,6 +71,9 @@ export function Shell({ user, onSignedOut }: Props) {
   const [toolbar, setToolbar] = useState<HTMLDivElement | null>(null)
   const [panelSlot, setPanelSlot] = useState<HTMLDivElement | null>(null)
   const [sideSlot, setSideSlot] = useState<HTMLDivElement | null>(null)
+  const [crumbSlot, setCrumbSlot] = useState<HTMLDivElement | null>(null)
+  const [pageSlot, setPageSlot] = useState<HTMLDivElement | null>(null)
+  const head = useMemo(() => ({ crumb: crumbSlot, page: pageSlot }), [crumbSlot, pageSlot])
   const actions = useMemo(() => ({ openSearch: () => setSearchOpen(true) }), [])
   const closeSettings = useCallback(() => setSettingsOpen(false), [])
   const closeSearch = useCallback(() => setSearchOpen(false), [])
@@ -120,6 +124,8 @@ export function Shell({ user, onSignedOut }: Props) {
 
   const onToday = list?.id === 'today'
   const focus = focusActive(focusPref, list?.id)
+  // In the review the sidebar folds to a rail of icons and the review list takes its place.
+  const reviewing = route.kind === 'review' && !narrow
   useEffect(() => {
     function onFocusKey(e: KeyboardEvent) {
       const target = e.target instanceof HTMLElement ? e.target : null
@@ -181,6 +187,7 @@ export function Shell({ user, onSignedOut }: Props) {
   const sidebar = (
     <Sidebar
       path={path}
+      rail={reviewing}
       status={engine.status}
       onOpenSettings={() => {
         setDrawerOpen(false)
@@ -200,7 +207,7 @@ export function Shell({ user, onSignedOut }: Props) {
           onDragCancel={() => setDragging(null)}
         >
           <div
-            className={focus ? 'app focus-mode' : 'app'}
+            className={`app${focus ? ' focus-mode' : ''}${reviewing ? ' reviewing' : ''}`}
             style={
               {
                 '--sidebar-width': `${sidebarWidth}px`,
@@ -223,7 +230,7 @@ export function Shell({ user, onSignedOut }: Props) {
             {!narrow && !focus && (
               <ResizeHandle
                 className="sidebar-resize"
-                label={t('nav.resize')}
+                label={t(reviewing ? 'review.resize' : 'nav.resize')}
                 width={sidebarWidth}
                 limits={SIDEBAR_LIMITS}
                 edge="right"
@@ -237,22 +244,36 @@ export function Shell({ user, onSignedOut }: Props) {
                   <MenuButton open={drawerOpen} onOpen={openDrawer} buttonRef={menuButton} />
                 </div>
               )}
-              {/* The side slot runs the full height beside the sidebar; the toolbar only spans
-                  the content (and the task panel) to its right. */}
+              {/* The side slot (the review list) runs the full height beside the sidebar; the
+                  content and the task panel each have their own head to its right. */}
               <div className="content-row">
                 <div className="side-slot" ref={setSideSlot} />
-                <div className="content-main">
-                  <div className="content-body">
-                    <div className="content">
-                      <ToolbarSlot.Provider value={toolbar}>
-                        <PanelSlot.Provider value={panelSlot}>
-                          <SideSlot.Provider value={sideSlot}>{page}</SideSlot.Provider>
-                        </PanelSlot.Provider>
-                      </ToolbarSlot.Provider>
+                <div className="content-split">
+                  <div className="content-main">
+                    {!narrow && (
+                      // On a desktop the list's actions live in the content pane's head; on a
+                      // phone they stay in the toolbar at the bottom.
+                      <div className="pane-head content-head">
+                        <div className="content-head-crumb" ref={setCrumbSlot} />
+                        <span className="pane-head-space" />
+                        <div className="content-head-tools" ref={setToolbar} />
+                        <div className="content-head-page" ref={setPageSlot} />
+                      </div>
+                    )}
+                    <div className="content-body">
+                      <div className="content">
+                        <ToolbarSlot.Provider value={toolbar}>
+                          <PanelSlot.Provider value={panelSlot}>
+                            <SideSlot.Provider value={sideSlot}>
+                              <ContentHead.Provider value={head}>{page}</ContentHead.Provider>
+                            </SideSlot.Provider>
+                          </PanelSlot.Provider>
+                        </ToolbarSlot.Provider>
+                      </div>
                     </div>
-                    <div className="panel-slot" ref={setPanelSlot} />
+                    {narrow && <div className="toolbar" ref={setToolbar} />}
                   </div>
-                  <div className="toolbar" ref={setToolbar} />
+                  <div className="panel-slot" ref={setPanelSlot} />
                 </div>
               </div>
             </main>
@@ -279,10 +300,15 @@ const collision: CollisionDetection = (args) => {
   return [...hits].sort((a, b) => Number(isGroup(a)) - Number(isGroup(b)))
 }
 
-/** Room for the sidebar: the window, less a task panel open beside the list. */
+/** Room for the sidebar: the window, less a task panel open beside the list and the rail. */
 function sidebarRoom(): number {
   const panel = document.querySelector('.task-panel.side')
-  return window.innerWidth - (panel?.getBoundingClientRect().width ?? 0)
+  const rail = document.querySelector('.app.reviewing > .sidebar')
+  return (
+    window.innerWidth -
+    (panel?.getBoundingClientRect().width ?? 0) -
+    (rail?.getBoundingClientRect().width ?? 0)
+  )
 }
 
 function setSidebarWidth(width: number | null): void {

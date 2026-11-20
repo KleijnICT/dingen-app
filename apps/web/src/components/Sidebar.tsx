@@ -1,7 +1,7 @@
 import { newArea, newProject, orderBetween, type Project, views } from '@dingen/core'
 import { useDraggable, useDroppable } from '@dnd-kit/core'
-import { ListPlus, ListRestart, Settings } from 'lucide-react'
-import { type ReactElement, type ReactNode, useRef, useState } from 'react'
+import { ListPlus, ListRestart, Settings, TextSearch } from 'lucide-react'
+import { type ReactElement, type ReactNode, useContext, useRef, useState } from 'react'
 import type { DragData, DropData } from '../dnd.js'
 import { useT } from '../i18n/index.js'
 import { countFor, LISTS, type ListId } from '../lists.js'
@@ -9,7 +9,7 @@ import { toggleAreaCollapsed, useCollapsedAreas } from '../prefs.js'
 import { appHref, areaPath, navigate, projectPath } from '../router.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import type { SyncStatus } from '../store/engine.js'
-import { AreaGlyph } from './AreaIcons.js'
+import { AREA_ICON_COMPONENTS, AreaGlyph, areaColorVar } from './AreaIcons.js'
 import {
   AnytimeIcon,
   CalendarIcon,
@@ -21,12 +21,16 @@ import {
   TodayIcon,
 } from './Icons.js'
 import { useDismiss } from './Menu.js'
+import { PaneHeader } from './Pane.js'
+import { ShellActions } from './Toolbar.js'
 
 const APP_VERSION_LABEL = `Dingen ${__DINGEN_VERSION__}${__DINGEN_BUILD__ ? ` · ${__DINGEN_BUILD__}` : ''}`
 
 interface Props {
   path: string
   status: SyncStatus
+  /** Folded to a rail of icons, in the review. */
+  rail?: boolean
   onOpenSettings: () => void
 }
 
@@ -39,7 +43,29 @@ const ICONS: Record<ListId, (p: { className?: string }) => ReactElement> = {
   logbook: LogbookIcon,
 }
 
-export function Sidebar({ path, status, onOpenSettings }: Props) {
+export function Sidebar({ path, status, rail = false, onOpenSettings }: Props) {
+  if (rail) return <SidebarRail path={path} onOpenSettings={onOpenSettings} />
+  return <FullSidebar path={path} status={status} onOpenSettings={onOpenSettings} />
+}
+
+/** The search button in the head of the sidebar and the rail. */
+function SearchButton() {
+  const t = useT()
+  const { openSearch } = useContext(ShellActions)
+  return (
+    <button
+      type="button"
+      className="icon-button"
+      aria-label={t('toolbar.search')}
+      title={t('toolbar.search')}
+      onClick={openSearch}
+    >
+      <TextSearch size={16} aria-hidden="true" />
+    </button>
+  )
+}
+
+function FullSidebar({ path, status, onOpenSettings }: Omit<Props, 'rail'>) {
   const t = useT()
   const engine = useEngine()
   const ws = useWorkspace()
@@ -90,6 +116,7 @@ export function Sidebar({ path, status, onOpenSettings }: Props) {
 
   return (
     <nav className="sidebar" aria-label={t('nav.lists')}>
+      <PaneHeader className="sidebar-head" title={t('sidebar.title')} actions={<SearchButton />} />
       <div className="sidebar-scroll">
         <ul className="nav">
           {LISTS.map((list) => {
@@ -225,10 +252,140 @@ export function Sidebar({ path, status, onOpenSettings }: Props) {
   )
 }
 
+/**
+ * The sidebar folded to a column of icons, in the review: the lists, then the projects and
+ * areas, each with its name as tooltip and label. They still take drops.
+ */
+function SidebarRail({ path, onOpenSettings }: { path: string; onOpenSettings: () => void }) {
+  const t = useT()
+  const ws = useWorkspace()
+  const collapsed = useCollapsedAreas()
+  const untitledProject = t('project.untitled')
+
+  const projectItem = (p: Project) => (
+    <li key={p.id}>
+      <NavLink
+        href={projectPath(p.id)}
+        className="project rail-item"
+        active={path === projectPath(p.id)}
+        title={p.title || untitledProject}
+        drop={{ type: 'project', project: p }}
+      >
+        <ProgressCircle
+          value={views.progress(p.id, ws.tasks)}
+          someday={views.isSomeday(p)}
+          className="nav-icon"
+        />
+      </NavLink>
+    </li>
+  )
+
+  return (
+    <nav className="sidebar rail" aria-label={t('nav.lists')}>
+      <div className="pane-head rail-head">
+        <SearchButton />
+      </div>
+      <div className="rail-scroll">
+        <ul className="nav rail-list">
+          {LISTS.map((list) => {
+            const Icon = ICONS[list.id]
+            const item = (
+              <li key={list.id}>
+                <NavLink
+                  href={list.path}
+                  className={`${list.id} rail-item`}
+                  active={path === list.path}
+                  title={t(list.titleKey)}
+                  drop={{ type: 'list', listId: list.id }}
+                >
+                  <Icon className="nav-icon" />
+                </NavLink>
+              </li>
+            )
+            if (list.id !== 'logbook') return item
+            return [
+              <li key="review">
+                <NavLink
+                  href="/review"
+                  className="review rail-item"
+                  active={path.startsWith('/review')}
+                  title={t('review.nav')}
+                >
+                  <ListRestart size={18} className="nav-icon" aria-hidden="true" />
+                </NavLink>
+              </li>,
+              item,
+            ]
+          })}
+        </ul>
+        <ul className="nav rail-list rail-tree">
+          {views.projectsOf(ws.projects, null).map(projectItem)}
+          {views.openAreas(ws.areas).map((area) => [
+            <li key={area.id}>
+              <NavLink
+                href={areaPath(area.id)}
+                className="area rail-item"
+                active={path === areaPath(area.id)}
+                title={area.title || t('area.untitled')}
+                drop={{ type: 'area', area }}
+              >
+                <RailAreaIcon icon={area.icon} color={area.color} title={area.title} />
+              </NavLink>
+            </li>,
+            ...(collapsed.has(area.id)
+              ? []
+              : views.projectsOf(ws.projects, area.id).map(projectItem)),
+          ])}
+        </ul>
+      </div>
+      <div className="rail-foot">
+        <button
+          type="button"
+          className="icon-button"
+          aria-label={t('settings.title')}
+          title={t('settings.title')}
+          onClick={onOpenSettings}
+        >
+          <Settings size={16} aria-hidden="true" />
+        </button>
+      </div>
+    </nav>
+  )
+}
+
+/**
+ * An area in the rail: its own icon, or, with the default icon, its first letter in its
+ * colour, so areas without an icon of their own can still be told apart.
+ */
+function RailAreaIcon({
+  icon,
+  color,
+  title,
+}: {
+  icon: string | null
+  color: string | null
+  title: string
+}) {
+  const known = icon !== null && icon in AREA_ICON_COMPONENTS
+  if (known) return <AreaGlyph icon={icon} color={color} className="nav-icon" />
+  const letter = [...title.trim()][0]?.toLocaleUpperCase() ?? ''
+  if (!letter) return <AreaGlyph icon={null} color={color} className="nav-icon" />
+  return (
+    <span
+      className="nav-icon rail-letter"
+      style={{ color: areaColorVar(color) }}
+      aria-hidden="true"
+    >
+      {letter}
+    </span>
+  )
+}
+
 interface NavLinkProps {
   href: string
   className: string
   active: boolean
+  /** The name, as tooltip and label, where the link shows only an icon. */
   title?: string | undefined
   drop?: DropData | undefined
   drag?: DragData | undefined
@@ -250,6 +407,8 @@ function NavLink({ href, className, active, title, drop, drag, children }: NavLi
         droppable.isOver ? 'drop-over' : ''
       } ${draggable.isDragging ? 'dragging' : ''}`}
       title={title}
+      aria-label={title}
+      aria-current={active ? 'page' : undefined}
       onClick={(e) => {
         e.preventDefault()
         navigate(href)
