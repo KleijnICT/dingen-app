@@ -23,6 +23,7 @@ import { ReviewPage } from './components/ReviewPage.js'
 import { Search } from './components/Search.js'
 import { Sidebar } from './components/Sidebar.js'
 import { MenuButton, SidebarDrawer, useNarrow } from './components/SidebarDrawer.js'
+import { SideSlot } from './components/SideSlot.js'
 import { PanelSlot } from './components/TaskPanel.js'
 import { ShellActions, ToolbarSlot } from './components/Toolbar.js'
 import { UpdateNotice } from './components/UpdateNotice.js'
@@ -68,6 +69,7 @@ export function Shell({ user, onSignedOut }: Props) {
   const [searchOpen, setSearchOpen] = useState(false)
   const [toolbar, setToolbar] = useState<HTMLDivElement | null>(null)
   const [panelSlot, setPanelSlot] = useState<HTMLDivElement | null>(null)
+  const [sideSlot, setSideSlot] = useState<HTMLDivElement | null>(null)
   const actions = useMemo(() => ({ openSearch: () => setSearchOpen(true) }), [])
   const closeSettings = useCallback(() => setSettingsOpen(false), [])
   const closeSearch = useCallback(() => setSearchOpen(false), [])
@@ -236,9 +238,12 @@ export function Shell({ user, onSignedOut }: Props) {
                 </div>
               )}
               <div className="content-body">
+                <div className="side-slot" ref={setSideSlot} />
                 <div className="content">
                   <ToolbarSlot.Provider value={toolbar}>
-                    <PanelSlot.Provider value={panelSlot}>{page}</PanelSlot.Provider>
+                    <PanelSlot.Provider value={panelSlot}>
+                      <SideSlot.Provider value={sideSlot}>{page}</SideSlot.Provider>
+                    </PanelSlot.Provider>
                   </ToolbarSlot.Provider>
                 </div>
                 <div className="panel-slot" ref={setPanelSlot} />

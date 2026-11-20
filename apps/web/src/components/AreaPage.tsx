@@ -24,9 +24,11 @@ interface Props {
   focusSignal: number
   /** More on the title row, before the filter: the Review's "Mark reviewed". */
   headerExtra?: ReactNode
+  /** False in the Review: an area is reviewed for its own tasks; projects have their own review. */
+  showProjects?: boolean
 }
 
-export function AreaPage({ area, focusSignal, headerExtra }: Props) {
+export function AreaPage({ area, focusSignal, headerExtra, showProjects = true }: Props) {
   const engine = useEngine()
   const t = useT()
   const ws = useWorkspace()
@@ -40,7 +42,7 @@ export function AreaPage({ area, focusSignal, headerExtra }: Props) {
   const present = new Set(open.flatMap((task) => task.tagIds))
   const filters: PageFilters = { present, tag: tagFilter, onTag: setTagFilter }
   const filtered = tagFilter ? shown.filter((task) => task.tagIds.includes(tagFilter)) : shown
-  const projects = views.projectsOf(ws.projects, area.id)
+  const projects = showProjects ? views.projectsOf(ws.projects, area.id) : []
 
   const taskList = useTaskList([...shown, ...completed], toggle)
 

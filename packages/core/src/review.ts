@@ -64,8 +64,8 @@ export type ReviewEntry =
   | { kind: 'project'; item: Project; nextReviewOn: CalendarDate }
 
 /**
- * Areas and projects in sidebar order: each area followed by its projects,
- * then the projects without an area.
+ * Areas and projects in sidebar order: the projects without an area first,
+ * then each area followed by its projects.
  */
 function inSidebarOrder(ws: Snapshot, today: CalendarDate): ReviewEntry[] {
   const projects = ws.projects.filter(isReviewable)
@@ -74,27 +74,18 @@ function inSidebarOrder(ws: Snapshot, today: CalendarDate): ReviewEntry[] {
     item: p,
     nextReviewOn: nextReviewOn(p, today),
   })
-  const out: ReviewEntry[] = []
+  const out: ReviewEntry[] = views.projectsOf(projects, null).map(project)
   for (const area of views.openAreas(ws.areas)) {
     out.push({ kind: 'area', item: area, nextReviewOn: nextReviewOn(area, today) })
     out.push(...views.projectsOf(projects, area.id).map(project))
   }
-  out.push(...views.projectsOf(projects, null).map(project))
   return out
 }
 
 /**
- * What is due for review today: areas and projects whose date has come,
- * earliest date first, then in sidebar order.
+ * What is due for review today, in sidebar order: the projects without an area, then each
+ * area followed by its projects. Whatever came due on an earlier day is due now just the same.
  */
 export function reviewQueue(ws: Snapshot, today: CalendarDate): ReviewEntry[] {
-  const all = inSidebarOrder(ws, today)
-  const rank = new Map(all.map((e, i) => [e.item.id, i]))
-  return all
-    .filter((e) => e.nextReviewOn <= today)
-    .sort(
-      (a, b) =>
-        a.nextReviewOn.localeCompare(b.nextReviewOn) ||
-        (rank.get(a.item.id) ?? 0) - (rank.get(b.item.id) ?? 0),
-    )
+  return inSidebarOrder(ws, today).filter((e) => e.nextReviewOn <= today)
 }

@@ -100,7 +100,8 @@ describe('frequency', () => {
 })
 
 describe('reviewQueue', () => {
-  it('lists due items by date, then in sidebar order', () => {
+  it('lists due items in sidebar order, whatever day they came due', () => {
+    // Home came due before Bath and Site, Site came due today: sidebar order all the same.
     const home = newArea({ title: 'Home', order: 'a1', reviewedAt: at('2026-11-10') })
     const work = newArea({ title: 'Work', order: 'a2', reviewedAt: at('2026-11-19') })
     const bath = newProject({
@@ -109,7 +110,12 @@ describe('reviewQueue', () => {
       order: 'a1',
       reviewedAt: at('2026-11-13'),
     })
-    const site = newProject({ title: 'Site', areaId: work.id, order: 'a1' })
+    const site = newProject({
+      title: 'Site',
+      areaId: work.id,
+      order: 'a1',
+      reviewedAt: at('2026-11-01'),
+    })
     const loose = newProject({ title: 'Loose', areaId: null, order: 'a1' })
     const later = newProject({
       title: 'Later',
@@ -123,11 +129,11 @@ describe('reviewQueue', () => {
       TODAY,
     )
     expect(queue.map((e) => [e.item.title, e.nextReviewOn])).toEqual([
+      ['Loose', '2026-11-20'],
       ['Home', '2026-11-17'],
       ['Bath', '2026-11-20'],
-      ['Site', '2026-11-20'],
-      ['Loose', '2026-11-20'],
+      ['Site', '2026-11-08'],
     ])
-    expect(queue.map((e) => e.kind)).toEqual(['area', 'project', 'project', 'project'])
+    expect(queue.map((e) => e.kind)).toEqual(['project', 'area', 'project', 'project'])
   })
 })

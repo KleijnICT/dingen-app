@@ -1,15 +1,16 @@
 import { type Area, type Project, type ReviewEntry, reviewQueue, views } from '@dingen/core'
 import { Check, ChevronLeft } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useContext, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useT } from '../i18n/index.js'
-import { describeDate } from '../lists.js'
-import { groupByReviewDate, selectAfterReviewed } from '../reviewList.js'
+import { selectAfterReviewed } from '../reviewList.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { AreaGlyph } from './AreaIcons.js'
 import { AreaPage } from './AreaPage.js'
 import { ProgressCircle } from './Icons.js'
 import { ProjectPage } from './ProjectPage.js'
 import { useNarrow } from './SidebarDrawer.js'
+import { SideSlot } from './SideSlot.js'
 
 interface Props {
   focusSignal: number
@@ -27,6 +28,7 @@ export function ReviewPage({ focusSignal }: Props) {
   const engine = useEngine()
   const ws = useWorkspace()
   const narrow = useNarrow()
+  const sideSlot = useContext(SideSlot)
   const queue = useMemo(() => reviewQueue(ws, ws.today), [ws])
   // The item picked in the list; on a wide screen nothing picked means the first one.
   const [picked, setPicked] = useState<string | null>(null)
@@ -53,16 +55,11 @@ export function ReviewPage({ focusSignal }: Props) {
   }
 
   const list = (
-    <ReviewQueue
-      queue={queue}
-      today={ws.today}
-      selectedId={selected?.item.id ?? null}
-      onSelect={select}
-    />
+    <ReviewQueue queue={queue} selectedId={selected?.item.id ?? null} onSelect={select} />
   )
 
   if (!selected) {
-    if (queue.length === 0) {
+    if (queue.length === 0 || !narrow) {
       return (
         <section className="list-page review-page">
           <header className="list-header">
@@ -99,6 +96,7 @@ export function ReviewPage({ focusSignal }: Props) {
         area={selected.item}
         focusSignal={focusSignal}
         headerExtra={mark}
+        showProjects={false}
       />
     )
 
@@ -114,74 +112,71 @@ export function ReviewPage({ focusSignal }: Props) {
     )
   }
 
+  // Wide: the list slides out beside the sidebar (into the shell's side slot), the item fills
+  // the content area as its own page would.
   return (
-    <div className="review-split">
-      <div className="review-side">{list}</div>
-      <div className="review-detail">{detail}</div>
-    </div>
+    <>
+      {sideSlot && createPortal(<div className="review-side">{list}</div>, sideSlot)}
+      {detail}
+    </>
   )
 }
 
 interface QueueProps {
   queue: ReviewEntry[]
-  today: string
   selectedId: string | null
   onSelect: (id: string) => void
 }
 
 /** The list of what is due, under a heading per review date. */
-function ReviewQueue({ queue, today, selectedId, onSelect }: QueueProps) {
+function ReviewQueue({ queue, selectedId, onSelect }: QueueProps) {
   const t = useT()
   const ws = useWorkspace()
+  const dueAreas = new Set(queue.filter((e) => e.kind === 'area').map((e) => e.item.id))
   return (
     <nav className="review-queue" aria-label={t('review.queue')}>
       <header className="list-header">
         <h1>{t('review.title')}</h1>
       </header>
       {queue.length === 0 && <p className="empty">{t('review.empty')}</p>}
-      {groupByReviewDate(queue).map((group) => (
-        <div key={group.date} className="review-group">
-          <h2 className="group-title review-group-title">
-            {capitalize(describeDate(group.date, today))}
-          </h2>
-          <ul className="nav">
-            {group.entries.map((entry) => {
-              const { item } = entry
-              const active = item.id === selectedId
-              return (
-                <li key={item.id}>
-                  <button
-                    type="button"
-                    className={`nav-item review-item ${entry.kind} ${active ? 'active' : ''}`}
-                    aria-current={active ? 'true' : undefined}
-                    onClick={() => onSelect(item.id)}
-                  >
-                    {entry.kind === 'area' ? (
-                      <AreaGlyph
-                        icon={entry.item.icon}
-                        color={entry.item.color}
-                        className="nav-icon"
-                      />
-                    ) : (
-                      <ProgressCircle
-                        value={views.progress(item.id, ws.tasks)}
-                        className="nav-icon"
-                      />
+      {queue.length > 0 && (
+        <ul className="nav">
+          {queue.map((entry) => {
+            const { item } = entry
+            const active = item.id === selectedId
+            // A project sits under its area, as in the sidebar, when that area is due too.
+            const nested = entry.kind === 'project' && dueAreas.has(entry.item.areaId ?? '')
+            return (
+              <li key={item.id}>
+                <button
+                  type="button"
+                  className={`nav-item review-item ${entry.kind}${nested ? ' nested' : ''}${active ? ' active' : ''}`}
+                  aria-current={active ? 'true' : undefined}
+                  onClick={() => onSelect(item.id)}
+                >
+                  {entry.kind === 'area' ? (
+                    <AreaGlyph
+                      icon={entry.item.icon}
+                      color={entry.item.color}
+                      className="nav-icon"
+                    />
+                  ) : (
+                    <ProgressCircle
+                      value={views.progress(item.id, ws.tasks)}
+                      className="nav-icon"
+                    />
+                  )}
+                  <span className="nav-title">
+                    {item.title || (
+                      <em>{t(entry.kind === 'area' ? 'area.untitled' : 'project.untitled')}</em>
                     )}
-                    <span className="nav-title">
-                      {item.title || (
-                        <em>{t(entry.kind === 'area' ? 'area.untitled' : 'project.untitled')}</em>
-                      )}
-                    </span>
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
-        </div>
-      ))}
+                  </span>
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      )}
     </nav>
   )
 }
-
-const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
