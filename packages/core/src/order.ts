@@ -39,25 +39,40 @@ export function placeAt<T extends { id: string }>(
   index: number,
   key: (item: T) => string,
 ): Placement {
+  const { orders, renumber } = placeBlockAt(siblings, index, 1, key)
+  return { order: orders[0] as string, renumber }
+}
+
+export interface BlockPlacement {
+  /** The new orders of the moved items, in the order they land. */
+  orders: string[]
+  /** New orders for siblings, by id; empty unless the row had to be renumbered. */
+  renumber: Map<string, string>
+}
+
+/**
+ * Where `count` items land together at `index` among `siblings` (sorted, without the items),
+ * keeping their own order: like `placeAt`, but for a block (several selected tasks dragged
+ * at once).
+ */
+export function placeBlockAt<T extends { id: string }>(
+  siblings: readonly T[],
+  index: number,
+  count: number,
+  key: (item: T) => string,
+): BlockPlacement {
   const before = siblings[index - 1]
   const after = siblings[index]
   const a = before ? key(before) : null
   const b = after ? key(after) : null
   if (a === null || b === null || a < b) {
-    return { order: orderBetween(a, b), renumber: new Map() }
+    return { orders: ordersBetween(a, b, count), renumber: new Map() }
   }
-  const orders = ordersBetween(null, null, siblings.length + 1)
+  const all = ordersBetween(null, null, siblings.length + count)
   const renumber = new Map<string, string>()
-  let moved = ''
-  let i = 0
-  for (let slot = 0; slot <= siblings.length; slot++) {
-    const order = orders[slot] as string
-    if (slot === index) {
-      moved = order
-      continue
-    }
-    const sibling = siblings[i++] as T
+  siblings.forEach((sibling, i) => {
+    const order = all[i < index ? i : i + count] as string
     if (key(sibling) !== order) renumber.set(sibling.id, order)
-  }
-  return { order: moved, renumber }
+  })
+  return { orders: all.slice(index, index + count), renumber }
 }

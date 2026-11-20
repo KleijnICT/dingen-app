@@ -295,6 +295,7 @@ export function useTaskList(tasks: Task[], toggle: (task: Task) => void): TaskLi
   const rowProps = (task: Task, extra: Partial<RowProps> = {}): RowProps => ({
     open: openId === task.id,
     selected: sel.ids.includes(task.id),
+    selection: count > 1 && sel.ids.includes(task.id) ? selection : undefined,
     showWhen: false,
     showCaption: false,
     onSelect: (how: ClickHow = {}) => {

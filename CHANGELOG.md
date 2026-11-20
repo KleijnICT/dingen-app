@@ -21,6 +21,9 @@
   What you move to Today yourself does not count. OK hides it on every device.
   Database migration: a column on `users`.
 - A new project's title asks for the desired outcome.
+- Dragging one of several selected tasks moves all of them, wherever you
+  drop them (a list, project, area, heading or a place in the list), in
+  their order; the drag shows how many. Moving a selection keeps its order.
 - Anytime no longer shows what is in Today: a task is in one of the two.
   The project and area pages still show all their tasks.
 

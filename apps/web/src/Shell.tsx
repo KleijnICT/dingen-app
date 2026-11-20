@@ -27,7 +27,7 @@ import { SideSlot } from './components/SideSlot.js'
 import { PanelSlot } from './components/TaskPanel.js'
 import { ShellActions, ToolbarSlot } from './components/Toolbar.js'
 import { UpdateNotice } from './components/UpdateNotice.js'
-import { type DragData, handleDragEnd } from './dnd.js'
+import { type DragData, draggedTasks, handleDragEnd } from './dnd.js'
 import { focusActive, focusKeyAction } from './focus.js'
 import { useT } from './i18n/index.js'
 import { LISTS } from './lists.js'
@@ -258,7 +258,7 @@ export function Shell({ user, onSignedOut }: Props) {
             </main>
           </div>
           <DragOverlay dropAnimation={null}>
-            {dragging && <div className="drag-ghost">{ghostTitle(dragging)}</div>}
+            {dragging && <DragGhost data={dragging} />}
           </DragOverlay>
         </DndContext>
         {settingsOpen && <Settings user={user} onSignedOut={onSignedOut} onClose={closeSettings} />}
@@ -287,6 +287,18 @@ function sidebarRoom(): number {
 
 function setSidebarWidth(width: number | null): void {
   setWidth('sidebar', width)
+}
+
+/** What follows the pointer while dragging: the title, and how many tasks go along. */
+function DragGhost({ data }: { data: DragData }) {
+  const t = useT()
+  const count = data.type === 'task' ? draggedTasks(data.task, data.selection).length : 1
+  return (
+    <div className="drag-ghost">
+      <span className="drag-ghost-title">{ghostTitle(data)}</span>
+      {count > 1 && <span className="drag-ghost-count">{t('drag.count', { n: count })}</span>}
+    </div>
+  )
 }
 
 function ghostTitle(d: DragData): string {

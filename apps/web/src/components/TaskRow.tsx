@@ -36,6 +36,8 @@ export interface RowProps {
   onLongPress?: () => void
   /** Double click: opens the task in the panel. */
   onOpen: () => void
+  /** The selection, when this task is part of a selection of several: a drag carries them all. */
+  selection?: readonly Task[] | undefined
   onToggle: () => void
 }
 

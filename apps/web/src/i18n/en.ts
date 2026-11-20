@@ -305,6 +305,7 @@ export const en = {
   'toolbar.move': 'Move',
   'toolbar.search': 'Search',
   'toolbar.tags': 'Tags',
+  'drag.count': '{n} tasks',
   'selection.label': 'Selection',
   'selection.count': '{n} selected',
   'selection.done': 'Done',

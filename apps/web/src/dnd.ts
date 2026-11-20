@@ -1,10 +1,17 @@
 import type { Area, ChecklistItem, Daypart, Project, Task } from '@dingen/core'
-import { orderBetween, placeAt, views } from '@dingen/core'
+import { orderBetween, ordersBetween, placeAt, placeBlockAt, views } from '@dingen/core'
 import type { DragEndEvent } from '@dnd-kit/core'
 import type { ListId } from './lists.js'
 import type { Workspace } from './store/context.js'
 import type { SyncEngine } from './store/engine.js'
-import { commitTask, type MoveTarget, mirrorChecklist, moveFields } from './taskActions.js'
+import {
+  batchFields,
+  commitTask,
+  type MoveTarget,
+  mirrorChecklist,
+  moveFields,
+  moveTasks,
+} from './taskActions.js'
 
 /**
  * Drag and drop in one place. Every draggable or droppable element carries
@@ -30,7 +37,14 @@ function orderKey(group: TaskGroupInfo): (task: Task) => string {
 }
 
 export type DragData =
-  | { type: 'task'; task: Task; group: TaskGroupInfo; siblings: Task[] }
+  | {
+      type: 'task'
+      task: Task
+      group: TaskGroupInfo
+      siblings: Task[]
+      /** The page's selection when this task is part of it: dragging it carries them all. */
+      selection?: readonly Task[] | undefined
+    }
   | { type: 'project'; project: Project }
   | { type: 'area'; area: Area }
   | { type: 'checklistItem'; item: ChecklistItem; task: Task; siblings: ChecklistItem[] }
@@ -39,6 +53,31 @@ export type DropData =
   | DragData
   | { type: 'group'; group: TaskGroupInfo; siblings: Task[] }
   | { type: 'list'; listId: ListId }
+
+/**
+ * The tasks a drag carries, top to bottom: the whole selection when the dragged task is part
+ * of it (the open ones, like the toolbar, and the dragged one itself), otherwise just that task.
+ */
+export function draggedTasks(task: Task, selection: readonly Task[] | undefined): Task[] {
+  if (!selection?.some((s) => s.id === task.id)) return [task]
+  return selection.filter((s) => s.id === task.id || s.status === 'open')
+}
+
+/**
+ * Where a block of dragged tasks lands among `siblings` (the rows of the group, the dragged
+ * ones included): its index among the siblings that stay, just above or below the row it was
+ * dropped on. Null when that row is not in the group.
+ */
+export function blockIndex(
+  siblings: readonly { id: string }[],
+  overId: string,
+  moving: ReadonlySet<string>,
+  below: boolean,
+): number | null {
+  const at = siblings.findIndex((s) => s.id === overId)
+  if (at < 0) return null
+  return siblings.slice(0, below ? at + 1 : at).filter((s) => !moving.has(s.id)).length
+}
 
 export function handleDragEnd(engine: SyncEngine, ws: Workspace, event: DragEndEvent): void {
   const active = event.active.data.current as DragData | undefined
@@ -85,46 +124,61 @@ function dropTask(
   over: DropData,
   below: boolean,
 ): void {
-  const task = active.task
+  const tasks = draggedTasks(active.task, active.selection)
+  const moving = new Set(tasks.map((t) => t.id))
   switch (over.type) {
     case 'list': {
       const target = listTarget(over.listId, ws.today)
-      if (target) commitTask(engine, ws, task, moveFields(ws, task, target))
+      if (target) moveTasks(engine, ws, tasks, target)
       return
     }
     case 'project':
-      commitTask(
-        engine,
-        ws,
-        task,
-        moveFields(ws, task, { kind: 'project', projectId: over.project.id }),
-      )
+      moveTasks(engine, ws, tasks, { kind: 'project', projectId: over.project.id })
       return
     case 'area':
-      commitTask(engine, ws, task, moveFields(ws, task, { kind: 'area', areaId: over.area.id }))
+      moveTasks(engine, ws, tasks, { kind: 'area', areaId: over.area.id })
       return
     case 'group': {
-      const siblings = over.siblings.filter((s) => s.id !== task.id)
-      const fields = over.group.key === active.group.key ? {} : targetFields(ws, task, over.group)
+      const last = over.siblings.filter((s) => !moving.has(s.id)).at(-1)
       const key = orderKey(over.group)
-      const last = siblings.at(-1)
-      fields[over.group.orderField ?? 'order'] = orderBetween(last ? key(last) : null, null)
-      commitTask(engine, ws, task, fields)
+      const orders = ordersBetween(last ? key(last) : null, null, tasks.length)
+      landTasks(engine, ws, active, tasks, over, orders)
       return
     }
     case 'task': {
-      const siblings = over.siblings.filter((s) => s.id !== task.id)
-      const index = siblings.findIndex((s) => s.id === over.task.id)
-      if (index < 0) return
-      const fields = over.group.key === active.group.key ? {} : targetFields(ws, task, over.group)
+      const index = blockIndex(over.siblings, over.task.id, moving, below)
+      if (index === null) return
+      const siblings = over.siblings.filter((s) => !moving.has(s.id))
       const field = over.group.orderField ?? 'order'
-      const { order, renumber } = placeAt(siblings, below ? index + 1 : index, orderKey(over.group))
+      const { orders, renumber } = placeBlockAt(siblings, index, tasks.length, orderKey(over.group))
       for (const [id, o] of renumber) engine.mutate('task', id, { [field]: o })
-      fields[field] = order
-      commitTask(engine, ws, task, fields)
+      landTasks(engine, ws, active, tasks, over, orders)
       return
     }
   }
+}
+
+/**
+ * Lands dragged tasks in a group with the given orders: tasks from elsewhere also take on
+ * what the group means (its project, area, date or daypart); tasks already in it only move.
+ */
+function landTasks(
+  engine: SyncEngine,
+  ws: Workspace,
+  active: Extract<DragData, { type: 'task' }>,
+  tasks: readonly Task[],
+  over: { group: TaskGroupInfo; siblings: Task[] },
+  orders: readonly string[],
+): void {
+  const inGroup = new Set(over.siblings.map((s) => s.id))
+  if (over.group.key === active.group.key) inGroup.add(active.task.id)
+  const field = over.group.orderField ?? 'order'
+  const changes = batchFields(tasks, (task, i) => {
+    const fields = inGroup.has(task.id) ? {} : targetFields(ws, task, over.group)
+    fields[field] = orders[i]
+    return fields
+  })
+  for (const { task, fields } of changes) commitTask(engine, ws, task, fields)
 }
 
 function targetFields(ws: Workspace, task: Task, group: TaskGroupInfo): Record<string, unknown> {

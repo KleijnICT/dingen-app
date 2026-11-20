@@ -3,7 +3,7 @@ import { CornerDownRight } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useT } from '../i18n/index.js'
 import { useEngine, useWorkspace } from '../store/context.js'
-import { type MoveTarget, moveTask } from '../taskActions.js'
+import { type MoveTarget, moveTasks } from '../taskActions.js'
 import { AreaGlyph } from './AreaIcons.js'
 import { ProgressCircle } from './Icons.js'
 
@@ -32,7 +32,7 @@ export function MoveList({ task, onDone, withHeadings = false, others = [] }: Pr
     withHeadings && task.projectId ? views.headingsOf(ws.headings, task.projectId) : []
 
   function move(target: MoveTarget) {
-    for (const x of [task, ...others]) moveTask(engine, ws, x, target)
+    moveTasks(engine, ws, [task, ...others], target)
     const stay =
       withHeadings &&
       target.kind === 'project' &&

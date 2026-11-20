@@ -17,7 +17,15 @@ export {
   toggleTask,
 } from '@dingen/core'
 
-import { convertTaskToProject, newTask, orderBetween, toggleTask } from '@dingen/core'
+import {
+  commitTask,
+  convertTaskToProject,
+  type MoveTarget,
+  moveFields,
+  newTask,
+  orderBetween,
+  toggleTask,
+} from '@dingen/core'
 import { navigate, projectPath } from './router.js'
 
 export { whenFields } from './dayparts.js'
@@ -25,6 +33,39 @@ export { whenFields } from './dayparts.js'
 /** Turns `task` into a project (see `convertTaskToProject`) and opens the project's page. */
 export function convertToProject(engine: Writer, ws: Snapshot, task: Task): void {
   navigate(projectPath(convertTaskToProject(engine, ws, task).id))
+}
+
+/**
+ * The field changes for several tasks that go to the same place at once, in the order given.
+ * `moveFields` puts each task after the last one already there, so on their own they would all
+ * get the same order; here each one that gets an order lands after the one before it.
+ */
+export function batchFields<T extends Task>(
+  tasks: readonly T[],
+  fieldsFor: (task: T, index: number) => Record<string, unknown>,
+): { task: T; fields: Record<string, unknown> }[] {
+  let last: string | null = null
+  return tasks.map((task, index) => {
+    const fields = fieldsFor(task, index)
+    if (typeof fields.order === 'string') {
+      if (last !== null && fields.order <= last) fields.order = orderBetween(last, null)
+      last = fields.order as string
+    }
+    return { task, fields }
+  })
+}
+
+/** Moves several tasks to the same place (the toolbar's Move, a drag of a selection). */
+export function moveTasks(
+  engine: Writer,
+  ws: Snapshot,
+  tasks: readonly Task[],
+  target: MoveTarget,
+) {
+  // One snapshot for all of them; the sync engine pushes the changes together.
+  for (const { task, fields } of batchFields(tasks, (task) => moveFields(ws, task, target))) {
+    commitTask(engine, ws, task, fields)
+  }
 }
 
 /** Gives `task` the order that puts it between `before` and `after` in a sorted list. */

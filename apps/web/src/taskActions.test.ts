@@ -1,6 +1,6 @@
 import { newTask, orderBetween } from '@dingen/core'
 import { describe, expect, it } from 'vitest'
-import { createListTask, newInboxTask } from './taskActions.js'
+import { batchFields, createListTask, newInboxTask } from './taskActions.js'
 
 describe('newInboxTask', () => {
   const a0 = orderBetween(null, null)
@@ -62,5 +62,27 @@ describe('createListTask', () => {
     expect(task.areaId).toBe('a1')
     expect(task.projectId).toBeNull()
     expect(task.order).toBe(orderBetween(null, null))
+  })
+})
+
+describe('batchFields', () => {
+  const a0 = orderBetween(null, null)
+  const a1 = orderBetween(a0, null)
+  const one = newTask({ title: 'One' })
+  const two = newTask({ title: 'Two' })
+  const three = newTask({ title: 'Three' })
+
+  it('gives tasks that would share an order one after the other, in the order given', () => {
+    const changes = batchFields([one, two, three], () => ({ order: a1 }))
+    const orders = changes.map((c) => c.fields.order as string)
+    expect(orders[0]).toBe(a1)
+    expect(new Set(orders).size).toBe(3)
+    expect([...orders].sort()).toEqual(orders)
+  })
+
+  it('leaves tasks without an order change alone', () => {
+    const changes = batchFields([one, two, three], (task) => (task === two ? {} : { order: a0 }))
+    expect(changes[1]?.fields).toEqual({})
+    expect((changes[0]?.fields.order as string) < (changes[2]?.fields.order as string)).toBe(true)
   })
 })

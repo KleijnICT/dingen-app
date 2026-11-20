@@ -3,7 +3,7 @@ import { useDndContext, useDroppable } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { ReactNode } from 'react'
-import type { DropData, TaskGroupInfo } from '../dnd.js'
+import { type DragData, type DropData, draggedTasks, type TaskGroupInfo } from '../dnd.js'
 import { type RowProps, TaskRow } from './TaskRow.js'
 
 interface Props {
@@ -61,12 +61,18 @@ interface SortableProps extends RowProps {
 }
 
 function SortableTaskRow({ task, group, siblings, frozen, ...row }: SortableProps) {
-  const data: DropData = { type: 'task', task, group, siblings }
-  const { setNodeRef, listeners, transform, transition, isDragging } = useSortable({
+  const data: DropData = { type: 'task', task, group, siblings, selection: row.selection }
+  const { setNodeRef, listeners, transform, transition, isDragging, active } = useSortable({
     id: task.id,
     data,
     disabled: frozen,
   })
+  // The other selected rows go along with the dragged one.
+  const dragged = active?.data.current as DragData | undefined
+  const carried =
+    dragged?.type === 'task' &&
+    dragged.task.id !== task.id &&
+    draggedTasks(dragged.task, dragged.selection).some((t) => t.id === task.id)
   return (
     <TaskRow
       task={task}
@@ -75,7 +81,7 @@ function SortableTaskRow({ task, group, siblings, frozen, ...row }: SortableProp
         ref: setNodeRef,
         listeners: listeners ?? {},
         style: { transform: CSS.Translate.toString(transform), transition },
-        dragging: isDragging,
+        dragging: isDragging || carried,
       }}
     />
   )

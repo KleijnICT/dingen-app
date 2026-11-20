@@ -297,6 +297,7 @@ export const nl: Messages = {
   'toolbar.move': 'Verplaatsen',
   'toolbar.search': 'Zoeken',
   'toolbar.tags': 'Tags',
+  'drag.count': '{n} taken',
   'selection.label': 'Selectie',
   'selection.count': '{n} geselecteerd',
   'selection.done': 'Klaar',
