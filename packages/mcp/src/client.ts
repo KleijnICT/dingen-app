@@ -74,7 +74,7 @@ export interface SyncTransport {
 
 /** The message for a server that refuses this plugin's sync protocol (HTTP 426). */
 const OUTDATED_MESSAGE =
-  'This Dingen plugin is too old for the Dingen server: update the plugin (in Claude Code: /plugin, then update dingen) and restart.'
+  'This Dingen MCP client is too old for the Dingen server: update it (the plugin in Claude Code: /plugin, then update dingen; or pull the newer Dingen image for dingen-mcp) and restart.'
 
 /** `?kinds=…&actor=…` for the activity API. */
 export function activityQuery(filter: ActivityFilter): string {

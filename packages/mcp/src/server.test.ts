@@ -35,6 +35,20 @@ describe('mcp', () => {
     })
   })
 
+  it('completes a project and reopens it by id or title', async () => {
+    const project = await call('create_project', { title: 'Zolder is opgeruimd' })
+    expect(await call('complete_project', { id: project.id })).toMatchObject({
+      status: 'completed',
+    })
+    expect(
+      await call('complete_project', { id: 'zolder is opgeruimd', reopen: true }),
+    ).toMatchObject({ project: project.id, status: 'open' })
+    await expect(call('complete_project', { id: project.id, reopen: true })).rejects.toThrow(
+      /No completed project/,
+    )
+    await call('delete_project', { id: project.id })
+  })
+
   it('starts empty', async () => {
     const o = await call('overview')
     expect(o.counts).toEqual({ inbox: 0, today: 0, upcoming: 0, anytime: 0, someday: 0 })

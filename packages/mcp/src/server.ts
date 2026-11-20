@@ -626,7 +626,8 @@ export function createMcpServer(client: DingenClient, options: McpServerOptions 
     },
     ({ id, reopen }) =>
       run((ws) => {
-        const project = findProject(ws, id)
+        // Reopening needs a closed project, which findProject (open ones only) never finds.
+        const project = reopen ? findClosedProject(ws, id) : findProject(ws, id)
         if ((project.status === 'open') === reopen) {
           throw new ToolError(reopen ? 'Project is already open' : 'Project is already closed')
         }
@@ -832,6 +833,15 @@ function findTask(ws: Snapshot, id: string): Task {
 
 function findProject(ws: Snapshot, ref: string): Project {
   return byRef(ws.projects.filter(views.isOpen), ref, 'project')
+}
+
+/** A completed or cancelled project, to reopen it. */
+function findClosedProject(ws: Snapshot, ref: string): Project {
+  return byRef(
+    ws.projects.filter((p) => !p.deleted && p.status !== 'open'),
+    ref,
+    'completed project',
+  )
 }
 
 function findArea(ws: Snapshot, ref: string): Area {

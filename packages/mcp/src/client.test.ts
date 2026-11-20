@@ -247,7 +247,7 @@ describe('HttpTransport', () => {
     )
     const err = await transport.snapshot().catch((e: unknown) => e)
     expect(err).toBeInstanceOf(ClientOutdatedError)
-    expect((err as Error).message).toMatch(/update the plugin/)
+    expect((err as Error).message).toMatch(/update it \(the plugin/)
   })
 
   it('sends the cursor per space as URL-encoded JSON and with a push', async () => {
