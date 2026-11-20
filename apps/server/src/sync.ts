@@ -38,6 +38,7 @@ import {
   type MemberGrants,
 } from './agents/access.js'
 import type { Db } from './db.js'
+import { PRUNE_FLOOR_KEY, type PruneFloors, parseFloors } from './prune.js'
 import { type Assignment, assignmentIn } from './push/assigned.js'
 import { CURSOR_GAPS_KEY, type CursorGap } from './restore.js'
 import { changes, entities, meta, type SpaceLevel, spaceMembers, spaces } from './schema.js'
@@ -683,11 +684,13 @@ export class SyncService {
   private advance(tx: Db, cursor: SpaceCursor, written: Written): SpaceCursor {
     const out: SpaceCursor = {}
     const gaps = this.cursorGaps(tx)
+    const floors = this.pruneFloors(tx)
     for (const [spaceId, mine] of written.perSpace) {
       const since = cursor[spaceId]
       if (since === undefined || written.moved.has(spaceId)) continue
-      // A cursor from before a restore: the client must resync, not skip ahead.
-      if (inGap(since, gaps)) continue
+      // A cursor from before a restore, or older than the pruned log: the client
+      // must resync, not skip ahead.
+      if (inGap(since, gaps) || belowFloor(since, floors[spaceId])) continue
       const after = tx
         .select({ n: count() })
         .from(changes)
@@ -847,7 +850,8 @@ export class SyncService {
    * Protocol 1: changes after `since` over all the user's spaces, in global
    * order. Kept for clients from before protocol 2 (a cached web app, an
    * older MCP plugin). With restricted `grants` only the changes of entities
-   * the agent can read now; the cursor still covers the whole page.
+   * the agent can read now; the cursor still covers the whole page. A cursor
+   * ahead of the server or below the pruned log throws `CursorAheadError`.
    */
   pull(
     userId: string,
@@ -855,9 +859,18 @@ export class SyncService {
     limit = PULL_LIMIT,
     grants: AgentGrant[] | null = null,
   ): PullResult {
+    const spaceIds = spacesOf(this.db, userId)
     if (since > 0) {
-      const highest = Math.max(0, ...Object.values(this.spaceSeqs(spacesOf(this.db, userId))))
+      const highest = Math.max(0, ...Object.values(this.spaceSeqs(spaceIds)))
       if (since > highest || inGap(since, this.cursorGaps())) throw new CursorAheadError()
+    }
+    // Changes after `since` were pruned (older than a year): the delta would be incomplete.
+    const floors = this.pruneFloors()
+    const floor = Math.max(0, ...spaceIds.map((id) => floors[id] ?? 0))
+    if (belowFloor(since, floor)) {
+      throw new CursorAheadError(
+        'The sync cursor is older than the change log (pruned after a year)',
+      )
     }
     const rows = this.db
       .select()
@@ -928,7 +941,8 @@ export class SyncService {
    *
    * A cursor ahead of the server (beyond the highest `seq` of the space, or in
    * a range lost by a restore, see restore.ts) also gets a snapshot, marked
-   * `resync`: the client replaces the space with the server's state.
+   * `resync`: the client replaces the space with the server's state. So does a
+   * cursor below the pruned part of the space's log (see prune.ts).
    */
   pullSpaces(
     userId: string,
@@ -945,6 +959,7 @@ export class SyncService {
     const moves = this.moveView(userId, grants)
     const highest = this.spaceSeqs(mine.map((s) => s.id))
     const gaps = this.cursorGaps()
+    const floors = this.pruneFloors()
     const overall = Math.max(0, ...Object.values(highest))
     let budget = limit
     const out: PullSpace[] = []
@@ -955,7 +970,11 @@ export class SyncService {
       if (since !== undefined) {
         // A number counts for every space: compare with the user's highest seq,
         // then bring it down to this space's, so the new cursor is a seq of this space.
-        if (inGap(since, gaps) || since > (typeof cursor === 'number' ? overall : top)) {
+        if (
+          inGap(since, gaps) ||
+          belowFloor(since, floors[space.id]) ||
+          since > (typeof cursor === 'number' ? overall : top)
+        ) {
           resync = true
           since = undefined
         } else if (typeof cursor === 'number') since = Math.min(since, top)
@@ -1094,6 +1113,16 @@ export class SyncService {
     } catch {
       return []
     }
+  }
+
+  /** The highest pruned `seq` per space (see prune.ts). */
+  private pruneFloors(db: Pick<Db, 'select'> = this.db): PruneFloors {
+    const row = db
+      .select({ value: meta.value })
+      .from(meta)
+      .where(eq(meta.key, PRUNE_FLOOR_KEY))
+      .get()
+    return parseFloors(row?.value)
   }
 
   private hasChangesAfter(spaceId: string, since: number): boolean {
@@ -1290,6 +1319,14 @@ function restricted(grants: AgentGrant[] | null): grants is AgentGrant[] {
 /** Is a cursor in a `seq` range lost by a restore? */
 function inGap(since: number, gaps: readonly CursorGap[]): boolean {
   return gaps.some((g) => since > g.after && since <= g.upTo)
+}
+
+/**
+ * Is a cursor below the pruned part of a space's log (see prune.ts)? A cursor
+ * equal to the floor has seen every pruned row; 0 (nothing seen) is below any floor.
+ */
+function belowFloor(since: number, floor: number | undefined): boolean {
+  return floor !== undefined && since < floor
 }
 
 export function normalizePushedTag(change: Change): Change {

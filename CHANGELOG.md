@@ -8,6 +8,12 @@
   in that language (English for devices that did not tell yet; open Settings
   once to update them). The update runs a small database migration (a
   `language` column on `push_subscriptions`), with a backup first.
+- The server keeps the change log for a year: older changes are removed
+  daily, after the nightly backup (and at startup when overdue), in small
+  batches. Your tasks, projects and exports are not affected; the activity
+  log (Logbook) no longer goes back more than a year. A device that was
+  offline for longer than that loads its data afresh instead of syncing the
+  missing changes.
 
 ## 1.0.0-alpha.8
 

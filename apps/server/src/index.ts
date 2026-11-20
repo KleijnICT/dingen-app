@@ -7,6 +7,7 @@ import { applyLogLevel, loadConfig } from './config.js'
 import { migrationsFolder, type OpenedDatabase } from './db.js'
 import { resetToDemo } from './demo/seed.js'
 import { DataDirLock } from './lock.js'
+import { ChangeLogPruner } from './prune.js'
 import { ReminderPlanner } from './push/planner.js'
 import { prepareDatabase, StartupError } from './startup.js'
 import { mountWeb } from './static.js'
@@ -85,15 +86,25 @@ if (fs.existsSync(path.join(config.webDist, 'index.html'))) {
 
 new ReminderPlanner(db, push, { timezone: config.timezone }).start()
 
-if (config.backups) {
-  new BackupScheduler(sqlite, {
-    backupDir: config.backupDir,
-    migrationsFolder,
-    timezone: config.timezone,
-  }).start()
-} else {
+// The change log keeps a year (see prune.ts): pruned daily after the nightly
+// backup, and at startup when overdue.
+const backups = config.backups
+  ? new BackupScheduler(sqlite, {
+      backupDir: config.backupDir,
+      migrationsFolder,
+      timezone: config.timezone,
+      afterBackup: () => void pruner.tick(),
+    })
+  : null
+const pruner = new ChangeLogPruner(sqlite, {
+  timezone: config.timezone,
+  ...(backups ? { backupPending: () => backups.due() } : {}),
+})
+if (backups) backups.start()
+else {
   console.log('Nightly backups are off (DINGEN_BACKUPS); backups before an update are still made.')
 }
+pruner.start()
 
 serve({ fetch: app.fetch, port: config.port }, (info) => {
   console.log(

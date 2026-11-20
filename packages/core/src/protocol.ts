@@ -116,8 +116,9 @@ export interface PullSpace extends SpaceInfo {
   /**
    * The client's cursor for this space was ahead of the server: the server
    * was restored from a back-up (plan 24) and lost changes the client has
-   * seen. `entities` then holds the whole space, as for a space the client
-   * did not know: replace what you had for it (keeping unsent changes).
+   * seen; or the cursor was older than the server's change log, which keeps
+   * changes for a year. `entities` then holds the whole space, as for a space
+   * the client did not know: replace what you had for it (keeping unsent changes).
    */
   resync?: true
 }
@@ -180,8 +181,9 @@ export interface PushResponse {
 export const CURSOR_AHEAD = 'cursor_ahead'
 
 /**
- * A protocol 1 pull (`since=<seq>`) with a cursor beyond the server's log:
- * the server was restored from a back-up. Load a fresh snapshot (keeping
+ * A protocol 1 pull (`since=<seq>`) with a cursor beyond the server's log
+ * (the server was restored from a back-up) or older than it (the server
+ * prunes changes after a year). Load a fresh snapshot (keeping
  * unsent changes). Over HTTP: 409 `{ error: 'cursor_ahead', resync: true }`.
  */
 export class CursorAheadError extends Error {

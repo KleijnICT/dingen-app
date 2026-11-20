@@ -12,6 +12,8 @@ export interface BackupSchedulerOptions {
   timezone: string
   /** De klok; tests geven een nep-klok mee. */
   now?: () => number
+  /** Called after a nightly back-up was written (the change log pruning, see prune.ts). */
+  afterBackup?: () => void
 }
 
 /** The calendar day and hour of a moment in a time zone. */
@@ -98,6 +100,7 @@ export class BackupScheduler {
     console.log(
       `Nightly backup written to ${file}${removed.length > 0 ? ` (${removed.length} old backup(s) removed)` : ''}`,
     )
+    this.options.afterBackup?.()
     return file
   }
 }
