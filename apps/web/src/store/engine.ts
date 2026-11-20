@@ -302,9 +302,10 @@ export class SyncEngine {
 
   /**
    * One pull answer: drop spaces we left, replace spaces new to us, apply
-   * changes. A space marked `resync` (the server was restored from a backup
-   * and our cursor was ahead of it) comes as a snapshot too and is replaced
-   * the same way; changes still in the outbox stay and are applied on top.
+   * changes. A space marked `resync` (our cursor no longer fits the server's
+   * log: the server was restored from a backup, or pruned changes older than
+   * a year) comes as a snapshot too and is replaced the same way; changes
+   * still in the outbox stay and are applied on top.
    */
   private async applyPull(body: PullResponse): Promise<void> {
     const personal = body.spaces.find((s) => s.kind === 'personal')?.id
@@ -325,7 +326,7 @@ export class SyncEngine {
     const touched = new Map<string, LocalRecord>()
     for (const key of gone) this.records.delete(key)
     for (const space of fresh) {
-      if (space.resync) console.info(`Space ${space.id}: the server was restored, loading it again`)
+      if (space.resync) console.info(`Space ${space.id}: loading your data again`)
       for (const rec of space.entities ?? []) {
         const key = recordKey(rec.entityType, rec.id)
         const record = { ...rec, spaceId: space.id }
