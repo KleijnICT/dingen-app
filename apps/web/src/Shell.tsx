@@ -237,18 +237,24 @@ export function Shell({ user, onSignedOut }: Props) {
                   <MenuButton open={drawerOpen} onOpen={openDrawer} buttonRef={menuButton} />
                 </div>
               )}
-              <div className="content-body">
+              {/* The side slot runs the full height beside the sidebar; the toolbar only spans
+                  the content (and the task panel) to its right. */}
+              <div className="content-row">
                 <div className="side-slot" ref={setSideSlot} />
-                <div className="content">
-                  <ToolbarSlot.Provider value={toolbar}>
-                    <PanelSlot.Provider value={panelSlot}>
-                      <SideSlot.Provider value={sideSlot}>{page}</SideSlot.Provider>
-                    </PanelSlot.Provider>
-                  </ToolbarSlot.Provider>
+                <div className="content-main">
+                  <div className="content-body">
+                    <div className="content">
+                      <ToolbarSlot.Provider value={toolbar}>
+                        <PanelSlot.Provider value={panelSlot}>
+                          <SideSlot.Provider value={sideSlot}>{page}</SideSlot.Provider>
+                        </PanelSlot.Provider>
+                      </ToolbarSlot.Provider>
+                    </div>
+                    <div className="panel-slot" ref={setPanelSlot} />
+                  </div>
+                  <div className="toolbar" ref={setToolbar} />
                 </div>
-                <div className="panel-slot" ref={setPanelSlot} />
               </div>
-              <div className="toolbar" ref={setToolbar} />
             </main>
           </div>
           <DragOverlay dropAnimation={null}>
