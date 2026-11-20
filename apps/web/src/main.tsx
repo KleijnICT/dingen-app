@@ -1,3 +1,4 @@
+import { LucideProvider } from 'lucide-react'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './App.js'
@@ -9,7 +10,10 @@ if (!root) throw new Error('No #root element found')
 
 createRoot(root).render(
   <StrictMode>
-    <App />
+    {/* One stroke for every icon, matching the hand-drawn ones in Icons.tsx. */}
+    <LucideProvider strokeWidth={1.8}>
+      <App />
+    </LucideProvider>
   </StrictMode>,
 )
 

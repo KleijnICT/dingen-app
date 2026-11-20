@@ -111,7 +111,7 @@ export function InvitationSettings() {
         </p>
       )}
       <div>
-        <button type="button" onClick={create} disabled={busy}>
+        <button type="button" className="button-primary" onClick={create} disabled={busy}>
           {t('invite.create')}
         </button>
       </div>
@@ -120,7 +120,7 @@ export function InvitationSettings() {
           <p>{t('invite.reveal')}</p>
           <code>{fresh}</code>
           <div className="row">
-            <button type="button" onClick={copy}>
+            <button type="button" className="button-primary" onClick={copy}>
               {copied ? t('invite.copied') : t('invite.copy')}
             </button>
             <button type="button" className="link" onClick={() => setFresh(null)}>

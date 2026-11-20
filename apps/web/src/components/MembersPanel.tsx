@@ -175,6 +175,7 @@ export function MembersPanel({ type, id, access }: PanelProps) {
           </select>
           <button
             type="button"
+            className="button-primary"
             disabled={!adding}
             onClick={() => {
               const agentId = adding

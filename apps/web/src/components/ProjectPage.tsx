@@ -168,7 +168,7 @@ export function ProjectPage({ project, focusSignal, headerExtra }: Props) {
               }}
             >
               {a ? (
-                <AreaGlyph icon={a.icon} color={a.color} size={15} />
+                <AreaGlyph icon={a.icon} color={a.color} size={16} />
               ) : (
                 <span className="move-none" />
               )}

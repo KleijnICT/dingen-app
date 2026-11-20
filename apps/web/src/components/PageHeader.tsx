@@ -50,13 +50,13 @@ export function HeaderButton({ icon: Icon, label, hint, pressed, onClick }: Butt
   return (
     <button
       type="button"
-      className={`header-button ${pressed ? 'on' : ''}`}
+      className={`icon-button ${pressed ? 'on' : ''}`}
       aria-label={label}
       title={hint ?? label}
       aria-pressed={pressed}
       onClick={onClick}
     >
-      <Icon size={17} strokeWidth={2} aria-hidden="true" />
+      <Icon size={16} aria-hidden="true" />
     </button>
   )
 }
@@ -107,14 +107,14 @@ export function FilterButton({
       <button
         ref={button}
         type="button"
-        className={`header-button ${active ? 'on' : ''}`}
+        className={`icon-button ${active ? 'on' : ''}`}
         aria-label={label}
         title={label}
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => setOpen(!open)}
       >
-        <ListFilter size={17} strokeWidth={2} aria-hidden="true" />
+        <ListFilter size={16} aria-hidden="true" />
       </button>
       {open && (
         <div className="popover filter-popover" role="dialog" aria-label={label}>
@@ -173,14 +173,14 @@ export function FilterPopover({ active, children }: { active: boolean; children:
       <button
         ref={button}
         type="button"
-        className={`header-button ${active ? 'on' : ''}`}
+        className={`icon-button ${active ? 'on' : ''}`}
         aria-label={label}
         title={label}
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => setOpen(!open)}
       >
-        <ListFilter size={17} strokeWidth={2} aria-hidden="true" />
+        <ListFilter size={16} aria-hidden="true" />
       </button>
       {open && (
         <div className="popover filter-popover" role="dialog" aria-label={label}>
@@ -211,7 +211,7 @@ export function FilterChips({
             title={t('filter.clear', { name: chip.label })}
             onClick={chip.clear}
           >
-            <X size={12} strokeWidth={2.2} aria-hidden="true" />
+            <X size={14} aria-hidden="true" />
           </button>
         </span>
       ))}

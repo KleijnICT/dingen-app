@@ -65,7 +65,7 @@ function ScopeIcon({ scope }: { scope: AgentScope }) {
     const area = ws.areaById.get(scope.id)
     return <AreaGlyph icon={area?.icon ?? null} color={area?.color ?? null} size={16} />
   }
-  return <ProgressCircle value={views.progress(scope.id, ws.tasks)} size={15} />
+  return <ProgressCircle value={views.progress(scope.id, ws.tasks)} size={16} />
 }
 
 type Fresh = { name: string; token: string }
@@ -130,7 +130,7 @@ export function AgentSettings() {
           : t('agents.mcpHelp', { url: `${window.location.origin}/mcp` })}
       </p>
       <div>
-        <button type="button" onClick={() => setEditing('new')}>
+        <button type="button" className="button-primary" onClick={() => setEditing('new')}>
           {t('agents.new')}
         </button>
       </div>
@@ -208,7 +208,7 @@ function TokenReveal({ fresh, onDone }: { fresh: Fresh; onDone: () => void }) {
       <p>{t('agents.token.reveal', { name: fresh.name })}</p>
       <code>{fresh.token}</code>
       <div className="row agent-token-actions">
-        <button type="button" onClick={copy}>
+        <button type="button" className="button-primary" onClick={copy}>
           {copied ? t('agents.token.copied') : t('agents.token.copy')}
         </button>
         <button type="button" className="link" onClick={onDone}>
@@ -355,12 +355,12 @@ function AgentEditor({ agent, onCancel, onSaved }: EditorProps) {
               </select>
               <button
                 type="button"
-                className="agent-grant-remove"
+                className="icon-button danger"
                 aria-label={t('agents.removeScope', { scope: label(g) })}
                 title={t('agents.removeScope', { scope: label(g) })}
                 onClick={() => setLevel(g, null)}
               >
-                <X size={15} aria-hidden="true" />
+                <X size={16} aria-hidden="true" />
               </button>
             </li>
           ))}
@@ -410,7 +410,7 @@ function AgentEditor({ agent, onCancel, onSaved }: EditorProps) {
         <button type="button" className="link" onClick={onCancel} disabled={busy}>
           {t('confirm.cancel')}
         </button>
-        <button type="submit" disabled={busy || !name.trim()}>
+        <button type="submit" className="button-primary" disabled={busy || !name.trim()}>
           {agent ? t('agents.save') : t('agents.create')}
         </button>
       </div>

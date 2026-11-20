@@ -466,12 +466,12 @@ function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
         {mode !== 'full' && (
           <button
             type="button"
-            className="panel-close"
+            className="icon-button"
             aria-label={t('panel.close')}
             title={t('panel.close')}
             onClick={close}
           >
-            <X size={18} aria-hidden="true" />
+            <X size={16} aria-hidden="true" />
           </button>
         )}
       </div>
@@ -533,9 +533,9 @@ function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
                         className={`field-button-icon ${task.daypart === 'evening' ? 'evening' : 'today'}`}
                       >
                         {task.daypart === 'evening' ? (
-                          <MoonIcon size={15} />
+                          <MoonIcon size={16} />
                         ) : (
-                          <TodayIcon size={15} />
+                          <TodayIcon size={16} />
                         )}
                       </span>
                     )}
@@ -635,7 +635,7 @@ function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
               aria-label={addLabels[name]}
               onClick={() => add(name)}
             >
-              <Plus size={13} strokeWidth={2} aria-hidden="true" />
+              <Plus size={14} aria-hidden="true" />
               {addTexts[name]}
             </button>
           ))}
@@ -643,7 +643,7 @@ function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
       )}
 
       <div className="panel-footer">
-        <button type="button" className="panel-ok" onClick={close}>
+        <button type="button" className="button-primary panel-ok" onClick={close}>
           {t('panel.ok')}
         </button>
       </div>

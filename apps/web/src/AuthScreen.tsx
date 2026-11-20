@@ -138,7 +138,11 @@ export function AuthScreen({ status, onSignedIn }: Props) {
           />
         </label>
         {error && <p className="error">{error}</p>}
-        <button type="submit" disabled={busy || inviteState === 'checking'}>
+        <button
+          type="submit"
+          className="button-primary"
+          disabled={busy || inviteState === 'checking'}
+        >
           {mode === 'register' ? t('auth.register') : t('auth.signIn')}
         </button>
         {canRegister && status.hasUsers && (

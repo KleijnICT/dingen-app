@@ -127,11 +127,7 @@ export function AreaGlyph({ icon, color, size = 18, className }: Props) {
   const Icon = icon === null ? undefined : AREA_ICON_COMPONENTS[icon as AreaIconId]
   return (
     <span className={className} style={{ color: areaColorVar(color), display: 'inline-flex' }}>
-      {Icon ? (
-        <Icon size={size} strokeWidth={1.8} aria-hidden="true" />
-      ) : (
-        <DefaultAreaIcon size={size} />
-      )}
+      {Icon ? <Icon size={size} aria-hidden="true" /> : <DefaultAreaIcon size={size} />}
     </span>
   )
 }

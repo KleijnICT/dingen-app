@@ -141,7 +141,7 @@ export function CalendarSettings() {
           autoComplete="off"
           spellCheck={false}
         />
-        <button type="submit" disabled={busy}>
+        <button type="submit" className="button-primary" disabled={busy}>
           {busy ? t('calendar.checking') : t('calendar.add')}
         </button>
       </form>

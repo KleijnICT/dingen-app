@@ -46,7 +46,7 @@ export function MenuButton({ open, onOpen, buttonRef }: MenuButtonProps) {
       aria-controls="sidebar-drawer"
       onClick={onOpen}
     >
-      <Menu size={22} strokeWidth={1.8} aria-hidden="true" />
+      <Menu size={18} aria-hidden="true" />
     </button>
   )
 }

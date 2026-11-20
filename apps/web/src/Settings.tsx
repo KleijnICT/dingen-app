@@ -73,12 +73,12 @@ export function Settings({ user, onSignedOut, onClose }: Props) {
           <h1>{t(`settings.tab.${tab}`)}</h1>
           <button
             type="button"
-            className="settings-close"
+            className="icon-button settings-close"
             aria-label={t('settings.close')}
             title={t('settings.close')}
             onClick={onClose}
           >
-            <X size={18} aria-hidden="true" />
+            <X size={16} aria-hidden="true" />
           </button>
         </header>
         <div className="settings-tabs" role="tablist">
@@ -91,7 +91,7 @@ export function Settings({ user, onSignedOut, onClose }: Props) {
               className={`settings-tab ${tab === id ? 'active' : ''}`}
               onClick={() => setTab(id)}
             >
-              <Icon size={22} strokeWidth={1.6} aria-hidden="true" />
+              <Icon size={18} aria-hidden="true" />
               <span>{t(`settings.tab.${id}`)}</span>
             </button>
           ))}
@@ -148,7 +148,7 @@ function Account({ user, onSignedOut }: { user: User; onSignedOut: () => void })
       <PasswordForm hasPassword={user.hasPassword !== false} />
       {!ingress && (
         <div>
-          <button type="button" onClick={logout}>
+          <button type="button" className="button-secondary" onClick={logout}>
             {t('account.signOut')}
           </button>
         </div>
@@ -220,7 +220,7 @@ function PasswordForm({ hasPassword: initial }: { hasPassword: boolean }) {
         />
       </label>
       <div>
-        <button type="submit" disabled={busy}>
+        <button type="submit" className="button-primary" disabled={busy}>
           {t('account.password.save')}
         </button>
       </div>
@@ -299,7 +299,7 @@ function DataTab() {
       <section>
         <h2>{t('data.export.title')}</h2>
         <p className="muted">{t('data.export.intro')}</p>
-        <a className="button" href={withBase('/api/export')} download>
+        <a className="button-secondary" href={withBase('/api/export')} download>
           {t('data.export.button')}
         </a>
       </section>
@@ -315,7 +315,12 @@ function DataTab() {
         />
         {!pending && (
           <div>
-            <button type="button" onClick={() => input.current?.click()} disabled={busy}>
+            <button
+              type="button"
+              className="button-secondary"
+              onClick={() => input.current?.click()}
+              disabled={busy}
+            >
               {t('data.import.choose')}
             </button>
           </div>
@@ -324,7 +329,7 @@ function DataTab() {
           <div className="data-confirm" role="alertdialog" aria-label={t('data.import.title')}>
             <p>{t('data.import.confirm', { name: pending.name })}</p>
             <div className="row">
-              <button type="button" onClick={runImport} disabled={busy}>
+              <button type="button" className="button-primary" onClick={runImport} disabled={busy}>
                 {busy ? t('data.import.working') : t('data.import.confirmButton')}
               </button>
               <button

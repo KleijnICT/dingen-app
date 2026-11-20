@@ -54,7 +54,7 @@ export function ToolbarButton({ icon: Icon, label, onClick, disabled, expanded }
       aria-expanded={expanded}
       onClick={onClick}
     >
-      <Icon size={18} strokeWidth={1.8} aria-hidden="true" />
+      <Icon size={18} aria-hidden="true" />
     </button>
   )
 }

@@ -89,7 +89,7 @@ export function ReminderSettings() {
       <p className="muted">{t('reminder.settings.help')}</p>
       {state === 'on' && (
         <div>
-          <button type="button" onClick={() => void test()}>
+          <button type="button" className="button-secondary" onClick={() => void test()}>
             {t('reminder.settings.test')}
           </button>
         </div>

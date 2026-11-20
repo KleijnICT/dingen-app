@@ -44,7 +44,7 @@ export function ScheduleField({ task, onChange }: Props) {
             })
           }
         >
-          <Bell size={13} aria-hidden="true" />
+          <Bell size={14} aria-hidden="true" />
           {t('reminder.label')}
         </button>
         {reminder && reminderDate && (
@@ -85,7 +85,7 @@ export function ScheduleBadge({ task }: { task: Task }) {
   if (task.when.kind !== 'date' || task.reminder === null) return null
   return (
     <span className="meta-time" title={t('reminder.label')}>
-      <Bell size={12} aria-label={t('reminder.label')} />
+      <Bell size={14} aria-label={t('reminder.label')} />
       {task.reminder.time}
     </span>
   )

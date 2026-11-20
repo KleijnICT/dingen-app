@@ -83,21 +83,21 @@ export function MoreMenu({ label, items, alignEnd = false }: Props) {
       <button
         type="button"
         ref={button}
-        className="more-button"
+        className="icon-button"
         aria-label={label}
         title={label}
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => (open ? close() : setOpen(true))}
       >
-        <EllipsisVertical size={17} strokeWidth={2} aria-hidden="true" />
+        <EllipsisVertical size={16} aria-hidden="true" />
       </button>
       {open && (
         <div className={`popover menu ${panel ? 'with-panel' : ''}`} role="menu" aria-label={label}>
           {panel?.panel ? (
             <>
               <button type="button" className="menu-back" onClick={() => setPanel(null)}>
-                <ChevronLeft size={15} aria-hidden="true" />
+                <ChevronLeft size={16} aria-hidden="true" />
                 {panel.label}
               </button>
               <div className="menu-panel">{panel.panel(close)}</div>
@@ -135,7 +135,7 @@ export function MoreMenu({ label, items, alignEnd = false }: Props) {
               >
                 {item.checked !== undefined && (
                   <span className="menu-check" aria-hidden="true">
-                    {item.checked && <Check size={14} strokeWidth={2.2} />}
+                    {item.checked && <Check size={14} />}
                   </span>
                 )}
                 {item.label}

@@ -1,5 +1,5 @@
 import { DURATION_CHOICES, DURATION_FILTERS } from '@dingen/core'
-import { Timer } from 'lucide-react'
+import { Timer, X } from 'lucide-react'
 import { type KeyboardEvent, useEffect, useState } from 'react'
 import {
   type DurationFilterList,
@@ -51,7 +51,7 @@ export function DurationField({ duration, onChange }: FieldProps) {
 
   return (
     <span className="duration-field">
-      <Timer size={13} className="meta-icon" aria-hidden="true" />
+      <Timer size={14} className="meta-icon" aria-hidden="true" />
       {DURATION_CHOICES.map((minutes) => (
         <button
           type="button"
@@ -78,12 +78,12 @@ export function DurationField({ duration, onChange }: FieldProps) {
       {duration !== null && (
         <button
           type="button"
-          className="task-delete visible"
+          className="icon-button small danger"
           aria-label={t('duration.clear')}
           title={t('duration.clear')}
           onClick={() => onChange(null)}
         >
-          ×
+          <X size={14} aria-hidden="true" />
         </button>
       )}
     </span>

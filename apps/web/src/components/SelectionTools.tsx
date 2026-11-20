@@ -110,10 +110,10 @@ export function DeleteQuestion({
     >
       <p>{t('selection.deleteQuestion', { n: count })}</p>
       <div className="delete-question-buttons">
-        <button type="button" className="secondary" onClick={onCancel}>
+        <button type="button" className="button-secondary" onClick={onCancel}>
           {t('confirm.cancel')}
         </button>
-        <button type="button" className="danger" ref={confirm} onClick={onDelete}>
+        <button type="button" className="button-danger" ref={confirm} onClick={onDelete}>
           {t('selection.deleteConfirm', { n: count })}
         </button>
       </div>

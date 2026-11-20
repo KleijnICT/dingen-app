@@ -77,8 +77,12 @@ export function ReviewPage({ focusSignal }: Props) {
   }
 
   const mark = (
-    <button type="button" className="review-mark" onClick={() => markReviewed(selected)}>
-      <Check size={15} strokeWidth={2.4} aria-hidden="true" />
+    <button
+      type="button"
+      className="button-secondary review-mark"
+      onClick={() => markReviewed(selected)}
+    >
+      <Check size={14} aria-hidden="true" />
       {t('review.markReviewed')}
     </button>
   )

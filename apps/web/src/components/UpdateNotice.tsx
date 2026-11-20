@@ -8,7 +8,7 @@ export function UpdateNotice() {
   return (
     <div className="update-notice" role="status">
       <span>{t('pwa.updateAvailable')}</span>
-      <button type="button" onClick={reloadForUpdate}>
+      <button type="button" className="button-primary" onClick={reloadForUpdate}>
         {t('pwa.reload')}
       </button>
     </div>

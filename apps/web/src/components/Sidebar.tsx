@@ -114,12 +114,7 @@ export function Sidebar({ path, status, onOpenSettings }: Props) {
             return [
               <li key="review">
                 <NavLink href="/review" className="review" active={path.startsWith('/review')}>
-                  <ListRestart
-                    size={18}
-                    strokeWidth={1.8}
-                    className="nav-icon"
-                    aria-hidden="true"
-                  />
+                  <ListRestart size={18} className="nav-icon" aria-hidden="true" />
                   <span className="nav-title">{t('review.nav')}</span>
                 </NavLink>
               </li>,
@@ -150,7 +145,7 @@ export function Sidebar({ path, status, onOpenSettings }: Props) {
                   {projects.length > 0 && (
                     <button
                       type="button"
-                      className={`area-toggle ${closed ? 'closed' : ''}`}
+                      className={`icon-button small area-toggle ${closed ? 'closed' : ''}`}
                       aria-expanded={!closed}
                       aria-label={t(closed ? 'nav.expand' : 'nav.collapse')}
                       title={t(closed ? 'nav.expand' : 'nav.collapse')}
@@ -183,7 +178,7 @@ export function Sidebar({ path, status, onOpenSettings }: Props) {
               aria-expanded={adding}
               onClick={() => setAdding((a) => !a)}
             >
-              <ListPlus size={16} strokeWidth={1.8} aria-hidden="true" />
+              <ListPlus size={16} aria-hidden="true" />
               <span>{t('nav.newList')}</span>
             </button>
             {adding && (
@@ -217,7 +212,7 @@ export function Sidebar({ path, status, onOpenSettings }: Props) {
             title={t('settings.title')}
             onClick={onOpenSettings}
           >
-            <Settings size={16} strokeWidth={1.8} aria-hidden="true" />
+            <Settings size={16} aria-hidden="true" />
           </button>
         </div>
         <p className={`sync-status ${status}`} title={`${statusText} · ${APP_VERSION_LABEL}`}>

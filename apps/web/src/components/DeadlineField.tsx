@@ -1,3 +1,4 @@
+import { X } from 'lucide-react'
 import { useT } from '../i18n/index.js'
 import { describeDeadline } from '../lists.js'
 import { FlagIcon } from './Icons.js'
@@ -27,12 +28,12 @@ export function DeadlineField({ deadline, today, onChange }: FieldProps) {
           <DeadlineBadge deadline={deadline} today={today} />
           <button
             type="button"
-            className="task-delete visible"
+            className="icon-button small danger"
             aria-label={t('deadline.clear')}
             title={t('deadline.clear')}
             onClick={() => onChange(null)}
           >
-            ×
+            <X size={14} aria-hidden="true" />
           </button>
         </>
       )}

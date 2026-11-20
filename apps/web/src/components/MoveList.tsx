@@ -67,7 +67,7 @@ export function MoveList({ task, onDone, withHeadings = false, others = [] }: Pr
       item(
         `project:${id}`,
         title || t('project.untitled'),
-        <ProgressCircle value={views.progress(id, ws.tasks)} size={15} />,
+        <ProgressCircle value={views.progress(id, ws.tasks)} size={16} />,
         { kind: 'project', projectId: id },
         depth,
         own && current !== null && (headings.length === 0 || task.headingId === null),
@@ -97,7 +97,7 @@ export function MoveList({ task, onDone, withHeadings = false, others = [] }: Pr
           item(
             `area:${a.id}`,
             a.title || t('area.untitled'),
-            <AreaGlyph icon={a.icon} color={a.color} size={15} />,
+            <AreaGlyph icon={a.icon} color={a.color} size={16} />,
             { kind: 'area', areaId: a.id },
           ),
           ...views.projectsOf(ws.projects, a.id).flatMap((p) => project(p.id, p.title, 1)),
