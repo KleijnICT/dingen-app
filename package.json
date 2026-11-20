@@ -15,10 +15,12 @@
     "typecheck": "pnpm -r --if-present typecheck",
     "lint": "biome check .",
     "format": "biome check --write .",
-    "check": "pnpm lint && pnpm build && pnpm typecheck && pnpm test"
+    "check": "pnpm lint && pnpm build && pnpm typecheck && pnpm test",
+    "screenshots": "node scripts/screenshots/capture.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.6.6",
+    "playwright-core": "^1.65.1",
     "typescript": "^7.0.2"
   }
 }
