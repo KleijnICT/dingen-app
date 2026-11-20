@@ -19,5 +19,7 @@ pnpm check   # must pass: lint (Biome), build, typecheck and tests (Vitest)
 - Interface text and code comments are in English. Interface strings go
   through the translation files in `apps/web/src/i18n/`.
 - Never put real personal data in tests, fixtures or commits.
+- Changes to the web client follow [DESIGN.md](DESIGN.md): tokens only, one
+  component per job, light and dark both.
 
 By contributing you agree that your contribution is licensed under GPL-3.0.
