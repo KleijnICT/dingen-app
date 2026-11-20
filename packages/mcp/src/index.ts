@@ -14,4 +14,4 @@ export {
   planTickTickImport,
   stableId,
 } from './import/ticktick.js'
-export { createMcpServer } from './server.js'
+export { createMcpServer, type McpServerOptions, serverInfo } from './server.js'

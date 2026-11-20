@@ -11,6 +11,7 @@ import {
   ulid,
 } from '@dingen/core'
 import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+import { lastSeq } from '../../test/sync-helpers.js'
 import { createApp } from '../app.js'
 import { openDatabase } from '../db.js'
 import { createPersonalSpace } from '../spaces/service.js'
@@ -61,7 +62,8 @@ function write(
     ts: clock.now(),
     clientId: 'TEST',
   }
-  const { seq } = sync.push(user, [change], { receivedAt: new Date(wall).toISOString() })
+  sync.push(user, [change], { receivedAt: new Date(wall).toISOString() })
+  const seq = lastSeq(database.db)
   if (actor) database.sqlite.prepare('update changes set actor = ? where seq = ?').run(actor, seq)
   return seq
 }

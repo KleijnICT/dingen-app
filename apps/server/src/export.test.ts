@@ -1,4 +1,4 @@
-import { type Change, createClock, newProject, newReview, newTask, ulid } from '@dingen/core'
+import { type Change, createClock, newProject, newTask, SYNC_PROTOCOL, ulid } from '@dingen/core'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { createApp } from './app.js'
@@ -50,7 +50,7 @@ function server() {
       headers: {
         'content-type': 'application/json',
         authorization: bearer,
-        'x-dingen-protocol': '3',
+        'x-dingen-protocol': String(SYNC_PROTOCOL),
       },
     })
   }
@@ -404,9 +404,7 @@ describe('import on another server', () => {
     )
     expect(after.entities).toEqual(fromFile.sort((a, b) => (a.id < b.id ? -1 : 1)))
 
-    // Clients get it through sync, in both protocols.
-    const p1 = await (await two.call(frank.bearer, '/api/sync/pull?since=0')).json()
-    expect(p1.changes.length).toBeGreaterThan(0)
+    // Clients get it through sync.
     const p2 = await (
       await two.call(frank.bearer, `/api/sync/pull?cursor=${encodeURIComponent('{}')}`)
     ).json()
@@ -465,15 +463,35 @@ describe('import on another server', () => {
     expect(JSON.stringify(out.entities.project)).toContain('"unit":"week"')
   })
 
-  it('imports reviews too', async () => {
+  it('imports a file with step-by-step reviews (before 1.0.0-beta.1), leaving them out', async () => {
     const two = server()
     const hans = await two.account('hans@test.nl')
-    const review = newReview({ kind: 'weekly' })
-    const file = { format: 'dingen-export', version: 1, entities: { review: [fileRecord(review)] } }
+    const at = '2026-10-01T09:00:00.000Z'
+    const review = {
+      id: ulid(),
+      createdAt: at,
+      deleted: false,
+      kind: 'weekly',
+      startedAt: at,
+      completedAt: null,
+      doneSteps: ['mindSweep'],
+    }
+    const task = newTask({ title: 'Kept' })
+    const file = {
+      format: 'dingen-export',
+      version: 3,
+      spaces: [],
+      entities: { task: [fileRecord(task)], review: [fileRecord(review)] },
+    }
     const res = await two.importFile(hans.bearer, file)
-    expect((await res.json()).total).toMatchObject({ created: 1 })
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.total).toMatchObject({ created: 1 })
+    expect(body.counts).not.toHaveProperty('review')
     const after = await two.snapshot(hans.bearer)
-    expect(after.entities.filter((e) => e.entityType === 'review')).toHaveLength(1)
+    expect(after.entities.map((e) => e.entityType)).toEqual(['task'])
+    const exported = await (await two.call(hans.bearer, '/api/export')).json()
+    expect(exported.entities).not.toHaveProperty('review')
   })
 
   it('merges tags per space by their lowercase name', async () => {

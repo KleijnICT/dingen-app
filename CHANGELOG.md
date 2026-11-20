@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased
+
+- Sync protocol 4. Clients that speak an older protocol (the web app and the
+  MCP client from 1.0.0-alpha.9 and earlier) are refused with
+  `426 client_outdated` and must update: reload the web app (a new web app
+  reloads by itself when this happens), update `dingen-mcp`. The Claude plugin
+  over `/mcp` runs in the server and needs nothing. Gone: pulls with
+  `since=` (protocol 1), the conversion of `evening` and `time` for protocol 2
+  clients, and the `seq` over all spaces in snapshot and push answers.
+- The step-by-step review of before 1.0.0-alpha.8 is gone as an entity type.
+  The update runs a database migration (with a backup first) that deletes
+  the stored review runs; older export files with reviews still import,
+  without them.
+- From 1.0.0-beta.1 the sync protocol only grows until 2.0 (new optional
+  fields, new entity types); a contract test pins it. `/api/health` and the
+  MCP server info report the version and the protocol.
+- Migrations are tested from a database of every alpha release.
+
 ## 1.0.0-alpha.9
 
 A calmer redesign with one layout for every pane, administration in the app,

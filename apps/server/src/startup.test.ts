@@ -216,7 +216,7 @@ describe('block 3 migrations', () => {
     const full = fs.readFileSync(journalFile, 'utf8')
     const journal = JSON.parse(full) as { entries: { tag: string }[] }
     const tags = journal.entries.map((e) => e.tag)
-    expect(tags.slice(-3)).toEqual([
+    expect(tags.slice(10, 13)).toEqual([
       '0010_push_language',
       '0011_mail_reset_totp',
       '0012_blocked_users',

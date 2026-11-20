@@ -6,9 +6,9 @@ import {
   buildSnapshot,
   type Change,
   type ChecklistItem,
+  CLIENT_OUTDATED,
+  ClientOutdatedError,
   type Clock,
-  CURSOR_AHEAD,
-  CursorAheadError,
   createClock,
   type Entity,
   type EntityRecord,
@@ -25,8 +25,8 @@ import {
   type PushResponse,
   recordKey,
   type Snapshot,
+  type SnapshotResponse,
   type SpaceCursor,
-  type SpaceInfo,
   SYNC_PROTOCOL,
   type Tag,
   type Task,
@@ -39,24 +39,6 @@ import {
  * A sync client without a UI: the same protocol as the browser (snapshot,
  * pull, push, HLC clock), so Claude is just another device.
  */
-
-/**
- * `GET /api/sync/snapshot`. Protocol 2 servers add `cursor` and `spaces` and
- * put `spaceId` on every entity; protocol 1 servers send only `seq`.
- */
-export interface SnapshotBody {
-  entities: (EntityRecord & { spaceId?: string })[]
-  seq: number
-  cursor?: SpaceCursor
-  spaces?: SpaceInfo[]
-}
-
-/** Protocol 1 pull (`since=<seq>`). */
-export interface PullBody {
-  changes: Change[]
-  seq: number
-  hasMore: boolean
-}
 
 /** Filters of `GET /api/activity`; instants are ISO strings. */
 export interface ActivityFilter {
@@ -75,12 +57,10 @@ export interface ActivityBody {
 
 /** Where the changes go: the Dingen server over HTTP, or the sync service in-process. */
 export interface SyncTransport {
-  snapshot(): Promise<SnapshotBody>
-  /** Protocol 1: one cursor over everything; used when the server sends no `cursor`. */
-  pull(since: number): Promise<PullBody>
-  /** Protocol 2: a cursor per space. Absent on transports that only speak protocol 1. */
-  pullSpaces?(cursor: SpaceCursor): Promise<PullResponse>
-  /** `cursor` (protocol 2) lets the answer move the cursor past these changes. */
+  snapshot(): Promise<SnapshotResponse>
+  /** Changes per space after the cursor. */
+  pullSpaces(cursor: SpaceCursor): Promise<PullResponse>
+  /** `cursor` lets the answer move the cursor past these changes. */
   push(changes: Change[], cursor?: SpaceCursor): Promise<unknown>
   /** The activity log (Logbook); absent on transports that have none. */
   activity?(filter: ActivityFilter): Promise<ActivityBody>
@@ -92,10 +72,9 @@ export interface SyncTransport {
   grants?(): Promise<AgentGrant[] | null>
 }
 
-/** The server says a protocol 1 cursor is ahead of it (restored from a backup). */
-function isCursorAhead(err: unknown): boolean {
-  return err instanceof CursorAheadError || (err as { code?: unknown })?.code === CURSOR_AHEAD
-}
+/** The message for a server that refuses this plugin's sync protocol (HTTP 426). */
+const OUTDATED_MESSAGE =
+  'This Dingen plugin is too old for the Dingen server: update the plugin (in Claude Code: /plugin, then update dingen) and restart.'
 
 /** `?kinds=…&actor=…` for the activity API. */
 export function activityQuery(filter: ActivityFilter): string {
@@ -128,12 +107,11 @@ export class HttpTransport implements SyncTransport {
       },
     })
     if (res.status === 401) throw new Error('Dingen rejected the token (401)')
-    if (res.status === 409) {
-      const body = (await res
-        .clone()
-        .json()
-        .catch(() => ({}))) as { error?: string }
-      if (body.error === CURSOR_AHEAD) throw new CursorAheadError()
+    if (res.status === 426) {
+      const body = (await res.json().catch(() => ({}))) as { error?: string; message?: string }
+      if (body.error === CLIENT_OUTDATED) {
+        throw new ClientOutdatedError(`${OUTDATED_MESSAGE} (${body.message ?? 'client_outdated'})`)
+      }
     }
     if (res.status === 403) {
       const body = (await res.json().catch(() => ({}))) as { error?: string; message?: string }
@@ -145,12 +123,8 @@ export class HttpTransport implements SyncTransport {
     return res
   }
 
-  async snapshot(): Promise<SnapshotBody> {
-    return (await this.request('/api/sync/snapshot')).json() as Promise<SnapshotBody>
-  }
-
-  async pull(since: number): Promise<PullBody> {
-    return (await this.request(`/api/sync/pull?since=${since}`)).json() as Promise<PullBody>
+  async snapshot(): Promise<SnapshotResponse> {
+    return (await this.request('/api/sync/snapshot')).json() as Promise<SnapshotResponse>
   }
 
   async pullSpaces(cursor: SpaceCursor): Promise<PullResponse> {
@@ -199,9 +173,7 @@ export class DingenClient implements Writer {
   private readonly clientId: string
   private readonly todayFn: () => string
   readonly timezone: string
-  /** Protocol 1 cursor, for servers that send no cursor per space. */
-  private cursor = 0
-  /** Protocol 2 cursor per space; null while speaking protocol 1. */
+  /** The cursor per space; null until the replica is loaded. */
   private spaceCursor: SpaceCursor | null = null
   /** The space of every record the server told us about; absent means the personal space. */
   private readonly spaceOf = new Map<string, string>()
@@ -247,55 +219,32 @@ export class DingenClient implements Writer {
   }
 
   /**
-   * Loads the replica the first time, then catches up with new changes. When
-   * the server says our cursor is ahead of it (restored from a backup), the
-   * replica is loaded again; changes not yet flushed stay pending and are
-   * applied on top.
+   * Loads the replica the first time, then catches up with new changes per
+   * space. A space whose cursor no longer fits the server's log (restored
+   * from a backup, or pruned) comes back whole (`resync`); changes not yet
+   * flushed stay pending and are applied on top.
    */
   async refresh(): Promise<void> {
-    if (this.loaded && !this.spaceCursor) {
-      try {
-        await this.pullSince()
-        return
-      } catch (err) {
-        if (!isCursorAhead(err)) throw err
-        this.records.clear()
-        this.spaceOf.clear()
-        this.loaded = false
-      }
-    }
-    if (!this.loaded) {
+    if (!this.loaded || !this.spaceCursor) {
       const body = await this.transport.snapshot()
+      this.records.clear()
+      this.spaceOf.clear()
       for (const rec of body.entities) {
         const { spaceId, ...record } = rec
         const key = recordKey(record.entityType, record.id)
         this.records.set(key, record)
-        if (spaceId) this.spaceOf.set(key, spaceId)
+        this.spaceOf.set(key, spaceId)
         for (const ts of Object.values(record.fieldTs)) this.clock.receive(ts)
       }
-      this.cursor = body.seq
-      this.spaceCursor = body.cursor && this.transport.pullSpaces ? body.cursor : null
+      this.spaceCursor = body.cursor
       this.loaded = true
       this.reapplyPending()
       return
     }
-    if (this.spaceCursor && this.transport.pullSpaces) {
-      await this.pullSpaces(this.transport.pullSpaces.bind(this.transport))
-    }
+    await this.pullSpaces((cursor) => this.transport.pullSpaces(cursor))
   }
 
-  /** Protocol 1: changes after one cursor over everything. */
-  private async pullSince(): Promise<void> {
-    let hasMore = true
-    while (hasMore) {
-      const body = await this.transport.pull(this.cursor)
-      for (const change of body.changes) this.applyRemote(change)
-      this.cursor = body.seq
-      hasMore = body.hasMore
-    }
-  }
-
-  /** Protocol 2: changes per space, snapshots of new spaces, dropping spaces we left. */
+  /** Changes per space, snapshots of new spaces, dropping spaces we left. */
   private async pullSpaces(pull: (cursor: SpaceCursor) => Promise<PullResponse>): Promise<void> {
     let hasMore = true
     while (hasMore && this.spaceCursor) {

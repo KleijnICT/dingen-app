@@ -1,6 +1,5 @@
 import { createHash } from 'node:crypto'
 import {
-  type Change,
   type EntityRecord,
   type EntityType,
   formatTimestamp,
@@ -112,36 +111,4 @@ export function childrenOf(root: EntityRecord, live: readonly EntityRecord[]): E
     }
   }
   return out
-}
-
-/**
- * Protocol 1 has no `arrived`: an entity that moved into the viewer's sight
- * comes as plain changes, one per distinct field timestamp, so last-writer-
- * wins keeps working. `deleted` goes at the move's own time at least, so it
- * beats the deletion an earlier move out of sight may have left behind.
- */
-export function arrivalAsChanges(
-  row: { id: string; ts: Timestamp; clientId: string },
-  record: EntityRecord,
-): Change[] {
-  const byTs = new Map<Timestamp, Record<string, unknown>>()
-  for (const [field, value] of Object.entries(record.data)) {
-    if (field === 'id') continue
-    let ts = record.fieldTs[field]
-    if (field === 'deleted') ts = latest(row.ts, ts ?? row.ts)
-    if (!ts) continue
-    const group = byTs.get(ts) ?? {}
-    group[field] = value
-    byTs.set(ts, group)
-  }
-  return [...byTs.entries()]
-    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
-    .map(([ts, fields]) => ({
-      id: derivedId(`${row.id}:p1:${ts}`),
-      entityType: record.entityType,
-      entityId: record.id,
-      fields,
-      ts,
-      clientId: row.clientId,
-    }))
 }

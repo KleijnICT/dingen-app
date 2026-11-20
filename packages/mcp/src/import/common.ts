@@ -137,7 +137,7 @@ export function writePlan(client: DingenClient, plan: ImportPlan): ImportResult 
   const tagIds = existingTagIds(client, plan.tags)
   const tagId = (id: string) => tagIds.get(id) ?? id
   const result: ImportResult = {
-    created: { area: 0, project: 0, heading: 0, task: 0, checklistItem: 0, tag: 0, review: 0 },
+    created: { area: 0, project: 0, heading: 0, task: 0, checklistItem: 0, tag: 0 },
     alreadyThere: 0,
   }
   const put = (type: EntityType, entity: Entity) => {

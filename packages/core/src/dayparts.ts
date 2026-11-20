@@ -38,9 +38,10 @@ const isDated = (when: unknown): boolean =>
   typeof when === 'object' && when !== null && (when as { kind?: unknown }).kind === 'date'
 
 /**
- * Task fields of sync protocol 2 (`evening`, `time`) in protocol 3 terms:
- * the one conversion for pushes from old clients, imports of old export files,
- * old MCP input and the data migration. `current` is the task's data as it
+ * Task fields from before dayparts (`evening`, `time`, plan 25) in today's
+ * terms: the one conversion for imports of old export files, old MCP input
+ * and the data migration of databases from 1.0.0-alpha.5 and older. (Sync
+ * clients that still send them are refused since protocol 4.) `current` is the task's data as it
  * stands (absent for a new task). Fields without `evening` or `time` come back
  * as they are.
  *
@@ -82,22 +83,4 @@ export function upgradeTaskFields(
     out.reminder = { daysBefore: 0, time: legacyTime } satisfies Reminder
   }
   return out
-}
-
-/**
- * A task's data as a protocol 2 client expects it: `evening` derived from the
- * daypart and `time` null. `daypart` and `duration` stay; protocol 2 schemas
- * do not know them and drop them when parsing.
- */
-export function downgradeTaskData(data: Record<string, unknown>): Record<string, unknown> {
-  return { ...data, evening: data.daypart === 'evening', time: null }
-}
-
-/**
- * The fields of a task change as a protocol 2 client expects them: a change
- * of the daypart also sets `evening` (and `time` null).
- */
-export function downgradeTaskFields(fields: Record<string, unknown>): Record<string, unknown> {
-  if (!('daypart' in fields)) return fields
-  return { ...fields, evening: fields.daypart === 'evening', time: null }
 }

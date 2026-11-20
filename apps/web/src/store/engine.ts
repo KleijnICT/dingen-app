@@ -1,10 +1,12 @@
 import {
   applyChange,
   type Change,
+  CLIENT_OUTDATED,
+  CLIENT_OUTDATED_STATUS,
   type Clock,
   createClock,
   type Entity,
-  type EntityType,
+  EntityType,
   entitySchemas,
   isDeleted,
   mergeCursor,
@@ -21,7 +23,7 @@ import {
 import { withBase } from '../base.js'
 import { dbNameFor, LocalDb, type LocalRecord, type StoredRecord } from './db.js'
 
-export type SyncStatus = 'idle' | 'syncing' | 'offline' | 'unauthorized'
+export type SyncStatus = 'idle' | 'syncing' | 'offline' | 'unauthorized' | 'outdated'
 
 export interface EngineOptions {
   userId: string
@@ -36,11 +38,15 @@ export interface EngineOptions {
  * De sync-engine van de browser: lokale replica, outbox, push en pull.
  * Zelfde protocol als straks de native clients, bewust zonder slimmigheden.
  *
- * Sync protocol 2: a cursor per space. A first pull with an empty cursor gets
- * every space as a snapshot; a space shared later arrives the same way, and
- * a space the user leaves is dropped. A replica from before protocol 2 keeps
- * its single cursor once: the server answers a numeric cursor for all spaces
- * and the engine stores the cursor per space from then on.
+ * A cursor per space. A first pull with an empty cursor gets every space as a
+ * snapshot; a space shared later arrives the same way, and a space the user
+ * leaves is dropped. A replica from before protocol 2 (one cursor for
+ * everything) starts over with an empty cursor: every space comes again as a
+ * snapshot, and changes in the outbox stay.
+ *
+ * A server that refuses this app's protocol (HTTP 426 `client_outdated`)
+ * means a newer version of the app is waiting: the status becomes
+ * `outdated` and `onOutdated` fires once (the app reloads, see pwa.ts).
  *
  * Moving between spaces (plan 23, part 3): a pull lists per space what
  * `arrived` (the whole record, now in that space) and what `left` (out of
@@ -54,6 +60,8 @@ export class SyncEngine {
   /** True once the local replica is loaded and the first sync has been attempted. */
   ready = false
   onUnauthorized: (() => void) | undefined
+  /** The server needs a newer app (HTTP 426); fires once. */
+  onOutdated: (() => void) | undefined
 
   private readonly db: LocalDb
   private readonly fetchFn: typeof fetch
@@ -62,8 +70,8 @@ export class SyncEngine {
   private readonly listeners = new Set<() => void>()
   private clock: Clock = createClock('init')
   private clientId = ''
-  /** Per space, or a protocol 1 number still to move over (until the first pull). */
-  private cursor: SpaceCursor | number = {}
+  /** The cursor per space. */
+  private cursor: SpaceCursor = {}
   private outboxOrder = 0
   private pushTimer: ReturnType<typeof setTimeout> | undefined
   private pollTimer: ReturnType<typeof setInterval> | undefined
@@ -73,6 +81,8 @@ export class SyncEngine {
   /** Outbox writes that have not finished yet. */
   private writes: Promise<void> = Promise.resolve()
   private stopped = false
+  /** The server refused this version's protocol; `onOutdated` has fired. */
+  private outdated = false
   private readonly entityCache = new Map<EntityType, { version: number; items: Entity[] }>()
 
   constructor(options: EngineOptions) {
@@ -89,16 +99,14 @@ export class SyncEngine {
     if (!storedClient) await this.db.meta.put({ key: 'clientId', value: this.clientId })
     this.clock = createClock(this.clientId)
 
+    await this.dropUnknownTypes()
     for (const { key, ...rec } of await this.db.entities.toArray()) {
       this.records.set(key, rec)
       for (const ts of Object.values(rec.fieldTs)) this.clock.receive(ts)
     }
     const cursors = meta.find((m) => m.key === 'cursors')?.value
-    const legacy = meta.find((m) => m.key === 'cursor')?.value
-    if (cursors && typeof cursors === 'object') this.cursor = cursors
-    else if (typeof legacy === 'number' && (legacy > 0 || this.records.size > 0)) {
-      this.cursor = legacy
-    } else this.cursor = {}
+    this.cursor = cursors && typeof cursors === 'object' ? (cursors as SpaceCursor) : {}
+    if (meta.some((m) => m.key === 'cursor')) await this.db.meta.delete('cursor')
     const last = await this.db.outbox.orderBy('order').last()
     this.outboxOrder = last?.order ?? 0
     this.bump()
@@ -109,12 +117,34 @@ export class SyncEngine {
     this.installTriggers()
   }
 
+  /**
+   * Removes records and unsent changes of entity types this version does not
+   * know (the step-by-step `review` of before protocol 4): the server refuses
+   * them, and an outbox that cannot be sent would block every later change.
+   */
+  private async dropUnknownTypes(): Promise<void> {
+    const known = (type: unknown) => EntityType.safeParse(type).success
+    await this.db.transaction('rw', this.db.entities, this.db.outbox, async () => {
+      const records = await this.db.entities.toArray()
+      const gone = records.filter((r) => !known(r.entityType)).map((r) => r.key)
+      if (gone.length > 0) await this.db.entities.bulkDelete(gone)
+      const outbox = await this.db.outbox.toArray()
+      const stale = outbox.filter((i) => !known(i.change.entityType)).map((i) => i.id)
+      if (stale.length > 0) await this.db.outbox.bulkDelete(stale)
+    })
+  }
+
   stop(): void {
     this.stopped = true
+    this.stopTimers()
+    this.db.close()
+  }
+
+  private stopTimers(): void {
     if (this.pushTimer) clearTimeout(this.pushTimer)
     if (this.pollTimer) clearInterval(this.pollTimer)
     this.removeTriggers?.()
-    this.db.close()
+    this.removeTriggers = undefined
   }
 
   subscribe = (listener: () => void): (() => void) => {
@@ -230,6 +260,14 @@ export class SyncEngine {
       if (err instanceof UnauthorizedError) {
         this.setStatus('unauthorized')
         this.onUnauthorized?.()
+      } else if (err instanceof OutdatedError) {
+        // Nothing more to send or fetch with this version; the outbox waits for the new one.
+        this.setStatus('outdated')
+        this.stopTimers()
+        if (!this.outdated) {
+          this.outdated = true
+          this.onOutdated?.()
+        }
       } else {
         this.setStatus('offline')
       }
@@ -246,11 +284,10 @@ export class SyncEngine {
     const items = await this.db.outbox.orderBy('order').toArray()
     if (items.length === 0) return
     const changes = items.map((i) => i.change)
-    const cursor = typeof this.cursor === 'number' ? undefined : this.cursor
     const res = await this.request('/api/sync/push', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(cursor ? { changes, cursor } : { changes }),
+      body: JSON.stringify({ changes, cursor: this.cursor }),
     })
     if (res.status === 400) {
       // Een afgekeurde wijziging zou een bug zijn; laat hem niet de hele outbox blokkeren.
@@ -264,9 +301,7 @@ export class SyncEngine {
     // Spaces where nothing but this push happened: no need to pull our own changes back.
     const body = (await res.json().catch(() => null)) as PushResponse | null
     if (body?.placed) await this.place(body.placed)
-    if (body?.cursor && typeof this.cursor !== 'number') {
-      await this.setCursor(mergeCursor(this.cursor, body.cursor))
-    }
+    if (body?.cursor) await this.setCursor(mergeCursor(this.cursor, body.cursor))
   }
 
   /** Notes the space the server put new or moved entities in. */
@@ -382,13 +417,9 @@ export class SyncEngine {
     this.bump()
   }
 
-  private async setCursor(cursor: SpaceCursor | number): Promise<void> {
+  private async setCursor(cursor: SpaceCursor): Promise<void> {
     this.cursor = cursor
-    if (typeof cursor === 'number') return
-    await this.db.transaction('rw', this.db.meta, async () => {
-      await this.db.meta.put({ key: 'cursors', value: cursor })
-      await this.db.meta.delete('cursor')
-    })
+    await this.db.meta.put({ key: 'cursors', value: cursor })
   }
 
   private async request(path: string, init?: RequestInit): Promise<Response> {
@@ -401,6 +432,13 @@ export class SyncEngine {
       },
     })
     if (res.status === 401) throw new UnauthorizedError()
+    if (res.status === CLIENT_OUTDATED_STATUS) {
+      const body = (await res
+        .clone()
+        .json()
+        .catch(() => null)) as { error?: unknown } | null
+      if (body?.error === CLIENT_OUTDATED) throw new OutdatedError()
+    }
     return res
   }
 
@@ -437,5 +475,12 @@ export class SyncEngine {
 export class UnauthorizedError extends Error {
   constructor() {
     super('unauthorized')
+  }
+}
+
+/** The server needs a newer version of the app (HTTP 426 `client_outdated`). */
+export class OutdatedError extends Error {
+  constructor() {
+    super('client_outdated')
   }
 }

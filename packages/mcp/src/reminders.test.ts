@@ -1,32 +1,9 @@
-import { applyChange, type Change, type EntityRecord, recordKey } from '@dingen/core'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { DingenClient, type SyncTransport } from './client.js'
+import { DingenClient } from './client.js'
+import { MemoryTransport } from './memory-transport.js'
 import { createMcpServer } from './server.js'
-
-/** The sync protocol in memory: enough to run the tools without a server. */
-class MemoryTransport implements SyncTransport {
-  readonly records = new Map<string, EntityRecord>()
-  readonly log: Change[] = []
-
-  async snapshot() {
-    return { entities: [...this.records.values()], seq: this.log.length }
-  }
-
-  async pull(since: number) {
-    return { changes: this.log.slice(since), seq: this.log.length, hasMore: false }
-  }
-
-  async push(changes: Change[]) {
-    for (const change of changes) {
-      const key = recordKey(change.entityType, change.entityId)
-      this.records.set(key, applyChange(this.records.get(key), change))
-      this.log.push(change)
-    }
-    return { seq: this.log.length, applied: changes.length, duplicates: 0 }
-  }
-}
 
 const TODAY = '2026-11-09'
 const transport = new MemoryTransport()

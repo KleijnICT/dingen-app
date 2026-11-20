@@ -1,9 +1,18 @@
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { type Change, createClock, newArea, newTask, SYNC_PROTOCOL, ulid } from '@dingen/core'
+import {
+  type Change,
+  createClock,
+  newArea,
+  newTask,
+  type PullResponse,
+  SYNC_PROTOCOL,
+  ulid,
+} from '@dingen/core'
 import { eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { changesSince, lastSeq } from '../../test/sync-helpers.js'
 import { ActivityService } from '../activity/service.js'
 import { createApp } from '../app.js'
 import { InvitationService } from '../auth/invitations.js'
@@ -188,8 +197,8 @@ describe('access goes through spaces', () => {
 
     expect(sync.snapshot('A').entities.map((e) => e.id)).toEqual([task.id])
     expect(sync.snapshot('B').entities).toEqual([])
-    expect(sync.pull('B', 0).changes).toEqual([])
-    expect(sync.snapshot('B').seq).toBe(0)
+    expect(changesSince(sync, 'B')).toEqual([])
+    expect(Object.values(sync.snapshot('B').cursor)).toEqual([0])
     expect(sync.hasEntities('B')).toBe(false)
     expect(buildExport(database.db, 'B', 't').entities.task).toEqual([])
     expect(new ActivityService(database.db).list('B').items).toEqual([])
@@ -217,7 +226,7 @@ describe('access goes through spaces', () => {
 
     // B reads it through the membership, in snapshot, pull and activity.
     expect(sync.snapshot('B').entities.map((e) => e.id)).toEqual([task.id])
-    expect(sync.pull('B', 0).changes.map((c) => c.entityId)).toEqual([task.id])
+    expect(changesSince(sync, 'B').map((c) => c.entityId)).toEqual([task.id])
     expect(new ActivityService(database.db).list('B').items).toHaveLength(1)
     // But not in an export: that holds the spaces you own (plan 23).
     expect(buildExport(database.db, 'B', 't').entities.task).toEqual([])
@@ -235,7 +244,8 @@ describe('access goes through spaces', () => {
       .set({ level: 'edit' })
       .where(eq(spaceMembers.userId, 'B'))
       .run()
-    const { seq } = sync.push('B', [edit('task', task.id, { title: 'Edited by B' })])
+    sync.push('B', [edit('task', task.id, { title: 'Edited by B' })])
+    const seq = lastSeq(database.db)
     expect(sync.snapshot('A').entities[0]?.data.title).toBe('Edited by B')
     const rows = database.db.select().from(entities).where(eq(entities.id, task.id)).all()
     expect(rows).toHaveLength(1)
@@ -243,14 +253,14 @@ describe('access goes through spaces', () => {
     const last = database.db.select().from(changes).where(eq(changes.seq, seq)).get()
     expect(last).toMatchObject({ userId: 'B', spaceId: shared, actor: 'user:B' })
     // A sees B's change in its pull and its Logbook, by B.
-    expect(sync.pull('A', seq - 1).changes.map((c) => c.fields.title)).toEqual(['Edited by B'])
+    expect(changesSince(sync, 'A', seq - 1).map((c) => c.fields.title)).toEqual(['Edited by B'])
     const items = new ActivityService(database.db).list('A').items
     expect(items[0]?.actor).toBe('user:B')
 
     // Out of the space: gone for B.
     database.db.delete(spaceMembers).where(eq(spaceMembers.userId, 'B')).run()
     expect(sync.snapshot('B').entities).toEqual([])
-    expect(sync.pull('B', 0).changes).toEqual([])
+    expect(changesSince(sync, 'B')).toEqual([])
   })
 
   it('a new entity of a member goes to their own personal space, not the shared one', () => {
@@ -276,7 +286,6 @@ describe('access goes through spaces', () => {
       entities: [],
       spaces: [],
       cursor: {},
-      seq: 0,
     })
     expect(sync.pullSpaces('C', {})).toEqual({
       protocol: SYNC_PROTOCOL,
@@ -340,10 +349,11 @@ describe('agents reach what their user reaches, never more', () => {
       .sort()
     expect(titles).toEqual(['Bob private', 'Shared with Bob'])
 
-    const pull = await app.request('/api/sync/pull?since=0', {
+    const pull = await app.request(`/api/sync/pull?cursor=${encodeURIComponent('{}')}`, {
       headers: { authorization: everything },
     })
-    expect(((await pull.json()) as { changes: unknown[] }).changes).toHaveLength(2)
+    const spacesSeen = ((await pull.json()) as PullResponse).spaces
+    expect(spacesSeen.flatMap((s) => s.entities ?? [])).toHaveLength(2)
 
     const activity = await app.request('/api/activity', { headers: { authorization: everything } })
     const lines = ((await activity.json()) as { items: { title: string }[] }).items
@@ -505,17 +515,17 @@ describe('migration 0008 on an existing database', () => {
     expect(live('U1').every((t) => t.startsWith('U1'))).toBe(true)
     expect(live('U2').every((t) => t.startsWith('U2'))).toBe(true)
     expect(live('U3')).toEqual([])
-    expect(sync.pull('U1', 0).changes).toHaveLength(5)
-    expect(sync.pull('U2', 0).changes).toHaveLength(2)
-    expect(sync.pull('U3', 0).changes).toEqual([])
+    expect(changesSince(sync, 'U1')).toHaveLength(5)
+    expect(changesSince(sync, 'U2')).toHaveLength(2)
+    expect(changesSince(sync, 'U3')).toEqual([])
 
     // Both rows with the shared id survive, each in its own space.
     const pair = db.select().from(entities).where(eq(entities.id, sharedId)).all()
     expect(pair.map((r) => r.spaceId).sort()).toEqual([spaceOf.U1, spaceOf.U2].sort())
 
     // The log keeps counting where it was; new writes go on as before.
-    const { seq } = sync.push('U2', [edit('task', sharedId, { title: 'After' })])
-    expect(seq).toBe(sequence + 1)
+    sync.push('U2', [edit('task', sharedId, { title: 'After' })])
+    expect(lastSeq(db)).toBe(sequence + 1)
     expect(live('U1')).not.toContain('After')
     expect(live('U2')).toContain('After')
 

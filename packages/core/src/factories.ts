@@ -1,13 +1,4 @@
-import type {
-  Area,
-  ChecklistItem,
-  Heading,
-  Project,
-  Review,
-  ReviewKind,
-  Tag,
-  Task,
-} from './entities.js'
+import type { Area, ChecklistItem, Heading, Project, Tag, Task } from './entities.js'
 import { ulid } from './ids.js'
 import { firstOrder } from './order.js'
 import { normalizeTagTitle } from './tags.js'
@@ -107,19 +98,5 @@ export function newTag(fields: Partial<Tag> & { title: string }): Tag {
     order: firstOrder(),
     ...fields,
     title: normalizeTagTitle(fields.title),
-  }
-}
-
-/** Starts a review of one kind; `startedAt` and `createdAt` are now. */
-export function newReview(fields: Partial<Review> & { kind: ReviewKind }): Review {
-  const now = nowIso()
-  return {
-    id: ulid(),
-    createdAt: now,
-    deleted: false,
-    startedAt: now,
-    completedAt: null,
-    doneSteps: [],
-    ...fields,
   }
 }

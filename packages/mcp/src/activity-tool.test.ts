@@ -93,7 +93,7 @@ describe('get_activity', () => {
     snapshot: async () => {
       throw new Error('get_activity must not load the replica')
     },
-    pull: async () => {
+    pullSpaces: async () => {
       throw new Error('get_activity must not pull')
     },
     push: async () => ({}),

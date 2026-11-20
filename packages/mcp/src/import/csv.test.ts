@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs'
-import { applyChange, type Change, type EntityRecord, newTag, recordKey } from '@dingen/core'
+import { newTag } from '@dingen/core'
 import { describe, expect, it } from 'vitest'
-import { DingenClient, type SyncTransport } from '../client.js'
+import { DingenClient } from '../client.js'
+import { MemoryTransport } from '../memory-transport.js'
 import { describePlan, writePlan } from './common.js'
 import { planCsvImport } from './csv.js'
 
@@ -95,20 +96,7 @@ describe('generic csv import', () => {
   })
 
   it('is idempotent against a running server', async () => {
-    const records = new Map<string, EntityRecord>()
-    const log: Change[] = []
-    const transport: SyncTransport = {
-      snapshot: async () => ({ entities: [...records.values()], seq: log.length }),
-      pull: async (since) => ({ changes: log.slice(since), seq: log.length, hasMore: false }),
-      push: async (changes) => {
-        for (const c of changes) {
-          const key = recordKey(c.entityType, c.entityId)
-          records.set(key, applyChange(records.get(key), c))
-          log.push(c)
-        }
-        return { seq: log.length, applied: changes.length, duplicates: 0 }
-      },
-    }
+    const transport = new MemoryTransport()
     const apply = async () => {
       const client = new DingenClient(transport, { today: () => TODAY })
       await client.refresh()
@@ -142,20 +130,7 @@ Drie,IJs
   })
 
   it('uses a tag the account already has under the same name', async () => {
-    const records = new Map<string, EntityRecord>()
-    const log: Change[] = []
-    const transport: SyncTransport = {
-      snapshot: async () => ({ entities: [...records.values()], seq: log.length }),
-      pull: async (since) => ({ changes: log.slice(since), seq: log.length, hasMore: false }),
-      push: async (changes) => {
-        for (const c of changes) {
-          const key = recordKey(c.entityType, c.entityId)
-          records.set(key, applyChange(records.get(key), c))
-          log.push(c)
-        }
-        return { seq: log.length, applied: changes.length, duplicates: 0 }
-      },
-    }
+    const transport = new MemoryTransport()
     const client = new DingenClient(transport, { today: () => TODAY })
     await client.refresh()
     // An older tag with capitals (from before lowercase names) counts as the same.
@@ -164,9 +139,9 @@ Drie,IJs
     const res = writePlan(client, planCsvImport(csv, { today: TODAY }))
     await client.flush()
     expect(res.created.tag).toBe(2)
-    const tags = [...records.values()].filter((r) => r.entityType === 'tag')
+    const tags = [...transport.records.values()].filter((r) => r.entityType === 'tag')
     expect(tags).toHaveLength(3)
-    const een = [...records.values()].find((r) => r.data.title === 'Een')
+    const een = [...transport.records.values()].find((r) => r.data.title === 'Een')
     expect(een?.data.tagIds).toEqual([existing.id, expect.any(String)])
   })
 })

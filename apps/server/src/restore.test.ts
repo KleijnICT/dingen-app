@@ -1,14 +1,7 @@
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import {
-  type Change,
-  CursorAheadError,
-  createClock,
-  newTask,
-  type SpaceCursor,
-  ulid,
-} from '@dingen/core'
+import { type Change, createClock, newTask, type SpaceCursor, ulid } from '@dingen/core'
 import Database from 'better-sqlite3'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createApp } from './app.js'
@@ -16,7 +9,7 @@ import { writeBackup } from './backup.js'
 import { migrationsFolder, type OpenedDatabase, openDatabase } from './db.js'
 import { DataDirLock } from './lock.js'
 import { CURSOR_GAPS_KEY, RestoreError, readGaps, replaceDatabase } from './restore.js'
-import { spaceMembers, spaces } from './schema.js'
+import { spaceMembers } from './schema.js'
 import { createPersonalSpace } from './spaces/service.js'
 import { SyncService } from './sync.js'
 
@@ -151,7 +144,7 @@ describe('replaceDatabase', () => {
 })
 
 describe('sync na terugzetten', () => {
-  it('protocol 2: een cursor voorbij het log krijgt de ruimte opnieuw, gemarkeerd resync', async () => {
+  it('een cursor voorbij het log krijgt de ruimte opnieuw, gemarkeerd resync', async () => {
     const { cursor } = await restoreWithLostChanges()
     const sync = new SyncService(db.db)
     const pulled = sync.pullSpaces('U1', cursor)
@@ -164,7 +157,7 @@ describe('sync na terugzetten', () => {
     expect(again.spaces[0]?.entities).toBeUndefined()
   })
 
-  it('protocol 2: ook na nieuwe wijzigingen blijft een oude cursor herkend', async () => {
+  it('ook na nieuwe wijzigingen blijft een oude cursor herkend', async () => {
     const { cursor } = await restoreWithLostChanges()
     const sync = new SyncService(db.db)
     sync.push('U1', [taskChange('Vijf'), taskChange('Zes'), taskChange('Zeven')])
@@ -176,43 +169,17 @@ describe('sync na terugzetten', () => {
     expect(pushed.cursor).toEqual({})
   })
 
-  it('protocol 2: een cursor voorbij het log zonder notitie (met de hand teruggezet)', () => {
+  it('een cursor voorbij het log zonder notitie (met de hand teruggezet)', () => {
     const sync = new SyncService(db.db)
     sync.push('U1', [taskChange('Een')])
     const { cursor } = sync.snapshot('U1')
     const ahead = { [personal]: (cursor[personal] ?? 0) + 5 }
     expect(sync.pullSpaces('U1', ahead).spaces[0]?.resync).toBe(true)
     expect(sync.pullSpaces('U1', cursor).spaces[0]?.resync).toBeUndefined()
-    // A numeric (protocol 1) cursor ahead: every space again.
-    expect(sync.pullSpaces('U1', (cursor[personal] ?? 0) + 5).spaces[0]?.resync).toBe(true)
   })
 
-  it('een getal als cursor wordt per ruimte de hoogste seq van die ruimte, zonder resync', () => {
-    db.db
-      .insert(spaces)
-      .values({ id: 'S2', kind: 'shared', ownerId: 'U1', createdAt: '2026-01-01' })
-      .run()
-    db.db
-      .insert(spaceMembers)
-      .values({ spaceId: 'S2', userId: 'U1', level: 'manage', joinedAt: '2026-01-01' })
-      .run()
-    const sync = new SyncService(db.db)
-    sync.push('U1', [taskChange('Gedeeld', 'S2')])
-    sync.push('U1', [taskChange('Eigen')])
-    const { cursor, seq } = sync.snapshot('U1')
-    const pulled = sync.pullSpaces('U1', seq)
-    expect(pulled.spaces.map((s) => s.resync)).toEqual([undefined, undefined])
-    expect(pulled.cursor).toEqual(cursor)
-    // That cursor is valid from then on.
-    expect(sync.pullSpaces('U1', pulled.cursor).spaces.some((s) => s.resync)).toBe(false)
-  })
-
-  it('protocol 1: een cursor voorbij het log geeft CursorAheadError en via HTTP 409', async () => {
+  it('via HTTP krijgt een cursor voorbij het log de ruimte opnieuw', async () => {
     const { cursor } = await restoreWithLostChanges()
-    const sync = new SyncService(db.db)
-    const since = cursor[personal] ?? 0
-    expect(() => sync.pull('U1', since)).toThrow(CursorAheadError)
-    expect(sync.pull('U1', 0).changes).toHaveLength(2)
 
     const app = createApp({
       db: db.db,
@@ -226,13 +193,26 @@ describe('sync na terugzetten', () => {
       body: JSON.stringify({ email: 'http@example.com', password: 'wachtwoord123' }),
     })
     const cookie = res.headers.get('set-cookie') ?? ''
-    const pull = await app.request(`/api/sync/pull?since=${since + 100}`, { headers: { cookie } })
-    expect(pull.status).toBe(409)
-    expect(await pull.json()).toMatchObject({ error: 'cursor_ahead', resync: true })
-    const p2 = await app.request(`/api/sync/pull?cursor=${encodeURIComponent('{}')}`, {
-      headers: { cookie },
-    })
-    expect(p2.status).toBe(200)
+    // The HTTP user is another account; give it U1's space to pull.
+    db.db
+      .insert(spaceMembers)
+      .values({
+        spaceId: personal,
+        userId: (await (await app.request('/api/auth/me', { headers: { cookie } })).json()).user.id,
+        level: 'read',
+        joinedAt: '2026-01-01',
+      })
+      .run()
+    const pull = await app.request(
+      `/api/sync/pull?cursor=${encodeURIComponent(JSON.stringify(cursor))}`,
+      {
+        headers: { cookie },
+      },
+    )
+    expect(pull.status).toBe(200)
+    const space = (await pull.json()).spaces.find((s: { id: string }) => s.id === personal)
+    expect(space).toMatchObject({ resync: true })
+    expect(space.entities).toHaveLength(2)
   })
 
   it('bewaart de notities van de vervangen database bij een volgende terugzet', async () => {

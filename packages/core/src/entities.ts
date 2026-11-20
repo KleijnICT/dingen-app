@@ -236,25 +236,6 @@ export const Tag = Base.extend({
 })
 export type Tag = z.infer<typeof Tag>
 
-export const ReviewKind = z.enum(['daily', 'weekly', 'monthly'])
-export type ReviewKind = z.infer<typeof ReviewKind>
-
-/**
- * One run of a step-by-step review. Unused since plan 29; kept so clients
- * that still sync it keep working. Goes with the protocol versioning.
- *
- * One run of a review. `completedAt` is null while it runs. `doneSteps` holds
- * step ids (and group keys such as `somedayDeep:<areaId>`); plain strings so
- * ids from a newer version survive a round trip.
- */
-export const Review = Base.extend({
-  kind: ReviewKind,
-  startedAt: IsoDateTime,
-  completedAt: IsoDateTime.nullable(),
-  doneSteps: z.array(z.string()),
-})
-export type Review = z.infer<typeof Review>
-
 export const entitySchemas = {
   area: Area,
   project: Project,
@@ -262,22 +243,13 @@ export const entitySchemas = {
   task: Task,
   checklistItem: ChecklistItem,
   tag: Tag,
-  review: Review,
 } as const
 
-export const EntityType = z.enum([
-  'area',
-  'project',
-  'heading',
-  'task',
-  'checklistItem',
-  'tag',
-  'review',
-])
+export const EntityType = z.enum(['area', 'project', 'heading', 'task', 'checklistItem', 'tag'])
 export type EntityType = z.infer<typeof EntityType>
 
 export type EntityOf<T extends EntityType> = z.infer<(typeof entitySchemas)[T]>
-export type Entity = Area | Project | Heading | Task | ChecklistItem | Tag | Review
+export type Entity = Area | Project | Heading | Task | ChecklistItem | Tag
 
 /**
  * Eén wijziging aan één entiteit. `fields` bevat alleen de gewijzigde velden.

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { createRequire } from 'node:module'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { DingenClient, HttpTransport } from './client.js'
 import { createMcpServer } from './server.js'
@@ -16,5 +17,7 @@ const client = new DingenClient(new HttpTransport(url, token), {
   today: () => todayIn(timezone),
   timezone,
 })
-const server = createMcpServer(client)
+// The version of this package: over stdio the MCP server is this client, not the Dingen server.
+const { version } = createRequire(import.meta.url)('../package.json') as { version: string }
+const server = createMcpServer(client, { version })
 await server.connect(new StdioServerTransport())

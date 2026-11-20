@@ -584,7 +584,8 @@ button.link.danger {
   background: var(--accent);
 }
 .sync-status.offline .dot,
-.sync-status.unauthorized .dot {
+.sync-status.unauthorized .dot,
+.sync-status.outdated .dot {
   background: var(--error);
 }
 .app-version {

@@ -1,12 +1,56 @@
 import { describe, expect, it } from 'vitest'
-import { mergeCursor, parseCursorParam } from './protocol.js'
+import {
+  CLIENT_OUTDATED,
+  ClientOutdatedBodySchema,
+  clientOutdatedBody,
+  MIN_CLIENT_PROTOCOL,
+  mergeCursor,
+  parseCursorParam,
+  requestProtocol,
+  SYNC_PROTOCOL,
+} from './protocol.js'
 
-describe('sync protocol 2 cursor', () => {
-  it('reads a cursor per space, or a protocol 1 number, and refuses anything else', () => {
+describe('sync protocol', () => {
+  it('is 4 and accepts nothing older', () => {
+    expect(SYNC_PROTOCOL).toBe(4)
+    expect(MIN_CLIENT_PROTOCOL).toBe(4)
+  })
+
+  it('reads the protocol a request names, 0 when it names none', () => {
+    expect(requestProtocol('4')).toBe(4)
+    expect(requestProtocol('3')).toBe(3)
+    expect(requestProtocol(undefined)).toBe(0)
+    expect(requestProtocol(null)).toBe(0)
+    expect(requestProtocol('')).toBe(0)
+    expect(requestProtocol('nonsense')).toBe(0)
+    expect(requestProtocol('-1')).toBe(0)
+  })
+
+  it('tells an outdated client what to do', () => {
+    const body = clientOutdatedBody(3)
+    expect(ClientOutdatedBodySchema.parse(body)).toEqual(body)
+    expect(body).toMatchObject({ error: CLIENT_OUTDATED, protocol: 4, minProtocol: 4 })
+    expect(body.message).toContain('protocol 3')
+    expect(clientOutdatedBody(0).message).toContain('out of date')
+  })
+})
+
+describe('cursor per space', () => {
+  it('reads a cursor per space and refuses anything else', () => {
     expect(parseCursorParam('{}')).toEqual({})
     expect(parseCursorParam('{"S1":3,"S2":0}')).toEqual({ S1: 3, S2: 0 })
-    expect(parseCursorParam('12')).toBe(12)
-    for (const bad of ['', 'x', '-1', '1.5', '[1]', 'null', '{"S":-1}', '{"S":"1"}', '{"":1}']) {
+    for (const bad of [
+      '',
+      'x',
+      '12',
+      '-1',
+      '1.5',
+      '[1]',
+      'null',
+      '{"S":-1}',
+      '{"S":"1"}',
+      '{"":1}',
+    ]) {
       expect(parseCursorParam(bad), bad).toBeNull()
     }
   })

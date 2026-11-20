@@ -47,6 +47,7 @@ export const nl: Messages = {
   'sync.syncing': 'Synchroniseren…',
   'sync.offline': 'Offline, wijzigingen staan in de wacht',
   'sync.unauthorized': 'Uitgelogd',
+  'sync.outdated': 'Bijwerken nodig',
 
   'task.untitled': 'Zonder titel',
   'task.title': 'Titel',
@@ -353,6 +354,7 @@ export const nl: Messages = {
   'data.type.tag': 'Tags',
   'pwa.updateAvailable': 'Nieuwe versie beschikbaar.',
   'pwa.reload': 'Herladen',
+  'pwa.outdated': 'Deze versie van Dingen is verouderd. Herlaad om bij te werken.',
   // --- agenda ---
   'settings.tab.calendars': "Agenda's",
   'calendar.events': 'Agenda',

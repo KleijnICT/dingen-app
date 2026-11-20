@@ -1,15 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { buildSnapshot, moveFields } from './actions.js'
-import {
-  daypartOf,
-  daypartStartTime,
-  downgradeTaskData,
-  downgradeTaskFields,
-  upgradeTaskFields,
-} from './dayparts.js'
+import { daypartOf, daypartStartTime, upgradeTaskFields } from './dayparts.js'
 import { Task } from './entities.js'
 import { newTask } from './factories.js'
-import { LEGACY_PROTOCOL, requestProtocol, SYNC_PROTOCOL } from './protocol.js'
 
 const DATE = { kind: 'date', date: '2026-11-20' } as const
 
@@ -34,7 +27,7 @@ describe('daypartStartTime', () => {
   })
 })
 
-describe('upgradeTaskFields (protocol 2 → 3)', () => {
+describe('upgradeTaskFields (evening and time to dayparts)', () => {
   const current = (fields: Partial<Task> = {}) =>
     ({ ...newTask({ title: 'Water the plants', when: DATE, ...fields }) }) as Record<
       string,
@@ -115,24 +108,6 @@ describe('upgradeTaskFields (protocol 2 → 3)', () => {
   })
 })
 
-describe('downgrade for protocol 2 clients', () => {
-  it('derives evening and sets time to null on data', () => {
-    const task = { ...newTask({ title: 'x', when: DATE, daypart: 'evening', duration: 15 }) }
-    expect(downgradeTaskData(task)).toMatchObject({ evening: true, time: null, duration: 15 })
-    expect(downgradeTaskData({ ...task, daypart: 'morning' })).toMatchObject({ evening: false })
-  })
-
-  it('adds evening to a change of the daypart only', () => {
-    expect(downgradeTaskFields({ daypart: 'evening' })).toEqual({
-      daypart: 'evening',
-      evening: true,
-      time: null,
-    })
-    const other = { title: 'y' }
-    expect(downgradeTaskFields(other)).toBe(other)
-  })
-})
-
 describe('moveFields with a daypart', () => {
   const ws = (tasks: Task[]) =>
     buildSnapshot('2026-11-20', {
@@ -159,14 +134,5 @@ describe('moveFields with a daypart', () => {
     expect(
       moveFields(ws([task]), task, { kind: 'when', when: { kind: 'anytime' }, daypart: 'evening' }),
     ).toEqual({ when: { kind: 'anytime' }, daypart: null })
-  })
-})
-
-describe('protocol', () => {
-  it('is 3, and a request without the header speaks protocol 2', () => {
-    expect(SYNC_PROTOCOL).toBe(3)
-    expect(requestProtocol(undefined)).toBe(LEGACY_PROTOCOL)
-    expect(requestProtocol('nonsense')).toBe(2)
-    expect(requestProtocol('3')).toBe(3)
   })
 })

@@ -25,8 +25,8 @@ export interface OutboxItem {
 }
 
 /**
- * `cursors` is the sync cursor per space (protocol 2). `cursor` is the single
- * cursor of protocol 1: read once to move over, then removed.
+ * `cursors` is the sync cursor per space. `cursor` is the single cursor of
+ * protocol 1, from old replicas: removed at start (the spaces come again).
  */
 export type MetaItem =
   | { key: 'clientId'; value: string }

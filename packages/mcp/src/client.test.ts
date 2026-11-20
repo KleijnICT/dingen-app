@@ -1,16 +1,19 @@
 import {
   applyChange,
   type Change,
-  CursorAheadError,
+  ClientOutdatedError,
+  clientOutdatedBody,
   createClock,
   type EntityRecord,
   newTask,
   type Placed,
+  PROTOCOL_HEADER,
   type PullResponse,
   type PullSpace,
   recordKey,
   type SpaceCursor,
   type SpaceInfo,
+  SYNC_PROTOCOL,
   type Task,
   ulid,
 } from '@dingen/core'
@@ -25,7 +28,7 @@ function createdBy(entity: { id: string }): Change {
   return { id: ulid(), entityType: 'task', entityId: id, fields, ts: other.now(), clientId: 'X' }
 }
 
-/** A protocol 2 server in memory, with spaces. */
+/** A server in memory, with spaces. */
 class SpaceTransport implements SyncTransport {
   log: { seq: number; spaceId: string; change: Change }[] = []
   records = new Map<string, EntityRecord>()
@@ -64,15 +67,11 @@ class SpaceTransport implements SyncTransport {
 
   async snapshot() {
     return {
+      protocol: SYNC_PROTOCOL,
       entities: this.spaces.flatMap((s) => this.live(s.id).map((r) => ({ ...r, spaceId: s.id }))),
-      seq: this.log.length,
       cursor: Object.fromEntries(this.spaces.map((s) => [s.id, this.seqOf(s.id)])),
       spaces: this.spaces,
     }
-  }
-
-  async pull(): Promise<never> {
-    throw new Error('protocol 1 pull must not be used')
   }
 
   async pullSpaces(cursor: SpaceCursor): Promise<PullResponse> {
@@ -126,7 +125,6 @@ class SpaceTransport implements SyncTransport {
     const placed = this.placed
     this.placed = undefined
     return {
-      seq: this.log.length,
       applied: changes.length,
       duplicates: 0,
       cursor: advanced,
@@ -229,64 +227,27 @@ describe('DingenClient with a cursor per space', () => {
     await client.refresh()
     expect(titles(client)).toEqual(['Kept, edited'])
   })
-
-  it('protocol 1: reloads the snapshot when the server says the cursor is ahead', async () => {
-    let log: Change[] = [createdBy(newTask({ title: 'One' })), createdBy(newTask({ title: 'Two' }))]
-    let snapshots = 0
-    const transport: SyncTransport = {
-      snapshot: async () => {
-        snapshots += 1
-        const records = new Map<string, EntityRecord>()
-        for (const c of log) {
-          const key = recordKey(c.entityType, c.entityId)
-          records.set(key, applyChange(records.get(key), c))
-        }
-        return { entities: [...records.values()], seq: log.length }
-      },
-      pull: async (since) => {
-        if (since > log.length) throw new CursorAheadError()
-        return { changes: log.slice(since), seq: log.length, hasMore: false }
-      },
-      push: async () => ({ seq: 0 }),
-    }
-    const client = new DingenClient(transport)
-    await client.refresh()
-    expect(titles(client)).toEqual(['One', 'Two'])
-    log = log.slice(0, 1)
-    await client.refresh()
-    expect(snapshots).toBe(2)
-    expect(titles(client)).toEqual(['One'])
-  })
-
-  it('falls back to protocol 1 when the server sends no cursor per space', async () => {
-    const log: Change[] = []
-    const seen: number[] = []
-    const transport: SyncTransport = {
-      snapshot: async () => ({ entities: [], seq: 0 }),
-      pull: async (since) => {
-        seen.push(since)
-        return { changes: log.slice(since), seq: log.length, hasMore: false }
-      },
-      pullSpaces: async () => {
-        throw new Error('this server speaks protocol 1')
-      },
-      push: async () => ({ seq: 0 }),
-    }
-    const client = new DingenClient(transport)
-    await client.refresh()
-    log.push(createdBy(newTask({ title: 'Old server' })))
-    await client.refresh()
-    expect(seen).toEqual([0])
-    expect(titles(client)).toEqual(['Old server'])
-  })
 })
 
 describe('HttpTransport', () => {
-  it('turns 409 cursor_ahead into CursorAheadError', async () => {
+  it('names its protocol on every request', async () => {
+    const headers: (string | null)[] = []
+    const transport = new HttpTransport('https://dingen.example', 'tok', async (_input, init) => {
+      headers.push(new Headers(init?.headers).get(PROTOCOL_HEADER))
+      return Response.json({ protocol: SYNC_PROTOCOL, entities: [], spaces: [], cursor: {} })
+    })
+    await transport.snapshot()
+    await transport.pullSpaces({})
+    expect(headers).toEqual([String(SYNC_PROTOCOL), String(SYNC_PROTOCOL)])
+  })
+
+  it('turns 426 client_outdated into a ClientOutdatedError that says to update the plugin', async () => {
     const transport = new HttpTransport('https://dingen.example', 'tok', async () =>
-      Response.json({ error: 'cursor_ahead', resync: true }, { status: 409 }),
+      Response.json(clientOutdatedBody(4), { status: 426 }),
     )
-    await expect(transport.pull(99)).rejects.toBeInstanceOf(CursorAheadError)
+    const err = await transport.snapshot().catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(ClientOutdatedError)
+    expect((err as Error).message).toMatch(/update the plugin/)
   })
 
   it('sends the cursor per space as URL-encoded JSON and with a push', async () => {

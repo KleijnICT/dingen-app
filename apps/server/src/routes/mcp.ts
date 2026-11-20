@@ -15,7 +15,7 @@ import type { SyncService } from '../sync.js'
  * Stateless: every request gets a fresh replica from the sync service, with
  * only what the agent can read; its writes are checked against its grants.
  */
-export function mcpRoutes(timezone: string, activity: ActivityService) {
+export function mcpRoutes(timezone: string, activity: ActivityService, version: string) {
   const app = new Hono<AppEnv>()
 
   app.all('/', async (c) => {
@@ -25,7 +25,7 @@ export function mcpRoutes(timezone: string, activity: ActivityService) {
     }
     const transport = new ServiceTransport(c.get('sync'), c.get('agents'), accessOf(c), activity)
     const client = new DingenClient(transport, { today: () => todayIn(timezone), timezone })
-    const server = createMcpServer(client)
+    const server = createMcpServer(client, { version })
     const http = new StreamableHTTPTransport()
     await server.connect(http)
     const res = await http.handleRequest(c)
@@ -60,10 +60,6 @@ class ServiceTransport implements SyncTransport {
 
   async snapshot() {
     return this.sync.snapshot(this.access.userId, this.access.grants)
-  }
-
-  async pull(since: number) {
-    return this.sync.pull(this.access.userId, since, undefined, this.access.grants)
   }
 
   async pullSpaces(cursor: SpaceCursor) {

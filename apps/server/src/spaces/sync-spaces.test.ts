@@ -8,7 +8,7 @@ import {
   SYNC_PROTOCOL,
   ulid,
 } from '@dingen/core'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, max } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createApp } from '../app.js'
 import { type OpenedDatabase, openDatabase } from '../db.js'
@@ -16,7 +16,7 @@ import { changes, entities, spaceMembers, spaces } from '../schema.js'
 import { SyncService } from '../sync.js'
 import { createPersonalSpace } from './service.js'
 
-/** Sync protocol 2: a cursor per space (plan 23, part 2). */
+/** Sync with a cursor per space (plan 23, part 2). */
 
 const clock = createClock('SPACESYNC')
 const opened: OpenedDatabase[] = []
@@ -71,9 +71,20 @@ describe('sync per space (service)', () => {
       .run()
   }
 
+  /** The highest `seq` in the change log. */
+  function lastSeq(): number {
+    return (
+      database.db
+        .select({ seq: max(changes.seq) })
+        .from(changes)
+        .get()?.seq ?? 0
+    )
+  }
+
   /** Creates an entity of A straight in the shared space, as moving will (part 3). */
   function inShared(entityType: 'task' | 'area', entity: { id: string }) {
-    const { seq } = sync.push('A', [created(entityType, entity)])
+    sync.push('A', [created(entityType, entity)])
+    const seq = lastSeq()
     database.db.update(entities).set({ spaceId: shared }).where(eq(entities.id, entity.id)).run()
     database.db
       .update(changes)
@@ -143,7 +154,8 @@ describe('sync per space (service)', () => {
   it('a space joined later comes as a snapshot of that space only', () => {
     const later = makeShared(null)
     const area = newArea({ title: 'Joined', order: 'a' })
-    const { seq } = sync.push('A', [created('area', area)])
+    sync.push('A', [created('area', area)])
+    const seq = lastSeq()
     database.db.update(entities).set({ spaceId: later }).where(eq(entities.id, area.id)).run()
     database.db.update(changes).set({ spaceId: later }).where(eq(changes.entityId, area.id)).run()
     sync.push('A', [edit('area', area.id, { title: 'Joined, renamed' })])
@@ -197,28 +209,14 @@ describe('sync per space (service)', () => {
     expect(next).toEqual({ [pa]: 3, [shared]: 4 })
   })
 
-  it('a number as cursor (protocol 1) counts for every space, without snapshots', () => {
-    sync.push('A', [created('task', newTask({ title: 'Old', order: 'a' }))])
-    const task = newTask({ title: 'Together', order: 'b' })
-    inShared('task', task)
-    sync.push('A', [created('task', newTask({ title: 'New', order: 'c' }))])
-    sync.push('A', [edit('task', task.id, { title: 'Together, renamed' })])
-
-    const body = sync.pullSpaces('A', 2)
-    expect(body.spaces.some((s) => s.entities)).toBe(false)
-    expect(body.spaces.map((s) => titles(s.changes))).toEqual([['New'], ['Together, renamed']])
-    expect(body.cursor).toEqual({ [pa]: 3, [shared]: 4 })
-    expect(body.removed).toEqual([])
-  })
-
-  it('the snapshot gives the cursor per space and keeps the protocol 1 seq', () => {
+  it('the snapshot gives the cursor per space', () => {
     sync.push('A', [created('task', newTask({ title: 'A private', order: 'a' }))])
     inShared('task', newTask({ title: 'Together', order: 'b' }))
     sync.push('B', [created('task', newTask({ title: 'B private', order: 'a' }))])
 
     const snap = sync.snapshot('B')
     expect(snap.cursor).toEqual({ [pb]: 3, [shared]: 2 })
-    expect(snap.seq).toBe(3)
+    expect(snap).not.toHaveProperty('seq')
     expect(snap.entities.map((e) => [e.data.title, e.spaceId]).sort()).toEqual([
       ['B private', pb],
       ['Together', shared],
@@ -324,10 +322,10 @@ describe('sync per space (HTTP)', () => {
     return { app, call }
   }
 
-  it('speaks protocol 2 with a cursor, protocol 1 with since, and says protocol 3 in health', async () => {
+  it('pulls with a cursor per space, and says its protocol in health', async () => {
     const { app, call } = await setup()
     const health = await (await app.request('/api/health')).json()
-    expect(health.syncProtocol).toBe(3)
+    expect(health.syncProtocol).toBe(SYNC_PROTOCOL)
 
     const task = newTask({ title: 'Melk', order: 'a' })
     const empty = (await (
@@ -342,7 +340,6 @@ describe('sync per space (HTTP)', () => {
       body: JSON.stringify({ changes: [created('task', task)], cursor: empty.cursor }),
     })
     expect(await pushed.json()).toEqual({
-      seq: 1,
       applied: 1,
       duplicates: 0,
       cursor: { [personal]: 1 },
@@ -355,26 +352,18 @@ describe('sync per space (HTTP)', () => {
     expect(titles(p2.spaces[0]?.changes ?? [])).toEqual(['Melk'])
     expect(p2.cursor).toEqual({ [personal]: 1 })
 
-    // The old form: exactly the old shape.
-    const p1 = await (await call('/api/sync/pull?since=0')).json()
-    expect(Object.keys(p1).sort()).toEqual(['changes', 'hasMore', 'seq'])
-    expect(titles(p1.changes)).toEqual(['Melk'])
-    expect(p1.seq).toBe(1)
-    const p0 = await (await call('/api/sync/pull')).json()
-    expect(p0.seq).toBe(1)
-
-    // A protocol 1 cursor moved over in one request.
-    const moved = (await (await call('/api/sync/pull?cursor=0')).json()) as PullResponse
-    expect(moved.cursor).toEqual({ [personal]: 1 })
-    expect(moved.spaces[0]?.entities).toBeUndefined()
-
-    for (const bad of ['nope', '{"x":-1}', '[1]', '1.5', encodeURIComponent('{"x":"1"}')]) {
+    for (const bad of ['nope', '0', '{"x":-1}', '[1]', '1.5', encodeURIComponent('{"x":"1"}')]) {
       const res = await call(`/api/sync/pull?cursor=${bad}`)
       expect(res.status, bad).toBe(400)
     }
 
     const snap = (await (await call('/api/sync/snapshot')).json()) as SnapshotResponse
-    expect(snap).toMatchObject({ protocol: 3, seq: 1, cursor: { [personal]: 1 } })
+    expect(snap).toEqual({
+      protocol: SYNC_PROTOCOL,
+      entities: [expect.objectContaining({ id: task.id, spaceId: personal })],
+      spaces: [{ id: personal, kind: 'personal', level: 'manage' }],
+      cursor: { [personal]: 1 },
+    })
     expect(snap.entities[0]?.spaceId).toBe(personal)
     const one = await call(`/api/sync/snapshot?space=${personal}`)
     expect(((await one.json()) as SnapshotResponse).entities).toHaveLength(1)

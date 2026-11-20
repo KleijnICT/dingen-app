@@ -50,6 +50,7 @@ export const en = {
   'sync.syncing': 'Syncing…',
   'sync.offline': 'Offline, changes are queued',
   'sync.unauthorized': 'Signed out',
+  'sync.outdated': 'Update needed',
 
   // Tasks
   'task.untitled': 'Untitled',
@@ -361,6 +362,7 @@ export const en = {
   'data.type.tag': 'Tags',
   'pwa.updateAvailable': 'New version available.',
   'pwa.reload': 'Reload',
+  'pwa.outdated': 'This version of Dingen is out of date. Reload to update.',
   // --- agenda ---
   'settings.tab.calendars': 'Calendars',
   'calendar.events': 'Calendar',

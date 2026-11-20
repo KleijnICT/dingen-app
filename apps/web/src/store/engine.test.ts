@@ -2,16 +2,19 @@ import 'fake-indexeddb/auto'
 import {
   applyChange,
   type Change,
+  clientOutdatedBody,
   createClock,
   type EntityRecord,
   newArea,
   newTask,
   type Placed,
+  PROTOCOL_HEADER,
   type PullSpace,
   parseCursorParam,
   recordKey,
   type SpaceCursor,
   type SpaceInfo,
+  SYNC_PROTOCOL,
   type Task,
   ulid,
 } from '@dingen/core'
@@ -21,7 +24,7 @@ import { SyncEngine } from './engine.js'
 
 const PERSONAL = 'SPACEPERSONAL'
 
-/** Nagebootste server met dezelfde semantiek als SyncService (protocol 2), zonder database. */
+/** Nagebootste server met dezelfde semantiek als SyncService, zonder database. */
 class FakeServer {
   log: { seq: number; spaceId: string; change: Change }[] = []
   entities = new Map<string, EntityRecord>()
@@ -42,6 +45,8 @@ class FakeServer {
   placed: Placed[] | undefined
   /** Pushed changes, as sent. */
   pushed: Change[] = []
+  /** The oldest protocol this server accepts; above `SYNC_PROTOCOL` it refuses the app. */
+  minProtocol = SYNC_PROTOCOL
 
   /** Writes a change as the server would store it; a new entity goes to `spaceId`. */
   write(change: Change, spaceId = PERSONAL): void {
@@ -85,6 +90,10 @@ class FakeServer {
         headers: { 'content-type': 'application/json' },
       })
     const params = new URL(url, 'http://x').searchParams
+    const spoken = Number(new Headers(init?.headers).get(PROTOCOL_HEADER))
+    if (url.startsWith('/api/sync/') && !(spoken >= this.minProtocol)) {
+      return json(clientOutdatedBody(spoken), 426)
+    }
     if (url.startsWith('/api/sync/push')) {
       const { changes, cursor } = JSON.parse(String(init?.body)) as {
         changes: Change[]
@@ -108,7 +117,6 @@ class FakeServer {
         if (after === mine.count) advanced[space] = mine.seq
       }
       const body = {
-        seq: this.log.length,
         applied: changes.length,
         duplicates: 0,
         ...(this.placed ? { placed: this.placed } : {}),
@@ -117,21 +125,13 @@ class FakeServer {
       return json(cursor ? { ...body, cursor: advanced } : body)
     }
     if (url.startsWith('/api/sync/pull')) {
-      const raw = params.get('cursor')
-      if (raw === null) {
-        const since = Number(params.get('since') ?? 0)
-        const changes = this.log.filter((l) => l.seq > since).map((l) => l.change)
-        return json({ changes, seq: this.log.length, hasMore: false })
-      }
-      const cursor = parseCursorParam(raw)
+      const cursor = parseCursorParam(params.get('cursor') ?? '')
       if (cursor === null) return json({ error: 'invalid_cursor' }, 400)
       let budget = this.pageSize
       const out: PullSpace[] = this.spaces.map((space) => {
-        const since = typeof cursor === 'number' ? cursor : cursor[space.id]
+        const since = cursor[space.id]
         // A cursor beyond the log (the server was restored): the space again, marked resync.
-        const ahead =
-          since !== undefined &&
-          since > (typeof cursor === 'number' ? this.log.length : this.seqOf(space.id))
+        const ahead = since !== undefined && since > this.seqOf(space.id)
         if (since === undefined || ahead) {
           return {
             ...space,
@@ -157,12 +157,9 @@ class FakeServer {
         }
       })
       return json({
-        protocol: 2,
+        protocol: SYNC_PROTOCOL,
         spaces: out,
-        removed:
-          typeof cursor === 'number'
-            ? []
-            : Object.keys(cursor).filter((id) => !this.spaces.some((s) => s.id === id)),
+        removed: Object.keys(cursor).filter((id) => !this.spaces.some((s) => s.id === id)),
         cursor: Object.fromEntries(out.map((s) => [s.id, s.seq])),
         hasMore: out.some((s) => s.hasMore),
       })
@@ -427,7 +424,7 @@ describe('SyncEngine with a cursor per space', () => {
     again.stop()
   })
 
-  it('moves a stored protocol 1 cursor over to a cursor per space', async () => {
+  it('starts a replica from before protocol 2 over, keeping its unsent changes', async () => {
     const server = new FakeServer()
     const known = newTask({ title: 'Al bekend' })
     server.write(createdBy('task', known))
@@ -441,6 +438,20 @@ describe('SyncEngine with a cursor per space', () => {
       { key: 'clientId', value: 'OLDCLIENT' },
       { key: 'cursor', value: 2 },
     ])
+    const unsent = newTask({ title: 'Nog niet verstuurd' })
+    const { id: unsentId, ...unsentFields } = unsent
+    await old.outbox.put({
+      id: ulid(),
+      order: 1,
+      change: {
+        id: ulid(),
+        entityType: 'task',
+        entityId: unsentId,
+        fields: unsentFields,
+        ts: createClock('OLDCLIENT').now(),
+        clientId: 'OLDCLIENT',
+      },
+    })
     old.close()
 
     server.write(editBy('task', known.id, { title: 'Hernoemd' }))
@@ -448,27 +459,78 @@ describe('SyncEngine with a cursor per space', () => {
 
     const a = engineFor(server, dbName)
     await a.start()
-    expect(server.urls[0]).toBe(`/api/sync/pull?cursor=${encodeURIComponent('2')}`)
-    expect(titles(a)).toEqual(['Hernoemd', 'Nieuw', 'Ook bekend'])
-    // Only what came after the old cursor was pulled.
-    expect(server.pulled).toHaveLength(2)
+    expect(server.urls.at(-1)).toBe(`/api/sync/pull?cursor=${encodeURIComponent('{}')}`)
+    expect(titles(a)).toEqual(['Hernoemd', 'Nieuw', 'Nog niet verstuurd', 'Ook bekend'])
     a.stop()
     const meta = await storedMeta(dbName)
-    expect(meta.cursors).toEqual({ [PERSONAL]: 4 })
+    expect(meta.cursors).toEqual({ [PERSONAL]: 5 })
     expect(meta.cursor).toBeUndefined()
     expect(meta.clientId).toBe('OLDCLIENT')
+  })
 
-    // From now on the cursor per space, and records without a space count as personal.
-    server.spaces.push({ id: 'SHARED', kind: 'shared', level: 'edit' })
-    const again = engineFor(server, dbName)
-    await again.start()
-    expect(server.urls.at(-1)).toBe(
-      `/api/sync/pull?cursor=${encodeURIComponent(JSON.stringify({ [PERSONAL]: 4 }))}`,
-    )
-    server.spaces = server.spaces.filter((s) => s.id !== 'SHARED')
-    await again.sync()
-    expect(titles(again)).toEqual(['Hernoemd', 'Nieuw', 'Ook bekend'])
-    again.stop()
+  it('drops records and unsent changes of entity types it does not know (reviews)', async () => {
+    const server = new FakeServer()
+    const dbName = `test-review-${Date.now()}`
+    const old = new LocalDb(dbName)
+    const id = ulid()
+    const review = {
+      entityType: 'review',
+      id,
+      data: { id, kind: 'weekly' },
+      fieldTs: { kind: other.now() },
+    }
+    await old.entities.put({ key: `review:${id}`, ...review } as never)
+    await old.outbox.put({
+      id: ulid(),
+      order: 1,
+      change: {
+        id: ulid(),
+        entityType: 'review',
+        entityId: id,
+        fields: { doneSteps: [] },
+        ts: other.now(),
+        clientId: 'OLD',
+      } as never,
+    })
+    await old.meta.put({ key: 'cursors', value: { [PERSONAL]: 0 } })
+    old.close()
+
+    const a = engineFor(server, dbName)
+    await a.start()
+    expect(a.status).toBe('idle')
+    expect([...a.records.keys()]).toEqual([])
+    expect(server.pushed).toEqual([])
+    a.stop()
+    const check = new LocalDb(dbName)
+    expect(await check.entities.count()).toBe(0)
+    expect(await check.outbox.count()).toBe(0)
+    check.close()
+  })
+
+  it('names its protocol, and on 426 client_outdated stops syncing and asks for the new version once', async () => {
+    const server = new FakeServer()
+    server.write(createdBy('task', newTask({ title: 'Op de server' })))
+    const a = engineFor(server)
+    let outdated = 0
+    a.onOutdated = () => {
+      outdated += 1
+    }
+    await a.start()
+    expect(a.status).toBe('idle')
+    expect(outdated).toBe(0)
+
+    // The server is updated and needs a newer app.
+    server.minProtocol = SYNC_PROTOCOL + 1
+    a.create('task', newTask({ title: 'Lokaal' }))
+    await a.sync()
+    expect(a.status).toBe('outdated')
+    expect(outdated).toBe(1)
+    await a.sync()
+    expect(outdated).toBe(1)
+    // The change waits in the outbox for the new version, which sends it.
+    expect(titles(a)).toEqual(['Lokaal', 'Op de server'])
+    expect(server.pushed).toEqual([])
+    a.stop()
   })
 
   it('does not pull its own pushed changes back, unless someone else wrote in between', async () => {

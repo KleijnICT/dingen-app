@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { AuthScreen } from './AuthScreen.js'
 import { type AuthStatus, api, errorText, type User } from './api.js'
 import { useT } from './i18n/index.js'
+import { reloadForOutdated } from './pwa.js'
 import { resetFromSearch } from './reset.js'
 import { Shell } from './Shell.js'
 import { EngineContext } from './store/context.js'
@@ -25,6 +26,8 @@ export function App() {
       engine.stop()
       void bootstrapRef.current()
     }
+    // The server needs a newer app (sync protocol): reload to get it.
+    engine.onOutdated = () => reloadForOutdated()
     void engine.start()
     setState({ kind: 'signedIn', user, engine })
   }, [])

@@ -541,8 +541,13 @@ Clients keep a local replica and sync it with three calls under `/api/sync`
 a space: for now each account has one, its personal space. The server numbers
 every change with one rising `seq`; a client keeps a cursor per space, the
 highest `seq` it has seen there. `GET /api/health` reports the protocol as
-`syncProtocol` (now `3`). A client names the protocol it speaks with the
-header `x-dingen-protocol: 3` on its sync requests.
+`syncProtocol` (now `4`) next to the server `version`. A client names the
+protocol it speaks with the header `x-dingen-protocol: 4` on every sync
+request. A request that names an older protocol, or none, gets
+`426 { error: "client_outdated", protocol, minProtocol, message }`: the web
+app then reloads to get the new version, the MCP client tells you to update.
+The shapes are defined in `packages/core/src/protocol.ts` and pinned by a
+contract test (see [Compatibility](#compatibility)).
 
 - `GET /api/sync/pull?cursor=<URL-encoded JSON {"<spaceId>": seq}>` answers
   `{ protocol, spaces, removed, cursor, hasMore }`. Each entry in `spaces` is
@@ -554,18 +559,18 @@ header `x-dingen-protocol: 3` on its sync requests.
   longer a member of: drop their data. `cursor` is the full new cursor; pull
   again while `hasMore` (at most 500 changes per answer).
 - `POST /api/sync/push` with `{ changes, cursor? }` answers
-  `{ seq, applied, duplicates, cursor? }`. With your cursor, the answer's
+  `{ applied, duplicates, cursor?, placed? }`. With your cursor, the answer's
   `cursor` holds the spaces where nothing but this push happened since, moved
   past it; merge it (highest per space) to skip pulling your own changes back.
 - `GET /api/sync/snapshot[?space=<id>]` answers `{ protocol, entities, spaces,
-  cursor, seq }`, every entity with its `spaceId`.
+  cursor }`, every entity with its `spaceId`.
 
 After a restore from a backup a client's cursor can lie beyond the server's
 log. The server recognises that (a cursor above the highest `seq` of the
 space, or in a range a restore recorded as lost) and answers that space in a
 pull with `entities` and `resync: true`: replace the space, keeping changes
-you have not sent yet. A protocol 1 pull (`since=`) gets 409 `{ error:
-"cursor_ahead", resync: true }`: load a new snapshot.
+you have not sent yet. The same goes for a cursor older than the change log,
+which keeps changes for a year.
 
 Moving between spaces. A change may carry `spaceId` (it is not an entity
 field and never shows up in `data`):
@@ -582,8 +587,8 @@ field and never shows up in `data`):
   tags become the target space's tag with the same name (compared in lower
   case), made there when missing. A move needs edit in both spaces (else 403
   `space_access`); an agent also needs edit on everything (else 403
-  `agent_scope`). Headings, checklist items, tags and reviews do not move on
-  their own (400).
+  `agent_scope`). Headings, checklist items and tags do not move on their own
+  (400).
 - The push answer adds `placed: [{ entityType, id, spaceId }]` for every
   entity it created or moved (children and new tags included). A space where
   a move happened is never in the answer's `cursor`: pull it.
@@ -591,26 +596,31 @@ field and never shows up in `data`):
   that space and within your reach, as whole records (put them as they are,
   with that space); `left` lists `{ entityType, id }` that went out of your
   sight (drop them). Apply both after `changes`. Moving between two of your
-  spaces is an arrival only. Protocol 1 pulls get a deletion for `left` and
-  the whole record as changes for `arrived`.
+  spaces is an arrival only.
 
-Protocol 1 still works for clients from 1.0.0-alpha.4 and older (a cached web
-app, the MCP plugin): `GET /api/sync/pull?since=<seq>` answers
-`{ changes, seq, hasMore }` over all your spaces. A stored protocol 1 cursor
-moves over with `pull?cursor=<seq>` (a bare number counts for every space).
-The `since` form will be removed once released clients no longer use it,
-at the earliest with 1.0.
+A task has `daypart` (`morning`, `afternoon`, `evening` or null; only with a
+date) and `duration` (minutes, 1 to 1440, or null).
 
-Protocol 3 (dayparts): a task has `daypart` (`morning`, `afternoon`,
-`evening` or null; only with a date) and `duration` (minutes, 1 to 1440, or
-null) instead of `evening` and `time`. A request without the
-`x-dingen-protocol: 3` header is answered as protocol 2: tasks (in snapshots,
-`entities`, `arrived` and changes of the daypart) also carry `evening` (true
-for the evening daypart) and `time: null`. Pushed `evening` and `time` are
-converted from any client: `evening: true` is the evening daypart,
-`evening: false` clears an evening daypart, and a `time` becomes its daypart
-(afternoon from 12:00, evening from 18:00) plus, when the task has no
-reminder, a reminder at that time on the day itself.
+### Compatibility
+
+- **Sync protocol.** From 1.0.0-beta.1 the sync protocol is 4, and it stays 4
+  until 2.0: changes are additive only (new optional fields with a default,
+  new entity types that older clients ignore). Nothing is renamed, removed or
+  made stricter. A contract test pins the entity types, their fields and the
+  pull, push and snapshot shapes in a checked-in snapshot
+  (`apps/server/test/contract/`), so a change shows up in review. Older
+  clients (protocol 3 and below: the web app and MCP plugin from
+  1.0.0-alpha.9 and earlier) get `426 client_outdated` and must update; the
+  web app does that by itself on its next reload.
+- **MCP tools.** The tools may still change until 1.0. The MCP server info
+  reports the Dingen version with the protocol, for example
+  `1.0.0-beta.1+protocol.4`.
+- **Database.** Every release migrates databases from every earlier release,
+  from 1.0.0-alpha.1 on, with a backup first (see [Updating](#updating)). CI
+  migrates a test database of each alpha to the latest version and checks the
+  data.
+- **Export files.** Every earlier export format imports; parts that no longer
+  exist (the step-by-step reviews of before 1.0.0-alpha.8) are left out.
 
 ## License
 

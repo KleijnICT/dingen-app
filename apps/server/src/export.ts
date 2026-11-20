@@ -25,15 +25,7 @@ export const EXPORT_FORMAT = 'dingen-export'
 export const EXPORT_VERSION = 3
 
 /** Volgorde waarin soorten in het bestand staan: eerst de containers, dan de inhoud. */
-export const EXPORT_TYPES = [
-  'area',
-  'project',
-  'heading',
-  'task',
-  'checklistItem',
-  'tag',
-  'review',
-] as const
+export const EXPORT_TYPES = ['area', 'project', 'heading', 'task', 'checklistItem', 'tag'] as const
 
 export interface ExportRecord {
   id: string
@@ -89,7 +81,6 @@ export function buildExport(
     project: [],
     heading: [],
     task: [],
-    review: [],
     checklistItem: [],
     tag: [],
   }
@@ -127,7 +118,11 @@ const Entities = z.object({
   task: z.array(RecordShape).default([]),
   checklistItem: z.array(RecordShape).default([]),
   tag: z.array(RecordShape).default([]),
-  review: z.array(RecordShape).default([]),
+  /**
+   * Step-by-step reviews, in files from before 1.0.0-beta.1 (plan 33): the
+   * entity type is gone, so they are accepted and left out.
+   */
+  review: z.array(z.unknown()).optional(),
 })
 
 const Spaces = z.array(z.object({ id: z.string().min(1), kind: z.enum(['personal', 'shared']) }))

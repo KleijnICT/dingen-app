@@ -4,8 +4,6 @@ import {
   type AgentGrant,
   applyChange,
   type Change,
-  Change as ChangeSchema,
-  CursorAheadError,
   type EntityKey,
   type EntityRecord,
   type EntityType,
@@ -15,19 +13,18 @@ import {
   type Placed,
   type PullResponse,
   type PullSpace,
+  PushRequestSchema,
   type PushResponse,
   recordKey,
   type SnapshotResponse,
   SPACE_FIELD,
   type SpaceCursor,
-  SpaceCursorSchema,
   type SpacedRecord,
   type SpaceKind,
   SYNC_PROTOCOL,
   validateChangeFields,
 } from '@dingen/core'
 import { and, asc, count, eq, gt, inArray, max } from 'drizzle-orm'
-import { z } from 'zod'
 import {
   type Access,
   AgentScopeError,
@@ -44,7 +41,6 @@ import { CURSOR_GAPS_KEY, type CursorGap } from './restore.js'
 import { changes, entities, meta, type SpaceLevel, spaceMembers, spaces } from './schema.js'
 import {
   after,
-  arrivalAsChanges,
   childrenOf,
   containerRefs,
   derivedId,
@@ -63,20 +59,10 @@ import {
   spacesOf,
 } from './spaces/service.js'
 
-export const PushBody = z.object({
-  changes: z.array(ChangeSchema).max(1000),
-  /** Protocol 2: the client's cursor, so the answer can move it past its own changes. */
-  cursor: SpaceCursorSchema.optional(),
-})
+/** `POST /api/sync/push` body (see `PushRequestSchema` in core). */
+export const PushBody = PushRequestSchema
 
 export type PushResult = PushResponse
-
-/** Protocol 1 pull (`since=<seq>`): one cursor over all the user's spaces. */
-export interface PullResult {
-  changes: Change[]
-  seq: number
-  hasMore: boolean
-}
 
 export type Snapshot = SnapshotResponse
 
@@ -130,7 +116,6 @@ export function emptyCounts(): Record<EntityType, ImportCounts> {
     heading: zero(),
     task: zero(),
     checklistItem: zero(),
-    review: zero(),
     tag: zero(),
   }
 }
@@ -360,7 +345,6 @@ export class SyncService {
       const lookup: Lookup = (type, id) => ctx.find(type, id)?.record
       let applied = 0
       let duplicates = 0
-      let seq = this.currentSeq(userId)
       const out: MoveOut = { receivedAt, actor, written: new Written(), tagIndex: new Map() }
       const { written } = out
 
@@ -414,7 +398,7 @@ export class SyncService {
           if (!ctx.canWrite(located.spaceId) || !ctx.canWrite(requested)) {
             throw new SpaceAccessError('Moving needs edit in both spaces')
           }
-          seq = this.move(tx, ctx, userId, { located, record, change, to: requested }, out)
+          this.move(tx, ctx, userId, { located, record, change, to: requested }, out)
           applied += 1
           continue
         }
@@ -431,7 +415,7 @@ export class SyncService {
           throw new SpaceAccessError('No write access to the space of this entity')
         }
         ctx.remember({ record, ...target })
-        seq = this.store(
+        const seq = this.store(
           tx,
           userId,
           target,
@@ -459,7 +443,7 @@ export class SyncService {
         throw new SyncValidationError(problems)
       }
       if (refused.length > 0) throw new AgentScopeError([...new Set(refused)].join('; '))
-      const result: PushResult = { seq, applied, duplicates }
+      const result: PushResult = { applied, duplicates }
       if (options.cursor) result.cursor = this.advance(tx, options.cursor, written)
       if (written.placed.length > 0) result.placed = written.placed
       return result
@@ -847,58 +831,6 @@ export class SyncService {
   }
 
   /**
-   * Protocol 1: changes after `since` over all the user's spaces, in global
-   * order. Kept for clients from before protocol 2 (a cached web app, an
-   * older MCP plugin). With restricted `grants` only the changes of entities
-   * the agent can read now; the cursor still covers the whole page. A cursor
-   * ahead of the server or below the pruned log throws `CursorAheadError`.
-   */
-  pull(
-    userId: string,
-    since: number,
-    limit = PULL_LIMIT,
-    grants: AgentGrant[] | null = null,
-  ): PullResult {
-    const spaceIds = spacesOf(this.db, userId)
-    if (since > 0) {
-      const highest = Math.max(0, ...Object.values(this.spaceSeqs(spaceIds)))
-      if (since > highest || inGap(since, this.cursorGaps())) throw new CursorAheadError()
-    }
-    // Changes after `since` were pruned (older than a year): the delta would be incomplete.
-    const floors = this.pruneFloors()
-    const floor = Math.max(0, ...spaceIds.map((id) => floors[id] ?? 0))
-    if (belowFloor(since, floor)) {
-      throw new CursorAheadError(
-        'The sync cursor is older than the change log (pruned after a year)',
-      )
-    }
-    const rows = this.db
-      .select()
-      .from(changes)
-      .where(and(inSpacesOf(this.db, changes.spaceId, userId), gt(changes.seq, since)))
-      .orderBy(asc(changes.seq))
-      .limit(limit + 1)
-      .all()
-    const hasMore = rows.length > limit
-    const page = hasMore ? rows.slice(0, limit) : rows
-    const last = page.at(-1)
-    const readable = this.readableFilter(userId, grants)
-    const moves = this.moveView(userId, grants)
-    const out: Change[] = []
-    for (const row of page) {
-      if (!isMoveRow(row.fields)) {
-        if (readable(row.entityType as EntityType, row.entityId)) out.push(toChange(row))
-        continue
-      }
-      // Protocol 1 knows no spaces: leaving your sight is a deletion, arriving the whole record.
-      const seen = moves(row)
-      if (seen === 'left') out.push({ ...toChange(row), fields: { deleted: true } })
-      else if (seen) out.push(...arrivalAsChanges(row, seen))
-    }
-    return { changes: out, seq: last ? last.seq : since, hasMore }
-  }
-
-  /**
    * How move rows (see spaces/move.ts) look to one viewer: an arrival in the
    * space where the entity is now, when the viewer can see it there, gives
    * the current record; a leave gives `'left'` when the viewer cannot see the
@@ -933,11 +865,10 @@ export class SyncService {
   }
 
   /**
-   * Protocol 2: changes per space after the client's cursor for that space.
-   * A space missing from the cursor comes as a snapshot; a space in the cursor
-   * the user is no longer a member of is listed in `removed`. A number instead
-   * of a cursor (a stored protocol 1 cursor) counts for every space, without
-   * snapshots. At most `limit` changes per answer over all spaces.
+   * Changes per space after the client's cursor for that space. A space
+   * missing from the cursor comes as a snapshot; a space in the cursor the
+   * user is no longer a member of is listed in `removed`. At most `limit`
+   * changes per answer over all spaces.
    *
    * A cursor ahead of the server (beyond the highest `seq` of the space, or in
    * a range lost by a restore, see restore.ts) also gets a snapshot, marked
@@ -946,38 +877,29 @@ export class SyncService {
    */
   pullSpaces(
     userId: string,
-    cursor: SpaceCursor | number,
+    cursor: SpaceCursor,
     limit = PULL_LIMIT,
     grants: AgentGrant[] | null = null,
   ): PullResponse {
     const mine = memberSpaces(this.db, userId)
-    const removed =
-      typeof cursor === 'number'
-        ? []
-        : Object.keys(cursor).filter((id) => !mine.some((s) => s.id === id))
+    const removed = Object.keys(cursor).filter((id) => !mine.some((s) => s.id === id))
     const readable = this.readableFilter(userId, grants)
     const moves = this.moveView(userId, grants)
     const highest = this.spaceSeqs(mine.map((s) => s.id))
     const gaps = this.cursorGaps()
     const floors = this.pruneFloors()
-    const overall = Math.max(0, ...Object.values(highest))
     let budget = limit
     const out: PullSpace[] = []
     for (const space of mine) {
       const top = highest[space.id] ?? 0
-      let since = typeof cursor === 'number' ? cursor : cursor[space.id]
+      let since = cursor[space.id]
       let resync = false
-      if (since !== undefined) {
-        // A number counts for every space: compare with the user's highest seq,
-        // then bring it down to this space's, so the new cursor is a seq of this space.
-        if (
-          inGap(since, gaps) ||
-          belowFloor(since, floors[space.id]) ||
-          since > (typeof cursor === 'number' ? overall : top)
-        ) {
-          resync = true
-          since = undefined
-        } else if (typeof cursor === 'number') since = Math.min(since, top)
+      if (
+        since !== undefined &&
+        (inGap(since, gaps) || belowFloor(since, floors[space.id]) || since > top)
+      ) {
+        resync = true
+        since = undefined
       }
       if (since === undefined) {
         const entities = this.liveEntities(userId, [space.id], grants).map(withoutSpace)
@@ -1038,8 +960,8 @@ export class SyncService {
   }
 
   /**
-   * Alle niet-verwijderde entiteiten plus de cursor om vanaf verder te pullen:
-   * per space (protocol 2) and over all spaces (`seq`, protocol 1). With
+   * Alle niet-verwijderde entiteiten plus de cursor per space om vanaf verder
+   * te pullen. With
    * `spaceId` only that space (none when the user is not a member). With
    * restricted `grants` only what the agent can read.
    */
@@ -1057,7 +979,6 @@ export class SyncService {
       entities: this.liveEntities(userId, ids, grants),
       spaces: mine,
       cursor,
-      seq: Math.max(0, ...Object.values(cursor)),
     }
   }
 

@@ -9,6 +9,7 @@ import {
 } from '@dingen/core'
 import { and, eq } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { lastSeq } from '../../test/sync-helpers.js'
 import { ActivityService } from '../activity/service.js'
 import { type OpenedDatabase, openDatabase } from '../db.js'
 import { entities, meta } from '../schema.js'
@@ -153,7 +154,8 @@ describe('lowercaseTags on the database', () => {
 
   it('writes the changes to the log so clients pull them, with system as actor', () => {
     const tag = oldTag('Bellen', '2026-01-02T00:00:00.000Z')
-    const { seq } = sync.push('A', [create('tag', tag)])
+    sync.push('A', [create('tag', tag)])
+    const seq = lastSeq(database.db)
     const cursor: SpaceCursor = { [personal]: seq }
     lowercaseTags(database.db)
 
@@ -162,8 +164,6 @@ describe('lowercaseTags on the database', () => {
     expect(space?.changes.map((c) => [c.entityId, c.fields])).toEqual([
       [tag.id, { title: 'bellen' }],
     ])
-    // Protocol 1 clients see it too.
-    expect(sync.pull('A', seq).changes.map((c) => c.fields)).toEqual([{ title: 'bellen' }])
     const actors = database.sqlite.prepare('select actor from changes where seq > ?').all(seq) as {
       actor: string
     }[]

@@ -315,7 +315,11 @@ describe('sync and account endpoints', () => {
   it('refuses /api/sync without an all grant, and checks writes with one', async () => {
     const scoped = await makeAgent('Scoped', [{ scope: 'inbox', level: 'manage' }])
     const bearer = { authorization: `Bearer ${scoped.token}` }
-    for (const p of ['/api/sync/snapshot', '/api/sync/pull?since=0', '/api/export']) {
+    for (const p of [
+      '/api/sync/snapshot',
+      `/api/sync/pull?cursor=${encodeURIComponent('{}')}`,
+      '/api/export',
+    ]) {
       const res = await app.request(p, { headers: bearer })
       expect(res.status).toBe(403)
       expect(await res.json()).toEqual({ error: 'agent_scope' })

@@ -199,9 +199,11 @@ describe('API-tokens en scheiding', () => {
     expect(aliceSnap.entities).toHaveLength(1)
     expect(bobSnap.entities).toHaveLength(0)
     const bobPull = await (
-      await openApp.request('/api/sync/pull', { headers: { cookie: bobCookie } })
+      await openApp.request(`/api/sync/pull?cursor=${encodeURIComponent('{}')}`, {
+        headers: { cookie: bobCookie },
+      })
     ).json()
-    expect(bobPull.changes).toHaveLength(0)
+    expect(bobPull.spaces.flatMap((s: { entities: unknown[] }) => s.entities)).toHaveLength(0)
   })
 })
 

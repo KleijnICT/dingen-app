@@ -1,4 +1,13 @@
-import { type Change, createClock, newProject, newReview, newTask, ulid } from '@dingen/core'
+import {
+  type Change,
+  CLIENT_OUTDATED,
+  createClock,
+  newProject,
+  newTask,
+  PROTOCOL_HEADER,
+  SYNC_PROTOCOL,
+  ulid,
+} from '@dingen/core'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { createApp } from './app.js'
 import { openDatabase } from './db.js'
@@ -83,9 +92,22 @@ async function push(changes: Change[]) {
   return { status: res.status, body: await res.json() }
 }
 
-async function get(path: string) {
-  const res = await app.request(path, { headers: { authorization: bearer } })
+async function get(path: string, headers: Record<string, string> = {}) {
+  const res = await app.request(path, { headers: { authorization: bearer, ...headers } })
   return { status: res.status, body: await res.json() }
+}
+
+/** The personal space of the HTTP user. */
+async function personal(): Promise<string> {
+  return (await get('/api/sync/snapshot')).body.spaces[0].id
+}
+
+/** A pull of the personal space after `since`. */
+async function pull(since = 0) {
+  const space = await personal()
+  const cursor = encodeURIComponent(JSON.stringify({ [space]: since }))
+  const res = await get(`/api/sync/pull?cursor=${cursor}`)
+  return { ...res, space: res.body.spaces[0] }
 }
 
 describe('sync API', () => {
@@ -93,32 +115,33 @@ describe('sync API', () => {
     const { change, id } = createTaskChange('Melk kopen')
     const pushed = await push([change])
     expect(pushed.status).toBe(200)
-    expect(pushed.body).toMatchObject({ applied: 1, duplicates: 0 })
-    expect(pushed.body.seq).toBeGreaterThan(0)
+    expect(pushed.body).toEqual({ applied: 1, duplicates: 0, placed: expect.any(Array) })
 
-    const pulled = await get('/api/sync/pull?since=0')
-    expect(pulled.body.changes).toHaveLength(1)
-    expect(pulled.body.changes[0]).toMatchObject({ id: change.id, entityId: id })
-    expect(pulled.body.seq).toBe(pushed.body.seq)
+    const pulled = await pull(0)
+    expect(pulled.body.protocol).toBe(SYNC_PROTOCOL)
+    expect(pulled.space.changes).toHaveLength(1)
+    expect(pulled.space.changes[0]).toMatchObject({ id: change.id, entityId: id })
+    expect(pulled.space.seq).toBeGreaterThan(0)
     expect(pulled.body.hasMore).toBe(false)
 
-    const again = await get(`/api/sync/pull?since=${pulled.body.seq}`)
-    expect(again.body.changes).toHaveLength(0)
-    expect(again.body.seq).toBe(pulled.body.seq)
+    const again = await pull(pulled.space.seq)
+    expect(again.space.changes).toHaveLength(0)
+    expect(again.space.seq).toBe(pulled.space.seq)
 
     const snapshot = await get('/api/sync/snapshot')
     expect(snapshot.body.entities).toHaveLength(1)
     expect(snapshot.body.entities[0].data.title).toBe('Melk kopen')
-    expect(snapshot.body.seq).toBe(pushed.body.seq)
+    expect(snapshot.body.cursor).toEqual({ [pulled.space.id]: pulled.space.seq })
+    expect(snapshot.body).not.toHaveProperty('seq')
   })
 
   it('negeert een wijziging die al bekend is', async () => {
     const { change } = createTaskChange('Dubbel')
-    const first = await push([change])
+    await push([change])
     const second = await push([change])
-    expect(second.body).toMatchObject({ applied: 0, duplicates: 1, seq: first.body.seq })
-    const pulled = await get('/api/sync/pull')
-    expect(pulled.body.changes).toHaveLength(1)
+    expect(second.body).toEqual({ applied: 0, duplicates: 1 })
+    const pulled = await pull()
+    expect(pulled.space.changes).toHaveLength(1)
   })
 
   it('past bij een ongeldige batch niets toe', async () => {
@@ -173,8 +196,8 @@ describe('sync API', () => {
     ])
     const snapshot = await get('/api/sync/snapshot')
     expect(snapshot.body.entities).toHaveLength(0)
-    const pulled = await get('/api/sync/pull')
-    expect(pulled.body.changes).toHaveLength(2)
+    const pulled = await pull()
+    expect(pulled.space.changes).toHaveLength(2)
   })
 
   it('accepteert aanmaken en bewerken van dezelfde entiteit in één batch', async () => {
@@ -193,30 +216,26 @@ describe('sync API', () => {
     expect(snapshot.body.entities[0].data.title).toBe('Daarna')
   })
 
-  it('laat reviews en reviewedAt door, ook naast projecten van vóór reviewedAt', async () => {
+  it('laat reviewedAt door, ook bij projecten van vóór reviewedAt, en weigert reviews', async () => {
     const change = (
       entityType: Change['entityType'],
       entityId: string,
       fields: Record<string, unknown>,
     ): Change => ({ id: ulid(), entityType, entityId, fields, ts: clock.now(), clientId: 'TEST' })
 
-    const { id: reviewId, ...review } = newReview({ kind: 'weekly' })
     // A project as an older client writes it: without reviewedAt.
     const { id: projectId, reviewedAt: _, ...project } = newProject({ title: 'Oud project' })
     const reviewedAt = new Date().toISOString()
     const res = await push([
-      change('review', reviewId, review),
       change('project', projectId, project),
       change('project', projectId, { reviewedAt }),
-      change('review', reviewId, { doneSteps: ['mindSweep'], completedAt: reviewedAt }),
     ])
     expect(res.status).toBe(200)
-    expect(res.body.applied).toBe(4)
+    expect(res.body.applied).toBe(2)
 
     const snapshot = await get('/api/sync/snapshot')
     const byType = (t: string) =>
       snapshot.body.entities.find((e: { entityType: string }) => e.entityType === t)
-    expect(byType('review').data).toMatchObject({ kind: 'weekly', doneSteps: ['mindSweep'] })
     expect(byType('project').data.reviewedAt).toBe(reviewedAt)
 
     // The review frequency of plan 29 syncs as an ordinary field.
@@ -229,9 +248,13 @@ describe('sync API', () => {
       ).data.reviewEvery,
     ).toEqual(every)
 
-    const bad = await push([change('review', ulid(), { ...review, kind: 'quarterly' })])
+    // The step-by-step review of before plan 29 is no entity type since protocol 4.
+    const review = { kind: 'weekly', startedAt: reviewedAt, completedAt: null, doneSteps: [] }
+    const bad = await push([
+      { ...change('project', ulid(), review), entityType: 'review' } as unknown as Change,
+    ])
     expect(bad.status).toBe(400)
-    expect(bad.body.error).toBe('invalid_changes')
+    expect(bad.body.error).toBe('invalid_body')
   })
 
   it('weigert een onleesbare body', async () => {
@@ -243,6 +266,42 @@ describe('sync API', () => {
     expect(res.status).toBe(400)
     expect((await res.json()).error).toBe('invalid_body')
   })
+
+  it('wants a cursor per space for a pull', async () => {
+    for (const query of ['', '?since=0', '?cursor=12', '?cursor=nope']) {
+      const res = await get(`/api/sync/pull${query}`)
+      expect(res.status, query).toBe(400)
+      expect(res.body.error).toBe('invalid_cursor')
+    }
+  })
+
+  it('refuses clients that speak an older protocol, or name none, with 426 client_outdated', async () => {
+    const paths = ['/api/sync/snapshot', `/api/sync/pull?cursor=${encodeURIComponent('{}')}`]
+    for (const header of ['3', '1', '', 'nonsense']) {
+      for (const path of paths) {
+        const res = await get(path, { [PROTOCOL_HEADER]: header })
+        expect(res.status, `${path} with ${header}`).toBe(426)
+        expect(res.body).toMatchObject({ error: CLIENT_OUTDATED, protocol: 4, minProtocol: 4 })
+        expect(res.body.message).toMatch(/out of date/)
+      }
+    }
+    const { change } = createTaskChange('From an old app')
+    const res = await app.request('/api/sync/push', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        authorization: bearer,
+        [PROTOCOL_HEADER]: '3',
+      },
+      body: JSON.stringify({ changes: [change] }),
+    })
+    expect(res.status).toBe(426)
+    expect((await get('/api/sync/snapshot')).body.entities).toHaveLength(0)
+    // A newer client is served in this server's protocol, which says which one it is.
+    const newer = await get('/api/sync/snapshot', { [PROTOCOL_HEADER]: '5' })
+    expect(newer.status).toBe(200)
+    expect(newer.body.protocol).toBe(SYNC_PROTOCOL)
+  })
 })
 
 describe('SyncService', () => {
@@ -250,8 +309,8 @@ describe('SyncService', () => {
     service.push('alice', [createTaskChange('Van Alice').change])
     expect(service.snapshot('alice').entities).toHaveLength(1)
     expect(service.snapshot('bob').entities).toHaveLength(0)
-    expect(service.pull('bob', 0).changes).toHaveLength(0)
-    expect(service.snapshot('bob').seq).toBe(0)
+    expect(service.pullSpaces('bob', {}).spaces[0]?.entities).toHaveLength(0)
+    expect(Object.values(service.snapshot('bob').cursor)).toEqual([0])
   })
 
   it('pagineert pull', () => {
@@ -259,11 +318,12 @@ describe('SyncService', () => {
       'carol',
       [1, 2, 3].map((n) => createTaskChange(`Taak ${n}`).change),
     )
-    const page1 = service.pull('carol', 0, 2)
-    expect(page1.changes).toHaveLength(2)
+    const space = service.snapshot('carol').spaces[0]?.id ?? ''
+    const page1 = service.pullSpaces('carol', { [space]: 0 }, 2)
+    expect(page1.spaces[0]?.changes).toHaveLength(2)
     expect(page1.hasMore).toBe(true)
-    const page2 = service.pull('carol', page1.seq, 2)
-    expect(page2.changes).toHaveLength(1)
+    const page2 = service.pullSpaces('carol', page1.cursor, 2)
+    expect(page2.spaces[0]?.changes).toHaveLength(1)
     expect(page2.hasMore).toBe(false)
   })
 

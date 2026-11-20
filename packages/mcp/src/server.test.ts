@@ -1,32 +1,11 @@
-import { applyChange, type Change, type EntityRecord, recordKey } from '@dingen/core'
+import type { Change } from '@dingen/core'
+import { SYNC_PROTOCOL } from '@dingen/core'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js'
 import { beforeAll, describe, expect, it } from 'vitest'
-import { DingenClient, type SyncTransport } from './client.js'
+import { DingenClient } from './client.js'
+import { MemoryTransport } from './memory-transport.js'
 import { createMcpServer } from './server.js'
-
-/** The sync protocol in memory: enough to run the tools without a server. */
-class MemoryTransport implements SyncTransport {
-  readonly records = new Map<string, EntityRecord>()
-  readonly log: Change[] = []
-
-  async snapshot() {
-    return { entities: [...this.records.values()], seq: this.log.length }
-  }
-
-  async pull(since: number) {
-    return { changes: this.log.slice(since), seq: this.log.length, hasMore: false }
-  }
-
-  async push(changes: Change[]) {
-    for (const change of changes) {
-      const key = recordKey(change.entityType, change.entityId)
-      this.records.set(key, applyChange(this.records.get(key), change))
-      this.log.push(change)
-    }
-    return { seq: this.log.length, applied: changes.length, duplicates: 0 }
-  }
-}
 
 const TODAY = '2026-11-09'
 const transport = new MemoryTransport()
@@ -40,13 +19,22 @@ async function call(name: string, args: Record<string, unknown> = {}) {
 }
 
 beforeAll(async () => {
-  const server = createMcpServer(new DingenClient(transport, { today: () => TODAY }))
+  const server = createMcpServer(new DingenClient(transport, { today: () => TODAY }), {
+    version: '1.2.3',
+  })
   const [a, b] = InMemoryTransport.createLinkedPair()
   await server.connect(a)
   await mcp.connect(b)
 })
 
 describe('mcp', () => {
+  it('reports the version and the sync protocol in its server info', () => {
+    expect(mcp.getServerVersion()).toMatchObject({
+      name: 'dingen',
+      version: `1.2.3+protocol.${SYNC_PROTOCOL}`,
+    })
+  })
+
   it('starts empty', async () => {
     const o = await call('overview')
     expect(o.counts).toEqual({ inbox: 0, today: 0, upcoming: 0, anytime: 0, someday: 0 })

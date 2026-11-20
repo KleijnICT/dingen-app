@@ -96,7 +96,7 @@ export function createApp(deps: AppDeps) {
   app.use('/mcp', services)
   app.use('/mcp', authenticate)
   const activity = new ActivityService(deps.db)
-  app.route('/mcp', mcpRoutes(deps.timezone ?? 'Europe/Amsterdam', activity))
+  app.route('/mcp', mcpRoutes(deps.timezone ?? 'Europe/Amsterdam', activity, deps.version))
 
   app.get('/api/health', (c) => {
     const body: HealthStatus = {

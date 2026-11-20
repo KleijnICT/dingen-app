@@ -32,6 +32,7 @@ import {
   Repeat,
   reviewEveryOf,
   type Snapshot,
+  SYNC_PROTOCOL,
   sameReminder,
   sameTagTitle,
   setRepeat,
@@ -144,8 +145,21 @@ async function resolveAssignee(client: DingenClient, input: string | null): Prom
   return ref
 }
 
-export function createMcpServer(client: DingenClient): McpServer {
-  const server = new McpServer({ name: 'dingen', version: '0.1.0' })
+export interface McpServerOptions {
+  /** The Dingen version to report; the sync protocol is added as build metadata. */
+  version?: string
+}
+
+/**
+ * The server info an MCP client sees: the Dingen version with the sync
+ * protocol as semver build metadata, for example `1.0.0-beta.1+protocol.4`.
+ */
+export function serverInfo(version = '0.0.0'): { name: string; title: string; version: string } {
+  return { name: 'dingen', title: 'Dingen', version: `${version}+protocol.${SYNC_PROTOCOL}` }
+}
+
+export function createMcpServer(client: DingenClient, options: McpServerOptions = {}): McpServer {
+  const server = new McpServer(serverInfo(options.version))
 
   const run = async <T>(fn: (ws: Snapshot) => T | Promise<T>) => {
     try {

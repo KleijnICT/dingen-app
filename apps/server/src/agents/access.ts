@@ -44,7 +44,7 @@ export type Lookup = (entityType: EntityType, id: string) => EntityRecord | unde
 const str = (v: unknown): string | null => (typeof v === 'string' && v !== '' ? v : null)
 
 /**
- * Where an entity lives, or null for entities without a place (tags, reviews).
+ * Where an entity lives, or null for entities without a place (tags).
  * A dangling reference (project gone) falls back to the inbox, so it never
  * opens up more than the inbox.
  */
@@ -84,7 +84,6 @@ export function placeOf(
       return placeOf('task', task.data, task.id, lookup, depth + 1)
     }
     case 'tag':
-    case 'review':
       return null
   }
 }
@@ -101,7 +100,7 @@ function hasAny(grants: AgentGrant[] | null, level: AgentLevel): boolean {
   return grants.some((g) => allows(g.level, level))
 }
 
-/** The level `grants` give on one entity. Tags: read for everyone; reviews: the `all` grant. */
+/** The level `grants` give on one entity. Tags: read for everyone. */
 export function levelOn(
   grants: AgentGrant[] | null,
   entityType: EntityType,
@@ -129,9 +128,7 @@ export function canRead(
 
 /** Tasks and checklist items need `edit`; projects, headings and areas `manage`. */
 function neededFor(entityType: EntityType): AgentLevel {
-  return entityType === 'task' || entityType === 'checklistItem' || entityType === 'review'
-    ? 'edit'
-    : 'manage'
+  return entityType === 'task' || entityType === 'checklistItem' ? 'edit' : 'manage'
 }
 
 /** Is `memberId` someone who can be assigned: the owner or a live agent, and with what grants. */
@@ -143,7 +140,6 @@ const LABEL: Record<EntityType, string> = {
   heading: 'heading',
   task: 'task',
   checklistItem: 'checklist item',
-  review: 'review',
   tag: 'tag',
 }
 

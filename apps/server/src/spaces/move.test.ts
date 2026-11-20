@@ -143,44 +143,6 @@ describe('moving between spaces', () => {
     expect(sync.snapshot('B').entities.find((e) => e.id === task.id)?.spaceId).toBe(s2)
   })
 
-  it('speaks protocol 1 too: gone is a deletion, arriving the whole record, and back again', () => {
-    const { sync, s1, s2 } = w
-    const task = newTask({ title: 'Traveller', order: 'a' })
-    sync.push('A', [created('task', task, s1)])
-    const seqC = sync.pull('C', 0).seq
-    const seqB = sync.pull('B', 0).seq
-
-    sync.push('A', [change('task', task.id, { spaceId: s2 })])
-    const forC = sync.pull('C', seqC)
-    expect(forC.changes.map((c) => [c.entityId, c.fields])).toEqual([[task.id, { deleted: true }]])
-    // B sees the record arrive again (as plain changes); applying them changes nothing.
-    const forB = sync.pull('B', seqB)
-    expect(forB.changes.every((c) => c.entityId === task.id)).toBe(true)
-    expect(Object.assign({}, ...forB.changes.map((c) => c.fields))).toMatchObject({
-      title: 'Traveller',
-      deleted: false,
-    })
-
-    // Back in S1: C gets it again, with `deleted: false` newer than its deletion.
-    sync.push('A', [change('task', task.id, { spaceId: s1 })])
-    const again = sync.pull('C', forC.seq)
-    const merged = again.changes.reduce<EntityRecord | undefined>(
-      (rec, c) => ({
-        entityType: 'task',
-        id: task.id,
-        data: { ...rec?.data, ...c.fields },
-        fieldTs: {
-          ...rec?.fieldTs,
-          ...Object.fromEntries(Object.keys(c.fields).map((f) => [f, c.ts])),
-        },
-      }),
-      undefined,
-    )
-    expect(merged?.data).toMatchObject({ title: 'Traveller', deleted: false })
-    const deletedTs = forC.changes[0]?.ts ?? ''
-    expect((merged?.fieldTs.deleted ?? '') >= deletedTs).toBe(true)
-  })
-
   it('moves a project with its headings, tasks and checklist items', () => {
     const { sync, personal, s2 } = w
     const area = newArea({ title: 'Home', order: 'a' })
@@ -397,9 +359,6 @@ describe('moving between spaces', () => {
     expect(keys(spaceOf(second, s2)?.arrived)).toEqual(
       [key('project', project.id), key('task', other.id)].sort(),
     )
-    // Protocol 1 for the narrow agent: the task went as a deletion.
-    const p1 = sync.pull('A', 0, undefined, narrow)
-    expect(p1.changes.some((c) => c.entityId === task.id && c.fields.deleted === true)).toBe(true)
   })
 
   it('places new entities: asked for, from the container, else personal; no container elsewhere', () => {

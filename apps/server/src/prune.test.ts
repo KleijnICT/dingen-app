@@ -1,12 +1,4 @@
-import {
-  type Change,
-  CursorAheadError,
-  createClock,
-  type EntityType,
-  newProject,
-  newTask,
-  ulid,
-} from '@dingen/core'
+import { type Change, createClock, type EntityType, newProject, newTask, ulid } from '@dingen/core'
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ActivityService } from './activity/service.js'
 import { openDatabase } from './db.js'
@@ -56,6 +48,13 @@ beforeEach(() => {
   sqlite.exec('delete from changes; delete from entities; delete from meta;')
 })
 
+/** The highest `seq` in the change log. */
+function lastSeq(): number {
+  return (
+    (sqlite.prepare('select max(seq) as seq from changes').get() as { seq: number | null }).seq ?? 0
+  )
+}
+
 /** Writes one change, received at `at`; returns its seq. */
 function write(
   entityType: EntityType,
@@ -71,7 +70,8 @@ function write(
     ts: clock.now(),
     clientId: 'T',
   }
-  return sync.push(USER, [change], { receivedAt: at }).seq
+  sync.push(USER, [change], { receivedAt: at })
+  return lastSeq()
 }
 
 function createTask(title: string, at: string, spaceId?: string): string {
@@ -203,7 +203,7 @@ describe('sync after pruning', () => {
     return h
   }
 
-  it('protocol 2: a cursor below the floor gets a snapshot marked resync', async () => {
+  it('a cursor below the floor gets a snapshot marked resync', async () => {
     const h = await pruned()
     const body = sync.pullSpaces(USER, { [SPACE]: 1, [QUIET]: h.lastOld })
     const personal = body.spaces.find((s) => s.id === SPACE)
@@ -223,7 +223,7 @@ describe('sync after pruning', () => {
     expect(zero.spaces.every((s) => s.resync === true)).toBe(true)
   })
 
-  it('protocol 2: a recent cursor gets a normal delta', async () => {
+  it('a recent cursor gets a normal delta', async () => {
     const h = await pruned()
     const body = sync.pullSpaces(USER, { [SPACE]: h.firstRecent, [QUIET]: h.lastOld })
     const personal = body.spaces.find((s) => s.id === SPACE)
@@ -235,26 +235,6 @@ describe('sync after pruning', () => {
     const floor = readFloors(sqlite)[SPACE] as number
     const atFloor = sync.pullSpaces(USER, { [SPACE]: floor, [QUIET]: h.lastOld })
     expect(atFloor.spaces.find((s) => s.id === SPACE)?.resync).toBeUndefined()
-  })
-
-  it('protocol 2: a number cursor below a floor resyncs that space', async () => {
-    const h = await pruned()
-    const body = sync.pullSpaces(USER, 2)
-    expect(body.spaces.every((s) => s.resync === true)).toBe(true)
-    const recent = sync.pullSpaces(USER, h.lastOld)
-    expect(recent.spaces.some((s) => s.resync)).toBe(false)
-  })
-
-  it('protocol 1: a cursor below the floor must take a snapshot', async () => {
-    const h = await pruned()
-    expect(() => sync.pull(USER, 1)).toThrow(CursorAheadError)
-    expect(() => sync.pull(USER, 0)).toThrow(CursorAheadError)
-    const snapshot = sync.snapshot(USER)
-    const after = sync.pull(USER, snapshot.seq)
-    expect(after.changes).toEqual([])
-    const delta = sync.pull(USER, h.lastOld)
-    expect(delta.changes).toHaveLength(3)
-    expect(delta.seq).toBe(h.lastRecent)
   })
 
   it('push: a cursor below the floor is not moved past the pushed changes', async () => {
@@ -270,6 +250,7 @@ describe('sync after pruning', () => {
     }
     const stale = sync.push(USER, [change], { cursor: { [SPACE]: 1 } })
     expect(stale.cursor).toEqual({})
+    const staleSeq = lastSeq()
     const { id: id2, ...fields2 } = newTask({ title: 'Pushed again' })
     const next: Change = {
       id: ulid(),
@@ -279,9 +260,9 @@ describe('sync after pruning', () => {
       ts: clock.now(),
       clientId: 'T',
     }
-    const fresh = sync.push(USER, [next], { cursor: { [SPACE]: stale.seq } })
-    expect(fresh.cursor).toEqual({ [SPACE]: fresh.seq })
-    expect(h.lastRecent).toBeLessThan(stale.seq)
+    const fresh = sync.push(USER, [next], { cursor: { [SPACE]: staleSeq } })
+    expect(fresh.cursor).toEqual({ [SPACE]: lastSeq() })
+    expect(h.lastRecent).toBeLessThan(staleSeq)
   })
 })
 

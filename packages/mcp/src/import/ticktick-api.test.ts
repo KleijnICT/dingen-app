@@ -1,6 +1,6 @@
-import { applyChange, type Change, type EntityRecord, recordKey } from '@dingen/core'
 import { describe, expect, it } from 'vitest'
-import { DingenClient, type SyncTransport } from '../client.js'
+import { DingenClient } from '../client.js'
+import { MemoryTransport } from '../memory-transport.js'
 import { describePlan, importTickTick, planTickTickImport, stableId } from './ticktick.js'
 import {
   convertTickTickDump,
@@ -234,20 +234,7 @@ describe('ticktick api import', () => {
     expect(stableId('area:💼 Acme')).toBe(result.areas[1]?.id)
     expect(stableId('project:Wasstraat')).toBe(result.projects[1]?.id)
 
-    const records = new Map<string, EntityRecord>()
-    const log: Change[] = []
-    const transport: SyncTransport = {
-      snapshot: async () => ({ entities: [...records.values()], seq: log.length }),
-      pull: async (since) => ({ changes: log.slice(since), seq: log.length, hasMore: false }),
-      push: async (changes) => {
-        for (const c of changes) {
-          const key = recordKey(c.entityType, c.entityId)
-          records.set(key, applyChange(records.get(key), c))
-          log.push(c)
-        }
-        return { seq: log.length, applied: changes.length, duplicates: 0 }
-      },
-    }
+    const transport = new MemoryTransport()
     const apply = async () => {
       const client = new DingenClient(transport, { today: () => TODAY })
       await client.refresh()

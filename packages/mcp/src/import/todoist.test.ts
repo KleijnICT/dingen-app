@@ -1,6 +1,6 @@
-import { applyChange, type Change, type EntityRecord, recordKey } from '@dingen/core'
 import { describe, expect, it } from 'vitest'
-import { DingenClient, type SyncTransport } from '../client.js'
+import { DingenClient } from '../client.js'
+import { MemoryTransport } from '../memory-transport.js'
 import { describePlan, writePlan } from './common.js'
 import {
   parseTodoistDate,
@@ -135,20 +135,7 @@ describe('todoist import', () => {
   })
 
   it('is idempotent against a running server', async () => {
-    const records = new Map<string, EntityRecord>()
-    const log: Change[] = []
-    const transport: SyncTransport = {
-      snapshot: async () => ({ entities: [...records.values()], seq: log.length }),
-      pull: async (since) => ({ changes: log.slice(since), seq: log.length, hasMore: false }),
-      push: async (changes) => {
-        for (const c of changes) {
-          const key = recordKey(c.entityType, c.entityId)
-          records.set(key, applyChange(records.get(key), c))
-          log.push(c)
-        }
-        return { seq: log.length, applied: changes.length, duplicates: 0 }
-      },
-    }
+    const transport = new MemoryTransport()
     const files = [
       { name: 'Garden.csv', text: GARDEN },
       { name: 'Inbox.csv', text: INBOX },
