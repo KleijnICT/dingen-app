@@ -40,9 +40,12 @@ export function isUpcoming(item: Task | Project, today: CalendarDate): boolean {
   return upcomingDate(item, today) !== null
 }
 
-/** Anytime: alles wat nu beschikbaar is, inclusief Vandaag, zonder Inbox en Ooit. */
+/**
+ * Anytime: what is available now and not in Today, Inbox or Someday. A task is in Today or
+ * in Anytime, never both (a deadline that has come puts it in Today too).
+ */
 export function isAnytime(item: Task | Project, today: CalendarDate): boolean {
-  return isOpen(item) && (item.when.kind === 'anytime' || isToday(item, today))
+  return isOpen(item) && item.when.kind === 'anytime' && !isToday(item, today)
 }
 
 /**

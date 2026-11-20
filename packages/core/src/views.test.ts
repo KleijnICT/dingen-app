@@ -49,13 +49,18 @@ describe('views', () => {
   it('Binnenkort op datum', () => {
     expect(views.upcoming(all, TODAY).map((t) => t.title)).toEqual(['morgen', 'later'])
   })
-  it('Anytime bevat Vandaag maar niet Inbox of Ooit', () => {
+  it('Anytime zonder Vandaag, Inbox of Ooit', () => {
     expect(
       views
         .anytime(all, TODAY)
         .map((t) => t.title)
         .sort(),
-    ).toEqual(['anytime', 'gisteren', 'vandaag'])
+    ).toEqual(['anytime'])
+  })
+  it('Anytime laat een taak met een verlopen deadline aan Vandaag', () => {
+    const due = newTask({ title: 'due', when: { kind: 'anytime' }, deadline: TODAY })
+    expect(views.anytime([due], TODAY)).toEqual([])
+    expect(views.today([due], TODAY).map((t) => t.title)).toEqual(['due'])
   })
   it('Ooit', () => {
     expect(views.someday(all).map((t) => t.title)).toEqual(['ooit'])
@@ -161,7 +166,7 @@ describe('views', () => {
       expect(views.available(tasks, projects).map((t) => t.title)).not.toContain('in klaar')
       expect(views.available(tasks, projects)).toHaveLength(5)
     })
-    it('Anytime zonder taken van Ooit-projecten, Vandaag mét', () => {
+    it('Anytime zonder taken van Ooit-projecten', () => {
       const avail = views.available(tasks, projects)
       expect(
         views.anytime(views.notInSomedayProject(avail, projects), TODAY).map((t) => t.title),

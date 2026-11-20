@@ -21,6 +21,8 @@
   What you move to Today yourself does not count. OK hides it on every device.
   Database migration: a column on `users`.
 - A new project's title asks for the desired outcome.
+- Anytime no longer shows what is in Today: a task is in one of the two.
+  The project and area pages still show all their tasks.
 
 ## 1.0.0-alpha.7
 
