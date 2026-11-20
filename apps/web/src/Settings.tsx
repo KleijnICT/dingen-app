@@ -242,14 +242,14 @@ interface ImportSummary {
   total: ImportCounts
 }
 
-const DATA_TYPES: EntityType[] = [
+/** The kinds counted after an import; reviews are no longer used (plan 29). */
+const DATA_TYPES: Exclude<EntityType, 'review'>[] = [
   'area',
   'project',
   'heading',
   'task',
   'checklistItem',
   'tag',
-  'review',
 ]
 
 /** Export and import of all data as one JSON file. */

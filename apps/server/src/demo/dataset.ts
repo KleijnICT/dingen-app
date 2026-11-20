@@ -2,19 +2,9 @@ import { addMonths, daysBetween, weekdayOf } from '@dingen/core'
 import type { ImportRecord } from '../sync.js'
 import { Book, type DemoContext } from './book.js'
 
-const WEEKLY_STEPS = [
-  'mindSweep',
-  'weekLookBack',
-  'dueSoon',
-  'areasAndProjects',
-  'somedayScan',
-  'triggers',
-]
-const MONTHLY_STEPS = ['monthLookBack', 'areasDeep', 'somedayDeep']
-
 /**
  * Sam Rivera, a freelance web designer: the main demo account. Every list is
- * filled, dates are relative to today, and the weekly review is due.
+ * filled, dates are relative to today, and some projects and areas are due for review.
  */
 function sam(ctx: DemoContext): ImportRecord[] {
   const b = new Book(ctx)
@@ -22,9 +12,9 @@ function sam(ctx: DemoContext): ImportRecord[] {
   for (const title of ['calls', 'errands', 'computer', 'waiting']) b.tag(title)
 
   const clients = b.area('Clients', 'briefcase', 'blue', 8)
-  const business = b.area('Business', 'wallet', 'green', 8)
+  const business = b.area('Business', 'wallet', 'green', 8, { n: 2, unit: 'week' })
   const home = b.area('Home', 'home', 'orange', 8)
-  const health = b.area('Health', 'heart-pulse', 'red', 22)
+  const health = b.area('Health', 'heart-pulse', 'red', 22, { n: 1, unit: 'month' })
   const family = b.area('Friends & Family', 'users', 'purple', 8)
 
   // --- Inbox: loose captures, not yet processed ---
@@ -223,7 +213,13 @@ function sam(ctx: DemoContext): ImportRecord[] {
     checklist: ['Lavender', 'Rosemary', 'Thyme', 'Strawberries', 'Compost (4 bags)'],
   })
 
-  b.project('Reading nook in the attic', { area: home, when: 'someday', created: 40, reviewed: 25 })
+  b.project('Reading nook in the attic', {
+    area: home,
+    when: 'someday',
+    created: 40,
+    reviewed: 25,
+    reviewEvery: { n: 3, unit: 'month' },
+  })
   b.task('Call the plumber about the dripping kitchen tap', {
     area: home,
     when: 0,
@@ -341,9 +337,14 @@ function sam(ctx: DemoContext): ImportRecord[] {
   b.task("Birthday present for Alex's little one", { area: family, done: 4 })
 
   // --- No area ---
-  b.project('Learn basic Portuguese', { when: 'someday', created: 30, reviewed: 25 })
+  b.project('Learn basic Portuguese', {
+    when: 'someday',
+    created: 30,
+    reviewed: 25,
+    reviewEvery: { n: 3, unit: 'week' },
+  })
 
-  // --- Reviews: the weekly one is due again, the monthly one is not ---
+  // --- A repeating weekly planning task ---
   b.repeating(
     'Weekly review',
     { unit: 'week', every: 1, basis: 'completion', start: b.day(-22) },
@@ -351,10 +352,6 @@ function sam(ctx: DemoContext): ImportRecord[] {
     { area: business, daypart: 'afternoon', reminder: [0, '15:45'], doneAt: '16:40' },
     [15, 8],
   )
-  b.review('weekly', 15, WEEKLY_STEPS)
-  b.review('weekly', 8, WEEKLY_STEPS)
-  b.review('monthly', 12, MONTHLY_STEPS)
-  b.review('daily', 1, [])
 
   return b.records
 }
@@ -422,8 +419,6 @@ function morgan(ctx: DemoContext): ImportRecord[] {
     [3, 2, 1],
   )
   b.task('Swim', { area: health, done: 5, doneAt: '07:50' })
-
-  b.review('weekly', 5, WEEKLY_STEPS)
 
   return b.records
 }

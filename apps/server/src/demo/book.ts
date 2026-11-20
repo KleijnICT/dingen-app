@@ -13,13 +13,12 @@ import {
   newChecklistItem,
   newHeading,
   newProject,
-  newReview,
   newTag,
   newTask,
   orderBetween,
   type Project,
   type Repeat,
-  type ReviewKind,
+  type ReviewEvery,
   type Task,
   type When,
 } from '@dingen/core'
@@ -69,6 +68,8 @@ export interface ProjectInput {
   created?: number
   /** Reviewed this many days ago; omitted means never. */
   reviewed?: number
+  /** Review frequency; omitted means the default, every week. */
+  reviewEvery?: ReviewEvery
   done?: number
 }
 
@@ -153,7 +154,13 @@ export class Book {
     })
   }
 
-  area(title: string, icon: string, color: string, reviewed?: number): Area {
+  area(
+    title: string,
+    icon: string,
+    color: string,
+    reviewed?: number,
+    reviewEvery?: ReviewEvery,
+  ): Area {
     return this.put(
       'area',
       newArea({
@@ -163,6 +170,7 @@ export class Book {
         order: this.order(),
         createdAt: this.ago(90),
         reviewedAt: reviewed === undefined ? null : this.ago(reviewed, '16:30'),
+        reviewEvery: reviewEvery ?? null,
       }),
     )
   }
@@ -180,6 +188,7 @@ export class Book {
         order: this.order(),
         createdAt: this.ago(created, '09:00'),
         reviewedAt: input.reviewed === undefined ? null : this.ago(input.reviewed, '16:30'),
+        reviewEvery: input.reviewEvery ?? null,
         status: input.done === undefined ? 'open' : 'completed',
         completedAt: input.done === undefined ? null : this.ago(input.done, '17:00'),
       }),
@@ -274,19 +283,5 @@ export class Book {
     })
     this.checklist(instance, input.checklist ?? [])
     return instance
-  }
-
-  review(kind: ReviewKind, completedDaysAgo: number, doneSteps: string[]): void {
-    const startedAt = this.ago(completedDaysAgo, '16:00')
-    this.put(
-      'review',
-      newReview({
-        kind,
-        createdAt: startedAt,
-        startedAt,
-        completedAt: this.ago(completedDaysAgo, '16:40'),
-        doneSteps,
-      }),
-    )
   }
 }

@@ -66,7 +66,9 @@ export type Route =
   | { kind: 'project'; id: string }
   | { kind: 'area'; id: string }
   | { kind: 'account' }
-  | { kind: 'review'; reviewKind: string | null }
+  | { kind: 'review' }
+  /** An old review link (`/review/weekly`): goes to /review. */
+  | { kind: 'oldReview' }
 
 export function parseRoute(path: string): Route {
   const project = path.match(/^\/project\/([A-Za-z0-9]+)$/)
@@ -74,8 +76,8 @@ export function parseRoute(path: string): Route {
   const area = path.match(/^\/area\/([A-Za-z0-9]+)$/)
   if (area?.[1]) return { kind: 'area', id: area[1] }
   if (path === '/account') return { kind: 'account' }
-  const review = path.match(/^\/review(?:\/([a-z]+))?$/)
-  if (review) return { kind: 'review', reviewKind: review[1] ?? null }
+  if (path === '/review') return { kind: 'review' }
+  if (/^\/review\/[a-z]+$/.test(path)) return { kind: 'oldReview' }
   return { kind: 'list', path }
 }
 

@@ -6,7 +6,6 @@ import type { DragData, DropData } from '../dnd.js'
 import { useT } from '../i18n/index.js'
 import { countFor, LISTS, type ListId } from '../lists.js'
 import { toggleAreaCollapsed, useCollapsedAreas } from '../prefs.js'
-import { showReviewDot } from '../reviewFlow.js'
 import { appHref, areaPath, navigate, projectPath } from '../router.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import type { SyncStatus } from '../store/engine.js'
@@ -22,7 +21,6 @@ import {
   TodayIcon,
 } from './Icons.js'
 import { useDismiss } from './Menu.js'
-import { useReviewAnchor, useReviews } from './useReviews.js'
 
 const APP_VERSION_LABEL = `Dingen ${__DINGEN_VERSION__}${__DINGEN_BUILD__ ? ` · ${__DINGEN_BUILD__}` : ''}`
 
@@ -45,7 +43,6 @@ export function Sidebar({ path, status, onOpenSettings }: Props) {
   const t = useT()
   const engine = useEngine()
   const ws = useWorkspace()
-  const reviewDot = showReviewDot(useReviews(), ws.today, useReviewAnchor())
   const [adding, setAdding] = useState(false)
   const statusText = t(`sync.${status}`)
   const collapsed = useCollapsedAreas()
@@ -120,9 +117,6 @@ export function Sidebar({ path, status, onOpenSettings }: Props) {
                     aria-hidden="true"
                   />
                   <span className="nav-title">{t('review.nav')}</span>
-                  {reviewDot && (
-                    <span className="review-dot" role="img" aria-label={t('review.nav.ready')} />
-                  )}
                 </NavLink>
               </li>,
               item,

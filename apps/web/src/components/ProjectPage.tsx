@@ -22,6 +22,7 @@ import { InlineInput } from './InlineInput.js'
 import { MemberAvatars, MembersPanel, useAccess } from './MembersPanel.js'
 import { type MenuItem, MoreMenu } from './Menu.js'
 import { ActiveFilters, FilterButton, type PageFilters, PageHeader } from './PageHeader.js'
+import { ReviewEveryField } from './ReviewEveryField.js'
 import { TagEditor } from './TagEditor.js'
 import { TaskGroup } from './TaskGroup.js'
 import type { RowProps } from './TaskRow.js'
@@ -32,9 +33,11 @@ import { WhenPicker } from './WhenPicker.js'
 interface Props {
   project: Project
   focusSignal: number
+  /** More on the title row, before the filter: the Review's "Mark reviewed". */
+  headerExtra?: ReactNode
 }
 
-export function ProjectPage({ project, focusSignal }: Props) {
+export function ProjectPage({ project, focusSignal, headerExtra }: Props) {
   const engine = useEngine()
   const t = useT()
   const ws = useWorkspace()
@@ -176,6 +179,11 @@ export function ProjectPage({ project, focusSignal }: Props) {
       ),
     },
     {
+      label: t('review.every.menu'),
+      onSelect: () => {},
+      panel: () => <ReviewEveryField kind="project" item={project} />,
+    },
+    {
       label: t('members.title'),
       onSelect: () => {},
       panel: () => <MembersPanel type="project" id={project.id} access={access} />,
@@ -216,6 +224,7 @@ export function ProjectPage({ project, focusSignal }: Props) {
         }
         actions={
           <>
+            {headerExtra}
             <FilterButton {...filters} />
             <MoreMenu alignEnd label={t('menu.projectActions')} items={menuItems} />
           </>

@@ -30,11 +30,11 @@ import {
   parseMemberId,
   type Reminder,
   Repeat,
+  reviewEveryOf,
   type Snapshot,
   sameReminder,
   sameTagTitle,
   setRepeat,
-  signals,
   stopRepeat,
   type Tag,
   type Task,
@@ -48,7 +48,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { z } from 'zod'
 import { registerActivityTool } from './activity-tool.js'
 import type { DingenClient } from './client.js'
-import { areaRow, registerReviewTools } from './review-tools.js'
+import { areaRow, ReviewEveryInput, registerReviewTools } from './review-tools.js'
 
 /**
  * The MCP tools. Every tool refreshes the replica, works on a snapshot with
@@ -164,7 +164,7 @@ export function createMcpServer(client: DingenClient): McpServer {
     {
       title: 'Overview of the structure',
       description:
-        'Areas, projects (with headings), tags and the number of tasks per list. Call this first in a session; use the ids it returns.',
+        'Areas, projects (with headings and review frequency), tags and the number of tasks per list. Call this first in a session; use the ids it returns.',
       inputSchema: {},
     },
     () =>
@@ -564,7 +564,8 @@ export function createMcpServer(client: DingenClient): McpServer {
     'update_project',
     {
       title: 'Update a project',
-      description: 'Changes title, notes, area, plan date, deadline or tags of a project.',
+      description:
+        'Changes title, notes, area, plan date, deadline, tags or review frequency of a project. Every project has a review frequency (default: every week); see review_queue.',
       inputSchema: {
         id: z.string(),
         title: z.string().min(1).optional(),
@@ -574,6 +575,7 @@ export function createMcpServer(client: DingenClient): McpServer {
         deadline: DateInput.nullable().optional(),
         tags: z.array(Ref).optional(),
         createTags: z.boolean().default(false),
+        reviewEvery: ReviewEveryInput.optional(),
       },
     },
     (input) =>
@@ -594,6 +596,7 @@ export function createMcpServer(client: DingenClient): McpServer {
         }
         if (input.tags !== undefined)
           fields.tagIds = resolveTags(client, ws, input.tags, input.createTags)
+        if (input.reviewEvery !== undefined) fields.reviewEvery = input.reviewEvery
         if (Object.keys(fields).length > 0) client.mutate('project', project.id, fields)
         return projectRow(client.snapshot(), { ...project, ...fields } as Project)
       }),
@@ -643,14 +646,16 @@ export function createMcpServer(client: DingenClient): McpServer {
     'create_area',
     {
       title: 'Create an area',
-      description: 'Creates an area of responsibility, optionally with an icon and a colour.',
+      description:
+        'Creates an area of responsibility, optionally with an icon, a colour and a review frequency (default: every week).',
       inputSchema: {
         title: z.string().min(1),
         icon: z.enum(AREA_ICONS).optional(),
         color: z.enum(AREA_COLORS).optional(),
+        reviewEvery: ReviewEveryInput.optional(),
       },
     },
-    ({ title, icon, color }) =>
+    ({ title, icon, color, reviewEvery }) =>
       run((ws) => {
         const last = views.openAreas(ws.areas).at(-1)
         const area = newArea({
@@ -658,9 +663,37 @@ export function createMcpServer(client: DingenClient): McpServer {
           order: orderBetween(last?.order ?? null, null),
           icon: icon ?? null,
           color: color === 'gray' ? null : (color ?? null),
+          reviewEvery: reviewEvery ?? null,
         })
         client.create('area', area)
-        return { id: area.id, title: area.title, icon: area.icon, color: area.color }
+        return areaRow(client.snapshot(), area)
+      }),
+  )
+
+  server.registerTool(
+    'update_area',
+    {
+      title: 'Update an area',
+      description:
+        'Changes title, icon, colour or review frequency of an area. Every area has a review frequency (default: every week); see review_queue.',
+      inputSchema: {
+        id: Ref,
+        title: z.string().min(1).optional(),
+        icon: z.enum(AREA_ICONS).nullable().optional(),
+        color: z.enum(AREA_COLORS).nullable().optional(),
+        reviewEvery: ReviewEveryInput.optional(),
+      },
+    },
+    (input) =>
+      run((ws) => {
+        const area = findArea(ws, input.id)
+        const fields: Record<string, unknown> = {}
+        if (input.title !== undefined) fields.title = input.title
+        if (input.icon !== undefined) fields.icon = input.icon
+        if (input.color !== undefined) fields.color = input.color === 'gray' ? null : input.color
+        if (input.reviewEvery !== undefined) fields.reviewEvery = input.reviewEvery
+        if (Object.keys(fields).length > 0) client.mutate('area', area.id, fields)
+        return areaRow(client.snapshot(), { ...area, ...fields } as Area)
       }),
   )
 
@@ -726,7 +759,6 @@ export function createMcpServer(client: DingenClient): McpServer {
     },
     findProject,
     findArea,
-    projectRow,
     taskRow,
   })
 
@@ -1078,8 +1110,8 @@ function projectRow(ws: Snapshot, p: Project) {
     ...(p.notes ? { notes: p.notes } : {}),
     openTasks: open,
     headings: views.headingsOf(ws.headings, p.id).map((h) => ({ id: h.id, title: h.title })),
+    reviewEvery: reviewEveryOf(p),
     reviewedAt: p.reviewedAt,
-    signals: signals(p, ws, ws.today),
   }
 }
 

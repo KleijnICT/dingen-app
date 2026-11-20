@@ -440,6 +440,31 @@ describe('import on another server', () => {
     expect(again.total).toEqual({ created: 0, updated: 0, unchanged: 2, skipped: 0 })
   })
 
+  it('carries reviewEvery, and an older file without it gets the default (null)', async () => {
+    const two = server()
+    const ida = await two.account('ida@test.nl')
+    const withEvery = newProject({ title: 'Elke twee weken', reviewEvery: { n: 2, unit: 'week' } })
+    const oldRecord = fileRecord(newProject({ title: 'Zonder frequentie' }))
+    delete oldRecord.data.reviewEvery
+    delete oldRecord.fieldTs.reviewEvery
+    const file = {
+      format: 'dingen-export',
+      version: 1,
+      entities: { project: [fileRecord(withEvery), oldRecord] },
+    }
+    const res = await two.importFile(ida.bearer, file)
+    expect((await res.json()).total).toMatchObject({ created: 2 })
+    const after = await two.snapshot(ida.bearer)
+    const byTitle = (t: string) =>
+      after.entities.find((e) => (e.data as { title?: string }).title === t)?.data as {
+        reviewEvery?: unknown
+      }
+    expect(byTitle('Elke twee weken').reviewEvery).toEqual({ n: 2, unit: 'week' })
+    expect(byTitle('Zonder frequentie').reviewEvery ?? null).toBeNull()
+    const out = await two.exportOf(ida.bearer)
+    expect(JSON.stringify(out.entities.project)).toContain('"unit":"week"')
+  })
+
   it('imports reviews too', async () => {
     const two = server()
     const hans = await two.account('hans@test.nl')

@@ -59,6 +59,7 @@ export function newProject(fields: Partial<Project> & { title: string }): Projec
     order: firstOrder(),
     completedAt: null,
     reviewedAt: null,
+    reviewEvery: null,
     ...fields,
   }
 }
@@ -72,6 +73,7 @@ export function newArea(fields: Partial<Area> & { title: string }): Area {
     icon: null,
     color: null,
     reviewedAt: null,
+    reviewEvery: null,
     ...fields,
   }
 }

@@ -1,227 +1,187 @@
-import {
-  currentStep,
-  lastCompletedReview,
-  nextReviewDate,
-  type Review,
-  type ReviewKind,
-  type ReviewStepId,
-  reviewSteps,
-  runningReview,
-} from '@dingen/core'
-import { Check } from 'lucide-react'
-import { useState } from 'react'
-import { formatDate, type MessageKey, useT } from '../i18n/index.js'
+import { type Area, type Project, type ReviewEntry, reviewQueue, views } from '@dingen/core'
+import { Check, ChevronLeft } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { useT } from '../i18n/index.js'
 import { describeDate } from '../lists.js'
-import {
-  openStepsAfter,
-  REVIEW_KINDS,
-  stepAfter,
-  stepBefore,
-  stepStates,
-  withDoneStep,
-} from '../reviewFlow.js'
-import { navigate } from '../router.js'
+import { groupByReviewDate, selectAfterReviewed } from '../reviewList.js'
 import { useEngine, useWorkspace } from '../store/context.js'
-import { ReviewStepView } from './ReviewSteps.js'
-import { startReview, useReviewAnchor, useReviews } from './useReviews.js'
+import { AreaGlyph } from './AreaIcons.js'
+import { AreaPage } from './AreaPage.js'
+import { ProgressCircle } from './Icons.js'
+import { ProjectPage } from './ProjectPage.js'
+import { useNarrow } from './SidebarDrawer.js'
 
 interface Props {
-  /** The review to show; null shows the overview. */
-  kind: ReviewKind | null
+  focusSignal: number
 }
 
-/** Route /review: the overview, or the running review of one kind. */
-export function ReviewPage({ kind }: Props) {
-  const reviews = useReviews()
-  const running = kind ? runningReview(reviews, kind) : null
-  if (running) return <ReviewRunner key={running.id} review={running} />
-  return <ReviewOverview reviews={reviews} />
-}
+type Selected = { kind: 'project'; item: Project } | { kind: 'area'; item: Area }
 
-function ReviewOverview({ reviews }: { reviews: Review[] }) {
+/**
+ * Route /review: the projects and areas due for review, grouped by review date, with the
+ * selected one beside the list, editable as on its own page. "Mark reviewed" moves on to
+ * the next. On a phone the list comes first and an item opens full width.
+ */
+export function ReviewPage({ focusSignal }: Props) {
   const t = useT()
   const engine = useEngine()
   const ws = useWorkspace()
-  const anchor = useReviewAnchor()
+  const narrow = useNarrow()
+  const queue = useMemo(() => reviewQueue(ws, ws.today), [ws])
+  // The item picked in the list; on a wide screen nothing picked means the first one.
+  const [picked, setPicked] = useState<string | null>(null)
 
-  return (
-    <section className="list-page review-page">
-      <header className="list-header">
-        <h1>{t('review.title')}</h1>
-        <p className="muted">{t('review.intro')}</p>
-      </header>
-      <ul className="review-kinds">
-        {REVIEW_KINDS.map((kind) => {
-          const running = runningReview(reviews, kind)
-          const next = nextReviewDate(reviews, kind, anchor)
-          const last = lastCompletedReview(reviews, kind)
-          const ready = running !== null || next === null || next <= ws.today
-          let status: string
-          if (running) {
-            const states = stepStates(running, ws)
-            const at = currentStep(running, ws, ws.today)
-            const n = at ? states.findIndex((s) => s.step.id === at.id) + 1 : states.length
-            status = t('review.status.running', { n, total: states.length })
-          } else if (ready) status = t('review.status.ready')
-          else status = t('review.status.next', { date: describeDate(next as string, ws.today) })
-          return (
-            <li key={kind} className={`review-kind ${ready ? 'ready' : ''}`}>
-              <div className="review-kind-text">
-                <h2>{t(`review.kind.${kind}`)}</h2>
-                <p className="muted">{t(`review.kind.${kind}.about`)}</p>
-                <p className="review-kind-status">
-                  {ready && <span className="review-dot" aria-hidden="true" />}
-                  {status}
-                  {last?.completedAt && (
-                    <span className="muted">
-                      {' · '}
-                      {t('review.status.last', {
-                        date: formatDate(new Date(last.completedAt), { dateStyle: 'medium' }),
-                      })}
-                    </span>
-                  )}
-                </p>
-              </div>
-              <button
-                type="button"
-                className={ready ? '' : 'secondary'}
-                onClick={() => startReview(engine, reviews, kind)}
-              >
-                {running ? t('review.resume') : ready ? t('review.start') : t('review.startAnyway')}
-              </button>
-            </li>
-          )
-        })}
-      </ul>
-    </section>
-  )
-}
+  const lookup = (id: string | null | undefined): Selected | null => {
+    if (!id) return null
+    const project = ws.projectById.get(id)
+    if (project && !project.deleted) return { kind: 'project', item: project }
+    const area = ws.areaById.get(id)
+    if (area && !area.deleted) return { kind: 'area', item: area }
+    return null
+  }
+  const selected = lookup(picked) ?? (narrow ? null : lookup(queue[0]?.item.id))
 
-function ReviewRunner({ review }: { review: Review }) {
-  const t = useT()
-  const engine = useEngine()
-  const ws = useWorkspace()
-  const steps = reviewSteps(review.kind)
-  const states = stepStates(review, ws)
-  // Open on the first step not done yet; after that the person moves on.
-  const [stepId, setStepId] = useState<ReviewStepId>(
-    () => currentStep(review, ws, ws.today)?.id ?? (steps.at(-1)?.id as ReviewStepId),
-  )
-  const index = steps.findIndex((s) => s.id === stepId)
-  const step = steps[index] ?? steps[0]
-  if (!step) return null
-  const doneCount = states.filter((s) => s.done).length
-  const last = stepAfter(review.kind, step.id) === null
-  const previous = stepBefore(review.kind, step.id)
-  const stepDone = states.find((s) => s.step.id === step.id)?.done ?? false
-  // Completing needs every step done (moving on ticks off a step with one tick).
-  const open = openStepsAfter(states, step.id)
-
-  function goTo(id: ReviewStepId) {
-    setStepId(id)
+  function select(id: string | null) {
+    setPicked(id)
     document.querySelector('.content')?.scrollTo({ top: 0 })
   }
 
-  function complete() {
-    if (open.length > 0) return
-    engine.mutate('review', review.id, { completedAt: new Date().toISOString() })
-    navigate('/review')
+  function markReviewed(sel: Selected) {
+    const next = selectAfterReviewed(queue, sel.item.id)
+    engine.mutate(sel.kind, sel.item.id, { reviewedAt: new Date().toISOString() })
+    select(next)
   }
 
-  /** Ticks off a step per item in one go; the items left are skipped. */
-  function skipRest() {
-    engine.mutate('review', review.id, { doneSteps: withDoneStep(review, step?.id ?? '') })
-  }
+  const list = (
+    <ReviewQueue
+      queue={queue}
+      today={ws.today}
+      selectedId={selected?.item.id ?? null}
+      onSelect={select}
+    />
+  )
 
-  function next() {
-    // A step with one tick is done by moving on. The Inbox is done when it is
-    // empty, a step per item when all items are reviewed (or skipped).
-    if (step?.check === 'once') {
-      engine.mutate('review', review.id, { doneSteps: withDoneStep(review, step.id) })
+  if (!selected) {
+    if (queue.length === 0) {
+      return (
+        <section className="list-page review-page">
+          <header className="list-header">
+            <h1>{t('review.title')}</h1>
+          </header>
+          <div className="empty review-empty">
+            <p>{t('review.empty')}</p>
+            <p className="muted">{t('review.empty.hint')}</p>
+          </div>
+        </section>
+      )
     }
-    const after = step ? stepAfter(review.kind, step.id) : null
-    if (after) goTo(after)
-    else complete()
+    // A phone, nothing opened yet: the list only.
+    return <section className="list-page review-page">{list}</section>
+  }
+
+  const mark = (
+    <button type="button" className="review-mark" onClick={() => markReviewed(selected)}>
+      <Check size={15} strokeWidth={2.4} aria-hidden="true" />
+      {t('review.markReviewed')}
+    </button>
+  )
+  const detail =
+    selected.kind === 'project' ? (
+      <ProjectPage
+        key={selected.item.id}
+        project={selected.item}
+        focusSignal={focusSignal}
+        headerExtra={mark}
+      />
+    ) : (
+      <AreaPage
+        key={selected.item.id}
+        area={selected.item}
+        focusSignal={focusSignal}
+        headerExtra={mark}
+      />
+    )
+
+  if (narrow) {
+    return (
+      <div className="review-detail">
+        <button type="button" className="link review-back" onClick={() => select(null)}>
+          <ChevronLeft size={16} aria-hidden="true" />
+          {t('review.back')}
+        </button>
+        {detail}
+      </div>
+    )
   }
 
   return (
-    <section className={`list-page review-page review-${review.kind}`}>
-      <header className="list-header review-header">
-        <p className="review-eyebrow">
-          <button type="button" className="link" onClick={() => navigate('/review')}>
-            {t('review.title')}
-          </button>
-          {' · '}
-          {t(`review.kind.${review.kind}`)}
-        </p>
-        <h1>{t(`review.step.${step.id}` as MessageKey)}</h1>
-        <p className="muted">{t(`review.step.${step.id}.intro` as MessageKey)}</p>
-        {steps.length > 1 && (
-          <>
-            <div
-              className="review-progress"
-              role="progressbar"
-              aria-valuemin={0}
-              aria-valuemax={steps.length}
-              aria-valuenow={doneCount}
-              aria-label={t('review.progress', { n: doneCount, total: steps.length })}
-            >
-              <span
-                className="review-progress-bar"
-                style={{ width: `${(doneCount / steps.length) * 100}%` }}
-              />
-            </div>
-            <ol className="review-steps" aria-label={t('review.steps')}>
-              {states.map(({ step: s, done }, i) => (
-                <li key={s.id}>
+    <div className="review-split">
+      <div className="review-side">{list}</div>
+      <div className="review-detail">{detail}</div>
+    </div>
+  )
+}
+
+interface QueueProps {
+  queue: ReviewEntry[]
+  today: string
+  selectedId: string | null
+  onSelect: (id: string) => void
+}
+
+/** The list of what is due, under a heading per review date. */
+function ReviewQueue({ queue, today, selectedId, onSelect }: QueueProps) {
+  const t = useT()
+  const ws = useWorkspace()
+  return (
+    <nav className="review-queue" aria-label={t('review.queue')}>
+      <header className="list-header">
+        <h1>{t('review.title')}</h1>
+      </header>
+      {queue.length === 0 && <p className="empty">{t('review.empty')}</p>}
+      {groupByReviewDate(queue).map((group) => (
+        <div key={group.date} className="review-group">
+          <h2 className="group-title review-group-title">
+            {capitalize(describeDate(group.date, today))}
+          </h2>
+          <ul className="nav">
+            {group.entries.map((entry) => {
+              const { item } = entry
+              const active = item.id === selectedId
+              return (
+                <li key={item.id}>
                   <button
                     type="button"
-                    className={`review-step ${s.id === step.id ? 'current' : ''} ${done ? 'done' : ''}`}
-                    aria-current={s.id === step.id ? 'step' : undefined}
-                    title={t(`review.step.${s.id}` as MessageKey)}
-                    onClick={() => goTo(s.id)}
+                    className={`nav-item review-item ${entry.kind} ${active ? 'active' : ''}`}
+                    aria-current={active ? 'true' : undefined}
+                    onClick={() => onSelect(item.id)}
                   >
-                    {done ? <Check size={12} strokeWidth={3} aria-hidden="true" /> : i + 1}
-                    <span className="visually-hidden">
-                      {t(`review.step.${s.id}` as MessageKey)}
+                    {entry.kind === 'area' ? (
+                      <AreaGlyph
+                        icon={entry.item.icon}
+                        color={entry.item.color}
+                        className="nav-icon"
+                      />
+                    ) : (
+                      <ProgressCircle
+                        value={views.progress(item.id, ws.tasks)}
+                        className="nav-icon"
+                      />
+                    )}
+                    <span className="nav-title">
+                      {item.title || (
+                        <em>{t(entry.kind === 'area' ? 'area.untitled' : 'project.untitled')}</em>
+                      )}
                     </span>
                   </button>
                 </li>
-              ))}
-            </ol>
-          </>
-        )}
-      </header>
-      <ReviewStepView key={step.id} review={review} stepId={step.id} />
-      {step.check === 'perItem' && !stepDone && (
-        <p className="review-skip">
-          <button type="button" className="link" onClick={skipRest}>
-            {t('review.skipRest')}
-          </button>
-        </p>
-      )}
-      <footer className="review-foot">
-        {previous ? (
-          <button type="button" className="link" onClick={() => goTo(previous)}>
-            {t('review.previous')}
-          </button>
-        ) : (
-          <span />
-        )}
-        <span className="muted review-foot-count">
-          {t('review.stepOf', { n: index + 1, total: steps.length })}
-        </span>
-        <button type="button" onClick={next} disabled={last && open.length > 0}>
-          {last ? t('review.complete') : t('review.next')}
-        </button>
-      </footer>
-      {last && open.length > 0 && (
-        <p className="review-blocked muted">
-          {t('review.completeBlocked', {
-            steps: open.map((id) => t(`review.step.${id}` as MessageKey)).join(', '),
-          })}
-        </p>
-      )}
-    </section>
+              )
+            })}
+          </ul>
+        </div>
+      ))}
+    </nav>
   )
 }
+
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)

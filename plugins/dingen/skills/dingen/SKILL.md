@@ -1,6 +1,6 @@
 ---
 name: dingen
-description: Manage tasks in Dingen, a self-hosted GTD task manager, through its MCP tools. Use when the user wants to capture a task, see what is on today, plan or reschedule work, process the inbox, organise areas and projects, or review their lists in Dingen.
+description: Manage tasks in Dingen, a self-hosted GTD task manager, through its MCP tools. Use when the user wants to capture a task, see what is on today, plan or reschedule work, process the inbox, organise areas and projects, or review their projects and areas in Dingen.
 ---
 
 # Dingen
@@ -81,7 +81,7 @@ week" is usually after completion, "pay rent on the 1st" on a schedule.
 5. **"What's on today?"**: `list_tasks` with `list: "today"`. Mention overdue
    deadlines explicitly. Do not move dates without asking.
 6. **Structure belongs to the user.** Create an area or project only when the
-   user asks or agrees. Renaming areas and tags is done in the app. Deleting a
+   user asks or agrees. Renaming tags is done in the app. Deleting a
    project or area (`delete_project`, `delete_area`) takes everything inside it
    along and needs Manage on it: only when the user explicitly asks, and
    prefer `complete_project`.
@@ -123,42 +123,33 @@ work over, not as a label.
 
 ## Reviews
 
-Dingen has three built-in reviews; you can guide the user through one. The
-progress is the same as in the app (a review started there can be finished
-here and the other way round), so always read it with `get_review` instead of
-keeping your own list.
+The review is about projects and areas. Every project and every area has a
+review frequency: every N days, weeks, months or years (the default is every
+week). Once that time has passed since it was last marked reviewed, it is due.
+An area works like a project in the review: it comes up with its loose tasks.
+Someday projects come up too; completed and canceled ones do not.
 
-- **Daily**: your day (read only: overdue, deadlines today and tomorrow, new
-  in the Inbox since the previous daily review; add today's calendar events
-  if you can read them), then the Inbox empty.
-- **Weekly** (due 7 days after the last one): mind sweep, Inbox, look back on
-  the last 7 days, overdue and due soon, areas and projects (per area the area
-  itself, then each of its active projects; projects without an area last), a
-  Someday scan, and a last "anything forgotten?" sweep.
-- **Monthly** (same day next month): look back, every area in depth, Someday
-  in depth.
+How to guide a review:
 
-How to guide one:
-
-1. `get_review` shows what is due. `start_review` with the `kind` starts it,
-   or resumes the one that is running; it returns the current step and its
-   items.
-2. Take the steps in order and keep it conversational: show the items of the
-   step briefly, ask what the user wants, apply it with the normal tools,
-   then tick it off. A project or area is ticked with `mark_reviewed`; other
-   steps with `complete_review_step`. The Inbox step is done when the Inbox is
-   empty, so process the Inbox (rule 4) rather than ticking it.
-3. Use the **signals** on projects and areas to ask the right question:
-   `noNextAction` (what is the next step?), `deadlineSoon`, `longQuiet` (still
-   alive?), `notReviewedLately`. For every project in the weekly review, also
-   ask whether its title is still the outcome the user wants.
+1. `review_queue` lists what is due, earliest first: kind (`project` or
+   `area`), id, title, the area of a project, `nextReviewOn`, `reviewEvery`
+   and its open tasks. An empty list means nothing is due; say so and stop.
+2. Walk through the items one by one, conversationally. Show the item and its
+   open tasks briefly, ask what the user wants changed, apply it with the
+   normal tools, then call `mark_reviewed` (with `project` or `area`). Never
+   mark an item reviewed that you did not look at together with the user.
+3. Keep project titles as the desired outcome ("Bathroom is tiled"). When a
+   title reads like a subject ("Bathroom"), suggest an outcome; the user
+   decides.
 4. Propose, do not decide. Completing a project, moving it to Someday,
-   canceling or deleting, and ticking a whole step of projects or areas that
-   were not each looked at, happen only after the user agrees. Prefer the
+   canceling or deleting happen only after the user agrees. Prefer the
    reversible option (Someday over delete).
-5. `complete_review` only when the user agrees the review is done. It refuses
-   while steps are open; pass `force: true` only when the user wants to stop
-   early.
+5. The user can change how often something comes up: `update_project` and
+   `update_area` take `reviewEvery`, for example `{ "n": 2, "unit": "week" }`
+   (unit `day`, `week`, `month` or `year`), or `null` for the default of every
+   week. `create_area` takes it too. Suggest a longer frequency for things
+   that rarely change (a Someday project every few months), but only change it
+   when the user asks or agrees.
 
 ## Tool notes
 
@@ -188,6 +179,7 @@ How to guide one:
   do not just do it (structure belongs to the user), and suggest phrasing the
   project title as the desired outcome ("Kitchen renovated", not "Kitchen").
   It needs edit where the task is and manage in the target area.
-- Project and area output carries `reviewedAt` and `signals`; `overview`
-  shows them for every open project and area.
+- Project and area output carries `reviewEvery` (the default, every week,
+  when none was set) and `reviewedAt`; `overview` shows them for every open
+  project and area.
 - Dates are in the user's time zone; "today" follows the server setting.

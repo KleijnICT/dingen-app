@@ -31,7 +31,6 @@ import {
   PageHeader,
 } from './PageHeader.js'
 import { ProjectRow } from './ProjectRow.js'
-import { ReviewBanner } from './ReviewBanner.js'
 import { TaskGroup } from './TaskGroup.js'
 import type { RowProps } from './TaskRow.js'
 import { TodayBody, TodayTotal } from './TodayBody.js'
@@ -287,11 +286,10 @@ export function ListPage({
         <ActiveFilters {...filters} />
         {below}
       </PageHeader>
-      {isToday && !focus && <ReviewBanner />}
       {isToday && fresh.length > 0 && (
-        <div className="review-banner today-new-banner">
+        <div className="notice-banner today-new-banner">
           <span className="task-new-dot" aria-hidden="true" />
-          <span className="review-banner-text">
+          <span className="notice-banner-text">
             {fresh.length === 1 ? t('today.new.one') : t('today.new.other', { n: fresh.length })}
           </span>
           <button type="button" className="chip small" onClick={() => void markTodaySeen(ws.today)}>

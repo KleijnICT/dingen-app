@@ -1,11 +1,10 @@
 import {
   type Area,
   type ChecklistItem,
-  dueReviews,
   entitySchemas,
   type Heading,
+  isDueForReview,
   type Project,
-  type Review,
   type Tag,
   type Task,
   views,
@@ -44,7 +43,6 @@ interface Lists {
   headings: Heading[]
   tags: Tag[]
   checklist: ChecklistItem[]
-  reviews: Review[]
 }
 
 function listsOf(sync: SyncService, userId: string): Lists {
@@ -58,7 +56,6 @@ function listsOf(sync: SyncService, userId: string): Lists {
     headings: of<Heading>('heading'),
     tags: of<Tag>('tag'),
     checklist: of<ChecklistItem>('checklistItem'),
-    reviews: of<Review>('review'),
   }
 }
 
@@ -81,7 +78,7 @@ describe('demo set', () => {
   it('never puts a completion or creation in the future', () => {
     for (const records of Object.values(buildDemoSet({ now, timezone, today }))) {
       for (const r of records) {
-        for (const field of ['createdAt', 'completedAt', 'reviewedAt', 'startedAt']) {
+        for (const field of ['createdAt', 'completedAt', 'reviewedAt']) {
           const value = r.data[field]
           if (typeof value === 'string') expect(Date.parse(value)).toBeLessThan(now.getTime())
         }
@@ -89,7 +86,7 @@ describe('demo set', () => {
     }
   })
 
-  it('fills every list for Sam and makes the weekly review due', async () => {
+  it('fills every list for Sam and has some projects and areas due for review', async () => {
     const { db } = freshDb()
     const result = await resetToDemo(db, { timezone, now })
     const sam = result.users.find((u) => u.email === 'sam@example.com')
@@ -138,8 +135,15 @@ describe('demo set', () => {
       const open = ws.tasks.filter((t) => t.templateId === template.id && t.status === 'open')
       expect(open, template.title).toHaveLength(1)
     }
-    expect(dueReviews(ws.reviews, today)).toContain('weekly')
-    expect(dueReviews(ws.reviews, today)).not.toContain('monthly')
+    // Some areas and projects are due for review, others are not (their own frequency).
+    const items = [...ws.areas, ...ws.projects]
+    const dueTitles = items.filter((i) => isDueForReview(i, today)).map((i) => i.title)
+    expect(dueTitles).toContain('Clients')
+    expect(dueTitles).not.toContain('Business')
+    expect(dueTitles).not.toContain('Health')
+    expect(dueTitles.length).toBeGreaterThan(0)
+    expect(ws.areas.some((a) => a.reviewEvery !== null)).toBe(true)
+    expect(ws.projects.some((p) => p.reviewEvery !== null)).toBe(true)
   })
 
   it('gives Morgan a smaller set and the new account nothing', async () => {

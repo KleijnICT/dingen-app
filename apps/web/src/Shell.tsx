@@ -1,4 +1,4 @@
-import { dateOf, toCalendarDate } from '@dingen/core'
+import { toCalendarDate } from '@dingen/core'
 import {
   type CollisionDetection,
   DndContext,
@@ -26,14 +26,12 @@ import { MenuButton, SidebarDrawer, useNarrow } from './components/SidebarDrawer
 import { PanelSlot } from './components/TaskPanel.js'
 import { ShellActions, ToolbarSlot } from './components/Toolbar.js'
 import { UpdateNotice } from './components/UpdateNotice.js'
-import { ReviewAnchorContext } from './components/useReviews.js'
 import { type DragData, handleDragEnd } from './dnd.js'
 import { focusActive, focusKeyAction } from './focus.js'
 import { useT } from './i18n/index.js'
 import { LISTS } from './lists.js'
 import { setFocusMode, setWidth, useFocusMode, usePanelWidth, useSidebarWidth } from './prefs.js'
 import { SIDEBAR_LIMITS } from './resize.js'
-import { parseReviewKind } from './reviewFlow.js'
 import { navigate, parseRoute, usePath } from './router.js'
 import { Settings } from './Settings.js'
 import { useBuildWorkspace, useEngine, WorkspaceContext } from './store/context.js'
@@ -60,8 +58,6 @@ export function Shell({ user, onSignedOut }: Props) {
     document.addEventListener('visibilitychange', onVisible)
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [])
-  // A weekly or monthly review never done counts from the day the account was made.
-  const reviewAnchor = useMemo(() => dateOf(user.createdAt), [user.createdAt])
   const t = useT()
   const sidebarWidth = useSidebarWidth()
   const panelWidth = usePanelWidth()
@@ -108,14 +104,17 @@ export function Shell({ user, onSignedOut }: Props) {
   const missing =
     (route.kind === 'list' && !list) ||
     (route.kind === 'project' && !project) ||
-    (route.kind === 'area' && !area) ||
-    (route.kind === 'review' && route.reviewKind !== null && !parseReviewKind(route.reviewKind))
+    (route.kind === 'area' && !area)
 
   // Only redirect once the replica is loaded; a project link must survive a fresh page load.
   const redirect = (missing && engine.ready) || route.kind === 'account'
   useEffect(() => {
     if (redirect) navigate('/today')
   }, [redirect])
+  const oldReview = route.kind === 'oldReview'
+  useEffect(() => {
+    if (oldReview) navigate('/review')
+  }, [oldReview])
 
   const onToday = list?.id === 'today'
   const focus = focusActive(focusPref, list?.id)
@@ -174,7 +173,7 @@ export function Shell({ user, onSignedOut }: Props) {
     page = <ProjectPage key={project.id} project={project} focusSignal={focusSignal} />
   } else if (area) page = <AreaPage key={area.id} area={area} focusSignal={focusSignal} />
   else if (route.kind === 'review') {
-    page = <ReviewPage kind={parseReviewKind(route.reviewKind ?? undefined)} />
+    page = <ReviewPage focusSignal={focusSignal} />
   }
 
   const sidebar = (
@@ -190,75 +189,71 @@ export function Shell({ user, onSignedOut }: Props) {
 
   return (
     <WorkspaceContext.Provider value={ws}>
-      <ReviewAnchorContext.Provider value={reviewAnchor}>
-        <ShellActions.Provider value={actions}>
-          <DndContext
-            sensors={sensors}
-            collisionDetection={collision}
-            onDragStart={onDragStart}
-            onDragEnd={onDragEnd}
-            onDragCancel={() => setDragging(null)}
+      <ShellActions.Provider value={actions}>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={collision}
+          onDragStart={onDragStart}
+          onDragEnd={onDragEnd}
+          onDragCancel={() => setDragging(null)}
+        >
+          <div
+            className={focus ? 'app focus-mode' : 'app'}
+            style={
+              {
+                '--sidebar-width': `${sidebarWidth}px`,
+                '--panel-width': `${panelWidth}px`,
+              } as CSSProperties
+            }
           >
-            <div
-              className={focus ? 'app focus-mode' : 'app'}
-              style={
-                {
-                  '--sidebar-width': `${sidebarWidth}px`,
-                  '--panel-width': `${panelWidth}px`,
-                } as CSSProperties
-              }
-            >
-              {narrow ? (
-                <SidebarDrawer
-                  open={drawerOpen}
-                  onOpen={openDrawer}
-                  onClose={closeDrawer}
-                  returnFocus={menuButton}
-                >
-                  {sidebar}
-                </SidebarDrawer>
-              ) : (
-                sidebar
-              )}
-              {!narrow && !focus && (
-                <ResizeHandle
-                  className="sidebar-resize"
-                  label={t('nav.resize')}
-                  width={sidebarWidth}
-                  limits={SIDEBAR_LIMITS}
-                  edge="right"
-                  room={sidebarRoom}
-                  onChange={setSidebarWidth}
-                />
-              )}
-              <main className="content-pane">
-                {narrow && (
-                  <div className="mobile-bar">
-                    <MenuButton open={drawerOpen} onOpen={openDrawer} buttonRef={menuButton} />
-                  </div>
-                )}
-                <div className="content-body">
-                  <div className="content">
-                    <ToolbarSlot.Provider value={toolbar}>
-                      <PanelSlot.Provider value={panelSlot}>{page}</PanelSlot.Provider>
-                    </ToolbarSlot.Provider>
-                  </div>
-                  <div className="panel-slot" ref={setPanelSlot} />
+            {narrow ? (
+              <SidebarDrawer
+                open={drawerOpen}
+                onOpen={openDrawer}
+                onClose={closeDrawer}
+                returnFocus={menuButton}
+              >
+                {sidebar}
+              </SidebarDrawer>
+            ) : (
+              sidebar
+            )}
+            {!narrow && !focus && (
+              <ResizeHandle
+                className="sidebar-resize"
+                label={t('nav.resize')}
+                width={sidebarWidth}
+                limits={SIDEBAR_LIMITS}
+                edge="right"
+                room={sidebarRoom}
+                onChange={setSidebarWidth}
+              />
+            )}
+            <main className="content-pane">
+              {narrow && (
+                <div className="mobile-bar">
+                  <MenuButton open={drawerOpen} onOpen={openDrawer} buttonRef={menuButton} />
                 </div>
-                <div className="toolbar" ref={setToolbar} />
-              </main>
-            </div>
-            <DragOverlay dropAnimation={null}>
-              {dragging && <div className="drag-ghost">{ghostTitle(dragging)}</div>}
-            </DragOverlay>
-          </DndContext>
-          {settingsOpen && (
-            <Settings user={user} onSignedOut={onSignedOut} onClose={closeSettings} />
-          )}
-          {searchOpen && <Search onClose={closeSearch} />}
-          <UpdateNotice />
-        </ShellActions.Provider>
-      </ReviewAnchorContext.Provider>
+              )}
+              <div className="content-body">
+                <div className="content">
+                  <ToolbarSlot.Provider value={toolbar}>
+                    <PanelSlot.Provider value={panelSlot}>{page}</PanelSlot.Provider>
+                  </ToolbarSlot.Provider>
+                </div>
+                <div className="panel-slot" ref={setPanelSlot} />
+              </div>
+              <div className="toolbar" ref={setToolbar} />
+            </main>
+          </div>
+          <DragOverlay dropAnimation={null}>
+            {dragging && <div className="drag-ghost">{ghostTitle(dragging)}</div>}
+          </DragOverlay>
+        </DndContext>
+        {settingsOpen && <Settings user={user} onSignedOut={onSignedOut} onClose={closeSettings} />}
+        {searchOpen && <Search onClose={closeSearch} />}
+        <UpdateNotice />
+      </ShellActions.Provider>
     </WorkspaceContext.Provider>
   )
 }

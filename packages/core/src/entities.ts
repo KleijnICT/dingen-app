@@ -100,6 +100,16 @@ export const AREA_COLORS = [
 export type AreaColorId = (typeof AREA_COLORS)[number]
 
 /**
+ * How often a project or area comes up for review: every `n` days, weeks,
+ * months or years (plan 29). null on the item means the default, every week.
+ */
+export const ReviewEvery = z.object({
+  n: z.number().int().min(1).max(999),
+  unit: z.enum(['day', 'week', 'month', 'year']),
+})
+export type ReviewEvery = z.infer<typeof ReviewEvery>
+
+/**
  * `icon` and `color` are plain strings so ids from a newer version survive a
  * round trip; null means the default look. Areas synced before these fields
  * existed parse with nulls.
@@ -109,8 +119,10 @@ export const Area = Base.extend({
   order: Order,
   icon: z.string().nullable().default(null),
   color: z.string().nullable().default(null),
-  /** Last time the area was ticked off in a review; null = never. */
+  /** Last time the area was marked reviewed; null = never. */
   reviewedAt: IsoDateTime.nullable().default(null),
+  /** Review frequency; null = every week. */
+  reviewEvery: ReviewEvery.nullable().default(null),
 })
 export type Area = z.infer<typeof Area>
 
@@ -124,8 +136,10 @@ export const Project = Base.extend({
   tagIds: z.array(Id),
   order: Order,
   completedAt: IsoDateTime.nullable(),
-  /** Last time the project was ticked off in a review; null = never. */
+  /** Last time the project was marked reviewed; null = never. */
   reviewedAt: IsoDateTime.nullable().default(null),
+  /** Review frequency; null = every week. */
+  reviewEvery: ReviewEvery.nullable().default(null),
 })
 export type Project = z.infer<typeof Project>
 
@@ -226,6 +240,9 @@ export const ReviewKind = z.enum(['daily', 'weekly', 'monthly'])
 export type ReviewKind = z.infer<typeof ReviewKind>
 
 /**
+ * One run of a step-by-step review. Unused since plan 29; kept so clients
+ * that still sync it keep working. Goes with the protocol versioning.
+ *
  * One run of a review. `completedAt` is null while it runs. `doneSteps` holds
  * step ids (and group keys such as `somedayDeep:<areaId>`); plain strings so
  * ids from a newer version survive a round trip.

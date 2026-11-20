@@ -135,43 +135,6 @@ export function useCompletedOpen(key: string): boolean {
   return raw.split(',').includes(key)
 }
 
-/**
- * Review banners on Today closed with the cross, per kind with the day they were closed
- * (`weekly:2026-11-13,monthly:…`). A banner closed today comes back tomorrow.
- */
-const BANNER_KEY = 'dingen.reviewBannerClosed'
-
-function readBannerClosed(): string {
-  try {
-    return localStorage.getItem(BANNER_KEY) ?? ''
-  } catch {
-    return ''
-  }
-}
-
-/** Is the banner of `kind` closed for `today`, given the stored value? */
-export function bannerClosedOn(raw: string, kind: string, today: string): boolean {
-  return raw.split(',').includes(`${kind}:${today}`)
-}
-
-export function closeReviewBanner(kind: string, today: string): void {
-  // Only today's entries are worth keeping; older days are dropped.
-  const keep = readBannerClosed()
-    .split(',')
-    .filter((entry) => entry.endsWith(`:${today}`) && !entry.startsWith(`${kind}:`))
-  keep.push(`${kind}:${today}`)
-  try {
-    localStorage.setItem(BANNER_KEY, keep.join(','))
-  } catch {
-    // See setTodayView.
-  }
-  for (const l of listeners) l()
-}
-
-export function useReviewBannersClosed(): string {
-  return useSyncExternalStore(subscribe, readBannerClosed, () => '')
-}
-
 /** Focus mode in Today: only the day's tasks, no sidebar. Kept per device. */
 const FOCUS_KEY = 'dingen.focusMode'
 
@@ -195,30 +158,4 @@ export function setFocusMode(on: boolean): void {
 
 export function useFocusMode(): boolean {
   return useSyncExternalStore(subscribe, readFocus, () => false)
-}
-
-/** The Inbox step of a review: one task at a time (the default) or the whole list. */
-export type InboxStepView = 'cards' | 'list'
-const INBOX_VIEW_KEY = 'dingen.reviewInboxView'
-
-function readInboxView(): InboxStepView {
-  try {
-    return localStorage.getItem(INBOX_VIEW_KEY) === 'list' ? 'list' : 'cards'
-  } catch {
-    return 'cards'
-  }
-}
-
-export function setInboxStepView(view: InboxStepView): void {
-  try {
-    if (view === 'cards') localStorage.removeItem(INBOX_VIEW_KEY)
-    else localStorage.setItem(INBOX_VIEW_KEY, view)
-  } catch {
-    // Private windows may refuse storage; the choice then lasts until reload.
-  }
-  for (const l of listeners) l()
-}
-
-export function useInboxStepView(): InboxStepView {
-  return useSyncExternalStore(subscribe, readInboxView, () => 'cards')
 }

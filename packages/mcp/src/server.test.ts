@@ -1,12 +1,4 @@
-import {
-  addDays,
-  applyChange,
-  type Change,
-  dateOf,
-  type EntityRecord,
-  newReview,
-  recordKey,
-} from '@dingen/core'
+import { applyChange, type Change, type EntityRecord, recordKey } from '@dingen/core'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js'
 import { beforeAll, describe, expect, it } from 'vitest'
@@ -270,46 +262,68 @@ describe('mcp reviews', () => {
     await claude.connect(b)
   })
 
-  it('shows every review as due when there never was one', async () => {
-    const r = await rcall('get_review')
-    expect(r.due).toEqual(['daily', 'weekly', 'monthly'])
-    expect(r.reviews.map((x: { running: unknown }) => x.running)).toEqual([null, null, null])
+  it('has no review tools of the old step-based review', async () => {
+    const names = (await claude.listTools()).tools.map((t) => t.name)
+    expect(names).toContain('review_queue')
+    expect(names).toContain('mark_reviewed')
+    for (const gone of ['start_review', 'get_review', 'complete_review_step', 'complete_review']) {
+      expect(names).not.toContain(gone)
+    }
+  })
+
+  it('lists areas and projects that were never reviewed, with their open tasks', async () => {
+    const area = await rcall('create_area', { title: 'Thuis' })
+    expect(area).toMatchObject({ title: 'Thuis', reviewEvery: { n: 1, unit: 'week' } })
+    const project = await rcall('create_project', { title: 'Zolder opruimen', area: area.id })
+    expect(project).toMatchObject({ reviewedAt: null, reviewEvery: { n: 1, unit: 'week' } })
+    await rcall('create_task', { title: 'Dozen kopen', project: project.id })
+    await rcall('create_task', { title: 'Lamp ophangen', area: area.id })
+    const q = await rcall('review_queue')
+    expect(q.today).toBe(TODAY)
+    expect(q.due).toBe(2)
+    expect(q.items.map((i: { kind: string }) => i.kind)).toEqual(['area', 'project'])
+    expect(q.items[0]).toMatchObject({ id: area.id, nextReviewOn: TODAY })
+    expect(q.items[0].openTasks.map((t: { title: string }) => t.title)).toEqual(['Lamp ophangen'])
+    expect(q.items[1]).toMatchObject({ id: project.id, area: 'Thuis' })
+    expect(q.items[1].openTasks.map((t: { title: string }) => t.title)).toEqual(['Dozen kopen'])
+  })
+
+  it('takes a project or area off the queue with mark_reviewed', async () => {
+    const q = await rcall('review_queue')
+    const [area, project] = q.items
+    await expect(rcall('mark_reviewed', {})).rejects.toThrow(/exactly one/)
+    await expect(rcall('mark_reviewed', { project: project.id, area: area.id })).rejects.toThrow(
+      /exactly one/,
+    )
+    const marked = await rcall('mark_reviewed', { project: 'zolder opruimen' })
+    expect(marked.reviewed.project).toBe(project.id)
+    expect((await rcall('review_queue')).items.map((i: { id: string }) => i.id)).toEqual([area.id])
+    await rcall('mark_reviewed', { area: 'Thuis' })
+    expect((await rcall('review_queue')).due).toBe(0)
+    const o = await rcall('overview')
+    expect(o.areas[0].reviewedAt).not.toBeNull()
+    expect(o.areas[0].projects[0].reviewedAt).toBe(marked.reviewedAt)
+    expect(o.areas[0].projects[0]).not.toHaveProperty('signals')
+  })
+
+  it('sets the review frequency on projects and areas', async () => {
+    const area = await rcall('create_area', { title: 'Werk', reviewEvery: { n: 1, unit: 'month' } })
+    expect(area.reviewEvery).toEqual({ n: 1, unit: 'month' })
+    const updated = await rcall('update_area', { id: area.id, reviewEvery: { n: 3, unit: 'day' } })
+    expect(updated.reviewEvery).toEqual({ n: 3, unit: 'day' })
+    const renamed = await rcall('update_area', { id: area.id, title: 'Werk en zo' })
+    expect(renamed).toMatchObject({ title: 'Werk en zo', reviewEvery: { n: 3, unit: 'day' } })
+    const project = await rcall('create_project', { title: 'Jaarplan maken', area: area.id })
+    const p = await rcall('update_project', {
+      id: project.id,
+      reviewEvery: { n: 2, unit: 'year' },
+    })
+    expect(p.reviewEvery).toEqual({ n: 2, unit: 'year' })
+    const reset = await rcall('update_project', { id: project.id, reviewEvery: null })
+    expect(reset.reviewEvery).toEqual({ n: 1, unit: 'week' })
     await expect(
-      rcall('complete_review_step', { kind: 'weekly', step: 'mindSweep' }),
-    ).rejects.toThrow(/start_review/)
-  })
-
-  it('starts a weekly review once and resumes it', async () => {
-    const first = await rcall('start_review', { kind: 'weekly' })
-    expect(first.resumed).toBe(false)
-    expect(first.currentStep).toBe('mindSweep')
-    expect(first.items).toEqual({ kind: 'none' })
-    const again = await rcall('start_review', { kind: 'weekly' })
-    expect(again).toMatchObject({ resumed: true, id: first.id })
-  })
-
-  it('ticks steps; the Inbox step only by emptying the Inbox', async () => {
-    const task = await rcall('create_task', { title: 'Lamp vervangen' })
-    const ticked = await rcall('complete_review_step', { kind: 'weekly', step: 'mindSweep' })
-    expect(ticked.currentStep).toBe('inbox')
-    expect(ticked.items.tasks.map((t: { title: string }) => t.title)).toEqual(['Lamp vervangen'])
-    await expect(rcall('complete_review_step', { kind: 'weekly', step: 'inbox' })).rejects.toThrow(
-      /Inbox is empty/,
-    )
-    await expect(rcall('complete_review_step', { kind: 'weekly', step: 'nope' })).rejects.toThrow(
-      /No step/,
-    )
-    // A When alone does not process it: it needs a list too.
-    await rcall('update_task', { id: task.id, when: 'anytime' })
-    const still = await rcall('get_review', { kind: 'weekly' })
-    expect(still.reviews[0].running.currentStep).toBe('inbox')
-    await rcall('complete_task', { id: task.id })
-    const r = await rcall('get_review', { kind: 'weekly' })
-    expect(r.reviews[0].running.currentStep).toBe('weekLookBack')
-    await rcall('complete_review_step', { kind: 'weekly', step: 'weekLookBack' })
-    const due = await rcall('complete_review_step', { kind: 'weekly', step: 'dueSoon' })
-    // No projects or areas yet: that step is done by an empty list.
-    expect(due.currentStep).toBe('somedayScan')
+      rcall('update_project', { id: project.id, reviewEvery: { n: 0, unit: 'week' } }),
+    ).rejects.toThrow()
   })
 
   it('deletes a project with its headings and tasks, and an area with everything in it', async () => {
@@ -329,132 +343,5 @@ describe('mcp reviews', () => {
     await expect(call('get_task', { id: inArea.id })).rejects.toThrow()
     const o = await call('overview')
     expect(o.areas.map((a: { id: string }) => a.id)).not.toContain(area.id)
-  })
-
-  it('shows projects with signals and ticks them off one by one', async () => {
-    const area = await rcall('create_area', { title: 'Thuis' })
-    const project = await rcall('create_project', { title: 'Zolder opruimen', area: area.id })
-    expect(project).toMatchObject({ reviewedAt: null, signals: ['noNextAction'] })
-    const r = await rcall('get_review', { kind: 'weekly' })
-    const items = r.reviews[0].running.items
-    expect(items.kind).toBe('areaProjects')
-    expect(items.groups).toHaveLength(1)
-    expect(items.groups[0].area).toMatchObject({ id: area.id, reviewed: false })
-    expect(items.groups[0].projects).toEqual([
-      expect.objectContaining({ id: project.id, reviewed: false, signals: ['noNextAction'] }),
-    ])
-    await expect(rcall('mark_reviewed', {})).rejects.toThrow(/exactly one/)
-    await expect(rcall('mark_reviewed', { project: project.id, area: area.id })).rejects.toThrow(
-      /exactly one/,
-    )
-    const marked = await rcall('mark_reviewed', { project: 'zolder opruimen' })
-    expect(marked.reviewed.project).toBe(project.id)
-    const after = await rcall('get_review', { kind: 'weekly' })
-    expect(after.reviews[0].running.currentStep).toBe('areasAndProjects')
-    expect(after.reviews[0].running.items.groups[0].projects[0]).toMatchObject({
-      id: project.id,
-      reviewed: true,
-    })
-    const o = await rcall('overview')
-    expect(o.areas[0]).toMatchObject({ id: area.id, reviewedAt: null })
-    expect(o.areas[0].projects[0].reviewedAt).toBe(marked.reviewedAt)
-  })
-
-  it('refuses to complete with open steps, then completes', async () => {
-    await expect(rcall('complete_review', { kind: 'weekly' })).rejects.toThrow(/Steps still open/)
-    await rcall('mark_reviewed', { area: 'Thuis' })
-    for (const step of ['somedayScan', 'triggers']) {
-      await rcall('complete_review_step', { kind: 'weekly', step })
-    }
-    const r = await rcall('get_review', { kind: 'weekly' })
-    expect(r.reviews[0].running.currentStep).toBeNull()
-    const done = await rcall('complete_review', { kind: 'weekly' })
-    expect(done.skippedSteps).toEqual([])
-    expect(done.nextDue).toBe(addDays(dateOf(done.completedAt), 7))
-    const after = await rcall('get_review')
-    expect(after.due).not.toContain('weekly')
-    expect(after.reviews[1]).toMatchObject({ kind: 'weekly', running: null })
-  })
-
-  it('ticks Someday groups in the monthly review', async () => {
-    await rcall('create_task', { title: 'Italiaans leren', when: 'someday', area: 'Thuis' })
-    await rcall('start_review', { kind: 'monthly' })
-    await expect(
-      rcall('complete_review_step', { kind: 'monthly', step: 'somedayDeep', group: 'elders' }),
-    ).rejects.toThrow(/No Someday group/)
-    const r = await rcall('get_review', { kind: 'monthly', step: 'somedayDeep' })
-    const group = r.reviews[0].running.items.groups[0]
-    expect(group).toMatchObject({ area: 'Thuis', done: false })
-    const ticked = await rcall('complete_review_step', {
-      kind: 'monthly',
-      step: 'somedayDeep',
-      group: group.group,
-    })
-    expect(ticked.ticked).toBe(`somedayDeep:${group.group}`)
-    const forced = await rcall('complete_review', { kind: 'monthly', force: true })
-    expect(forced.skippedSteps).toEqual(['monthLookBack', 'areasDeep'])
-  })
-
-  it('resumes a review started on another device', async () => {
-    const app = new DingenClient(store, { today: () => TODAY })
-    await app.refresh()
-    const review = newReview({ kind: 'daily' })
-    app.create('review', review)
-    await app.flush()
-    const resumed = await rcall('start_review', { kind: 'daily' })
-    expect(resumed).toMatchObject({ resumed: true, id: review.id, currentStep: 'dayOverview' })
-    expect(resumed.items).toMatchObject({ kind: 'day', newInbox: [] })
-  })
-})
-
-describe('mcp reviews for a new account', () => {
-  class AnchoredTransport extends MemoryTransport {
-    async accountCreatedAt() {
-      return `${TODAY}T10:00:00.000Z`
-    }
-  }
-  let today = TODAY
-  const claude = new Client({ name: 'test-anchor', version: '0' })
-
-  async function rcall(name: string, args: Record<string, unknown> = {}) {
-    const res = await claude.callTool({ name, arguments: args })
-    const text = (res.content as { type: string; text: string }[])[0]?.text ?? ''
-    if (res.isError) throw new Error(text)
-    return JSON.parse(text)
-  }
-
-  beforeAll(async () => {
-    const client = new DingenClient(new AnchoredTransport(), {
-      today: () => today,
-      timezone: 'UTC',
-    })
-    const server = createMcpServer(client)
-    const [a, b] = InMemoryTransport.createLinkedPair()
-    await server.connect(a)
-    await claude.connect(b)
-  })
-
-  it('has no weekly or monthly review due on the day the account was created', async () => {
-    const r = await rcall('get_review')
-    expect(r.due).toEqual(['daily'])
-    expect(r.reviews.map((x: { nextDue: string }) => x.nextDue)).toEqual([
-      TODAY,
-      addDays(TODAY, 7),
-      '2026-12-09',
-    ])
-  })
-
-  it('makes the weekly review due a week later, the monthly a month later', async () => {
-    today = addDays(TODAY, 7)
-    expect((await rcall('get_review')).due).toEqual(['daily', 'weekly'])
-    today = '2026-12-09'
-    expect((await rcall('get_review')).due).toEqual(['daily', 'weekly', 'monthly'])
-  })
-
-  it('still lets a review start before it is due', async () => {
-    today = TODAY
-    const started = await rcall('start_review', { kind: 'monthly' })
-    expect(started.resumed).toBe(false)
-    expect((await rcall('get_review')).due).toEqual(['daily', 'monthly'])
   })
 })

@@ -307,13 +307,11 @@ changed or deleted, by whom and when, newest first. It filters on `kinds`,
 returns `{ items, nextBefore }`; changes to the same item by the same member
 within five minutes are one line, and notes only say that they changed.
 
-For the daily, weekly and monthly review there are `get_review` (what is due,
-the steps and the items of the current step with their signals),
-`start_review`, `mark_reviewed` (a project or area), `complete_review_step`
-and `complete_review`. They share their progress with the app, so a review can
-be started in one and finished in the other. Project and area output includes
-`reviewedAt` and the signals (no next action, deadline soon, long quiet, not
-reviewed lately).
+Every project and area has a review frequency (`reviewEvery`: every N days,
+weeks, months or years; every week when not set). `review_queue` lists the
+projects and areas that are due, the same list as the app's Review page, and
+`mark_reviewed` marks one reviewed, so it comes back one frequency later.
+`update_project` and the area tools set the frequency.
 
 Agent tokens only work for the API and MCP; the `/mcp` endpoint never accepts a
 browser session.

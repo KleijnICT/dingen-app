@@ -2,21 +2,23 @@
 
 ## Unreleased
 
-- The daily review starts with "Your day": Today as on the Today page (events,
-  tasks and projects by daypart), what else is overdue, deadlines today and
-  tomorrow, what came into the Inbox since the previous daily review and what
-  is assigned to you. Read only.
+- A new, simpler review. Every project and area has a review frequency
+  (every N days, weeks, months or years; every week unless you change it, in
+  the `…` menu of the project or area). Once that time has passed since its
+  last review, it shows on the Review page: a list of what is due, grouped by
+  date, with the selected project or area beside it, fully editable. "Mark
+  reviewed" moves on to the next one. Someday projects come along too.
+  The daily, weekly and monthly reviews with their steps are gone, and so are
+  the review signals and the review notice in Today. No database migration.
+- MCP: `review_queue` lists what is due for review and `mark_reviewed` marks
+  a project or area reviewed; `update_project` and the area tools take a
+  review frequency. The step tools (`start_review`, `get_review`,
+  `complete_review_step`, `complete_review`) are gone.
 - Today shows a banner when tasks came in by themselves, because the date
   they were planned for arrived: "3 new tasks in Today", with a dot on each.
   What you move to Today yourself does not count. OK hides it on every device.
   Database migration: a column on `users`.
-- The Inbox step of a review shows one task at a time. When, Where and
-  Delegate (assign to an agent, or tag it `waiting` for someone else) are
-  buttons that open a small popover, like in the task panel; below them are
-  Done (2 minutes), Delete, Open and Skip. Once it has a When and a list, the
-  next one shows. "Show as list" goes back to the list.
-- A new project's title asks for the desired outcome, and each project card
-  in the weekly review asks whether that outcome is still right.
+- A new project's title asks for the desired outcome.
 
 ## 1.0.0-alpha.7
 

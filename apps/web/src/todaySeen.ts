@@ -4,7 +4,7 @@ import { api, type User } from './api.js'
 import type { SyncEngine } from './store/engine.js'
 
 /**
- * Today's "new tasks" banner (like Things): tasks that came into Today by themselves, because
+ * Today's "new tasks" banner: tasks that came into Today by themselves, because
  * the date they were planned for arrived. OK marks them seen for that day; the day lives on
  * the account, so every device knows.
  */

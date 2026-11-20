@@ -219,6 +219,16 @@ describe('sync API', () => {
     expect(byType('review').data).toMatchObject({ kind: 'weekly', doneSteps: ['mindSweep'] })
     expect(byType('project').data.reviewedAt).toBe(reviewedAt)
 
+    // The review frequency of plan 29 syncs as an ordinary field.
+    const every = { n: 2, unit: 'month' }
+    const set = await push([change('project', projectId, { reviewEvery: every })])
+    expect(set.body.applied).toBe(1)
+    expect(
+      (await get('/api/sync/snapshot')).body.entities.find(
+        (e: { entityType: string }) => e.entityType === 'project',
+      ).data.reviewEvery,
+    ).toEqual(every)
+
     const bad = await push([change('review', ulid(), { ...review, kind: 'quarterly' })])
     expect(bad.status).toBe(400)
     expect(bad.body.error).toBe('invalid_changes')

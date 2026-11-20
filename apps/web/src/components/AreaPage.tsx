@@ -1,6 +1,6 @@
 import { type Area, newProject, orderBetween, type Task, views } from '@dingen/core'
 import { FolderPlus } from 'lucide-react'
-import { useState } from 'react'
+import { type ReactNode, useState } from 'react'
 import { useT } from '../i18n/index.js'
 import { navigate, projectPath } from '../router.js'
 import { completedSection } from '../sections.js'
@@ -13,6 +13,7 @@ import { MemberAvatars, MembersPanel, useAccess } from './MembersPanel.js'
 import { MoreMenu } from './Menu.js'
 import { ActiveFilters, FilterButton, type PageFilters, PageHeader } from './PageHeader.js'
 import { ProjectRow } from './ProjectRow.js'
+import { ReviewEveryField } from './ReviewEveryField.js'
 import { TaskGroup } from './TaskGroup.js'
 import type { RowProps } from './TaskRow.js'
 import { TaskToolbar, ToolbarButton } from './Toolbar.js'
@@ -21,9 +22,11 @@ import { useOnSignal, useTaskList } from './useTaskList.js'
 interface Props {
   area: Area
   focusSignal: number
+  /** More on the title row, before the filter: the Review's "Mark reviewed". */
+  headerExtra?: ReactNode
 }
 
-export function AreaPage({ area, focusSignal }: Props) {
+export function AreaPage({ area, focusSignal, headerExtra }: Props) {
   const engine = useEngine()
   const t = useT()
   const ws = useWorkspace()
@@ -85,12 +88,18 @@ export function AreaPage({ area, focusSignal }: Props) {
         }
         actions={
           <>
+            {headerExtra}
             <FilterButton {...filters} />
             <MoreMenu
               alignEnd
               label={t('menu.areaActions')}
               items={[
                 { label: t('nav.newProject'), onSelect: addProject },
+                {
+                  label: t('review.every.menu'),
+                  onSelect: () => {},
+                  panel: () => <ReviewEveryField kind="area" item={area} />,
+                },
                 {
                   label: t('members.title'),
                   onSelect: () => {},
