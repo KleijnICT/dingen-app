@@ -46,6 +46,7 @@ export function ingressGate(auth: AuthService, trusted: readonly string[]) {
       name: c.req.header('x-remote-user-name')?.trim() || undefined,
       displayName: c.req.header('x-remote-user-display-name')?.trim() || undefined,
     })
+    if (user.blocked) return c.json({ error: 'account_blocked' }, 403)
     c.set('ingressUser', user)
     const ingressPath = c.req.header('x-ingress-path')
     if (ingressPath && INGRESS_PATH.test(ingressPath)) c.set('ingressPath', ingressPath)

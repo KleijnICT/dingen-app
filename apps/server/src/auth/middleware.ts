@@ -24,7 +24,8 @@ export const authenticate = createMiddleware<AppEnv>(async (c, next) => {
   } else if (header?.startsWith('Bearer ')) {
     const resolved = c.get('agents').resolveToken(header.slice('Bearer '.length).trim())
     const user = resolved ? auth.findById(resolved.userId) : null
-    if (resolved && user) {
+    // A blocked account's API and agent tokens resolve to nobody (also on /mcp).
+    if (resolved && user && !user.blocked) {
       c.set('user', user)
       c.set('userId', user.id)
       c.set('authSource', 'token')

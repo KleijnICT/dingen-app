@@ -73,6 +73,12 @@ export const users = sqliteTable('users', {
   haUserId: text('ha_user_id').unique(),
   /** The day the user last saw Today's new tasks (OK on the banner); YYYY-MM-DD or null. */
   todaySeenOn: text('today_seen_on'),
+  /**
+   * When an administrator blocked the account (ISO), or null. A blocked
+   * account cannot sign in and its sessions, API tokens and agent tokens do
+   * not work; its data stays until the account is deleted.
+   */
+  blockedAt: text('blocked_at'),
 })
 
 export type SpaceKind = 'personal' | 'shared'

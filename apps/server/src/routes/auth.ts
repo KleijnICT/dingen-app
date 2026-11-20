@@ -53,7 +53,7 @@ function handleAuthError(c: Ctx, err: unknown) {
           ? 409
           : err.code === 'password_required'
             ? 400
-            : err.code.startsWith('invite_')
+            : err.code.startsWith('invite_') || err.code === 'account_blocked'
               ? 403
               : 401
     return c.json({ error: err.code }, status)
@@ -87,6 +87,7 @@ export function authRoutes(options: { demo?: boolean } = {}) {
     const account = demoAccount(c.req.param('email'))
     const user = account ? c.get('auth').findByEmail(account.email) : null
     if (!user) return c.json({ error: 'not_found' }, 404)
+    if (user.blocked) return c.json({ error: 'account_blocked' }, 403)
     startSession(c, user.id)
     return c.json({ user })
   })

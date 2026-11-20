@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto'
 import { ulid } from '@dingen/core'
-import { and, count, eq, gt } from 'drizzle-orm'
+import { and, count, eq, gt, isNull } from 'drizzle-orm'
 import { sha256 } from '../agents/service.js'
 import type { RegistrationMode } from '../config.js'
 import type { Db } from '../db.js'
@@ -21,6 +21,8 @@ export interface User {
   hasPassword: boolean
   /** The day the user last dismissed Today's "new tasks" banner; null = never. */
   todaySeenOn: string | null
+  /** Blocked by an administrator: cannot sign in, sessions and tokens do not work. */
+  blocked: boolean
 }
 
 /** The Home Assistant user behind an ingress request (Supervisor headers). */
@@ -47,6 +49,7 @@ function toUser(row: UserRow): User {
     homeAssistant: row.haUserId !== null,
     hasPassword: hasUsablePassword(row.passwordHash),
     todaySeenOn: row.todaySeenOn ?? null,
+    blocked: row.blockedAt !== null && row.blockedAt !== undefined,
   }
 }
 
@@ -72,6 +75,7 @@ export class AuthError extends Error {
       | 'too_many_attempts'
       | 'invite_required'
       | 'password_required'
+      | 'account_blocked'
       | InvitationProblem,
   ) {
     super(code)
@@ -79,8 +83,12 @@ export class AuthError extends Error {
 }
 
 export interface AuthOptions {
-  /** Wie een account mag maken naast de eerste gebruiker: niemand, iedereen of wie een uitnodiging heeft. */
-  registration: RegistrationMode
+  /**
+   * Wie een account mag maken naast de eerste gebruiker: niemand, iedereen of
+   * wie een uitnodiging heeft. A function is asked on every use (the mode is
+   * stored in the database and an administrator can change it).
+   */
+  registration: RegistrationMode | (() => RegistrationMode)
   sessionTtlMs?: number
 }
 
@@ -109,12 +117,13 @@ export class AuthService {
   }
 
   registrationMode(): RegistrationMode {
-    return this.options.registration
+    const mode = this.options.registration
+    return typeof mode === 'function' ? mode() : mode
   }
 
   /** Kan iemand zonder uitnodiging nu een account maken? */
   registrationOpen(): boolean {
-    return this.options.registration === 'open' || !this.hasUsers()
+    return this.registrationMode() === 'open' || !this.hasUsers()
   }
 
   /**
@@ -138,6 +147,7 @@ export class AuthService {
         homeAssistant: false,
         hasPassword: true,
         todaySeenOn: null,
+        blocked: false,
       }
       tx.insert(users)
         .values({ id: user.id, email, createdAt: now, isAdmin: first, passwordHash })
@@ -168,7 +178,7 @@ export class AuthService {
     const existing = db.select({ id: users.id }).from(users).where(eq(users.email, email)).get()
     if (existing) throw new AuthError('email_taken')
     if (n === 0) return { first: true, invitationId: null }
-    switch (this.options.registration) {
+    switch (this.registrationMode()) {
       case 'open':
         return { first: false, invitationId: null }
       case 'closed':
@@ -193,6 +203,8 @@ export class AuthService {
       throw new AuthError('invalid_credentials')
     }
     this.failedAttempts.delete(attemptKey)
+    // Only after the right password, so the answer does not tell who is blocked.
+    if (row.blockedAt) throw new AuthError('account_blocked')
     return toUser(row)
   }
 
@@ -223,6 +235,7 @@ export class AuthService {
         isAdmin: first,
         haUserId: identity.id,
         todaySeenOn: null,
+        blockedAt: null,
       }
       tx.insert(users).values(row).run()
       createPersonalSpace(tx, row.id, row.createdAt)
@@ -300,7 +313,9 @@ export class AuthService {
       .select({ user: users, sessionId: sessions.id })
       .from(sessions)
       .innerJoin(users, eq(users.id, sessions.userId))
-      .where(and(eq(sessions.id, sha256(token)), gt(sessions.expiresAt, now)))
+      .where(
+        and(eq(sessions.id, sha256(token)), gt(sessions.expiresAt, now), isNull(users.blockedAt)),
+      )
       .get()
     if (!row) return null
     this.db.update(sessions).set({ lastSeenAt: now }).where(eq(sessions.id, row.sessionId)).run()

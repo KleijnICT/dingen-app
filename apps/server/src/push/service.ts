@@ -1,8 +1,8 @@
 import { ulid } from '@dingen/core'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, isNull } from 'drizzle-orm'
 import webpush from 'web-push'
 import type { Db } from '../db.js'
-import { pushSubscriptions } from '../schema.js'
+import { pushSubscriptions, users } from '../schema.js'
 import { DEFAULT_PUSH_LOCALE, type PushLocale, parsePushLocale } from './messages.js'
 import type { VapidKeys } from './vapid.js'
 
@@ -103,10 +103,18 @@ export class PushService {
    * apparaat; verdwenen abonnementen gaan weg.
    */
   async send(userId: string, message: PushMessage): Promise<number> {
+    // Nothing goes to a blocked account; its subscriptions stay for when it is unblocked.
     const subs = this.db
-      .select()
+      .select({
+        id: pushSubscriptions.id,
+        endpoint: pushSubscriptions.endpoint,
+        p256dh: pushSubscriptions.p256dh,
+        auth: pushSubscriptions.auth,
+        language: pushSubscriptions.language,
+      })
       .from(pushSubscriptions)
-      .where(eq(pushSubscriptions.userId, userId))
+      .innerJoin(users, eq(users.id, pushSubscriptions.userId))
+      .where(and(eq(pushSubscriptions.userId, userId), isNull(users.blockedAt)))
       .all()
     let sent = 0
     await Promise.all(

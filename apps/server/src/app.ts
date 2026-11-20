@@ -3,6 +3,9 @@ import { APP_NAME, SYNC_PROTOCOL } from '@dingen/core'
 import { type Context, Hono, type Next } from 'hono'
 import { createMiddleware } from 'hono/factory'
 import { ActivityService } from './activity/service.js'
+import { BackupAdmin, type BackupHost } from './admin/backups.js'
+import { readRegistration, seedRegistration } from './admin/registration.js'
+import { UserAdmin } from './admin/users.js'
 import { AgentService } from './agents/service.js'
 import { InvitationService } from './auth/invitations.js'
 import { authenticate, requireAllScope, requireAuth } from './auth/middleware.js'
@@ -16,6 +19,7 @@ import { AssignmentNotifier } from './push/assigned.js'
 import { PushService, webPushSender } from './push/service.js'
 import { loadVapidKeys } from './push/vapid.js'
 import { activityRoutes } from './routes/activity.js'
+import { adminRoutes } from './routes/admin.js'
 import { agentRoutes } from './routes/agents.js'
 import { authRoutes } from './routes/auth.js'
 import { calendarRoutes } from './routes/calendars.js'
@@ -32,7 +36,11 @@ export interface AppDeps {
   /** Korte commit-hash van de build (DINGEN_COMMIT). */
   build?: string | null
   sqliteVersion: string
-  /** Wie een account mag maken naast de eerste gebruiker (DINGEN_REGISTRATION). */
+  /**
+   * Wie een account mag maken naast de eerste gebruiker: the starting value
+   * (DINGEN_REGISTRATION), stored in the database when none is stored yet.
+   * After that Administration decides (see admin/registration.ts).
+   */
   registration?: RegistrationMode
   /** Verkorte vorm voor tests: true is `open`. `registration` gaat voor. */
   registrationOpen?: boolean
@@ -49,6 +57,8 @@ export interface AppDeps {
    * `c.env.ingress`); default the Supervisor. Ignored on the normal port.
    */
   ingressTrusted?: readonly string[]
+  /** Back-ups in Administration; without, the back-up routes answer 404. */
+  backups?: BackupHost
 }
 
 /** Bouwt de Hono-app zonder HTTP-server of statische bestanden, zodat tests hem direct kunnen aanroepen. */
@@ -60,9 +70,8 @@ export function createApp(deps: AppDeps) {
   const sync = new SyncService(deps.db, {
     onAssigned: (list) => void assignments.notify(list).catch((err) => console.error(err)),
   })
-  const auth = new AuthService(deps.db, {
-    registration: deps.registration ?? (deps.registrationOpen ? 'open' : 'closed'),
-  })
+  seedRegistration(deps.db, deps.registration ?? (deps.registrationOpen ? 'open' : 'closed'))
+  const auth = new AuthService(deps.db, { registration: () => readRegistration(deps.db) })
 
   const agents = new AgentService(deps.db)
   // First, for every path (API and web app): only does something on the ingress listener.
@@ -124,6 +133,16 @@ export function createApp(deps: AppDeps) {
   app.use('/api/invitations', requireAllScope('manage'))
   app.use('/api/invitations/*', requireAllScope('manage'))
   app.route('/api/invitations', invitationRoutes(new InvitationService(deps.db)))
+
+  // --- beheer (plan 32): admin only, session only (see routes/admin.ts) ---
+  app.route(
+    '/api/admin',
+    adminRoutes({
+      db: deps.db,
+      users: new UserAdmin(deps.db),
+      ...(deps.backups ? { backups: new BackupAdmin(deps.backups) } : {}),
+    }),
+  )
 
   app.notFound((c) => {
     if (c.req.path.startsWith('/api/')) {
