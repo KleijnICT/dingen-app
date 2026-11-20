@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- A calmer, more consistent look (the first step of a redesign): one set of
+  design tokens for space, type, radius, shadow and motion, a finished dark
+  theme, quiet buttons with one primary per screen, one icon button, one
+  style for the active item, soft menu hovers and section headings without
+  capitals. The rules are in `DESIGN.md`.
 - Push notifications arrive in the language of the device: when you turn on
   reminders, the device sends its app language along, and again when you
   change the language. Reminders and "an agent assigned you a task" then come
