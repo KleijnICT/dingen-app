@@ -74,13 +74,13 @@ The image is built for `linux/amd64` and `linux/arm64`.
 
 ## Configuration
 
-| Variable              | Default            | Meaning                                                                                       |
-| --------------------- | ------------------ | --------------------------------------------------------------------------------------------- |
-| `PORT`                | `8080`             | Port the server listens on inside the container.                                              |
-| `DATA_DIR`            | `/data`            | Directory for the SQLite database (`dingen.db`).                                              |
-| `DINGEN_REGISTRATION` | `closed`           | Starting value for who may register: `closed`, `invite` or `open`.                            |
-| `DINGEN_TIMEZONE`     | `Europe/Amsterdam` | Time zone for "today" in the MCP, calendar appointments and reminders.                        |
-| `DINGEN_BACKUPS`      | on                 | `off` turns the nightly backups off (backups before an update stay).                          |
+| Variable              | Default            | Meaning                                                                                                              |
+| --------------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| `PORT`                | `8080`             | Port the server listens on inside the container.                                                                     |
+| `DATA_DIR`            | `/data`            | Directory for the SQLite database (`dingen.db`).                                                                     |
+| `DINGEN_REGISTRATION` | `closed`           | Starting value for who may register: `closed`, `invite` or `open`.                                                   |
+| `DINGEN_TIMEZONE`     | `Europe/Amsterdam` | Time zone for "today" in the MCP, calendar appointments and reminders.                                               |
+| `DINGEN_BACKUPS`      | on                 | `off` turns the nightly backups off (backups before an update stay).                                                 |
 | `DINGEN_PUBLIC_URL`   | (none)             | The address people open Dingen on, e.g. `https://dingen.example.com`; needed for "Forgot password?" (links in mail). |
 
 ### Mail (SMTP)
