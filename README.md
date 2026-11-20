@@ -81,7 +81,7 @@ The image is built for `linux/amd64` and `linux/arm64`.
 | `DINGEN_REGISTRATION` | `closed`           | Starting value for who may register: `closed`, `invite` or `open`.                            |
 | `DINGEN_TIMEZONE`     | `Europe/Amsterdam` | Time zone for "today" in the MCP, calendar appointments and reminders.                        |
 | `DINGEN_BACKUPS`      | on                 | `off` turns the nightly backups off (backups before an update stay).                          |
-| `DINGEN_PUBLIC_URL`   | (the request)      | The address people open Dingen on, e.g. `https://dingen.example.com`; used for links in mail. |
+| `DINGEN_PUBLIC_URL`   | (none)             | The address people open Dingen on, e.g. `https://dingen.example.com`; needed for "Forgot password?" (links in mail). |
 
 ### Mail (SMTP)
 
@@ -102,8 +102,9 @@ and the password is never logged.
 | `SMTP_PASSWORD` | (none)                      | Its password.                                                  |
 | `SMTP_FROM`     | (none: mail off)            | The sender, e.g. `Dingen <dingen@example.com>`.                |
 
-Set `DINGEN_PUBLIC_URL` as well, so links in mail point to your real address
-and not to whatever address a request came in on. In the Home Assistant app
+Set `DINGEN_PUBLIC_URL` as well: "Forgot password?" only appears when both
+mail and the public address are set, so a link in a mail always points to your
+real address and never to whatever address a request came in on. In the Home Assistant app
 the same settings are the options `smtp_host`, `smtp_port`, `smtp_secure`,
 `smtp_user`, `smtp_password`, `smtp_from` and `public_url`.
 

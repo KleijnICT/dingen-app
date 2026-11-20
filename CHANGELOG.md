@@ -6,8 +6,8 @@
   `SMTP_FROM` and `SMTP_SECURE`, and `DINGEN_PUBLIC_URL` (the address people
   open Dingen on, used for links in mail). Settings → Administration shows
   whether mail is set up and sends a test mail.
-- Password reset: with mail set up the sign-in screen offers "Forgot
-  password?": a link that works once, for an hour, mailed in English or
+- Password reset: with mail and `DINGEN_PUBLIC_URL` set up the sign-in
+  screen offers "Forgot password?": a link that works once, for an hour, mailed in English or
   Dutch, without telling whether an address has an account. An
   administrator can also make a one-time reset link (24 hours) for a user to
   pass on by hand. A reset signs the account out everywhere; agents' tokens

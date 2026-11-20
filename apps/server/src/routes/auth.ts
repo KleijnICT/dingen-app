@@ -126,8 +126,8 @@ export function authRoutes(options: AuthRouteOptions) {
       hasUsers: auth.hasUsers(),
       registrationOpen: auth.registrationOpen(),
       registration: auth.registrationMode(),
-      // "Forgot password?" only works with mail.
-      ...(mail.isConfigured() ? { passwordReset: true } : {}),
+      // "Forgot password?" needs mail and the public address for the link in it.
+      ...(mail.isConfigured() && publicUrl ? { passwordReset: true } : {}),
       ...(demo ? { demo: true } : {}),
     })
   })
@@ -215,12 +215,15 @@ export function authRoutes(options: AuthRouteOptions) {
   // "Forgot password?": the same answer whether or not the address has an account.
   app.post('/forgot', async (c) => {
     if (!mail.isConfigured()) return c.json({ error: 'mail_not_configured' }, 404)
+    // A link built from the request's own address could point anywhere behind a misconfigured
+    // proxy, so mailed links need DINGEN_PUBLIC_URL.
+    if (!publicUrl) return c.json({ error: 'public_url_not_set' }, 404)
     const parsed = Forgot.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return c.json({ error: 'invalid_body', issues: parsed.error.issues }, 400)
     const { result } = resets.request(parsed.data.email, {
       clientKey: clientKey(c),
       locale: mailLocale(parsed.data.language ?? c.req.header('accept-language')),
-      base: appBase(c, publicUrl),
+      base: publicUrl,
     })
     if (result === 'limited') return c.json({ error: 'too_many_attempts' }, 429)
     return c.json({ ok: true })

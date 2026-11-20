@@ -17,7 +17,7 @@ afterEach(() => {
 
 const SMTP = { SMTP_HOST: 'smtp.example.com', SMTP_FROM: 'dingen@example.com' }
 
-function setup(options: { mail?: boolean } = {}) {
+function setup(options: { mail?: boolean; publicUrl?: string | null } = {}) {
   const database = openDatabase(':memory:')
   open.push(database)
   const outbox: MailMessage[] = []
@@ -30,7 +30,7 @@ function setup(options: { mail?: boolean } = {}) {
     sqliteVersion: database.sqliteVersion,
     registration: 'open',
     mail,
-    publicUrl: 'https://dingen.example.com',
+    publicUrl: options.publicUrl === undefined ? 'https://dingen.example.com' : options.publicUrl,
   })
   async function call(
     method: string,
@@ -96,6 +96,23 @@ describe('totp', () => {
 })
 
 describe('password reset by mail', () => {
+  it('stays off without DINGEN_PUBLIC_URL, so a link never points at a forged host', async () => {
+    const { call, register, outbox } = setup({ publicUrl: null })
+    await register('anna@example.com')
+    const status = await call('GET', '/api/auth/status')
+    expect(status.body.passwordReset).toBeUndefined()
+    const forgot = await call(
+      'POST',
+      '/api/auth/forgot',
+      { email: 'anna@example.com' },
+      { host: 'evil.example.net' },
+    )
+    expect(forgot.status).toBe(404)
+    expect(forgot.body.error).toBe('public_url_not_set')
+    await new Promise((r) => setTimeout(r, 10))
+    expect(outbox).toHaveLength(0)
+  })
+
   it('answers the same for an unknown address and mails only a known one', async () => {
     const { call, register, outbox, app } = setup()
     await register('anna@example.com')

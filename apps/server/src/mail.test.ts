@@ -142,6 +142,7 @@ describe('admin mail routes', () => {
             mail: new MailService(parseMail({ ...SMTP, SMTP_PASSWORD: 'hunter2' }), async (m) => {
               outbox.push(m)
             }),
+            publicUrl: 'https://dingen.example.com',
           }
         : {}),
     })

@@ -128,7 +128,7 @@ export class ServerRuntime {
         )
         if (!config.publicUrl) {
           this.log.warn(
-            'DINGEN_PUBLIC_URL is not set: links in mail use the address of the request. Set it to the address people open Dingen on.',
+            'DINGEN_PUBLIC_URL is not set: "Forgot password?" stays off until it is. Set it to the address people open Dingen on.',
           )
         }
       } else {
