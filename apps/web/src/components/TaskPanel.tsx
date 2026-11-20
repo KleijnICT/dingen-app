@@ -413,7 +413,7 @@ function TaskEditor({ task, mode, onClose, onToggle, onOpen }: EditorProps) {
       <div className="editor-head">
         <button
           type="button"
-          className="check editor-check"
+          className={`check editor-check ${!done && task.when.kind === 'someday' ? 'someday' : ''}`}
           aria-label={done ? t('task.markOpen') : t('task.markDone')}
           aria-pressed={done}
           onClick={onToggle}
@@ -771,7 +771,11 @@ export function ListButton({
       : (emptyLabel ?? t('task.noContainer'))
   const headingName = project && heading ? heading.title || t('project.newHeading') : null
   const icon = project ? (
-    <ProgressCircle value={views.progress(project.id, ws.tasks)} size={14} />
+    <ProgressCircle
+      value={views.progress(project.id, ws.tasks)}
+      someday={views.isSomeday(project)}
+      size={14}
+    />
   ) : area ? (
     <AreaGlyph icon={area.icon} color={area.color} size={14} />
   ) : (

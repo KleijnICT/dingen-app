@@ -1,6 +1,6 @@
-import { newHeading, newProject, newTask } from '@dingen/core'
+import { newHeading, newProject, newTask, views } from '@dingen/core'
 import { describe, expect, it } from 'vitest'
-import { completedSection, projectSections } from './sections.js'
+import { completedSection, onSomeday, projectSections, splitSomeday } from './sections.js'
 
 const project = newProject({ title: 'Verhuizen' })
 const first = newHeading({ title: 'Inpakken', projectId: project.id, order: 'a' })
@@ -50,6 +50,60 @@ describe('projectSections', () => {
     expect(s.loose.map((t) => t.title)).toEqual(['Getagd', 'Wees'])
     expect(s.headings[0]?.tasks).toEqual([])
     expect(s.completed).toHaveLength(3)
+  })
+})
+
+describe('the Someday section', () => {
+  const someday = { kind: 'someday' } as const
+  const later = newTask({ title: 'Later', projectId: project.id, when: someday, order: 'c' })
+  const dream = newTask({
+    title: 'Droom',
+    projectId: project.id,
+    headingId: second.id,
+    when: someday,
+    order: 'b',
+  })
+
+  it('takes Someday tasks out of the loose tasks and the headings, in their own order', () => {
+    const s = projectSections([...all, later, dream], [...open, later, dream], [first, second])
+    expect(s.loose.map((t) => t.title)).toEqual(['Busje huren'])
+    expect(s.headings.map((h) => h.tasks.map((t) => t.title))).toEqual([
+      ['Dozen halen'],
+      ['Keuken'],
+    ])
+    expect(s.someday.map((t) => t.title)).toEqual(['Later', 'Droom'])
+    expect(s.completed).toHaveLength(3)
+  })
+
+  it('keeps a Someday task that was just ticked off in the section while it lingers', () => {
+    const ticked = { ...dream, status: 'completed' as const, completedAt: '2026-11-20T09:00:00Z' }
+    const s = projectSections([...all, ticked], [...open, ticked], [first, second])
+    expect(s.someday.map((t) => t.title)).toEqual(['Droom'])
+    expect(s.headings[1]?.tasks.map((t) => t.title)).toEqual(['Keuken'])
+  })
+
+  it('applies the tag filter to the Someday section too', () => {
+    const s = projectSections([...all, later], [...open, later], [first], (t) =>
+      t.tagIds.includes('x'),
+    )
+    expect(s.someday).toEqual([])
+  })
+
+  it('splits tasks and projects into regular and Someday, keeping the order', () => {
+    const plan = newProject({ title: 'Plan', order: 'a' })
+    const wish = newProject({ title: 'Wens', when: someday, order: 'b' })
+    const next = newProject({ title: 'Volgende', order: 'c' })
+    const split = splitSomeday([plan, wish, next])
+    expect(split.regular.map((p) => p.title)).toEqual(['Plan', 'Volgende'])
+    expect(split.someday.map((p) => p.title)).toEqual(['Wens'])
+    expect(splitSomeday([loose, later]).someday).toEqual([later])
+  })
+
+  it('agrees with views.isSomeday for open items', () => {
+    for (const item of [loose, later, dream, newProject({ title: 'p', when: someday })]) {
+      expect(onSomeday(item)).toBe(views.isSomeday(item))
+    }
+    expect(onSomeday({ ...later, deleted: true })).toBe(false)
   })
 })
 

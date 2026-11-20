@@ -499,6 +499,10 @@ button.link.danger {
   background: var(--accent);
   border-color: var(--accent);
 }
+/* On Someday: the same circle, drawn with a dashed line. */
+.check.someday {
+  border-style: dashed;
+}
 .task-main {
   flex: 1;
   display: flex;

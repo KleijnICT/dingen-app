@@ -24,6 +24,7 @@ export function ProjectRow({ project, showArea = true }: Props) {
         <ProgressCircle
           value={views.progress(project.id, ws.tasks)}
           done={done}
+          someday={views.isSomeday(project)}
           className="row-progress"
         />
         <span className="task-text">

@@ -88,7 +88,7 @@ export function TaskRow({
     >
       <button
         type="button"
-        className="check"
+        className={`check ${!done && task.when.kind === 'someday' ? 'someday' : ''}`}
         aria-label={done ? t('task.markOpen') : t('task.markDone')}
         aria-pressed={done}
         onClick={onToggle}

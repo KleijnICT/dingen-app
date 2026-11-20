@@ -158,10 +158,22 @@ interface ProgressProps {
   size?: number
   className?: string
   done?: boolean
+  /** On Someday: the ring is dashed (a done project keeps its solid ring). */
+  someday?: boolean
 }
 
+/** The outer ring split into 16 dashes, so the pattern closes evenly. */
+const RING = 2 * Math.PI * 10
+const SOMEDAY_DASH = `${(RING / 16) * 0.55} ${(RING / 16) * 0.45}`
+
 /** A pie that fills as tasks complete; a full circle when the project is done. */
-export function ProgressCircle({ value, size = 18, className, done = false }: ProgressProps) {
+export function ProgressCircle({
+  value,
+  size = 18,
+  className,
+  done = false,
+  someday = false,
+}: ProgressProps) {
   const r = 6
   const c = 2 * Math.PI * r
   const filled = done ? 1 : Math.max(0, Math.min(1, value))
@@ -174,7 +186,15 @@ export function ProgressCircle({ value, size = 18, className, done = false }: Pr
       aria-hidden="true"
       style={{ transform: 'rotate(-90deg)' }}
     >
-      <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <circle
+        cx="12"
+        cy="12"
+        r="10"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeDasharray={someday && !done ? SOMEDAY_DASH : undefined}
+      />
       <circle
         cx="12"
         cy="12"

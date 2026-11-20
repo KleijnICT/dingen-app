@@ -51,7 +51,7 @@ export function ProjectPage({ project, focusSignal, headerExtra }: Props) {
   const present = new Set(open.flatMap((task) => task.tagIds))
   const filters: PageFilters = { present, tag: tagFilter, onTag: setTagFilter }
   const headings = views.headingsOf(ws.headings, project.id)
-  // Open tasks per heading; completed ones in their own section at the bottom.
+  // Open tasks per heading, Someday ones below them; completed ones in their own section at the bottom.
   const sections = projectSections(all, shownOpen, headings, (task) =>
     tagFilter ? task.tagIds.includes(tagFilter) : true,
   )
@@ -208,7 +208,12 @@ export function ProjectPage({ project, focusSignal, headerExtra }: Props) {
               title={`${Math.round(progress * 100)}%`}
               onClick={() => toggleProject(engine, project)}
             >
-              <ProgressCircle value={progress} done={done} size={26} />
+              <ProgressCircle
+                value={progress}
+                done={done}
+                someday={views.isSomeday(project)}
+                size={26}
+              />
             </button>
             <InlineInput
               className="title-input"
@@ -267,6 +272,19 @@ export function ProjectPage({ project, focusSignal, headerExtra }: Props) {
           )}
         </div>
       ))}
+      {sections.someday.length > 0 && (
+        <div className="group someday-group">
+          <TaskGroup
+            group={{
+              key: `project:${project.id}:someday`,
+              target: { kind: 'when', when: { kind: 'someday' } },
+            }}
+            tasks={sections.someday}
+            rowProps={rowProps}
+            header={<h2 className="group-title">{t('list.someday')}</h2>}
+          />
+        </div>
+      )}
       <CompletedSection
         sectionKey={`project:${project.id}`}
         tasks={sections.completed}

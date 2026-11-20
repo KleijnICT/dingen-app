@@ -79,7 +79,11 @@ export function Sidebar({ path, status, onOpenSettings }: Props) {
       drop={{ type: 'project', project: p }}
       drag={{ type: 'project', project: p }}
     >
-      <ProgressCircle value={views.progress(p.id, ws.tasks)} className="nav-icon" />
+      <ProgressCircle
+        value={views.progress(p.id, ws.tasks)}
+        someday={views.isSomeday(p)}
+        className="nav-icon"
+      />
       <span className="nav-title">{p.title || <em>{t('project.untitled')}</em>}</span>
     </NavLink>
   )

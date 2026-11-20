@@ -3,7 +3,7 @@ import { FolderPlus } from 'lucide-react'
 import { type ReactNode, useState } from 'react'
 import { useT } from '../i18n/index.js'
 import { navigate, projectPath } from '../router.js'
-import { completedSection } from '../sections.js'
+import { completedSection, splitSomeday } from '../sections.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { createListTask, deleteArea, useLinger } from '../taskActions.js'
 import { AreaAppearance } from './AreaAppearance.js'
@@ -43,6 +43,9 @@ export function AreaPage({ area, focusSignal, headerExtra, showProjects = true }
   const filters: PageFilters = { present, tag: tagFilter, onTag: setTagFilter }
   const filtered = tagFilter ? shown.filter((task) => task.tagIds.includes(tagFilter)) : shown
   const projects = showProjects ? views.projectsOf(ws.projects, area.id) : []
+  // Someday tasks and projects leave their usual place for a section at the bottom.
+  const tasks = splitSomeday(filtered)
+  const projectGroups = splitSomeday(projects)
 
   const taskList = useTaskList([...shown, ...completed], toggle)
 
@@ -123,17 +126,37 @@ export function AreaPage({ area, focusSignal, headerExtra, showProjects = true }
       {all.length === 0 && projects.length === 0 && <p className="empty">{t('area.empty')}</p>}
       <TaskGroup
         group={{ key: `area:${area.id}`, target: { kind: 'area', areaId: area.id } }}
-        tasks={filtered}
+        tasks={tasks.regular}
         rowProps={rowProps}
       />
-      {projects.length > 0 && (
+      {projectGroups.regular.length > 0 && (
         <div className="group">
           <h2 className="group-title">{t('list.projects')}</h2>
           <ul className="tasks">
-            {projects.map((p) => (
+            {projectGroups.regular.map((p) => (
               <ProjectRow key={p.id} project={p} showArea={false} />
             ))}
           </ul>
+        </div>
+      )}
+      {(tasks.someday.length > 0 || projectGroups.someday.length > 0) && (
+        <div className="group someday-group">
+          <TaskGroup
+            group={{
+              key: `area:${area.id}:someday`,
+              target: { kind: 'when', when: { kind: 'someday' } },
+            }}
+            tasks={tasks.someday}
+            rowProps={rowProps}
+            header={<h2 className="group-title">{t('list.someday')}</h2>}
+          />
+          {projectGroups.someday.length > 0 && (
+            <ul className="tasks">
+              {projectGroups.someday.map((p) => (
+                <ProjectRow key={p.id} project={p} showArea={false} />
+              ))}
+            </ul>
+          )}
         </div>
       )}
       <CompletedSection sectionKey={`area:${area.id}`} tasks={completed} rowProps={rowProps} />

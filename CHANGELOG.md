@@ -26,6 +26,9 @@
   their order; the drag shows how many. Moving a selection keeps its order.
 - Anytime no longer shows what is in Today: a task is in one of the two.
   The project and area pages still show all their tasks.
+- On a project's and an area's page, Someday tasks (and an area's Someday
+  projects) sit together at the bottom under "Someday", before Completed.
+  The circle in front of a Someday task or project is drawn dashed.
 
 ## 1.0.0-alpha.7
 

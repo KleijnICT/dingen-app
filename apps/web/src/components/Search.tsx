@@ -110,7 +110,13 @@ function HitIcon({ hit, ws }: { hit: SearchHit; ws: Workspace }) {
   if (hit.kind === 'area')
     return <AreaGlyph icon={hit.item.icon} color={hit.item.color} size={16} />
   if (hit.kind === 'project') {
-    return <ProgressCircle value={views.progress(hit.item.id, ws.tasks)} size={16} />
+    return (
+      <ProgressCircle
+        value={views.progress(hit.item.id, ws.tasks)}
+        someday={views.isSomeday(hit.item)}
+        size={16}
+      />
+    )
   }
   return <span className="search-check" aria-hidden="true" />
 }

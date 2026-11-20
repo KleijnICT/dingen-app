@@ -163,6 +163,7 @@ function ReviewQueue({ queue, selectedId, onSelect }: QueueProps) {
                   ) : (
                     <ProgressCircle
                       value={views.progress(item.id, ws.tasks)}
+                      someday={views.isSomeday(entry.item)}
                       className="nav-icon"
                     />
                   )}
