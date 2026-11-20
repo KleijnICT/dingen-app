@@ -7,6 +7,7 @@ import { applyLogLevel, loadConfig } from './config.js'
 import { migrationsFolder, type OpenedDatabase } from './db.js'
 import { resetToDemo } from './demo/seed.js'
 import { DataDirLock } from './lock.js'
+import { MailService } from './mail/service.js'
 import { ChangeLogPruner } from './prune.js'
 import { ReminderPlanner } from './push/planner.js'
 import { prepareDatabase, StartupError } from './startup.js'
@@ -62,9 +63,26 @@ if (config.demo) {
   console.warn('Demo mode: passwordless sign-in is on. Data resets on every restart.')
 }
 
+// Mail settings come from the environment only; the password is never logged.
+const mail = new MailService(config.mail)
+if (config.mail) {
+  console.log(
+    `Mail: SMTP ${config.mail.host}:${config.mail.port}${config.mail.secure ? ' (TLS)' : ''}, from ${config.mail.from}`,
+  )
+  if (!config.publicUrl) {
+    console.warn(
+      'DINGEN_PUBLIC_URL is not set: links in mail use the address of the request. Set it to the address people open Dingen on.',
+    )
+  }
+} else {
+  console.log('Mail is off (no SMTP_HOST and SMTP_FROM); "Forgot password?" is hidden.')
+}
+
 const push = defaultPush(db)
 const app = createApp({
   push,
+  mail,
+  publicUrl: config.publicUrl,
   db,
   version: config.version,
   build: config.build,

@@ -58,6 +58,26 @@ export interface Config {
    * (or `0`, `false`, `no`). Back-ups before an update are always made.
    */
   backups: boolean
+  /** Outgoing mail (SMTP_*), or null when SMTP_HOST or SMTP_FROM is missing. */
+  mail: MailConfig | null
+  /**
+   * DINGEN_PUBLIC_URL: the address people open Dingen on (e.g.
+   * `https://dingen.example.com`), used for links in mail. Null: the request's own address.
+   */
+  publicUrl: string | null
+}
+
+/** SMTP settings for outgoing mail (password resets, the test mail). */
+export interface MailConfig {
+  host: string
+  port: number
+  /** TLS from the start (port 465). Off: STARTTLS when the server offers it. */
+  secure: boolean
+  user: string | null
+  /** Never logged and never sent to a client. */
+  password: string | null
+  /** The sender, e.g. `Dingen <dingen@example.com>`. */
+  from: string
 }
 
 export interface LoadConfigOptions {
@@ -99,6 +119,63 @@ export function loadConfig(
       typeof haOptions?.log_level === 'string' ? haOptions.log_level : env.LOG_LEVEL,
     ),
     backups: !['off', '0', 'false', 'no'].includes((env.DINGEN_BACKUPS ?? '').trim().toLowerCase()),
+    mail: parseMail(env, haOptions),
+    publicUrl: parsePublicUrl(
+      typeof haOptions?.public_url === 'string' ? haOptions.public_url : env.DINGEN_PUBLIC_URL,
+    ),
+  }
+}
+
+/**
+ * The SMTP settings from SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD,
+ * SMTP_FROM and SMTP_SECURE; in Home Assistant the app's options `smtp_host`,
+ * `smtp_port`, … go first. Mail is configured when there is a host and a
+ * sender. The port defaults to 465 with SMTP_SECURE, else 587; SMTP_SECURE
+ * defaults to on for port 465.
+ */
+export function parseMail(
+  env: NodeJS.ProcessEnv,
+  haOptions: Record<string, unknown> | null = null,
+): MailConfig | null {
+  const pick = (option: string, variable: string): string => {
+    const value = haOptions?.[option]
+    if (typeof value === 'string' && value.trim() !== '') return value.trim()
+    if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+    return (env[variable] ?? '').trim()
+  }
+  const host = pick('smtp_host', 'SMTP_HOST')
+  const from = pick('smtp_from', 'SMTP_FROM')
+  if (!host || !from) return null
+  const portText = pick('smtp_port', 'SMTP_PORT')
+  const secureText = pick('smtp_secure', 'SMTP_SECURE')
+  const parsedPort = Number(portText)
+  const validPort = Number.isInteger(parsedPort) && parsedPort > 0 && parsedPort < 65536
+  const secure = secureText ? parseFlag(secureText) : validPort && parsedPort === 465
+  const user = pick('smtp_user', 'SMTP_USER')
+  // A password keeps its spaces: only an empty one counts as none.
+  const rawPassword = haOptions?.smtp_password
+  const password =
+    typeof rawPassword === 'string' && rawPassword !== '' ? rawPassword : env.SMTP_PASSWORD || ''
+  return {
+    host,
+    port: validPort ? parsedPort : secure ? 465 : 587,
+    secure,
+    user: user || null,
+    password: password || null,
+    from,
+  }
+}
+
+/** An http(s) origin plus optional path, without a trailing slash; anything else is null. */
+export function parsePublicUrl(value: string | undefined): string | null {
+  const text = (value ?? '').trim()
+  if (!text) return null
+  try {
+    const url = new URL(text)
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null
+    return `${url.origin}${url.pathname}`.replace(/\/+$/, '')
+  } catch {
+    return null
   }
 }
 

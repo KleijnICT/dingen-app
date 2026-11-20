@@ -21,6 +21,8 @@ export interface User {
   hasPassword: boolean
   /** The day the user last dismissed Today's "new tasks" banner; null = never. */
   todaySeenOn: string | null
+  /** Two-step verification (TOTP) is on for this account. */
+  twoStep: boolean
 }
 
 /** The Home Assistant user behind an ingress request (Supervisor headers). */
@@ -47,6 +49,7 @@ function toUser(row: UserRow): User {
     homeAssistant: row.haUserId !== null,
     hasPassword: hasUsablePassword(row.passwordHash),
     todaySeenOn: row.todaySeenOn ?? null,
+    twoStep: row.totpEnabledAt !== null,
   }
 }
 
@@ -72,6 +75,9 @@ export class AuthError extends Error {
       | 'too_many_attempts'
       | 'invite_required'
       | 'password_required'
+      | 'invalid_code'
+      | 'totp_already_enabled'
+      | 'totp_not_started'
       | InvitationProblem,
   ) {
     super(code)
@@ -138,6 +144,7 @@ export class AuthService {
         homeAssistant: false,
         hasPassword: true,
         todaySeenOn: null,
+        twoStep: false,
       }
       tx.insert(users)
         .values({ id: user.id, email, createdAt: now, isAdmin: first, passwordHash })
@@ -223,6 +230,10 @@ export class AuthService {
         isAdmin: first,
         haUserId: identity.id,
         todaySeenOn: null,
+        totpSecret: null,
+        totpPendingSecret: null,
+        totpEnabledAt: null,
+        totpLastStep: null,
       }
       tx.insert(users).values(row).run()
       createPersonalSpace(tx, row.id, row.createdAt)
@@ -258,6 +269,23 @@ export class AuthService {
     }
     const passwordHash = await hashPassword(newPassword)
     this.db.update(users).set({ passwordHash }).where(eq(users.id, userId)).run()
+  }
+
+  /**
+   * Is this the account's password? Wrong guesses count towards the same
+   * lock as changing the password. False for an account without a password.
+   */
+  async checkPassword(userId: string, password: string): Promise<boolean> {
+    const row = this.db.select().from(users).where(eq(users.id, userId)).get()
+    if (!row) return false
+    const attemptKey = `password|${userId}`
+    this.assertNotLocked(attemptKey)
+    if (!(await verifyPassword(password, row.passwordHash))) {
+      this.recordFailure(attemptKey)
+      return false
+    }
+    this.failedAttempts.delete(attemptKey)
+    return true
   }
 
   /** The account with this id, or null. */

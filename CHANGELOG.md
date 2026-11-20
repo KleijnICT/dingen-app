@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Mail, password resets and two-step verification. Set `SMTP_HOST`,
+  `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` and `SMTP_SECURE`
+  (and `DINGEN_PUBLIC_URL`) and the sign-in screen offers "Forgot password?":
+  a link that works once, for an hour, mailed in English or Dutch, without
+  telling whether an address has an account. An administrator can also make
+  a one-time reset link for a user. A reset signs the account out
+  everywhere; agents' tokens keep working. Two-step verification with an
+  authenticator app is optional for everyone (Settings → Account), with ten
+  recovery codes. The database gets a migration (reset links, recovery
+  codes and two-step settings); a backup is made before it runs.
 - A calmer, more consistent look (the first step of a redesign): one set of
   design tokens for space, type, radius, shadow and motion, a finished dark
   theme, quiet buttons with one primary per screen, one icon button, one

@@ -73,6 +73,17 @@ export const users = sqliteTable('users', {
   haUserId: text('ha_user_id').unique(),
   /** The day the user last saw Today's new tasks (OK on the banner); YYYY-MM-DD or null. */
   todaySeenOn: text('today_seen_on'),
+  /**
+   * Two-step verification (TOTP): the base32 secret once it is on. Never sent
+   * to a client after setup.
+   */
+  totpSecret: text('totp_secret'),
+  /** A secret being set up, until the first code confirms it. */
+  totpPendingSecret: text('totp_pending_secret'),
+  /** When two-step verification was turned on; null when it is off. */
+  totpEnabledAt: text('totp_enabled_at'),
+  /** The time step of the last accepted code, so a code cannot be used twice. */
+  totpLastStep: integer('totp_last_step'),
 })
 
 export type SpaceKind = 'personal' | 'shared'
@@ -266,4 +277,39 @@ export const invitations = sqliteTable(
     revokedAt: text('revoked_at'),
   },
   (t) => [index('invitations_created_by_idx').on(t.createdBy)],
+)
+
+/**
+ * One-time links to choose a new password: by mail (`createdBy` null, one
+ * hour) or made by an administrator (24 hours). Only the sha256 of the secret
+ * is stored.
+ */
+export const passwordResets = sqliteTable(
+  'password_resets',
+  {
+    id: text('id').primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    tokenHash: text('token_hash').notNull().unique(),
+    createdBy: text('created_by').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: text('created_at').notNull(),
+    expiresAt: text('expires_at').notNull(),
+    usedAt: text('used_at'),
+  },
+  (t) => [index('password_resets_user_idx').on(t.userId)],
+)
+
+/** Recovery codes for two-step verification: ten per user, each usable once; hashes only. */
+export const totpRecoveryCodes = sqliteTable(
+  'totp_recovery_codes',
+  {
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    codeHash: text('code_hash').notNull(),
+    createdAt: text('created_at').notNull(),
+    usedAt: text('used_at'),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.codeHash] })],
 )

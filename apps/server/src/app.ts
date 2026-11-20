@@ -6,16 +6,20 @@ import { ActivityService } from './activity/service.js'
 import { AgentService } from './agents/service.js'
 import { InvitationService } from './auth/invitations.js'
 import { authenticate, requireAllScope, requireAuth } from './auth/middleware.js'
+import { PasswordResetService } from './auth/reset.js'
 import { AuthService } from './auth/service.js'
+import { TwoStepService } from './auth/two-step.js'
 import { CalendarService, type FetchFeed } from './calendar/service.js'
 import type { RegistrationMode } from './config.js'
 import type { Db } from './db.js'
 import type { AppEnv } from './env.js'
 import { ingressGate, SUPERVISOR_ADDRESS } from './ingress.js'
+import { MailService } from './mail/service.js'
 import { AssignmentNotifier } from './push/assigned.js'
 import { PushService, webPushSender } from './push/service.js'
 import { loadVapidKeys } from './push/vapid.js'
 import { activityRoutes } from './routes/activity.js'
+import { adminSecurityRoutes } from './routes/admin-security.js'
 import { agentRoutes } from './routes/agents.js'
 import { authRoutes } from './routes/auth.js'
 import { calendarRoutes } from './routes/calendars.js'
@@ -49,6 +53,10 @@ export interface AppDeps {
    * `c.env.ingress`); default the Supervisor. Ignored on the normal port.
    */
   ingressTrusted?: readonly string[]
+  /** Outgoing mail (SMTP_*); without, mail is off and "Forgot password?" is hidden. */
+  mail?: MailService
+  /** DINGEN_PUBLIC_URL: the address links in mail point to. */
+  publicUrl?: string | null
 }
 
 /** Bouwt de Hono-app zonder HTTP-server of statische bestanden, zodat tests hem direct kunnen aanroepen. */
@@ -94,7 +102,13 @@ export function createApp(deps: AppDeps) {
     return c.json(body)
   })
 
-  app.route('/api/auth', authRoutes({ demo: deps.demo ?? false }))
+  // --- mail, password resets and two-step verification (plan 32) ---
+  const mail = deps.mail ?? new MailService(null)
+  const resets = new PasswordResetService(deps.db, mail)
+  const twoStep = new TwoStepService(deps.db)
+  const publicUrl = deps.publicUrl ?? null
+  app.route('/api/auth', authRoutes({ demo: deps.demo ?? false, mail, resets, twoStep, publicUrl }))
+  app.route('/api/admin', adminSecurityRoutes({ mail, resets, twoStep, publicUrl }))
   app.route('/api', agentRoutes())
   // Account-wide endpoints: the owner, or an agent with an `all` grant.
   app.use('/api/sync/*', requireAllScope('read'))

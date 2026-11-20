@@ -68,6 +68,18 @@ export const requireSession = createMiddleware<AppEnv>(async (c, next) => {
 })
 
 /**
+ * Administration: an administrator in a browser session. An agent token never
+ * passes, not even one of an administrator (403 `session_required`).
+ */
+export const requireAdmin = createMiddleware<AppEnv>(async (c, next) => {
+  const user = c.get('user')
+  if (!user) return c.json({ error: 'unauthorized' }, 401)
+  if (!user.isAdmin) return c.json({ error: 'forbidden' }, 403)
+  if (c.get('authSource') !== 'session') return c.json({ error: 'session_required' }, 403)
+  await next()
+})
+
+/**
  * Account-wide endpoints (sync, export, calendars, …): the owner, or an agent
  * with an `all` grant of at least `level`; others get 403 `agent_scope`.
  */
