@@ -571,4 +571,48 @@ export const nl: Messages = {
   'activity.retry': 'Opnieuw',
   'activity.loading': 'Laden…',
   'activity.end': 'Dat is alles.',
+  // --- password reset and two-step verification (plan 32) ---
+  'auth.forgot': 'Wachtwoord vergeten?',
+  'auth.forgot.intro':
+    'Vul je e-mailadres in. Hoort er een account bij, dan krijg je een link om een nieuw wachtwoord te kiezen.',
+  'auth.forgot.send': 'Stuur link',
+  'auth.forgot.sent':
+    'Als {email} bij een account hoort, is er een link onderweg. Die werkt één keer, een uur lang. Kijk ook in je spammap.',
+  'auth.backToSignIn': 'Terug naar inloggen',
+  'auth.twoStep.prompt': 'Vul de code van 6 cijfers uit je authenticator-app in.',
+  'auth.twoStep.code': 'Code',
+  'auth.twoStep.recoveryPrompt': 'Vul een van je herstelcodes in. Elke code werkt één keer.',
+  'auth.twoStep.recoveryCode': 'Herstelcode',
+  'auth.twoStep.useRecovery': 'Gebruik een herstelcode',
+  'auth.twoStep.useApp': 'Gebruik de code uit de app',
+  'auth.twoStep.verify': 'Controleren',
+  'auth.reset.prompt': 'Kies een nieuw wachtwoord.',
+  'auth.reset.done':
+    'Je wachtwoord is gewijzigd en je bent overal uitgelogd. Log in met je nieuwe wachtwoord.',
+  'auth.error.invalid_code': 'Die code klopt niet. Probeer de nieuwste uit de app.',
+  'auth.error.challenge_expired': 'Inloggen duurde te lang. Log opnieuw in.',
+  'auth.error.reset_invalid': 'Deze link is niet geldig. Vraag een nieuwe aan.',
+  'auth.error.reset_expired': 'Deze link is verlopen. Vraag een nieuwe aan.',
+  'auth.error.reset_used': 'Deze link is al gebruikt. Vraag een nieuwe aan als dat nodig is.',
+  'twoStep.title': 'Tweestapsverificatie',
+  'twoStep.intro':
+    'Vraag bij het inloggen naast je wachtwoord om een code uit een authenticator-app. Agents blijven werken met hun tokens.',
+  'twoStep.status': 'Aan. Nog {count} herstelcodes over.',
+  'twoStep.turnOn': 'Aanzetten',
+  'twoStep.scan': 'Scan deze QR-code met je authenticator-app, of typ de sleutel over:',
+  'twoStep.qrLabel': 'QR-code voor je authenticator-app',
+  'twoStep.key': 'Sleutel',
+  'twoStep.confirmCode': 'Code uit de app',
+  'twoStep.confirm': 'Bevestigen',
+  'twoStep.cancel': 'Annuleren',
+  'twoStep.codesIntro':
+    'Tweestapsverificatie staat aan. Bewaar deze herstelcodes op een veilige plek: elke code werkt één keer, voor als je je telefoon niet bij je hebt. Je ziet ze alleen nu.',
+  'twoStep.copy': 'Kopieer codes',
+  'twoStep.copied': 'Gekopieerd',
+  'twoStep.done': 'Klaar',
+  'twoStep.turnOff': 'Uitzetten',
+  'twoStep.turnOffPrompt':
+    'Vul je wachtwoord of een code uit de app in om tweestapsverificatie uit te zetten.',
+  'twoStep.passwordOrCode': 'Wachtwoord of code',
+  'twoStep.wrong': 'Dat wachtwoord of die code klopt niet.',
 }

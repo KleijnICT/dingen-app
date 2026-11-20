@@ -578,6 +578,50 @@ export const en = {
   'activity.retry': 'Try again',
   'activity.loading': 'Loading…',
   'activity.end': 'That is everything.',
+  // --- password reset and two-step verification (plan 32) ---
+  'auth.forgot': 'Forgot password?',
+  'auth.forgot.intro':
+    'Enter your email address. If it belongs to an account, you get a link to choose a new password.',
+  'auth.forgot.send': 'Send link',
+  'auth.forgot.sent':
+    'If {email} belongs to an account, a link is on its way. It works once, for one hour. Check your spam folder too.',
+  'auth.backToSignIn': 'Back to sign in',
+  'auth.twoStep.prompt': 'Enter the 6-digit code from your authenticator app.',
+  'auth.twoStep.code': 'Code',
+  'auth.twoStep.recoveryPrompt': 'Enter one of your recovery codes. Each one works once.',
+  'auth.twoStep.recoveryCode': 'Recovery code',
+  'auth.twoStep.useRecovery': 'Use a recovery code',
+  'auth.twoStep.useApp': 'Use the code from the app',
+  'auth.twoStep.verify': 'Verify',
+  'auth.reset.prompt': 'Choose a new password.',
+  'auth.reset.done':
+    'Your password is changed and you are signed out everywhere. Sign in with your new password.',
+  'auth.error.invalid_code': 'That code is not correct. Try the newest one from the app.',
+  'auth.error.challenge_expired': 'Signing in took too long. Sign in again.',
+  'auth.error.reset_invalid': 'This link is not valid. Ask for a new one.',
+  'auth.error.reset_expired': 'This link has expired. Ask for a new one.',
+  'auth.error.reset_used': 'This link has been used already. Ask for a new one if you need it.',
+  'twoStep.title': 'Two-step verification',
+  'twoStep.intro':
+    'Besides your password, ask for a code from an authenticator app when you sign in. Agents keep working with their tokens.',
+  'twoStep.status': 'On. {count} recovery codes left.',
+  'twoStep.turnOn': 'Turn on',
+  'twoStep.scan': 'Scan this QR code with your authenticator app, or type in the key:',
+  'twoStep.qrLabel': 'QR code for your authenticator app',
+  'twoStep.key': 'Key',
+  'twoStep.confirmCode': 'Code from the app',
+  'twoStep.confirm': 'Confirm',
+  'twoStep.cancel': 'Cancel',
+  'twoStep.codesIntro':
+    'Two-step verification is on. Keep these recovery codes somewhere safe: each one works once, for when you do not have your phone. You see them only now.',
+  'twoStep.copy': 'Copy codes',
+  'twoStep.copied': 'Copied',
+  'twoStep.done': 'Done',
+  'twoStep.turnOff': 'Turn off',
+  'twoStep.turnOffPrompt':
+    'Enter your password, or a code from the app, to turn two-step verification off.',
+  'twoStep.passwordOrCode': 'Password or code',
+  'twoStep.wrong': 'That password or code is not correct.',
 } as const
 
 export type MessageKey = keyof typeof en

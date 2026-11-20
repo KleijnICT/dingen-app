@@ -25,8 +25,10 @@ built-in MCP server.
 - **Checklists and notes** on every task.
 - **Offline-first web app:** every browser keeps a local replica and syncs when
   it is back online.
-- **Multi-user accounts**, and **agents** as members: each with its own token,
-  scope and level, assignable tasks, and their changes on record.
+- **Multi-user accounts** with optional two-step verification (an
+  authenticator app, with recovery codes) and password resets by mail or by
+  a link from the administrator, and **agents** as members: each with its own
+  token, scope and level, assignable tasks, and their changes on record.
 - **MCP server** built in (`/mcp`, Streamable HTTP) and as a stdio command.
 - **Imports** from TickTick (backup CSV), Todoist (CSV export) and a generic CSV.
 - **Calendars (read-only):** subscribe to ICS feeds; appointments appear in
@@ -71,13 +73,47 @@ The image is built for `linux/amd64` and `linux/arm64`.
 
 ## Configuration
 
-| Variable              | Default            | Meaning                                                                 |
-| --------------------- | ------------------ | ----------------------------------------------------------------------- |
-| `PORT`                | `8080`             | Port the server listens on inside the container.                        |
-| `DATA_DIR`            | `/data`            | Directory for the SQLite database (`dingen.db`).                        |
-| `DINGEN_REGISTRATION` | `closed`           | Who may register after the first account: `closed`, `invite` or `open`. |
-| `DINGEN_TIMEZONE`     | `Europe/Amsterdam` | Time zone for "today" in the MCP, calendar appointments and reminders.  |
-| `DINGEN_BACKUPS`      | on                 | `off` turns the nightly backups off (backups before an update stay).    |
+| Variable              | Default            | Meaning                                                                                       |
+| --------------------- | ------------------ | --------------------------------------------------------------------------------------------- |
+| `PORT`                | `8080`             | Port the server listens on inside the container.                                              |
+| `DATA_DIR`            | `/data`            | Directory for the SQLite database (`dingen.db`).                                              |
+| `DINGEN_REGISTRATION` | `closed`           | Who may register after the first account: `closed`, `invite` or `open`.                       |
+| `DINGEN_TIMEZONE`     | `Europe/Amsterdam` | Time zone for "today" in the MCP, calendar appointments and reminders.                        |
+| `DINGEN_BACKUPS`      | on                 | `off` turns the nightly backups off (backups before an update stay).                          |
+| `DINGEN_PUBLIC_URL`   | (the request)      | The address people open Dingen on, e.g. `https://dingen.example.com`; used for links in mail. |
+
+### Mail (SMTP)
+
+With mail set up, the sign-in screen offers **Forgot password?**: it mails a
+link that works once, for one hour. The answer is the same whether or not an
+address has an account. Without mail that link is hidden; an administrator can
+then make a one-time reset link (valid for 24 hours) for a user and pass it on.
+Using a reset link signs that account out everywhere; agents' tokens keep
+working. Mail settings live only in the environment, never in the database,
+and the password is never logged.
+
+| Variable        | Default                     | Meaning                                                        |
+| --------------- | --------------------------- | -------------------------------------------------------------- |
+| `SMTP_HOST`     | (none: mail off)            | The mail server. Mail is on when this and `SMTP_FROM` are set. |
+| `SMTP_PORT`     | `587`, or `465` with secure | Its port.                                                      |
+| `SMTP_SECURE`   | on for port 465, else off   | TLS from the start (port 465). Off: STARTTLS when offered.     |
+| `SMTP_USER`     | (none)                      | User name, if the server wants one.                            |
+| `SMTP_PASSWORD` | (none)                      | Its password.                                                  |
+| `SMTP_FROM`     | (none: mail off)            | The sender, e.g. `Dingen <dingen@example.com>`.                |
+
+Set `DINGEN_PUBLIC_URL` as well, so links in mail point to your real address
+and not to whatever address a request came in on. In the Home Assistant app
+the same settings are the options `smtp_host`, `smtp_port`, `smtp_secure`,
+`smtp_user`, `smtp_password`, `smtp_from` and `public_url`.
+
+### Two-step verification
+
+Anyone can turn on two-step verification in **Settings → Account**: scan the
+QR code with an authenticator app (or type the key), confirm with a code, and
+keep the ten recovery codes that are shown once; each works one time. Signing
+in then asks for the 6-digit code after the password. Turning it off takes the
+password or a code. An administrator can turn it off for a user who lost
+their phone. Agents' API tokens and the MCP endpoint do not use it.
 
 ### Inviting people
 

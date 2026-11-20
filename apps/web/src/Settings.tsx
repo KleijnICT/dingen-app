@@ -19,6 +19,7 @@ import { InvitationSettings } from './components/InvitationSettings.js'
 import { PaneHeader } from './components/Pane.js'
 import { ReminderSettings } from './components/ReminderSettings.js'
 import { TagSettings } from './components/TagSettings.js'
+import { TwoStepSettings } from './components/TwoStepSettings.js'
 import { LOCALES, type Locale, setLocale, useLocale, useT } from './i18n/index.js'
 
 const TABS = [
@@ -151,6 +152,8 @@ function Account({ user, onSignedOut }: { user: User; onSignedOut: () => void })
         <p className="muted">{t('account.homeAssistant', { email: user.email })}</p>
       )}
       <PasswordForm hasPassword={user.hasPassword !== false} />
+      {/* Two-step verification guards signing in with a password; without one there is nothing to guard. */}
+      {user.hasPassword !== false && <TwoStepSettings />}
       {!ingress && (
         <div>
           <button type="button" className="button-secondary" onClick={logout}>

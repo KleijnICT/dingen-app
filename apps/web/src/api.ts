@@ -64,6 +64,8 @@ export interface User {
   hasPassword?: boolean
   /** The day Today's "new tasks" banner was last dismissed; null = never. */
   todaySeenOn?: string | null
+  /** Two-step verification (TOTP) is on. */
+  twoStep?: boolean
 }
 
 export type RegistrationMode = 'closed' | 'open' | 'invite'
@@ -75,7 +77,12 @@ export interface AuthStatus {
   registration?: RegistrationMode
   /** Demo mode (DINGEN_DEMO): demo accounts can sign in without a password. */
   demo?: boolean
+  /** Mail is set up: "Forgot password?" can send a link. */
+  passwordReset?: boolean
 }
+
+/** `POST /api/auth/login`: signed in, or (two-step verification) a code is needed first. */
+export type LoginResult = { user: User } | { twoStep: true; challenge: string }
 
 export interface DemoAccount {
   email: string
@@ -102,6 +109,11 @@ const AUTH_ERRORS = new Set([
   'invite_expired',
   'invite_used',
   'invite_revoked',
+  'invalid_code',
+  'challenge_expired',
+  'reset_invalid',
+  'reset_expired',
+  'reset_used',
 ])
 
 export function errorText(err: unknown): string {
