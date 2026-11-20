@@ -3,7 +3,8 @@ import { clampWidth, PANEL_LIMITS, SIDEBAR_LIMITS } from './resize.js'
 
 /**
  * Per-device choices that are not part of the data: how Today is ordered,
- * how wide the sidebar and the task panel are and which areas are folded shut.
+ * how wide the sidebar and the task panel are, whether the sidebar is folded to
+ * a rail and which areas are folded shut.
  * Stored in localStorage, like the language.
  */
 
@@ -158,4 +159,32 @@ export function setFocusMode(on: boolean): void {
 
 export function useFocusMode(): boolean {
   return useSyncExternalStore(subscribe, readFocus, () => false)
+}
+
+/** The sidebar folded to a rail of icons on a desktop. Kept per device; only its button changes it. */
+const SIDEBAR_COLLAPSED_KEY = 'dingen.sidebarCollapsed'
+/** The choice in memory, for windows that refuse storage. */
+let sidebarCollapsed = false
+
+function readSidebarCollapsed(): boolean {
+  try {
+    return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1'
+  } catch {
+    return sidebarCollapsed
+  }
+}
+
+export function setSidebarCollapsed(collapsed: boolean): void {
+  sidebarCollapsed = collapsed
+  try {
+    if (collapsed) localStorage.setItem(SIDEBAR_COLLAPSED_KEY, '1')
+    else localStorage.removeItem(SIDEBAR_COLLAPSED_KEY)
+  } catch {
+    // Private windows may refuse storage; the choice then lasts until reload.
+  }
+  for (const l of listeners) l()
+}
+
+export function useSidebarCollapsed(): boolean {
+  return useSyncExternalStore(subscribe, readSidebarCollapsed, () => false)
 }

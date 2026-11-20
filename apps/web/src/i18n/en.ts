@@ -405,6 +405,8 @@ export const en = {
   'review.close': 'Close review',
   'crumb.label': 'Path',
   'sidebar.title': 'Dingen',
+  'sidebar.collapse': 'Collapse sidebar',
+  'sidebar.expand': 'Expand sidebar',
   // --- herinneringen ---
   'reminder.time': 'Time',
   'reminder.clearTime': 'Remove time',

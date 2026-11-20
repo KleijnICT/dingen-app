@@ -3389,20 +3389,27 @@ button.crumb-link:hover {
   background: var(--sidebar);
 }
 
-/* --- The review: the sidebar folds to a rail of icons, the review list takes its place --- */
+/* --- The rail: the sidebar folded to icons, by its button or in the review --- */
 .app {
   transition: grid-template-columns var(--dur) var(--ease);
 }
 .resizing .app {
   transition: none;
 }
-.app.reviewing {
+.app.railed:not(.focus-mode) {
   grid-template-columns: var(--rail) 1fr;
-  /* The rail and the review list: what the task panel has to leave room for. */
+  --sidebar-room: var(--rail);
+}
+/* In the review the review list sits beside the sidebar or the rail, as wide as the sidebar:
+   both are what the task panel has to leave room for. */
+.app.reviewing {
+  --sidebar-room: calc(2 * var(--sidebar-width, var(--sidebar-default)));
+}
+.app.reviewing.railed {
   --sidebar-room: calc(var(--rail) + var(--sidebar-width, var(--sidebar-default)));
 }
-/* The handle resizes the review list, which is as wide as the sidebar. */
-.app.reviewing .sidebar-resize {
+/* Beside the rail the handle resizes the review list. */
+.app.reviewing.railed .sidebar-resize {
   left: calc(var(--rail) + var(--sidebar-width) - 0.5px);
 }
 .sidebar.rail {
@@ -3412,6 +3419,10 @@ button.crumb-link:hover {
   align-self: stretch;
   justify-content: center;
   padding: 0;
+}
+.rail-search {
+  display: flex;
+  justify-content: center;
 }
 .rail-scroll {
   flex: 1;

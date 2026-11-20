@@ -1,12 +1,20 @@
 import { newArea, newProject, orderBetween, type Project, views } from '@dingen/core'
 import { useDraggable, useDroppable } from '@dnd-kit/core'
-import { ListPlus, ListRestart, Settings, TextSearch } from 'lucide-react'
+import {
+  ListPlus,
+  ListRestart,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Search,
+  Settings,
+} from 'lucide-react'
 import { type ReactElement, type ReactNode, useContext, useRef, useState } from 'react'
 import type { DragData, DropData } from '../dnd.js'
 import { useT } from '../i18n/index.js'
 import { countFor, LISTS, type ListId } from '../lists.js'
 import { toggleAreaCollapsed, useCollapsedAreas } from '../prefs.js'
-import { appHref, areaPath, navigate, projectPath } from '../router.js'
+import { appHref, areaPath, navigate, parseRoute, projectPath } from '../router.js'
+import { railAreaActive, railEntries } from '../sidebarFold.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import type { SyncStatus } from '../store/engine.js'
 import { AREA_ICON_COMPONENTS, AreaGlyph, areaColorVar } from './AreaIcons.js'
@@ -29,8 +37,10 @@ const APP_VERSION_LABEL = `Dingen ${__DINGEN_VERSION__}${__DINGEN_BUILD__ ? ` ·
 interface Props {
   path: string
   status: SyncStatus
-  /** Folded to a rail of icons, in the review. */
+  /** Folded to a rail of icons. */
   rail?: boolean
+  /** Folds or unfolds the sidebar; absent in the phone's drawer, which does not fold. */
+  onToggleRail?: (() => void) | undefined
   onOpenSettings: () => void
 }
 
@@ -43,9 +53,37 @@ const ICONS: Record<ListId, (p: { className?: string }) => ReactElement> = {
   logbook: LogbookIcon,
 }
 
-export function Sidebar({ path, status, rail = false, onOpenSettings }: Props) {
-  if (rail) return <SidebarRail path={path} onOpenSettings={onOpenSettings} />
-  return <FullSidebar path={path} status={status} onOpenSettings={onOpenSettings} />
+export function Sidebar({ path, status, rail = false, onToggleRail, onOpenSettings }: Props) {
+  if (rail) {
+    return <SidebarRail path={path} onToggleRail={onToggleRail} onOpenSettings={onOpenSettings} />
+  }
+  return (
+    <FullSidebar
+      path={path}
+      status={status}
+      onToggleRail={onToggleRail}
+      onOpenSettings={onOpenSettings}
+    />
+  )
+}
+
+/** Folds the sidebar to the rail, or unfolds it; in the sidebar's head and on top of the rail. */
+function FoldButton({ rail, onToggle }: { rail: boolean; onToggle: () => void }) {
+  const t = useT()
+  const label = t(rail ? 'sidebar.expand' : 'sidebar.collapse')
+  const Icon = rail ? PanelLeftOpen : PanelLeftClose
+  return (
+    <button
+      type="button"
+      className="icon-button fold-button"
+      aria-label={label}
+      title={label}
+      aria-expanded={!rail}
+      onClick={onToggle}
+    >
+      <Icon size={16} aria-hidden="true" />
+    </button>
+  )
 }
 
 /** The search button in the head of the sidebar and the rail. */
@@ -60,12 +98,12 @@ function SearchButton() {
       title={t('toolbar.search')}
       onClick={openSearch}
     >
-      <TextSearch size={16} aria-hidden="true" />
+      <Search size={16} aria-hidden="true" />
     </button>
   )
 }
 
-function FullSidebar({ path, status, onOpenSettings }: Omit<Props, 'rail'>) {
+function FullSidebar({ path, status, onToggleRail, onOpenSettings }: Omit<Props, 'rail'>) {
   const t = useT()
   const engine = useEngine()
   const ws = useWorkspace()
@@ -116,7 +154,16 @@ function FullSidebar({ path, status, onOpenSettings }: Omit<Props, 'rail'>) {
 
   return (
     <nav className="sidebar" aria-label={t('nav.lists')}>
-      <PaneHeader className="sidebar-head" title={t('sidebar.title')} actions={<SearchButton />} />
+      <PaneHeader
+        className="sidebar-head"
+        title={t('sidebar.title')}
+        actions={
+          <>
+            <SearchButton />
+            {onToggleRail && <FoldButton rail={false} onToggle={onToggleRail} />}
+          </>
+        }
+      />
       <div className="sidebar-scroll">
         <ul className="nav">
           {LISTS.map((list) => {
@@ -259,43 +306,58 @@ function FullSidebar({ path, status, onOpenSettings }: Omit<Props, 'rail'>) {
 }
 
 /**
- * The sidebar folded to a column of icons, in the review: the lists, then the projects and
- * areas, each with its name as tooltip and label. They still take drops.
+ * The sidebar folded to a column of icons: the lists, then the areas, each with its name as
+ * tooltip and label. No projects; an area is lit on its projects' pages too. They still take
+ * drops.
  */
-function SidebarRail({ path, onOpenSettings }: { path: string; onOpenSettings: () => void }) {
+function SidebarRail({
+  path,
+  onToggleRail,
+  onOpenSettings,
+}: {
+  path: string
+  onToggleRail?: (() => void) | undefined
+  onOpenSettings: () => void
+}) {
   const t = useT()
   const ws = useWorkspace()
-  const collapsed = useCollapsedAreas()
-  const untitledProject = t('project.untitled')
-
-  const projectItem = (p: Project) => (
-    <li key={p.id}>
-      <NavLink
-        href={projectPath(p.id)}
-        className="project rail-item"
-        active={path === projectPath(p.id)}
-        title={p.title || untitledProject}
-        drop={{ type: 'project', project: p }}
-      >
-        <ProgressCircle
-          value={views.progress(p.id, ws.tasks)}
-          someday={views.isSomeday(p)}
-          className="nav-icon"
-        />
-      </NavLink>
-    </li>
-  )
+  const route = parseRoute(path)
+  const entries = railEntries(ws.areas)
+  const lists = entries.filter((e) => e.kind !== 'area')
+  const areas = entries.flatMap((e) => (e.kind === 'area' ? [e.area] : []))
 
   return (
     <nav className="sidebar rail" aria-label={t('nav.lists')}>
       <div className="pane-head rail-head">
-        <SearchButton />
+        {onToggleRail ? <FoldButton rail onToggle={onToggleRail} /> : <SearchButton />}
       </div>
       <div className="rail-scroll">
+        {onToggleRail && (
+          <div className="rail-search">
+            <SearchButton />
+          </div>
+        )}
         <ul className="nav rail-list">
-          {LISTS.map((list) => {
+          {lists.map((entry) => {
+            if (entry.kind === 'review') {
+              return (
+                <li key="review">
+                  <NavLink
+                    href="/review"
+                    className="review rail-item"
+                    active={path.startsWith('/review')}
+                    title={t('review.nav')}
+                  >
+                    <ListRestart size={18} className="nav-icon" aria-hidden="true" />
+                  </NavLink>
+                </li>
+              )
+            }
+            if (entry.kind !== 'list') return null
+            const list = LISTS.find((l) => l.id === entry.id)
+            if (!list) return null
             const Icon = ICONS[list.id]
-            const item = (
+            return (
               <li key={list.id}>
                 <NavLink
                   href={list.path}
@@ -308,41 +370,25 @@ function SidebarRail({ path, onOpenSettings }: { path: string; onOpenSettings: (
                 </NavLink>
               </li>
             )
-            if (list.id !== 'logbook') return item
-            return [
-              <li key="review">
-                <NavLink
-                  href="/review"
-                  className="review rail-item"
-                  active={path.startsWith('/review')}
-                  title={t('review.nav')}
-                >
-                  <ListRestart size={18} className="nav-icon" aria-hidden="true" />
-                </NavLink>
-              </li>,
-              item,
-            ]
           })}
         </ul>
-        <ul className="nav rail-list rail-tree">
-          {views.projectsOf(ws.projects, null).map(projectItem)}
-          {views.openAreas(ws.areas).map((area) => [
-            <li key={area.id}>
-              <NavLink
-                href={areaPath(area.id)}
-                className="area rail-item"
-                active={path === areaPath(area.id)}
-                title={area.title || t('area.untitled')}
-                drop={{ type: 'area', area }}
-              >
-                <RailAreaIcon icon={area.icon} color={area.color} title={area.title} />
-              </NavLink>
-            </li>,
-            ...(collapsed.has(area.id)
-              ? []
-              : views.projectsOf(ws.projects, area.id).map(projectItem)),
-          ])}
-        </ul>
+        {areas.length > 0 && (
+          <ul className="nav rail-list rail-tree">
+            {areas.map((area) => (
+              <li key={area.id}>
+                <NavLink
+                  href={areaPath(area.id)}
+                  className="area rail-item"
+                  active={railAreaActive(area.id, route, ws.projectById)}
+                  title={area.title || t('area.untitled')}
+                  drop={{ type: 'area', area }}
+                >
+                  <RailAreaIcon icon={area.icon} color={area.color} title={area.title} />
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
       <div className="rail-foot">
         <button

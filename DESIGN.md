@@ -200,7 +200,7 @@ Where it is used:
 
 | Pane        | Head                                                                                     |
 | ----------- | ---------------------------------------------------------------------------------------- |
-| Sidebar     | "Dingen", Search                                                                         |
+| Sidebar     | "Dingen", Search, Collapse                                                               |
 | Review list | "Review" with the count                                                                  |
 | Content     | Breadcrumb on the left; the list's actions, a hairline, the page's own actions (desktop) |
 | Task panel  | Where the task lives (project › heading, or area); `…` and Close. Back on a phone        |
@@ -220,14 +220,27 @@ Search), and the page's buttons sit on the title row.
 is a path: a project in an area shows "Area ›" (clicking goes there). Top
 level lists and areas have none; the big title stays in the content.
 
-**The rail.** On `/review` on a desktop the sidebar folds to a `--rail` of
-icons (`--rail-item` squares): the lists, then the projects (their progress
-circle) and areas. An area with the default icon shows its first letter in
-its colour, so areas stay apart. Every icon has its name as `title` and
-`aria-label`, and still takes drops. The review list takes the sidebar's
-place at the sidebar's width (the resize handle sizes it), so the window
-keeps its layout. The columns move with `--dur`; with reduced motion they
-switch at once. Leaving the review brings the full sidebar back.
+**The rail.** On a desktop the sidebar folds to a `--rail` of icons
+(`--rail-item` squares) with the button in its head (`PanelLeftClose`, next
+to Search); on top of the rail the same button (`PanelLeftOpen`) unfolds it,
+with Search under it and Settings at the bottom. Both carry `aria-expanded`,
+and `[` does the same outside fields. The rail shows the lists (Review
+between Someday and Logbook) and the areas, no projects; an area is lit on
+its own page and on its projects' pages. An area with the default icon shows
+its first letter in its colour, so areas stay apart. Every icon has its name
+as `title` and `aria-label`, and still takes drops. The choice is the
+user's, kept per device (`prefs.ts`); navigating never unfolds it. Folded,
+there is no resize handle. Phones keep the drawer and have no fold button.
+
+On `/review` the sidebar folds to the rail by itself and the review list
+takes the sidebar's place at the sidebar's width (the handle sizes it), so
+the window keeps its layout. The button works there too: unfolded, the full
+sidebar and the review list sit side by side at one width, and the handle on
+the sidebar's edge sizes both. Leaving the review brings back the user's own
+choice. `--sidebar-room` follows the shape: the sidebar's width, the rail,
+the rail plus the review list, or twice the sidebar's width. The columns move
+with `--dur`; while resizing or with reduced motion they switch at once. The
+rules live in `sidebarFold.ts`.
 
 Review items have a second line in `--text-xs` / `--muted`: when the item
 was last reviewed and how many tasks are open in it ("last reviewed 3 weeks

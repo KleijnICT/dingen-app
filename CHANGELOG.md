@@ -17,6 +17,12 @@
   shows where its task lives. In the Review the sidebar folds to a rail of
   icons and the review list takes its place; each item says when it was last
   reviewed and how many tasks are open.
+- The sidebar folds to a rail of icons with a button in its head, and
+  unfolds with the same button on top of the rail (or with `[`). The rail
+  shows the lists and the areas; the choice stays on this device, and
+  opening a list or area from the rail keeps it folded. In the Review the
+  sidebar still folds by itself, but the button unfolds it there too. Search
+  in the sidebar's head is a plain magnifying glass. Phones keep the drawer.
 - Menus and popovers are one kind of sheet: the same surface everywhere,
   sections with a small heading (Planning, Organisation; When, Daypart),
   icons in front of menu items, the delete action last under a line. On a

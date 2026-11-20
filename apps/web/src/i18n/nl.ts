@@ -397,6 +397,8 @@ export const nl: Messages = {
   'review.close': 'Review sluiten',
   'crumb.label': 'Pad',
   'sidebar.title': 'Dingen',
+  'sidebar.collapse': 'Zijbalk inklappen',
+  'sidebar.expand': 'Zijbalk uitklappen',
   // --- herinneringen ---
   'reminder.time': 'Tijd',
   'reminder.clearTime': 'Tijd weghalen',

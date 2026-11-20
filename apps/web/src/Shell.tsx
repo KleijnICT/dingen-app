@@ -32,10 +32,19 @@ import { type DragData, draggedTasks, handleDragEnd } from './dnd.js'
 import { focusActive, focusKeyAction } from './focus.js'
 import { useT } from './i18n/index.js'
 import { LISTS } from './lists.js'
-import { setFocusMode, setWidth, useFocusMode, usePanelWidth, useSidebarWidth } from './prefs.js'
+import {
+  setFocusMode,
+  setSidebarCollapsed,
+  setWidth,
+  useFocusMode,
+  usePanelWidth,
+  useSidebarCollapsed,
+  useSidebarWidth,
+} from './prefs.js'
 import { SIDEBAR_LIMITS } from './resize.js'
 import { navigate, parseRoute, usePath } from './router.js'
 import { Settings } from './Settings.js'
+import { type SidebarShape, sidebarRoom, sidebarShape } from './sidebarFold.js'
 import { useBuildWorkspace, useEngine, WorkspaceContext } from './store/context.js'
 import { initTodaySeen, refreshTodaySeen } from './todaySeen.js'
 
@@ -124,8 +133,22 @@ export function Shell({ user, onSignedOut }: Props) {
 
   const onToday = list?.id === 'today'
   const focus = focusActive(focusPref, list?.id)
-  // In the review the sidebar folds to a rail of icons and the review list takes its place.
+  // The sidebar folds to a rail of icons when the user asks; in the review it does so by
+  // itself and the review list takes its place, unless the user unfolds it there.
   const reviewing = route.kind === 'review' && !narrow
+  const collapsedPref = useSidebarCollapsed()
+  const [reviewOpen, setReviewOpen] = useState(false)
+  // Leaving the review brings back the user's own choice.
+  useEffect(() => {
+    if (!reviewing) setReviewOpen(false)
+  }, [reviewing])
+  const shape = sidebarShape({ narrow, reviewing, collapsed: collapsedPref, reviewOpen })
+  const railed = shape === 'rail'
+  const toggleRail = useCallback(() => {
+    if (reviewing) setReviewOpen((open) => !open)
+    else setSidebarCollapsed(!collapsedPref)
+  }, [reviewing, collapsedPref])
+  const sidebarRoomNow = useCallback(() => measureSidebarRoom(shape, reviewing), [shape, reviewing])
   useEffect(() => {
     function onFocusKey(e: KeyboardEvent) {
       const target = e.target instanceof HTMLElement ? e.target : null
@@ -152,6 +175,9 @@ export function Shell({ user, onSignedOut }: Props) {
     return () => window.removeEventListener('keydown', onFocusKey)
   }, [onToday, focus])
 
+  // [ folds and unfolds the sidebar, like its button; not on phones, nor in focus mode.
+  const toggleRailKey = useRef<(() => void) | null>(null)
+  toggleRailKey.current = narrow || focus ? null : toggleRail
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       const target = e.target as HTMLElement | null
@@ -167,6 +193,10 @@ export function Shell({ user, onSignedOut }: Props) {
       if (e.key === '/') {
         e.preventDefault()
         setSearchOpen(true)
+      }
+      if (e.key === '[' && toggleRailKey.current) {
+        e.preventDefault()
+        toggleRailKey.current()
       }
     }
     window.addEventListener('keydown', onKey)
@@ -187,7 +217,8 @@ export function Shell({ user, onSignedOut }: Props) {
   const sidebar = (
     <Sidebar
       path={path}
-      rail={reviewing}
+      rail={railed}
+      onToggleRail={narrow ? undefined : toggleRail}
       status={engine.status}
       onOpenSettings={() => {
         setDrawerOpen(false)
@@ -207,7 +238,9 @@ export function Shell({ user, onSignedOut }: Props) {
           onDragCancel={() => setDragging(null)}
         >
           <div
-            className={`app${focus ? ' focus-mode' : ''}${reviewing ? ' reviewing' : ''}`}
+            className={`app${focus ? ' focus-mode' : ''}${reviewing ? ' reviewing' : ''}${
+              railed ? ' railed' : ''
+            }`}
             style={
               {
                 '--sidebar-width': `${sidebarWidth}px`,
@@ -227,14 +260,15 @@ export function Shell({ user, onSignedOut }: Props) {
             ) : (
               sidebar
             )}
-            {!narrow && !focus && (
+            {/* Folded, there is nothing to size, except the review list beside the rail. */}
+            {!narrow && !focus && (!railed || reviewing) && (
               <ResizeHandle
                 className="sidebar-resize"
-                label={t(reviewing ? 'review.resize' : 'nav.resize')}
+                label={t(railed ? 'review.resize' : 'nav.resize')}
                 width={sidebarWidth}
                 limits={SIDEBAR_LIMITS}
                 edge="right"
-                room={sidebarRoom}
+                room={sidebarRoomNow}
                 onChange={setSidebarWidth}
               />
             )}
@@ -300,15 +334,17 @@ const collision: CollisionDetection = (args) => {
   return [...hits].sort((a, b) => Number(isGroup(a)) - Number(isGroup(b)))
 }
 
-/** Room for the sidebar: the window, less a task panel open beside the list and the rail. */
-function sidebarRoom(): number {
+/** Room for the sidebar's handle: the window, less a task panel open beside the list and the rail. */
+function measureSidebarRoom(shape: SidebarShape, reviewing: boolean): number {
   const panel = document.querySelector('.task-panel.side')
-  const rail = document.querySelector('.app.reviewing > .sidebar')
-  return (
-    window.innerWidth -
-    (panel?.getBoundingClientRect().width ?? 0) -
-    (rail?.getBoundingClientRect().width ?? 0)
-  )
+  const rail = document.querySelector('.app > .sidebar.rail')
+  return sidebarRoom({
+    shape,
+    reviewing,
+    window: window.innerWidth,
+    panel: panel?.getBoundingClientRect().width ?? 0,
+    rail: rail?.getBoundingClientRect().width ?? 0,
+  })
 }
 
 function setSidebarWidth(width: number | null): void {
