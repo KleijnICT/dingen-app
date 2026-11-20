@@ -22,6 +22,7 @@ import { useEngine, useWorkspace } from '../store/context.js'
 import { createInboxTask, type MoveTarget, useLinger } from '../taskActions.js'
 import { markTodaySeen, newInToday, useTodaySeen, whenSetOn } from '../todaySeen.js'
 import { DayEvents } from './CalendarEvents.js'
+import { EmptyState } from './EmptyState.js'
 import { MoreMenu } from './Menu.js'
 import {
   ActiveFilters,
@@ -298,7 +299,10 @@ export function ListPage({
         </div>
       )}
       {shown.length === 0 && projects.length === 0 && (
-        <p className="empty">{t(`list.empty.${list.id}` as MessageKey)}</p>
+        <EmptyState
+          title={t(`list.empty.${list.id}` as MessageKey)}
+          text={t(`list.emptyHint.${list.id}` as MessageKey)}
+        />
       )}
       {body}
       <TaskToolbar onNew={addNew} list={taskList} />

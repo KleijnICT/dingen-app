@@ -109,6 +109,9 @@
   --content-max: 640px;
   --panel-default: 420px;
 
+  /* --- Sheets: menus and popovers --- */
+  --sheet-w: 280px;
+
   font-family: var(--font-ui);
   font-size: 15px;
   color-scheme: light dark;
@@ -651,15 +654,33 @@ button.link.danger {
   margin: 0;
   letter-spacing: -0.02em;
 }
-.empty {
-  color: var(--muted);
+/* The one empty state: a short title and one sentence, both muted (EmptyState.tsx). */
+.empty-state {
   padding: var(--space-5) var(--row-x);
+  color: var(--muted);
+}
+.empty-title {
+  margin: 0;
+  font-weight: var(--weight-strong);
+}
+.empty-text {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  max-width: 46ch;
+}
+/* Loading and load errors where a list would be: muted, never the empty state. */
+.page-status {
+  padding: var(--space-5) var(--row-x);
+  color: var(--muted);
+}
+.page-status p {
+  margin: 0 0 var(--space-2);
 }
 /* One section heading for groups, dayparts, filters and panel sections: no capitals,
    small, strong and muted. New section headings use .section-heading. */
 .section-heading,
 .group-title,
-.filter-title,
 .panel-section-label {
   font-size: var(--text-sm);
   font-weight: var(--weight-strong);
@@ -845,6 +866,11 @@ button.link.danger {
     transform: translateX(100%);
   }
 }
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+}
 @keyframes scrim-in {
   from {
     opacity: 0;
@@ -867,10 +893,10 @@ button.link.danger {
 .when-picker {
   border: 0;
   margin: 0;
+  padding: 0;
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  padding-left: var(--indent);
 }
 .chip {
   padding: var(--space-1) var(--row-x);
@@ -892,9 +918,8 @@ button.link.danger {
 /* The daypart under a date in the When picker. */
 .daypart-picker {
   border: 0;
-  margin: var(--row-x) 0 0;
-  padding: var(--row-x) 0 0;
-  border-top: 1px solid var(--line);
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
@@ -1423,18 +1448,6 @@ button.link.danger {
   outline: var(--focus-ring);
   outline-offset: 2px;
 }
-.area-picker {
-  position: absolute;
-  top: calc(100% + var(--space-2));
-  left: 0;
-  z-index: 20;
-  width: min(300px, calc(100vw - 32px));
-  padding: var(--row-x);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  box-shadow: var(--shadow-2);
-}
 .icon-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(34px, 1fr));
@@ -1512,25 +1525,70 @@ button.link.danger {
   opacity: 0.35;
   cursor: default;
 }
-.popover {
+
+/* --- Sheets: the one surface for every menu and popover (see DESIGN.md). Next to the
+   button that opened it here; from the bottom of the screen on phones (the mobile block). --- */
+.sheet {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + var(--space-1));
+  left: 0;
+  width: var(--sheet-w);
+  max-width: calc(100vw - var(--space-6));
+  max-height: min(440px, 60vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-2);
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--r-md);
+  border-radius: var(--r-lg);
   box-shadow: var(--shadow-2);
-  z-index: 30;
+  color: var(--fg);
+  text-align: left;
 }
-.toolbar-popover {
-  position: absolute;
-  bottom: calc(100% + var(--space-2));
+.sheet[data-align="end"] {
+  left: auto;
+  right: 0;
+}
+.sheet[data-align="center"] {
   left: 50%;
   transform: translateX(-50%);
-  width: min(340px, calc(100vw - 32px));
-  max-height: min(420px, 60vh);
-  overflow-y: auto;
-  padding: var(--row-x);
 }
-.toolbar-popover .when-picker {
+.sheet[data-align="stretch"] {
+  right: 0;
+  width: auto;
+}
+.sheet[data-side="above"] {
+  top: auto;
+  bottom: calc(100% + var(--space-2));
+}
+/* Only on phones. */
+.sheet-scrim,
+.sheet-grab {
+  display: none;
+}
+.sheet-section + .sheet-section {
+  margin-top: var(--space-1);
+}
+/* Fields, chips and text line up with the heading; rows bring their own inset. */
+.sheet-section.inset {
+  padding: 0 var(--row-x) var(--space-1);
+}
+.sheet-heading {
+  margin: 0;
+  padding: var(--space-2) var(--row-x) var(--space-1);
+}
+.sheet-section.inset > .sheet-heading {
   padding-left: 0;
+  padding-right: 0;
+}
+.sheet-divider {
+  flex: none;
+  margin: var(--space-1) var(--space-0);
+  border: 0;
+  border-top: 1px solid var(--line);
 }
 
 /* --- Several tasks selected --- */
@@ -1601,11 +1659,8 @@ button.link.danger {
 .bulk-tag[aria-pressed="true"] {
   font-weight: var(--weight-regular);
 }
-.delete-question {
-  width: min(280px, calc(100vw - 32px));
-}
 .delete-question p {
-  margin: var(--space-0) var(--space-0) var(--row-x);
+  margin: var(--space-1) 0 var(--row-x);
 }
 .delete-question-buttons {
   display: flex;
@@ -1666,20 +1721,6 @@ button.link.danger {
   position: relative;
   flex: none;
 }
-.menu {
-  position: absolute;
-  top: calc(100% + var(--space-1));
-  left: 0;
-  min-width: 200px;
-  max-width: calc(100vw - 32px);
-  padding: var(--space-1);
-  display: flex;
-  flex-direction: column;
-}
-.more-menu.end .menu {
-  left: auto;
-  right: 0;
-}
 .menu-item {
   display: flex;
   align-items: center;
@@ -1694,7 +1735,29 @@ button.link.danger {
 .menu-item:hover {
   background: var(--hover);
 }
-.menu-item.danger {
+.menu-icon {
+  flex: none;
+  color: var(--muted);
+}
+.menu-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* The key that does the same outside the menu. */
+.menu-kbd {
+  flex: none;
+  min-width: 20px;
+  padding: var(--space-0) var(--space-1);
+  border-radius: var(--r-sm);
+  background: var(--hover);
+  color: var(--muted);
+  font: var(--weight-medium) var(--text-xs) / 1.2 var(--font-mono);
+  text-align: center;
+}
+.menu-item.danger,
+.menu-item.danger .menu-icon {
   color: var(--error);
 }
 .menu-item.danger:hover {
@@ -1742,11 +1805,6 @@ button.link.danger {
 }
 .settings-button {
   padding: var(--space-2) var(--space-2);
-}
-.new-list-menu {
-  top: auto;
-  bottom: calc(100% + var(--space-2));
-  width: 260px;
 }
 .new-list-menu .menu-item {
   align-items: flex-start;
@@ -1900,8 +1958,8 @@ button.link.danger {
   padding: var(--space-2);
   overflow-y: auto;
 }
-.search-empty {
-  padding: var(--row-x);
+.search-empty .empty-state {
+  padding: var(--space-3) var(--row-x);
 }
 .search-hit {
   display: flex;
@@ -1958,9 +2016,6 @@ button.link.danger {
   background: var(--hover);
   color: var(--fg);
 }
-.menu.with-panel {
-  min-width: 280px;
-}
 .menu-back {
   display: flex;
   align-items: center;
@@ -1976,10 +2031,11 @@ button.link.danger {
   color: var(--fg);
 }
 .menu-panel {
-  padding: var(--space-1) var(--space-2) var(--space-2);
+  padding: var(--space-1) var(--row-x) var(--space-2);
 }
-.menu-panel .when-picker {
+.menu-panel .sheet-section.inset {
   padding-left: 0;
+  padding-right: 0;
 }
 
 /* --- data (export/import) --- */
@@ -2298,9 +2354,6 @@ button.review-mark {
   gap: var(--space-0);
   margin: 0 0 var(--space-2);
 }
-.review-empty p {
-  margin: 0 0 var(--space-1);
-}
 .review-every {
   display: flex;
   flex-direction: column;
@@ -2320,6 +2373,9 @@ button.review-mark {
   align-items: center;
   gap: var(--space-2) var(--space-3);
   padding-left: var(--indent);
+}
+.sheet .schedule-field {
+  padding-left: 0;
 }
 .schedule-time,
 .schedule-reminder {
@@ -2344,10 +2400,6 @@ button.review-mark {
   font-size: var(--text-sm);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-}
-.toolbar-popover .schedule-field {
-  padding-left: 0;
-  margin-top: var(--row-x);
 }
 .reminder-settings .reminder-switch {
   display: inline-flex;
@@ -2429,11 +2481,6 @@ button.agent-main .muted {
   outline: var(--focus-ring);
   outline-offset: 2px;
   border-radius: var(--r-sm);
-}
-.agent-item .more-menu .menu {
-  /* Opens upwards: the last agent sits at the bottom of the scrolling settings body. */
-  top: auto;
-  bottom: calc(100% + var(--space-1));
 }
 .agent-token-actions {
   justify-content: flex-start;
@@ -2922,18 +2969,6 @@ button.agent-main .muted {
 .field-button-sep {
   color: var(--muted);
 }
-.panel-popover {
-  position: absolute;
-  top: calc(100% + var(--space-0));
-  right: 0;
-  left: 0;
-  max-height: min(380px, 60vh);
-  overflow-y: auto;
-  padding: var(--space-2);
-}
-.panel-popover .when-picker {
-  padding-left: 0;
-}
 .panel-add {
   position: relative;
   display: flex;
@@ -3072,11 +3107,6 @@ button.tag-settings-name:hover {
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
-.tag-settings-item.up .more-menu .menu {
-  /* Opens upwards: these rows sit at the bottom of the scrolling settings body. */
-  top: auto;
-  bottom: calc(100% + var(--space-1));
-}
 .tag-settings-parents {
   max-height: min(300px, 40vh);
   overflow-y: auto;
@@ -3122,21 +3152,6 @@ button.tag-settings-name:hover {
 .filter-menu {
   position: relative;
   flex: none;
-}
-.filter-popover {
-  position: absolute;
-  top: calc(100% + var(--space-1));
-  right: 0;
-  width: max-content;
-  min-width: 200px;
-  max-width: min(320px, calc(100vw - 32px));
-  padding: var(--space-3);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-.filter-title {
-  margin-bottom: var(--space-2);
 }
 .filter-chips {
   border: 0;
@@ -3508,6 +3523,56 @@ button.crumb-link:hover {
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
   }
+  /* Sheets come up from the bottom: the whole width, over a scrim, with a grab handle.
+     A tap on the scrim or a swipe down closes them (Menu.tsx). */
+  .sheet-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 55;
+    background: var(--scrim);
+    animation: scrim-in var(--dur) var(--ease);
+  }
+  .sheet[data-side][data-align] {
+    position: fixed;
+    z-index: 56;
+    inset: auto 0 0;
+    width: auto;
+    max-width: none;
+    max-height: 85dvh;
+    transform: none;
+    padding: 0 max(var(--space-2), env(safe-area-inset-right))
+      calc(var(--space-4) + env(safe-area-inset-bottom))
+      max(var(--space-2), env(safe-area-inset-left));
+    border-width: 1px 0 0;
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    animation: sheet-in var(--dur) var(--ease);
+    transition: transform var(--dur) var(--ease);
+  }
+  .sheet-grab {
+    display: block;
+    flex: none;
+    align-self: center;
+    width: 36px;
+    height: 5px;
+    margin: var(--space-2) 0 var(--space-1);
+    border-radius: var(--r-pill);
+    background: var(--check);
+  }
+  /* Rows a thumb can hit. */
+  .sheet .menu-item,
+  .sheet .move-item {
+    padding-top: var(--space-3);
+    padding-bottom: var(--space-3);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sheet[data-side][data-align],
+    .sheet-scrim {
+      animation: none;
+      transition: none;
+    }
+  }
+
   /* Inputs at 16px: iOS zooms into smaller ones when they are focused. */
   input,
   textarea,

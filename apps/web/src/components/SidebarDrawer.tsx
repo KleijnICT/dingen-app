@@ -115,7 +115,7 @@ export function SidebarDrawer({ open, onOpen, onClose, returnFocus, children }: 
   function onKeyDown(e: KeyboardEvent<HTMLDivElement>) {
     if (e.key === 'Escape') {
       // An open menu inside the drawer (New list) closes first.
-      if (panel.current?.querySelector('.popover')) return
+      if (panel.current?.querySelector('.sheet')) return
       e.preventDefault()
       onClose()
       return

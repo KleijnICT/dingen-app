@@ -16,7 +16,7 @@ import { useT } from '../i18n/index.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { commitTask, whenFields } from '../taskActions.js'
 import { AssigneeList } from './Assignee.js'
-import { useDismiss } from './Menu.js'
+import { Sheet, SheetDivider, SheetSection, useDismiss } from './Menu.js'
 import { MoveList } from './MoveList.js'
 import { ScheduleField } from './ScheduleField.js'
 import { BulkTags, DeleteQuestion } from './SelectionTools.js'
@@ -95,14 +95,11 @@ export function TaskToolbar({ onNew, extra, list }: TaskToolbarProps) {
   const selecting = list?.selecting ?? false
   const asking = list?.askingDelete ?? false
   const cancelDelete = list?.cancelDelete
-  useDismiss(
-    chosen !== null || asking,
-    () => {
-      setPopup(null)
-      cancelDelete?.()
-    },
-    root,
-  )
+  const dismiss = () => {
+    setPopup(null)
+    cancelDelete?.()
+  }
+  useDismiss(chosen !== null || asking, dismiss, root)
   // The open tasks among the selection; When, Move, Tags and Assign act on these.
   const targets = selection.filter((task) => task.status === 'open')
   const first = targets[0]
@@ -170,10 +167,12 @@ export function TaskToolbar({ onNew, extra, list }: TaskToolbarProps) {
           <ToolbarButton icon={TextSearch} label={t('toolbar.search')} onClick={openSearch} />
         )}
         {popup && first && (
-          <div
-            className="popover toolbar-popover"
-            role="dialog"
-            aria-label={popup === 'assign' ? t('assign.toolbar') : t(`toolbar.${popup}`)}
+          <Sheet
+            label={popup === 'assign' ? t('assign.toolbar') : t(`toolbar.${popup}`)}
+            align="center"
+            side="above"
+            className="toolbar-popover"
+            onClose={dismiss}
           >
             {popup === 'when' ? (
               <WhenPopup tasks={targets} onDone={() => setPopup(null)} />
@@ -184,7 +183,7 @@ export function TaskToolbar({ onNew, extra, list }: TaskToolbarProps) {
             ) : (
               <AssigneeList task={first} onDone={() => setPopup(null)} />
             )}
-          </div>
+          </Sheet>
         )}
         {asking && list && (
           <DeleteQuestion
@@ -219,6 +218,7 @@ function SelectionBar({ count, list }: { count: number; list: TaskList }) {
  * and picking a daypart sets it for all. Time and reminder only for a single task.
  */
 function WhenPopup({ tasks, onDone }: { tasks: Task[]; onDone: () => void }) {
+  const t = useT()
   const engine = useEngine()
   const ws = useWorkspace()
   const task = tasks[0]
@@ -238,8 +238,16 @@ function WhenPopup({ tasks, onDone }: { tasks: Task[]; onDone: () => void }) {
           if (close) onDone()
         }}
       />
-      {tasks.length === 1 && (
-        <ScheduleField task={task} onChange={(fields) => commitTask(engine, ws, task, fields)} />
+      {tasks.length === 1 && task.when.kind === 'date' && (
+        <>
+          <SheetDivider />
+          <SheetSection inset title={t('reminder.label')}>
+            <ScheduleField
+              task={task}
+              onChange={(fields) => commitTask(engine, ws, task, fields)}
+            />
+          </SheetSection>
+        </>
       )}
     </>
   )

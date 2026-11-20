@@ -1,4 +1,5 @@
 import { AREA_COLORS, type AreaColorId } from '@dingen/core'
+import { Trash2 } from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { ApiError, api, errorText } from '../api.js'
 import { refreshCalendar } from '../calendar.js'
@@ -204,6 +205,7 @@ function CalendarItem({
           items={[
             {
               label: t('calendar.remove'),
+              icon: Trash2,
               danger: true,
               confirm: t('calendar.removeQuestion', { name: calendar.name }),
               onSelect: onRemove,

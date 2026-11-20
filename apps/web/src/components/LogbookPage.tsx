@@ -18,6 +18,7 @@ import { describeDate, type ListDef } from '../lists.js'
 import { areaPath, navigate, projectPath, taskPath } from '../router.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { createInboxTask, toggleTask } from '../taskActions.js'
+import { EmptyState } from './EmptyState.js'
 import { ListPage } from './ListPage.js'
 import { MemberAvatar, useMembers } from './MemberAvatar.js'
 import { FilterChips, FilterPopover, PageHeader } from './PageHeader.js'
@@ -281,7 +282,7 @@ function ActivityList({ filter, me, owner, byId }: ListProps) {
 
   if (state === 'error' && items.length === 0) {
     return (
-      <div className="empty">
+      <div className="page-status">
         <p>{t('activity.error')}</p>
         <button type="button" className="chip small" onClick={() => setAttempt((n) => n + 1)}>
           {t('activity.retry')}
@@ -289,9 +290,13 @@ function ActivityList({ filter, me, owner, byId }: ListProps) {
       </div>
     )
   }
-  if (state === 'loading') return <p className="empty">{t('activity.loading')}</p>
+  if (state === 'loading') return <p className="page-status">{t('activity.loading')}</p>
   if (items.length === 0 && next === null) {
-    return <p className="empty">{t(filtered ? 'activity.emptyFiltered' : 'activity.empty')}</p>
+    return filtered ? (
+      <EmptyState title={t('activity.emptyFiltered')} text={t('activity.emptyFilteredHint')} />
+    ) : (
+      <EmptyState title={t('activity.empty')} text={t('activity.emptyHint')} />
+    )
   }
 
   return (

@@ -5,7 +5,7 @@ import { type DurationFilterList, setDurationFilter, useDurationText } from '../
 import { useT } from '../i18n/index.js'
 import { useWorkspace } from '../store/context.js'
 import { DurationFilter } from './Duration.js'
-import { useDismiss } from './Menu.js'
+import { Sheet, SheetSection, useDismiss } from './Menu.js'
 import { ContentHead } from './Pane.js'
 import { TagFilter, useFilterTags } from './TagFilter.js'
 
@@ -122,21 +122,19 @@ export function FilterButton({
         <ListFilter size={16} aria-hidden="true" />
       </button>
       {open && (
-        <div className="popover filter-popover" role="dialog" aria-label={label}>
-          {extra && <div className="filter-section">{extra}</div>}
+        <Sheet label={label} align="end" className="filter-popover" onClose={close}>
+          {extra && <SheetSection inset>{extra}</SheetSection>}
           {hasTags && (
-            <div className="filter-section">
-              <p className="filter-title">{t('tags.label')}</p>
+            <SheetSection inset title={t('tags.label')}>
               <TagFilter present={present} active={tag} onChange={onTag} />
-            </div>
+            </SheetSection>
           )}
           {durationList && (
-            <div className="filter-section">
-              <p className="filter-title">{t('duration.filter')}</p>
+            <SheetSection inset title={t('duration.filter')}>
               <DurationFilter list={durationList} active={maxDuration ?? null} />
-            </div>
+            </SheetSection>
           )}
-        </div>
+        </Sheet>
       )}
     </div>
   )
@@ -188,9 +186,9 @@ export function FilterPopover({ active, children }: { active: boolean; children:
         <ListFilter size={16} aria-hidden="true" />
       </button>
       {open && (
-        <div className="popover filter-popover" role="dialog" aria-label={label}>
-          {children}
-        </div>
+        <Sheet label={label} align="end" className="filter-popover" onClose={close}>
+          <SheetSection inset>{children}</SheetSection>
+        </Sheet>
       )}
     </div>
   )

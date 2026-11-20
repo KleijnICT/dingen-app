@@ -10,7 +10,7 @@ import {
   memberId,
   views,
 } from '@dingen/core'
-import { Infinity as EverythingIcon, Inbox, X } from 'lucide-react'
+import { Infinity as EverythingIcon, Inbox, KeyRound, Pencil, Trash2, X } from 'lucide-react'
 import { type FormEvent, useState } from 'react'
 import {
   agentsApi,
@@ -163,16 +163,19 @@ export function AgentSettings() {
             </button>
             <MoreMenu
               alignEnd
+              above
               label={t('agents.actions', { name: agent.name })}
               items={[
-                { label: t('agents.edit'), onSelect: () => setEditing(agent) },
+                { label: t('agents.edit'), icon: Pencil, onSelect: () => setEditing(agent) },
                 {
                   label: t('agents.rotate'),
+                  icon: KeyRound,
                   confirm: t('agents.rotateQuestion', { name: agent.name }),
                   onSelect: () => void rotate(agent),
                 },
                 {
                   label: t('agents.revoke'),
+                  icon: Trash2,
                   danger: true,
                   confirm: t('agents.revokeQuestion', { name: agent.name }),
                   onSelect: () => void revoke(agent),

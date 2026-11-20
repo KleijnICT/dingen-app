@@ -8,6 +8,7 @@ import { areaPath, navigate, projectPath, taskPath } from '../router.js'
 import { type SearchHit, searchWorkspace } from '../search.js'
 import { useWorkspace, type Workspace } from '../store/context.js'
 import { AreaGlyph } from './AreaIcons.js'
+import { EmptyState } from './EmptyState.js'
 import { ProgressCircle } from './Icons.js'
 
 /** Where a task lives: its project, its area, or the list that shows it. */
@@ -81,7 +82,11 @@ export function Search({ onClose }: { onClose: () => void }) {
         </div>
         {query.trim() && (
           <ul className="search-results">
-            {hits.length === 0 && <li className="muted search-empty">{t('search.none')}</li>}
+            {hits.length === 0 && (
+              <li className="search-empty">
+                <EmptyState title={t('search.none')} text={t('search.noneHint')} />
+              </li>
+            )}
             {hits.map((hit, i) => (
               <li key={`${hit.kind}:${hit.item.id}`}>
                 <button

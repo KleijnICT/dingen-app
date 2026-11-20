@@ -115,6 +115,7 @@ things going out. Every animation has a `prefers-reduced-motion` fallback.
 | `--rail`                                                | 56px            | The sidebar folded to icons               |
 | `--rail-item`                                           | 36px            | One icon in the rail                      |
 | `--sidebar-default`, `--panel-default`, `--content-max` | 220, 420, 640px | Default column widths                     |
+| `--sheet-w`                                             | 280px           | The width of a sheet (see "Sheets")       |
 
 ## Components
 
@@ -169,15 +170,15 @@ section labels: `--text-sm`, `--weight-strong`, `--muted`, no capitals. New
 headings use `.section-heading`. A daypart heading adds a hairline and uses
 `--fg`.
 
-### Popovers
-
-`.popover` gives the surface, hairline border, `--r-lg` and `--shadow-2`.
-Menus use `.menu` inside a `.more-menu` with `.menu-item` rows.
-
 ### Empty states
 
-A title and one sentence, in `--muted`, nothing more. No illustrations, no
-buttons that repeat what the toolbar already offers.
+One component, `EmptyState` (`.empty-state`): a short title (strong) and one
+sentence (`--text-sm`), both in `--muted`, nothing more. No illustrations, no
+buttons that repeat what the toolbar already offers. Every empty list and
+page uses it: the lists, a project, an area, the Logbook, Review with nothing
+due and search without hits. Titles have no full stop; the sentence says what
+will show up there. Loading and load errors are not empty states: they use
+`.page-status`.
 
 ## Panes
 
@@ -232,11 +233,34 @@ Review items have a second line in `--text-xs` / `--muted`: when the item
 was last reviewed and how many tasks are open in it ("last reviewed 3 weeks
 ago · 4 open"); it breaks at the dot rather than losing the count.
 
-## Sheets (coming)
+## Sheets
 
-_Placeholder._ Menus and popovers will become one sheet component: sections
-with a small heading, shortcuts on the right, and a sheet from the bottom on
-phones. This section is filled in when the sheet component lands.
+Every menu and popover is one component, `Sheet` in `Menu.tsx` (`.sheet`):
+the `…` menus, the When picker, the filter, Review every, Move, Tags, Assign,
+the area's look, New list, the toolbar's questions and the task panel's
+field pickers. Do not build another floating surface.
+
+- **Surface.** `--surface`, a hairline, `--r-lg`, `--shadow-2`, one padding
+  (`--space-2`) and `--sheet-w` wide. A field picker in the task panel takes
+  its field's width instead.
+- **Placement.** It stays next to the button that opened it, in the DOM too,
+  so click-outside and focus work as before. `align` (start, end, center,
+  stretch) and `side` (below, above) place it; no positioning in other CSS.
+- **Sections.** `SheetSection` groups content under a small heading in the
+  `.section-heading` style (Planning, Organisation; When, Daypart). Fields,
+  chips and text use `inset` to line up with the heading; rows (menu items,
+  the move list) bring their own inset. `SheetDivider` is the hairline.
+- **Menu items.** `.menu-item`: a 16px icon in `--muted`, the label, and on the
+  right the key that does the same outside the menu (`.menu-kbd`), only where
+  the app has one. Items with the same `section` sit together under its
+  heading. A destructive item is red, and always last, under a hairline.
+- **Closing.** Escape and a click outside close it (`useDismiss`) and focus
+  goes back to the button; choosing closes it where that is the natural end.
+- **Phones** (720px and narrower). The same sheet comes up from the bottom:
+  the whole width, `--r-lg` on top, a grab handle, over `--scrim`, with
+  room for the safe area. It slides up in `--dur`; with reduced motion it
+  just appears. A tap on the scrim or a swipe down closes it; Escape still
+  does. Rows get more height for the thumb.
 
 ## Adding UI: a checklist
 

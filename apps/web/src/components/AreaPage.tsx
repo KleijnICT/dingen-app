@@ -1,5 +1,5 @@
 import { type Area, newProject, orderBetween, type Task, views } from '@dingen/core'
-import { FolderPlus } from 'lucide-react'
+import { FolderPlus, RefreshCw, Trash2, Users } from 'lucide-react'
 import { type ReactNode, useState } from 'react'
 import { useT } from '../i18n/index.js'
 import { navigate, projectPath } from '../router.js'
@@ -8,6 +8,7 @@ import { useEngine, useWorkspace } from '../store/context.js'
 import { createListTask, deleteArea, useLinger } from '../taskActions.js'
 import { AreaAppearance } from './AreaAppearance.js'
 import { CompletedSection } from './CompletedSection.js'
+import { EmptyState } from './EmptyState.js'
 import { InlineInput } from './InlineInput.js'
 import { MemberAvatars, MembersPanel, useAccess } from './MembersPanel.js'
 import { MoreMenu } from './Menu.js'
@@ -99,19 +100,22 @@ export function AreaPage({ area, focusSignal, headerExtra, showProjects = true }
               alignEnd
               label={t('menu.areaActions')}
               items={[
-                { label: t('nav.newProject'), onSelect: addProject },
+                { label: t('nav.newProject'), icon: FolderPlus, onSelect: addProject },
                 {
                   label: t('review.every.menu'),
+                  icon: RefreshCw,
                   onSelect: () => {},
                   panel: () => <ReviewEveryField kind="area" item={area} />,
                 },
                 {
                   label: t('members.title'),
+                  icon: Users,
                   onSelect: () => {},
                   panel: () => <MembersPanel type="area" id={area.id} access={access} />,
                 },
                 {
                   label: t('area.delete'),
+                  icon: Trash2,
                   danger: true,
                   confirm: t('area.deleteQuestion'),
                   onSelect: remove,
@@ -123,7 +127,9 @@ export function AreaPage({ area, focusSignal, headerExtra, showProjects = true }
       >
         <ActiveFilters {...filters} />
       </PageHeader>
-      {all.length === 0 && projects.length === 0 && <p className="empty">{t('area.empty')}</p>}
+      {all.length === 0 && projects.length === 0 && (
+        <EmptyState title={t('area.empty')} text={t('area.emptyHint')} />
+      )}
       <TaskGroup
         group={{ key: `area:${area.id}`, target: { kind: 'area', areaId: area.id } }}
         tasks={tasks.regular}

@@ -6,6 +6,7 @@ import { tagChanges, tagCoverage } from '../selection.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { tagForName } from '../tags.js'
 import { commitTask } from '../taskActions.js'
+import { Sheet, SheetSection } from './Menu.js'
 
 /**
  * Tags for one or more tasks, from the toolbar. Each tag shows whether all, some or none of
@@ -103,20 +104,24 @@ export function DeleteQuestion({
   const confirm = useRef<HTMLButtonElement>(null)
   useEffect(() => confirm.current?.focus(), [])
   return (
-    <div
-      className="popover toolbar-popover delete-question"
-      role="dialog"
-      aria-label={t('selection.delete')}
+    <Sheet
+      label={t('selection.delete')}
+      align="center"
+      side="above"
+      className="toolbar-popover delete-question"
+      onClose={onCancel}
     >
-      <p>{t('selection.deleteQuestion', { n: count })}</p>
-      <div className="delete-question-buttons">
-        <button type="button" className="button-secondary" onClick={onCancel}>
-          {t('confirm.cancel')}
-        </button>
-        <button type="button" className="button-danger" ref={confirm} onClick={onDelete}>
-          {t('selection.deleteConfirm', { n: count })}
-        </button>
-      </div>
-    </div>
+      <SheetSection inset>
+        <p>{t('selection.deleteQuestion', { n: count })}</p>
+        <div className="delete-question-buttons">
+          <button type="button" className="button-secondary" onClick={onCancel}>
+            {t('confirm.cancel')}
+          </button>
+          <button type="button" className="button-danger" ref={confirm} onClick={onDelete}>
+            {t('selection.deleteConfirm', { n: count })}
+          </button>
+        </div>
+      </SheetSection>
+    </Sheet>
   )
 }

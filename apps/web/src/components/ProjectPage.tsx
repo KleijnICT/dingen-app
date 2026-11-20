@@ -6,7 +6,18 @@ import {
   type Task,
   views,
 } from '@dingen/core'
-import { Heading as HeadingIcon } from 'lucide-react'
+import {
+  CalendarClock,
+  CircleCheck,
+  Flag,
+  FolderInput,
+  Heading as HeadingIcon,
+  RefreshCw,
+  RotateCcw,
+  Tag,
+  Trash2,
+  Users,
+} from 'lucide-react'
 import { type ReactNode, useState } from 'react'
 import { useT } from '../i18n/index.js'
 import { describeWhen } from '../lists.js'
@@ -17,6 +28,7 @@ import { createListTask, deleteProject, toggleProject, useLinger } from '../task
 import { AreaGlyph } from './AreaIcons.js'
 import { CompletedSection } from './CompletedSection.js'
 import { DeadlineBadge, DeadlineField } from './DeadlineField.js'
+import { EmptyState } from './EmptyState.js'
 import { ProgressCircle } from './Icons.js'
 import { InlineInput } from './InlineInput.js'
 import { MemberAvatars, MembersPanel, useAccess } from './MembersPanel.js'
@@ -114,14 +126,18 @@ export function ProjectPage({ project, focusSignal, headerExtra }: Props) {
   const menuItems: MenuItem[] = [
     {
       label: done ? t('project.reopen') : t('project.complete'),
+      icon: done ? RotateCcw : CircleCheck,
       onSelect: () => toggleProject(engine, project),
     },
     {
       label: t('menu.when'),
+      icon: CalendarClock,
+      section: t('panel.planning'),
       onSelect: () => {},
       panel: (close) => (
         <WhenPicker
           forProject
+          untitled
           when={project.when}
           daypart={null}
           today={ws.today}
@@ -134,6 +150,8 @@ export function ProjectPage({ project, focusSignal, headerExtra }: Props) {
     },
     {
       label: t('menu.deadline'),
+      icon: Flag,
+      section: t('panel.planning'),
       onSelect: () => {},
       panel: () => (
         <DeadlineField
@@ -144,7 +162,16 @@ export function ProjectPage({ project, focusSignal, headerExtra }: Props) {
       ),
     },
     {
+      label: t('review.every.menu'),
+      icon: RefreshCw,
+      section: t('panel.planning'),
+      onSelect: () => {},
+      panel: () => <ReviewEveryField kind="project" item={project} />,
+    },
+    {
       label: t('menu.tags'),
+      icon: Tag,
+      section: t('panel.organization'),
       onSelect: () => {},
       panel: () => (
         <TagEditor
@@ -155,6 +182,8 @@ export function ProjectPage({ project, focusSignal, headerExtra }: Props) {
     },
     {
       label: t('menu.move'),
+      icon: FolderInput,
+      section: t('panel.organization'),
       onSelect: () => {},
       panel: (close) => (
         <div className="move-list">
@@ -181,17 +210,15 @@ export function ProjectPage({ project, focusSignal, headerExtra }: Props) {
       ),
     },
     {
-      label: t('review.every.menu'),
-      onSelect: () => {},
-      panel: () => <ReviewEveryField kind="project" item={project} />,
-    },
-    {
       label: t('members.title'),
+      icon: Users,
+      section: t('panel.organization'),
       onSelect: () => {},
       panel: () => <MembersPanel type="project" id={project.id} access={access} />,
     },
     {
       label: t('project.delete'),
+      icon: Trash2,
       danger: true,
       confirm: t('project.deleteQuestion'),
       onSelect: remove,
@@ -277,7 +304,7 @@ export function ProjectPage({ project, focusSignal, headerExtra }: Props) {
           })}
         </div>
       )}
-      {all.length === 0 && <p className="empty">{t('project.empty')}</p>}
+      {all.length === 0 && <EmptyState title={t('project.empty')} text={t('project.emptyHint')} />}
       {group(null, sections.loose)}
       {sections.headings.map(({ heading, tasks }) => (
         <div key={heading.id} className="group heading-group">
@@ -351,7 +378,7 @@ export function HeadingRow({ heading, onRemove }: HeadingProps) {
       <MoreMenu
         alignEnd
         label={t('menu.headingActions')}
-        items={[{ label: t('heading.delete'), danger: true, onSelect: onRemove }]}
+        items={[{ label: t('heading.delete'), icon: Trash2, danger: true, onSelect: onRemove }]}
       />
     </div>
   )

@@ -17,6 +17,13 @@
   shows where its task lives. In the Review the sidebar folds to a rail of
   icons and the review list takes its place; each item says when it was last
   reviewed and how many tasks are open.
+- Menus and popovers are one kind of sheet: the same surface everywhere,
+  sections with a small heading (Planning, Organisation; When, Daypart),
+  icons in front of menu items, the delete action last under a line. On a
+  phone they come up from the bottom with a grab handle, and close with a
+  tap beside them or a swipe down. Empty lists and pages all show a short
+  title with one sentence, and the Logbook no longer shows "Loading…" as if
+  it were empty.
 - Push notifications arrive in the language of the device: when you turn on
   reminders, the device sends its app language along, and again when you
   change the language. Reminders and "an agent assigned you a task" then come

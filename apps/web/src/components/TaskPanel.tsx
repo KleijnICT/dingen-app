@@ -1,6 +1,6 @@
 import type { Task } from '@dingen/core'
 import { views } from '@dingen/core'
-import { ChevronLeft, Plus, X } from 'lucide-react'
+import { ChevronLeft, Copy, FolderPlus, Plus, Trash2, X } from 'lucide-react'
 import {
   createContext,
   type FocusEvent,
@@ -46,7 +46,7 @@ import { DeadlineField } from './DeadlineField.js'
 import { DurationField } from './Duration.js'
 import { CheckIcon, MoonIcon, ProgressCircle, TodayIcon } from './Icons.js'
 import { LinkedNotes } from './LinkedText.js'
-import { MoreMenu, useDismiss } from './Menu.js'
+import { MoreMenu, Sheet, useDismiss } from './Menu.js'
 import { MoveList } from './MoveList.js'
 import { Crumb, type CrumbStep, PaneHeader } from './Pane.js'
 import { RepeatEditor } from './RepeatEditor.js'
@@ -462,6 +462,7 @@ function TaskEditor({ task, mode, headActions, onClose, onToggle, onOpen }: Edit
         items={[
           {
             label: t('task.duplicate'),
+            icon: Copy,
             onSelect: () => {
               commit()
               onOpen(duplicateTask(engine, ws, { ...task, title, notes }).id)
@@ -473,12 +474,16 @@ function TaskEditor({ task, mode, headActions, onClose, onToggle, onOpen }: Edit
             ? [
                 {
                   label: t('task.convertToProject'),
+                  icon: FolderPlus,
                   onSelect: () => convertToProject(engine, ws, { ...task, title, notes }),
                 },
               ]
             : []),
           {
             label: t('task.delete'),
+            icon: Trash2,
+            // A selected task in the list goes with Backspace (or Delete) too.
+            shortcut: '⌫',
             danger: true,
             confirm: t('task.deleteQuestion'),
             onSelect: () => {
@@ -798,9 +803,15 @@ export function PopoverButton({ label, autoOpen = false, value, text, children }
         {value}
       </button>
       {open && (
-        <div ref={popover} className="popover panel-popover" role="dialog" aria-label={label}>
+        <Sheet
+          sheetRef={popover}
+          label={label}
+          align="stretch"
+          className="panel-popover"
+          onClose={close}
+        >
           {children(done)}
-        </div>
+        </Sheet>
       )}
     </div>
   )

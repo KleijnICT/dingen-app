@@ -1,6 +1,7 @@
 import { DAYPARTS, type Daypart, type When } from '@dingen/core'
 import { whenOptions } from '../dayparts.js'
 import { useT } from '../i18n/index.js'
+import { SheetSection } from './Menu.js'
 
 interface Props {
   when: When
@@ -13,6 +14,8 @@ interface Props {
   onChange: (when: When, daypart: Daypart | null, close: boolean) => void
   /** Projects have no Inbox and no daypart. */
   forProject?: boolean
+  /** Leave out the When heading where the sheet already says When (a menu's panel). */
+  untitled?: boolean
 }
 
 /**
@@ -20,50 +23,61 @@ interface Props {
  * a date, and under a date the daypart (none, morning, afternoon, evening).
  * Moving to a date keeps the daypart; without a date there is none.
  */
-export function WhenPicker({ when, daypart, today, onChange, forProject = false }: Props) {
+export function WhenPicker({
+  when,
+  daypart,
+  today,
+  onChange,
+  forProject = false,
+  untitled = false,
+}: Props) {
   const t = useT()
   const date = when.kind === 'date' ? when.date : null
 
   return (
     <div className="when-picker-wrap">
-      <fieldset className="when-picker" aria-label={t('when.label')}>
-        {whenOptions(when, today, forProject).map((o) => (
-          <button
-            type="button"
-            key={o.key}
-            className={`chip ${o.active ? 'active' : ''}`}
-            aria-pressed={o.active}
-            onClick={() => onChange(o.when, o.when.kind === 'date' ? daypart : null, o.close)}
-          >
-            {t(`when.${o.key}`)}
-          </button>
-        ))}
-        <input
-          type="date"
-          className="chip date"
-          value={date ?? ''}
-          min={today}
-          onChange={(e) => {
-            if (e.target.value)
-              onChange({ kind: 'date', date: e.target.value }, daypart, forProject)
-          }}
-          aria-label={t('when.pickDate')}
-        />
-      </fieldset>
-      {date !== null && !forProject && (
-        <fieldset className="daypart-picker" aria-label={t('daypart.label')}>
-          {[null, ...DAYPARTS].map((part) => (
+      <SheetSection inset title={untitled ? undefined : t('when.label')}>
+        <fieldset className="when-picker" aria-label={t('when.label')}>
+          {whenOptions(when, today, forProject).map((o) => (
             <button
               type="button"
-              key={part ?? 'none'}
-              className={`chip small ${daypart === part ? 'active' : ''}`}
-              aria-pressed={daypart === part}
-              onClick={() => onChange(when, part, true)}
+              key={o.key}
+              className={`chip ${o.active ? 'active' : ''}`}
+              aria-pressed={o.active}
+              onClick={() => onChange(o.when, o.when.kind === 'date' ? daypart : null, o.close)}
             >
-              {t(`daypart.${part ?? 'none'}`)}
+              {t(`when.${o.key}`)}
             </button>
           ))}
+          <input
+            type="date"
+            className="chip date"
+            value={date ?? ''}
+            min={today}
+            onChange={(e) => {
+              if (e.target.value)
+                onChange({ kind: 'date', date: e.target.value }, daypart, forProject)
+            }}
+            aria-label={t('when.pickDate')}
+          />
         </fieldset>
+      </SheetSection>
+      {date !== null && !forProject && (
+        <SheetSection inset title={t('daypart.label')}>
+          <fieldset className="daypart-picker" aria-label={t('daypart.label')}>
+            {[null, ...DAYPARTS].map((part) => (
+              <button
+                type="button"
+                key={part ?? 'none'}
+                className={`chip small ${daypart === part ? 'active' : ''}`}
+                aria-pressed={daypart === part}
+                onClick={() => onChange(when, part, true)}
+              >
+                {t(`daypart.${part ?? 'none'}`)}
+              </button>
+            ))}
+          </fieldset>
+        </SheetSection>
       )}
     </div>
   )

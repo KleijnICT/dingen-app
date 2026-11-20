@@ -1,5 +1,5 @@
 import { normalizeTagTitle, recordKey, type Tag } from '@dingen/core'
-import { CornerDownRight } from 'lucide-react'
+import { CornerDownRight, Pencil, Trash2 } from 'lucide-react'
 import { type FormEvent, type KeyboardEvent, useMemo, useState } from 'react'
 import { useT } from '../i18n/index.js'
 import { useEngine, useWorkspace } from '../store/context.js'
@@ -189,10 +189,12 @@ function TagItem(props: ItemProps) {
       <MoreMenu
         label={t('tagSettings.actions', { name: tag.title })}
         alignEnd
+        above={props.up}
         items={[
-          { label: t('tagSettings.rename'), onSelect: start },
+          { label: t('tagSettings.rename'), icon: Pencil, onSelect: start },
           {
             label: t('tagSettings.moveUnder'),
+            icon: CornerDownRight,
             onSelect: () => {},
             panel: (close) => (
               <div className="move-list tag-settings-parents">
@@ -227,6 +229,7 @@ function TagItem(props: ItemProps) {
           },
           {
             label: t('tagSettings.delete'),
+            icon: Trash2,
             danger: true,
             confirm: t(props.hasChildren ? 'tagSettings.confirmParent' : 'tagSettings.confirm', {
               name: tag.title,

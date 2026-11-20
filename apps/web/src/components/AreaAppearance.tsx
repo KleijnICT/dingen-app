@@ -1,9 +1,10 @@
 import { AREA_COLORS, AREA_ICONS, type Area } from '@dingen/core'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { type MessageKey, useT } from '../i18n/index.js'
 import { useEngine } from '../store/context.js'
 import { AREA_ICON_COMPONENTS, AreaGlyph, areaColorVar, knownColor } from './AreaIcons.js'
 import { AreaIcon } from './Icons.js'
+import { Sheet, SheetSection, useDismiss } from './Menu.js'
 
 /**
  * The button left of an area's title: shows its icon in its colour and opens
@@ -16,24 +17,8 @@ export function AreaAppearance({ area }: { area: Area }) {
   const root = useRef<HTMLDivElement>(null)
   const button = useRef<HTMLButtonElement>(null)
 
-  useEffect(() => {
-    if (!open) return
-    function onPointerDown(e: PointerEvent) {
-      if (root.current && !root.current.contains(e.target as Node)) setOpen(false)
-    }
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key !== 'Escape') return
-      e.stopPropagation()
-      setOpen(false)
-      button.current?.focus()
-    }
-    document.addEventListener('pointerdown', onPointerDown)
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown)
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [open])
+  const close = useCallback(() => setOpen(false), [])
+  useDismiss(open, close, root, button)
 
   const icon = area.icon !== null && area.icon in AREA_ICON_COMPONENTS ? area.icon : null
   const color = knownColor(area.color) ?? 'gray'
@@ -52,49 +37,53 @@ export function AreaAppearance({ area }: { area: Area }) {
         <AreaGlyph icon={area.icon} color={area.color} size={26} />
       </button>
       {open && (
-        <div className="popover area-picker" role="dialog" aria-label={t('area.appearance')}>
-          <div className="icon-grid">
-            <button
-              type="button"
-              className="picker-item"
-              aria-label={t('areaIcon.default')}
-              title={t('areaIcon.default')}
-              aria-pressed={icon === null}
-              onClick={() => engine.mutate('area', area.id, { icon: null })}
-            >
-              <span style={{ color: areaColorVar(area.color), display: 'inline-flex' }}>
-                <AreaIcon size={18} />
-              </span>
-            </button>
-            {AREA_ICONS.map((id) => (
+        <Sheet label={t('area.appearance')} className="area-picker" onClose={close}>
+          <SheetSection inset>
+            <div className="icon-grid">
               <button
-                key={id}
                 type="button"
                 className="picker-item"
-                aria-label={t(`areaIcon.${id}` as MessageKey)}
-                title={t(`areaIcon.${id}` as MessageKey)}
-                aria-pressed={icon === id}
-                onClick={() => engine.mutate('area', area.id, { icon: id })}
+                aria-label={t('areaIcon.default')}
+                title={t('areaIcon.default')}
+                aria-pressed={icon === null}
+                onClick={() => engine.mutate('area', area.id, { icon: null })}
               >
-                <AreaGlyph icon={id} color={area.color} />
+                <span style={{ color: areaColorVar(area.color), display: 'inline-flex' }}>
+                  <AreaIcon size={18} />
+                </span>
               </button>
-            ))}
-          </div>
-          <div className="color-row">
-            {AREA_COLORS.map((id) => (
-              <button
-                key={id}
-                type="button"
-                className="swatch"
-                style={{ background: areaColorVar(id) }}
-                aria-label={t(`areaColor.${id}` as MessageKey)}
-                title={t(`areaColor.${id}` as MessageKey)}
-                aria-pressed={color === id}
-                onClick={() => engine.mutate('area', area.id, { color: id === 'gray' ? null : id })}
-              />
-            ))}
-          </div>
-        </div>
+              {AREA_ICONS.map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  className="picker-item"
+                  aria-label={t(`areaIcon.${id}` as MessageKey)}
+                  title={t(`areaIcon.${id}` as MessageKey)}
+                  aria-pressed={icon === id}
+                  onClick={() => engine.mutate('area', area.id, { icon: id })}
+                >
+                  <AreaGlyph icon={id} color={area.color} />
+                </button>
+              ))}
+            </div>
+            <div className="color-row">
+              {AREA_COLORS.map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  className="swatch"
+                  style={{ background: areaColorVar(id) }}
+                  aria-label={t(`areaColor.${id}` as MessageKey)}
+                  title={t(`areaColor.${id}` as MessageKey)}
+                  aria-pressed={color === id}
+                  onClick={() =>
+                    engine.mutate('area', area.id, { color: id === 'gray' ? null : id })
+                  }
+                />
+              ))}
+            </div>
+          </SheetSection>
+        </Sheet>
       )}
     </div>
   )

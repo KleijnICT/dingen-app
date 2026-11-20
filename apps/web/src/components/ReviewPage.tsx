@@ -7,6 +7,7 @@ import { openCount, reviewAge, selectAfterReviewed } from '../reviewList.js'
 import { useEngine, useWorkspace } from '../store/context.js'
 import { AreaGlyph } from './AreaIcons.js'
 import { AreaPage } from './AreaPage.js'
+import { EmptyState } from './EmptyState.js'
 import { ProgressCircle } from './Icons.js'
 import { Pane, PaneHeader } from './Pane.js'
 import { ProjectPage } from './ProjectPage.js'
@@ -71,10 +72,7 @@ export function ReviewPage({ focusSignal }: Props) {
           <header className="list-header">
             <h1>{t('review.title')}</h1>
           </header>
-          <div className="empty review-empty">
-            <p>{t('review.empty')}</p>
-            <p className="muted">{t('review.empty.hint')}</p>
-          </div>
+          <EmptyState title={t('review.empty')} text={t('review.empty.hint')} />
         </section>
       )
     }
@@ -160,7 +158,7 @@ function ReviewQueue({ queue, selectedId, onSelect, inline }: QueueProps) {
         )
       }
     >
-      {queue.length === 0 && <p className="empty">{t('review.empty')}</p>}
+      {queue.length === 0 && <EmptyState title={t('review.empty')} text={t('review.empty.hint')} />}
       {queue.length > 0 && (
         <ul className="nav">
           {queue.map((entry) => {

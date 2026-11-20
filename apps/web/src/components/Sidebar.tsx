@@ -20,7 +20,7 @@ import {
   SomedayIcon,
   TodayIcon,
 } from './Icons.js'
-import { useDismiss } from './Menu.js'
+import { Sheet, useDismiss } from './Menu.js'
 import { PaneHeader } from './Pane.js'
 import { ShellActions } from './Toolbar.js'
 
@@ -209,7 +209,13 @@ function FullSidebar({ path, status, onOpenSettings }: Omit<Props, 'rail'>) {
               <span>{t('nav.newList')}</span>
             </button>
             {adding && (
-              <div className="popover menu new-list-menu" role="menu">
+              <Sheet
+                label={t('nav.newList')}
+                role="menu"
+                side="above"
+                className="menu new-list-menu"
+                onClose={closeAdd}
+              >
                 <button
                   type="button"
                   role="menuitem"
@@ -229,7 +235,7 @@ function FullSidebar({ path, status, onOpenSettings }: Omit<Props, 'rail'>) {
                     <small>{t('nav.newArea.hint')}</small>
                   </span>
                 </button>
-              </div>
+              </Sheet>
             )}
           </div>
           <button
