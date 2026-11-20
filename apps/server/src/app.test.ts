@@ -1,3 +1,4 @@
+import { SYNC_PROTOCOL } from '@dingen/core'
 import { afterAll, describe, expect, it } from 'vitest'
 import { createApp } from './app.js'
 import { openDatabase } from './db.js'
@@ -18,6 +19,7 @@ describe('server', () => {
       version: 'test',
       build: null,
       database: 'ok',
+      syncProtocol: SYNC_PROTOCOL,
     })
     expect(body.sqliteVersion).toMatch(/^3\./)
   })
