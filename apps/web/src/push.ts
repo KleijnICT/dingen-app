@@ -1,5 +1,6 @@
 import { api } from './api.js'
 import { readBase } from './base.js'
+import { getLocale, type Locale } from './i18n/index.js'
 
 /**
  * Web push on this device (browser). Push needs a service worker, and both
@@ -55,15 +56,19 @@ export async function currentSubscription(): Promise<PushSubscription | null> {
   return reg ? reg.pushManager.getSubscription() : null
 }
 
-async function register(sub: PushSubscription): Promise<void> {
-  await api.post('/api/push/subscriptions', sub.toJSON())
+/** With the app language of this device, so the server writes notifications in it. */
+async function register(sub: PushSubscription, language: Locale = getLocale()): Promise<void> {
+  await api.post('/api/push/subscriptions', { ...sub.toJSON(), language })
 }
 
-/** Re-sends an existing subscription, so the server knows it under the signed-in account. */
-export async function refreshSubscription(): Promise<boolean> {
+/**
+ * Re-sends an existing subscription, so the server knows it under the signed-in
+ * account and in the current app language.
+ */
+export async function refreshSubscription(language: Locale = getLocale()): Promise<boolean> {
   const sub = await currentSubscription()
   if (!sub) return false
-  await register(sub)
+  await register(sub, language)
   return true
 }
 

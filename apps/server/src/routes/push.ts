@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import { z } from 'zod'
 import type { AppEnv } from '../env.js'
+import { parsePushLocale } from '../push/messages.js'
 import type { PushService } from '../push/service.js'
 
 const Key = z.string().min(1).max(512)
@@ -8,6 +9,8 @@ const Endpoint = z.string().url().max(2048)
 const SubscribeBody = z.object({
   endpoint: Endpoint,
   keys: z.object({ p256dh: Key, auth: Key }),
+  /** The app language on the device; an unknown value is stored as null. */
+  language: z.unknown().optional(),
 })
 const UnsubscribeBody = z.object({ endpoint: Endpoint })
 /** De client geeft de tekst van de proefmelding mee, in de taal van de gebruiker. */
@@ -28,7 +31,8 @@ export function pushRoutes(service: PushService) {
     const endpoint = new URL(parsed.data.endpoint)
     if (endpoint.protocol !== 'https:') return c.json({ error: 'invalid_body' }, 400)
     const userAgent = c.req.header('user-agent')?.slice(0, 300) ?? null
-    service.subscribe(c.get('userId'), parsed.data, userAgent)
+    const { language, ...target } = parsed.data
+    service.subscribe(c.get('userId'), target, userAgent, parsePushLocale(language))
     return c.json({ ok: true }, 201)
   })
 

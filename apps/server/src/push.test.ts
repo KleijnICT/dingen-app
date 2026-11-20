@@ -1,7 +1,10 @@
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 import { createClock, newTask, type Task, ulid } from '@dingen/core'
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { createApp } from './app.js'
-import { openDatabase } from './db.js'
+import { migrationsFolder, openDatabase } from './db.js'
 import { LATE_MS, ReminderPlanner } from './push/planner.js'
 import { type PushPayload, PushService, type PushTarget, type SendResult } from './push/service.js'
 import { loadVapidKeys } from './push/vapid.js'
@@ -136,6 +139,30 @@ describe('/api/push', () => {
     expect(push.count(await userIdOf(bob))).toBe(1)
     await call(bob, 'DELETE', '/api/push/subscriptions', { endpoint })
     expect(users()).toHaveLength(0)
+  })
+
+  it('keeps the device language: a known one, otherwise null, updated on re-sending', async () => {
+    const endpoint = 'https://push.example.org/language'
+    const language = () =>
+      (
+        database.sqlite
+          .prepare('select language from push_subscriptions where endpoint = ?')
+          .get(endpoint) as { language: string | null }
+      ).language
+    const send = (extra: Record<string, unknown>) =>
+      call(alice, 'POST', '/api/push/subscriptions', { ...subscription(endpoint), ...extra })
+    expect((await send({ language: 'nl' })).status).toBe(201)
+    expect(language()).toBe('nl')
+    expect((await send({ language: 'en' })).status).toBe(201)
+    expect(language()).toBe('en')
+    expect((await send({ language: 'fr' })).status).toBe(201)
+    expect(language()).toBeNull()
+    expect((await send({ language: 42 })).status).toBe(201)
+    expect(language()).toBeNull()
+    await send({ language: 'nl' })
+    expect((await send({})).status).toBe(201)
+    expect(language()).toBeNull()
+    await call(alice, 'DELETE', '/api/push/subscriptions', { endpoint })
   })
 
   it('refuses a bad subscription', async () => {
@@ -298,6 +325,20 @@ describe('ReminderPlanner', () => {
     )
   })
 
+  it('names an untitled task in the language of each device', async () => {
+    const dutch = 'https://push.example.org/carol-tablet'
+    await call(carol, 'POST', '/api/push/subscriptions', {
+      ...subscription(dutch),
+      language: 'nl',
+    })
+    await save(carol, reminderTask({ title: '', reminder: { daysBefore: 0, time: '13:00' } }))
+    clock = Date.parse('2026-11-12T12:00:00Z')
+    await planner.tick()
+    const titles = Object.fromEntries(outbox.map((o) => [o.endpoint, o.payload.title]))
+    expect(titles).toEqual({ [endpoint]: 'Untitled', [dutch]: 'Zonder titel' })
+    await call(carol, 'DELETE', '/api/push/subscriptions', { endpoint: dutch })
+  })
+
   it('drops a subscription the push service no longer knows', async () => {
     const extra = 'https://push.example.org/carol-old-laptop'
     await call(carol, 'POST', '/api/push/subscriptions', subscription(extra))
@@ -330,5 +371,59 @@ describe('ReminderPlanner', () => {
     clock = Date.parse('2026-12-01T12:00:00Z')
     await planner.tick()
     expect(database.db.select().from(reminderDeliveries).all()).toHaveLength(0)
+  })
+})
+
+describe('migration 0010: push_subscriptions.language', () => {
+  it('keeps the subscriptions of an existing database, without a language (English)', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dingen-push-language-'))
+    try {
+      // A migrations folder that stops before 0010, like the previous build.
+      const before = path.join(dir, 'migrations')
+      fs.cpSync(migrationsFolder, before, { recursive: true })
+      const journalPath = path.join(before, 'meta/_journal.json')
+      const journal = JSON.parse(fs.readFileSync(journalPath, 'utf8'))
+      journal.entries = journal.entries.filter((e: { tag: string }) => e.tag < '0010')
+      fs.writeFileSync(journalPath, JSON.stringify(journal))
+
+      const file = path.join(dir, 'dingen.db')
+      const old = openDatabase(file, { migrationsFolder: before })
+      old.sqlite.exec(
+        `insert into users (id, email, password_hash, created_at) values ('U1', 'old@example.com', 'x', '2026-01-01T00:00:00.000Z');
+         insert into push_subscriptions (id, user_id, endpoint, p256dh, auth, created_at) values ('S1', 'U1', 'https://push.example.org/old', 'BPubKey', 'authSecret', '2026-01-01T00:00:00.000Z');`,
+      )
+      old.close()
+
+      const upgraded = openDatabase(file)
+      try {
+        const sent: PushPayload[] = []
+        const service = new PushService(upgraded.db, 'key', async (_target, payload) => {
+          sent.push(payload)
+          return 'sent'
+        })
+        expect(
+          await service.send('U1', (locale) => ({
+            title: locale,
+            body: '',
+            tag: 't',
+            url: '/today',
+          })),
+        ).toBe(1)
+        expect(sent.map((p) => p.title)).toEqual(['en'])
+        service.subscribe(
+          'U1',
+          { endpoint: 'https://push.example.org/old', keys: { p256dh: 'B', auth: 'a' } },
+          null,
+          'nl',
+        )
+        sent.length = 0
+        await service.send('U1', (locale) => ({ title: locale, body: '', tag: 't', url: '/' }))
+        expect(sent.map((p) => p.title)).toEqual(['nl'])
+      } finally {
+        upgraded.close()
+      }
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
   })
 })

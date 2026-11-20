@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Push notifications arrive in the language of the device: when you turn on
+  reminders, the device sends its app language along, and again when you
+  change the language. Reminders and "an agent assigned you a task" then come
+  in that language (English for devices that did not tell yet; open Settings
+  once to update them). The update runs a small database migration (a
+  `language` column on `push_subscriptions`), with a backup first.
+
 ## 1.0.0-alpha.8
 
 A new, simpler review: every project and area has its own review frequency,

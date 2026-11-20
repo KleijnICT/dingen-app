@@ -223,6 +223,8 @@ export const pushSubscriptions = sqliteTable(
     p256dh: text('p256dh').notNull(),
     auth: text('auth').notNull(),
     userAgent: text('user_agent'),
+    /** The app language on the device ('en', 'nl'); null: English. */
+    language: text('language'),
     createdAt: text('created_at').notNull(),
   },
   (t) => [index('push_subscriptions_user_idx').on(t.userId)],

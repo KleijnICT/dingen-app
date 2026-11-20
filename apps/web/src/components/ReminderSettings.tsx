@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useT } from '../i18n/index.js'
+import { useLocale, useT } from '../i18n/index.js'
 import {
   disablePush,
   enablePush,
@@ -15,19 +15,21 @@ type State = 'loading' | 'off' | 'on' | 'busy'
 export function ReminderSettings() {
   const t = useT()
   const support = pushSupport()
+  // Re-sent when the app language changes, so notifications follow it.
+  const locale = useLocale()
   const [state, setState] = useState<State>('loading')
   const [message, setMessage] = useState<string | null>(null)
 
   useEffect(() => {
     if (support !== 'ok') return
     let alive = true
-    refreshSubscription()
+    refreshSubscription(locale)
       .then((on) => alive && setState(on ? 'on' : 'off'))
       .catch(() => alive && setState('off'))
     return () => {
       alive = false
     }
-  }, [support])
+  }, [support, locale])
 
   if (support !== 'ok') {
     return (

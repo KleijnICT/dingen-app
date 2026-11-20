@@ -8,6 +8,7 @@ import {
 import { eq } from 'drizzle-orm'
 import type { Db } from '../db.js'
 import { agents } from '../schema.js'
+import { type PushLocale, pushMessages } from './messages.js'
 import type { PushPayload, PushService } from './service.js'
 
 /** An agent gave a task to a person (plan 19, decision 10). */
@@ -65,9 +66,8 @@ export function taskUrl(a: Pick<Assignment, 'taskId' | 'projectId' | 'areaId'>):
 
 /**
  * Sends a web push to the assignee's devices. Without a push subscription (push
- * not switched on in Settings) nothing goes out. The server does not know the
- * person's language (it is a per-device choice in the web app), so the text is
- * English, the app's default.
+ * not switched on in Settings) nothing goes out. Each device gets the text in
+ * the language it subscribed with (English when it did not tell).
  */
 export class AssignmentNotifier {
   constructor(
@@ -75,18 +75,22 @@ export class AssignmentNotifier {
     private readonly push: PushService,
   ) {}
 
-  payload(a: Assignment): PushPayload {
+  /** The notification for one assignment, rendered in `locale`. */
+  payload(a: Assignment): (locale: PushLocale) => PushPayload {
     const agent = this.db
       .select({ name: agents.name })
       .from(agents)
       .where(eq(agents.id, a.agentId))
       .get()
-    const who = agent?.name?.trim() || 'An agent'
-    return {
-      title: `${who} assigned you a task`,
-      body: a.title || '…',
-      tag: a.taskId,
-      url: taskUrl(a),
+    const name = agent?.name?.trim()
+    return (locale) => {
+      const m = pushMessages(locale)
+      return {
+        title: m.assigned(name || m.anAgent),
+        body: a.title || m.untitled,
+        tag: a.taskId,
+        url: taskUrl(a),
+      }
     }
   }
 

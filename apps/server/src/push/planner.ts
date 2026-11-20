@@ -4,6 +4,7 @@ import { wallToInstant } from '../calendar/ics.js'
 import type { Db } from '../db.js'
 import { entities, pushSubscriptions, reminderDeliveries, spaceMembers } from '../schema.js'
 import { inSpacesOf } from '../spaces/service.js'
+import { type PushLocale, pushMessages } from './messages.js'
 import type { PushPayload, PushService } from './service.js'
 
 /** Hoe vaak de planner kijkt. */
@@ -130,7 +131,13 @@ export class ReminderPlanner {
     return due.length
   }
 
-  private payload({ userId, task }: { userId: string; task: Task }): PushPayload {
+  private payload({
+    userId,
+    task,
+  }: {
+    userId: string
+    task: Task
+  }): (locale: PushLocale) => PushPayload {
     const containerId = task.projectId ?? task.areaId
     let container: string | null = null
     if (containerId) {
@@ -149,6 +156,11 @@ export class ReminderPlanner {
       container = typeof title === 'string' && title ? title : null
     }
     const body = container ?? ''
-    return { title: task.title || '…', body, tag: task.id, url: '/today' }
+    return (locale) => ({
+      title: task.title || pushMessages(locale).untitled,
+      body,
+      tag: task.id,
+      url: '/today',
+    })
   }
 }

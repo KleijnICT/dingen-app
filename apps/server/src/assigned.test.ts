@@ -216,4 +216,30 @@ describe('assignment notifications: over the API', () => {
     await settle()
     expect(outbox).toEqual([])
   })
+
+  it("renders the push in each device's language, English without one", async () => {
+    await app.request('/api/push/subscriptions', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', cookie },
+      body: JSON.stringify({
+        endpoint: 'https://push.example.org/dutch-phone',
+        keys: { p256dh: 'BPubKey', auth: 'authSecret' },
+        language: 'nl',
+      }),
+    })
+    outbox.length = 0
+    const { id, ...fields } = newTask({ title: '' })
+    await sync({ cookie }, [taskChange(id, fields)])
+    await sync({ authorization: agentAuth }, [taskChange(id, { assigneeId: `user:${userId}` })])
+    await settle()
+    const byDevice = Object.fromEntries(outbox.map((o) => [o.target.endpoint, o.payload]))
+    expect(byDevice['https://push.example.org/device']).toMatchObject({
+      title: 'Claude assigned you a task',
+      body: 'Untitled',
+    })
+    expect(byDevice['https://push.example.org/dutch-phone']).toMatchObject({
+      title: 'Claude heeft je een taak toegewezen',
+      body: 'Zonder titel',
+    })
+  })
 })

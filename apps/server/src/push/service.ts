@@ -3,6 +3,7 @@ import { and, eq } from 'drizzle-orm'
 import webpush from 'web-push'
 import type { Db } from '../db.js'
 import { pushSubscriptions } from '../schema.js'
+import { DEFAULT_PUSH_LOCALE, type PushLocale, parsePushLocale } from './messages.js'
 import type { VapidKeys } from './vapid.js'
 
 export interface PushTarget {
@@ -19,6 +20,12 @@ export interface PushPayload {
   /** Pad dat een klik op de melding opent. */
   url: string
 }
+
+/**
+ * A payload, or a function that renders it in a subscription's language
+ * (English when the device did not tell its language).
+ */
+export type PushMessage = PushPayload | ((locale: PushLocale) => PushPayload)
 
 /** `gone`: het abonnement bestaat niet meer (404/410) en kan weg. */
 export type SendResult = 'sent' | 'gone' | 'failed'
@@ -53,12 +60,19 @@ export class PushService {
     private readonly sender: PushSender,
   ) {}
 
-  subscribe(userId: string, target: PushTarget, userAgent: string | null): void {
+  /** `language`: the app language on the device; an unknown one is stored as null. */
+  subscribe(
+    userId: string,
+    target: PushTarget,
+    userAgent: string | null,
+    language: string | null = null,
+  ): void {
     const values = {
       userId,
       p256dh: target.keys.p256dh,
       auth: target.keys.auth,
       userAgent,
+      language: parsePushLocale(language),
       createdAt: new Date().toISOString(),
     }
     this.db
@@ -84,8 +98,11 @@ export class PushService {
       .all().length
   }
 
-  /** Stuurt naar alle apparaten van de gebruiker; verdwenen abonnementen gaan weg. */
-  async send(userId: string, payload: PushPayload): Promise<number> {
+  /**
+   * Stuurt naar alle apparaten van de gebruiker, elk in de taal van dat
+   * apparaat; verdwenen abonnementen gaan weg.
+   */
+  async send(userId: string, message: PushMessage): Promise<number> {
     const subs = this.db
       .select()
       .from(pushSubscriptions)
@@ -94,6 +111,10 @@ export class PushService {
     let sent = 0
     await Promise.all(
       subs.map(async (s) => {
+        const payload =
+          typeof message === 'function'
+            ? message(parsePushLocale(s.language) ?? DEFAULT_PUSH_LOCALE)
+            : message
         const result = await this.sender(
           { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
           payload,
