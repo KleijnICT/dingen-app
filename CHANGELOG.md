@@ -1,6 +1,14 @@
 # Changelog
 
-## Unreleased
+## 1.0.0-alpha.8
+
+A new, simpler review: every project and area has its own review frequency,
+and the Review page lists what is due beside the sidebar. Also: Someday items
+at the bottom of project and area pages, dragging a whole selection, and
+Anytime without what is in Today. A pre-release; `:latest` points to it. The
+update runs a small database migration (a column on `users`), with a backup
+first. The daily, weekly and monthly reviews are gone; the MCP review tools
+changed, so update the MCP plugin. Reload the web app to get the new version.
 
 - A new, simpler review. Every project and area has a review frequency
   (every N days, weeks, months or years; every week unless you change it, in
