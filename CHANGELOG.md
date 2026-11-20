@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- Administration in Settings, for administrators (replaces the Invitations
+  tab): the users with when they joined and were last active; make someone an
+  administrator; block an account (signed out everywhere, no sign-in, its API
+  and agent tokens and Home Assistant access refused, no notifications) and
+  unblock it; delete a blocked account permanently with all its own data,
+  after typing its email address and with a backup first. Nobody can block,
+  delete or unadmin themselves or the last administrator. Who may register
+  (nobody, with an invitation, anyone) is now chosen there and stored in the
+  database; `DINGEN_REGISTRATION` is only the starting value, and an existing
+  server keeps its current setting. The backups are listed with date, kind
+  and size: back up now, download, or restore one after typing "restore";
+  a restore makes its own backup first and restarts the server's database in
+  place, and devices load a fresh copy. All under `/api/admin`, for
+  administrators in a browser session only. Database migration: a column on
+  `users` (`blocked_at`), with a backup first.
 - A calmer, more consistent look (the first step of a redesign): one set of
   design tokens for space, type, radius, shadow and motion, a finished dark
   theme, quiet buttons with one primary per screen, one icon button, one

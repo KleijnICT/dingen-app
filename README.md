@@ -64,29 +64,44 @@ docker run -d --name dingen -p 8080:8080 -v dingen-data:/data ghcr.io/kleijnict/
 ```
 
 Open http://localhost:8080. **The first visitor creates the first account**
-and becomes the administrator; after that, registration is closed. Create your
+and becomes the administrator; after that, registration is closed (change that
+in **Settings → Administration**). Create your
 account right after starting the container, before exposing it to anyone else.
 
 The image is built for `linux/amd64` and `linux/arm64`.
 
 ## Configuration
 
-| Variable              | Default            | Meaning                                                                 |
-| --------------------- | ------------------ | ----------------------------------------------------------------------- |
-| `PORT`                | `8080`             | Port the server listens on inside the container.                        |
-| `DATA_DIR`            | `/data`            | Directory for the SQLite database (`dingen.db`).                        |
-| `DINGEN_REGISTRATION` | `closed`           | Who may register after the first account: `closed`, `invite` or `open`. |
-| `DINGEN_TIMEZONE`     | `Europe/Amsterdam` | Time zone for "today" in the MCP, calendar appointments and reminders.  |
-| `DINGEN_BACKUPS`      | on                 | `off` turns the nightly backups off (backups before an update stay).    |
+| Variable              | Default            | Meaning                                                                |
+| --------------------- | ------------------ | ---------------------------------------------------------------------- |
+| `PORT`                | `8080`             | Port the server listens on inside the container.                       |
+| `DATA_DIR`            | `/data`            | Directory for the SQLite database (`dingen.db`).                       |
+| `DINGEN_REGISTRATION` | `closed`           | Starting value for who may register: `closed`, `invite` or `open`.     |
+| `DINGEN_TIMEZONE`     | `Europe/Amsterdam` | Time zone for "today" in the MCP, calendar appointments and reminders. |
+| `DINGEN_BACKUPS`      | on                 | `off` turns the nightly backups off (backups before an update stay).   |
 
-### Inviting people
+### Administration
 
-`DINGEN_REGISTRATION=closed` (the default) allows only the first account,
-`open` lets anyone register. With `invite`, the administrator (the first account)
-invites others from **Settings → Invitations**: create a link, copy it and send
-it to the person you mean. A link works once and expires after 14 days; open
-links can be withdrawn. Whoever opens the link can create an account on your
-server. The very first account never needs an invitation.
+Administrators (the first account, and whoever they make one) manage the
+server in **Settings → Administration**:
+
+- **Users**: every account with when it joined and was last active. Make
+  someone an administrator, or block an account: it is signed out everywhere,
+  cannot sign in, and its API and agent tokens (also the MCP) stop working
+  until it is unblocked; its data stays. A blocked account can be **deleted
+  permanently** with all its own data (its spaces, tasks, agents, calendars),
+  after typing its email address; a backup is made first. You cannot block,
+  delete or unadmin yourself, and the last administrator stays one.
+- **Registration**: who may create an account: nobody (`closed`, the default),
+  people with an invitation (`invite`) or anyone (`open`). The choice is stored
+  in the database; `DINGEN_REGISTRATION` (or the Home Assistant option) is
+  only the starting value of a new installation, and an existing one keeps
+  its value from before the update. With invitations, create a link, copy it
+  and send it to the person you mean. A link works once and expires after 14
+  days; open links can be withdrawn. The very first account never needs an
+  invitation.
+- **Backups**: the backups in `/data/backups` with date, kind and size;
+  make one now, download one, or restore one (see [Restoring](#restoring)).
 
 ### Reminders (web push)
 
@@ -180,7 +195,9 @@ volume (Duplicati, restic, the Home Assistant backup) takes the backups along:
 - **Before an update** that migrates the database, a `pre-update` backup (the
   10 newest are kept). Always, also with `DINGEN_BACKUPS=off`.
 - **Before a restore**, a `pre-restore` backup of what was there (10 kept).
-- **By hand** with `dingen backup`: `manual`, never removed automatically.
+- **Before deleting an account** in Administration, a `pre-delete` backup (10 kept).
+- **By hand** with `dingen backup` or **Back up now** in Settings →
+  Administration: `manual`, never removed automatically.
 
 Every backup is one complete SQLite file, made with SQLite's backup API, so it
 is consistent while Dingen runs. The name tells the kind, the moment (UTC) and
@@ -199,7 +216,15 @@ docker compose cp dingen:/data/backups/<file> ./   # copy one out
 
 ### Restoring
 
-`dingen restore <file>` puts a backup back. It only runs with the server
+In the app: **Settings → Administration → Backups**, the restore button next
+to a backup, then type `restore` (in Dutch: `terugzetten`). Dingen first makes
+a `pre-restore` backup, then puts the chosen one in place and starts its
+database and services again inside the running process, so this works the
+same in Docker and in Home Assistant (where the command line is awkward). The
+page reloads when the server is back; you stay signed in if your account is in
+the backup. If the restore fails, the `pre-restore` backup goes back.
+
+From the command line, `dingen restore <file>` puts a backup back. It only runs with the server
 stopped (it checks the lock the server holds on `/data/dingen.lock`, which
 works across containers), first saves the current database as a `pre-restore`
 backup, and checks that the file is a Dingen database from this version or
