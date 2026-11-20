@@ -12,11 +12,13 @@ import {
   changes,
   entities,
   invitations,
+  passwordResets,
   pushSubscriptions,
   reminderDeliveries,
   sessions,
   spaceMembers,
   spaces,
+  totpRecoveryCodes,
   users,
 } from '../schema.js'
 import { createPersonalSpace } from '../spaces/service.js'
@@ -61,6 +63,8 @@ export async function resetToDemo(db: Db, options: DemoSeedOptions): Promise<Dem
     tx.delete(agents).run()
     tx.delete(sessions).run()
     tx.delete(invitations).run()
+    tx.delete(passwordResets).run()
+    tx.delete(totpRecoveryCodes).run()
     tx.delete(entities).run()
     tx.delete(changes).run()
     tx.delete(spaceMembers).run()
