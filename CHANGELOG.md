@@ -1,6 +1,14 @@
 # Changelog
 
-## Unreleased
+## 1.0.0-alpha.9
+
+A calmer redesign with one layout for every pane, administration in the app,
+password reset and two-step verification. A pre-release; `:latest` points to
+it. The update runs two database migrations (with a backup first) and a third
+small one for push notifications. Optional: set `SMTP_*` and
+`DINGEN_PUBLIC_URL` for mail; Home Assistant users get these as app options.
+Registration is now chosen in Settings → Administration; your current
+setting carries over. Reload the web app to get the new version.
 
 - Mail: set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`,
   `SMTP_FROM` and `SMTP_SECURE`, and `DINGEN_PUBLIC_URL` (the address people
