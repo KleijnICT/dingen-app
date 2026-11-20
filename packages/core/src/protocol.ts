@@ -26,7 +26,7 @@ import { TIMESTAMP_PATTERN } from './hlc.js'
  * From 1.0.0-beta.1 until 2.0 the protocol only grows: new optional fields
  * with a default, new entity types that older clients ignore. Nothing is
  * renamed, removed or made stricter. The contract test in
- * apps/server/test/contract pins the shapes below; see its README.
+ * apps/server/test/contract pins the shapes below; see sync-protocol.test.ts.
  */
 export const SYNC_PROTOCOL = 4
 

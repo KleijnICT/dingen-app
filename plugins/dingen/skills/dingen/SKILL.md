@@ -63,7 +63,9 @@ week" is usually after completion, "pay rent on the 1st" on a schedule.
 ## How to work
 
 1. **Start with `overview`** in every session. Use the ids it returns instead
-   of guessing titles. Tools accept an id or an exact title.
+   of guessing titles. Projects, areas, headings and tags can be named by id
+   or exact title; tasks only by id (find them with `list_tasks` or
+   `search`).
 2. **Capture fast.** "Remember to…", "put on my list…": create the task with
    no `when`, project or area so it lands in the Inbox. Write the title as a
    concrete next action starting with a verb ("Call the plumber about the
@@ -183,3 +185,6 @@ How to guide a review:
   when none was set) and `reviewedAt`; `overview` shows them for every open
   project and area.
 - Dates are in the user's time zone; "today" follows the server setting.
+- When a tool answers that the plugin is too old for the Dingen server, tell
+  the user to update the Dingen plugin (or the `dingen-mcp` image) and
+  restart; do not retry or work around it.

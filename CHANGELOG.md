@@ -1,22 +1,40 @@
 # Changelog
 
-## Unreleased
+## 1.0.0-beta.1
+
+The first beta: phases 1 and 2 of the roadmap are complete. From this release
+on the sync protocol stays compatible until 2.0; the MCP tools may still
+change until 1.0. A pre-release; `:latest` points to it. The update runs a
+small database migration (with a backup first) and migrates databases from
+every earlier release. Reload the web app to get the new version; a tab that
+was left open on an older version must be reloaded too. Update the Claude
+plugin for its updated skill, and pull the new image for a stdio MCP server
+(`dingen-mcp`): web apps and stdio MCP servers from 1.0.0-alpha.9 and earlier
+can no longer sync.
 
 - Sync protocol 4. Clients that speak an older protocol (the web app and the
-  MCP client from 1.0.0-alpha.9 and earlier) are refused with
-  `426 client_outdated` and must update: reload the web app (a new web app
-  reloads by itself when this happens), update `dingen-mcp`. The Claude plugin
-  over `/mcp` runs in the server and needs nothing. Gone: pulls with
-  `since=` (protocol 1), the conversion of `evening` and `time` for protocol 2
-  clients, and the `seq` over all spaces in snapshot and push answers.
+  stdio MCP server from 1.0.0-alpha.9 and earlier) are refused with
+  `426 client_outdated` and must update. From now on the web app reloads by
+  itself when this happens, and shows "This version of Dingen is out of
+  date" if reloading does not help; the stdio MCP server says to update. The
+  MCP server over `/mcp` runs in Dingen itself and needs nothing. Gone: pulls
+  with `since=` (protocol 1), the conversion of `evening` and `time` for
+  protocol 2 clients, and the `seq` over all spaces in snapshot and push
+  answers.
+- From 1.0.0-beta.1 until 2.0 the sync protocol only grows (new optional
+  fields with a default, new entity types); a contract test pins it. The MCP
+  server info now reports the Dingen version with the protocol, for example
+  `1.0.0-beta.1+protocol.4`; `/api/health` reports `version` and
+  `syncProtocol`.
 - The step-by-step review of before 1.0.0-alpha.8 is gone as an entity type.
-  The update runs a database migration (with a backup first) that deletes
-  the stored review runs; older export files with reviews still import,
-  without them.
-- From 1.0.0-beta.1 the sync protocol only grows until 2.0 (new optional
-  fields, new entity types); a contract test pins it. `/api/health` and the
-  MCP server info report the version and the protocol.
-- Migrations are tested from a database of every alpha release.
+  The database migration `0013_drop_reviews` deletes the stored review runs;
+  older export files with reviews still import, without them.
+- Every release is now tested to migrate a database of every alpha release
+  (1.0.0-alpha.1 to alpha.9) and keep its data.
+- The Claude plugin's skill: tasks are named by id (projects, areas, headings
+  and tags also by title), and what to do when the plugin is too old.
+- Documentation: the README, the roadmap and the contribution notes describe
+  the beta.
 
 ## 1.0.0-alpha.9
 

@@ -6,33 +6,44 @@ repeating tasks and checklists. Open source, web-based and self-hosted with
 Docker. Claude (or any MCP client) can read and manage your tasks through the
 built-in MCP server.
 
-> **Status: early test release (0.1).** Dingen is used daily by its author but
-> is young. Back up your data volume, expect rough edges, and please
+> **Status: beta (1.0.0-beta.1).** Dingen is used daily by its author and is
+> feature complete for self-hosting. From this beta on the sync protocol stays
+> compatible until 2.0 (see [Compatibility](#compatibility)); the MCP tools may
+> still change until 1.0. Back up your data volume and please
 > [report what you run into](https://github.com/KleijnICT/dingen-app/issues).
 
 ## Features
 
-- **Structure:** Inbox, Today (with This Evening), Upcoming,
-  Anytime, Someday, Logbook; areas, projects, headings and nested tags.
+- **Structure:** Inbox, Today (grouped into morning, afternoon and evening),
+  Upcoming, Anytime, Someday, Logbook; areas, projects, headings and nested
+  tags.
 - **Logbook as activity:** everything that was added, completed, changed or
   deleted, by you or by an agent, newest first and per day; filter on kind,
   who and period. "Completed" keeps the list of completed items.
-- **Dates:** a "when" date for planning and a separate deadline.
-- **Times and reminders:** a time of day on a task and a reminder, delivered
-  as a notification on every device where you turn it on (web push).
+- **Dates:** a "when" date for planning and a separate deadline; a daypart
+  (morning, afternoon, evening) and an estimated duration.
+- **Reminders:** a notification at an exact time, on the task's date or an
+  earlier day, on every device where you turn them on (web push).
 - **Repeating tasks:** on a schedule or after completion, with weekdays, end
   dates and deadlines.
 - **Checklists and notes** on every task.
-- **Offline-first web app:** every browser keeps a local replica and syncs when
-  it is back online.
+- **Review:** every project and area has a review frequency; the Review page
+  lists what is due.
+- **Offline-first web app:** installable (PWA); every browser keeps a local
+  replica and syncs when it is back online.
 - **Multi-user accounts** with optional two-step verification (an
   authenticator app, with recovery codes) and password resets by mail or by
   a link from the administrator, and **agents** as members: each with its own
   token, scope and level, assignable tasks, and their changes on record.
+- **Administration in the app:** users, registration, backups and restores,
+  mail.
+- **Backups** every night and before every update; **export and import** of
+  all your data as one JSON file, also to move between servers.
 - **MCP server** built in (`/mcp`, Streamable HTTP) and as a stdio command.
 - **Imports** from TickTick (backup CSV), Todoist (CSV export) and a generic CSV.
 - **Calendars (read-only):** subscribe to ICS feeds; appointments appear in
   Today and Upcoming. The server fetches them, so feed URLs stay private.
+- **Home Assistant app** (add-on), with Dingen in the sidebar.
 - Interface in English and Dutch.
 
 ## Quick start
@@ -79,9 +90,10 @@ The image is built for `linux/amd64` and `linux/arm64`.
 | `PORT`                | `8080`             | Port the server listens on inside the container.                                                                     |
 | `DATA_DIR`            | `/data`            | Directory for the SQLite database (`dingen.db`).                                                                     |
 | `DINGEN_REGISTRATION` | `closed`           | Starting value for who may register: `closed`, `invite` or `open`.                                                   |
-| `DINGEN_TIMEZONE`     | `Europe/Amsterdam` | Time zone for "today" in the MCP, calendar appointments and reminders.                                               |
+| `DINGEN_TIMEZONE`     | `Europe/Amsterdam` | Time zone for "today" in the MCP, calendar appointments, reminders and the nightly backup.                           |
 | `DINGEN_BACKUPS`      | on                 | `off` turns the nightly backups off (backups before an update stay).                                                 |
 | `DINGEN_PUBLIC_URL`   | (none)             | The address people open Dingen on, e.g. `https://dingen.example.com`; needed for "Forgot password?" (links in mail). |
+| `LOG_LEVEL`           | `info`             | `debug`, `info`, `warning` or `error` (in Home Assistant: the app's `log_level` option).                             |
 
 ### Mail (SMTP)
 
@@ -224,7 +236,7 @@ Database migration 0008 → 0009 (0009_example) failed: …
 The database was restored to /data/backups/dingen-pre-update-2026-11-13T080000Z-0008.db; it is as it was before this update. Start the previous version of Dingen and report the problem.
 ```
 
-Go back to the previous image tag (for example `ghcr.io/kleijnict/dingen:1.0.0-alpha.4`
+Go back to the previous image tag (for example `ghcr.io/kleijnict/dingen:1.0.0-alpha.9`
 instead of `latest`) and start again; your data is as it was before the update.
 
 ## Backups
@@ -355,6 +367,8 @@ Desktop), using the same image:
         "DINGEN_URL=https://dingen.example.com",
         "-e",
         "DINGEN_TOKEN=dgn_...",
+        "-e",
+        "DINGEN_TIMEZONE=Europe/Amsterdam",
         "ghcr.io/kleijnict/dingen:latest",
         "node",
         "packages/mcp/dist/stdio.js"
@@ -364,10 +378,21 @@ Desktop), using the same image:
 }
 ```
 
-The MCP server offers tools to get an overview, list, search, create, update,
-complete, reopen, cancel and delete tasks, and to create areas, projects,
-headings and tags. Renaming or deleting areas, projects and tags is left to
-the app.
+The MCP server offers these tools:
+
+- **Reading:** `overview` (areas, projects, tags, members and counts; call it
+  first), `list_tasks`, `get_task`, `search` and `get_activity`.
+- **Tasks:** `create_task`, `update_task`, `complete_task`, `reopen_task`,
+  `cancel_task`, `delete_task` and `convert_task_to_project`.
+- **Structure:** `create_project`, `update_project`, `complete_project`,
+  `delete_project`, `create_area`, `update_area`, `delete_area`,
+  `create_heading` and `create_tag`. Deleting a project or area takes
+  everything in it along and needs Manage on it. Renaming and deleting tags
+  is left to the app.
+- **Review:** `review_queue` and `mark_reviewed` (see below).
+
+Projects, areas, headings and tags can be named by id or exact title; tasks
+by id.
 
 `get_activity` reads the Logbook: what was added, completed, reopened,
 changed or deleted, by whom and when, newest first. It filters on `kinds`,
@@ -384,8 +409,11 @@ projects and areas that are due, the same list as the app's Review page, and
 `mark_reviewed` marks one reviewed, so it comes back one frequency later.
 `update_project` and the area tools set the frequency.
 
-Agent tokens only work for the API and MCP; the `/mcp` endpoint never accepts a
-browser session.
+Over stdio the MCP server is a client of the sync API, so its agent needs the
+scope Everything, and `DINGEN_TIMEZONE` sets "today" (inside a container the
+default would be UTC). Over `/mcp` it runs in the server itself and works with
+any scope. Agent tokens only work for the API and MCP; the `/mcp` endpoint
+never accepts a browser session.
 
 ### Agents
 
@@ -418,10 +446,10 @@ the agent for good, while its past changes stay attributed to it. Tokens from
 before agents existed became agents with the same name, scope Everything and
 level Manage, so existing connections keep working.
 
-Agents with a narrower scope than Everything use the MCP; the sync API
-(`/api/sync`), export, import, calendars and invitations need the scope
-Everything and answer `403 agent_scope` otherwise. The API: `GET /api/members`,
-`GET`/`POST /api/agents`, `PATCH`/`DELETE /api/agents/:id`,
+Agents with a narrower scope than Everything use the MCP over `/mcp`; the
+sync API (`/api/sync`), export, import, calendars, reminders (`/api/push`) and
+invitations need the scope Everything and answer `403 agent_scope` otherwise.
+The API: `GET /api/members`, `GET`/`POST /api/agents`, `PATCH`/`DELETE /api/agents/:id`,
 `POST /api/agents/:id/token` (new token) and
 `GET /api/access?type=area|project&id=…` (who reaches it, at which level).
 Managing agents needs a browser session.
@@ -446,8 +474,12 @@ docker compose exec -e DINGEN_TOKEN=dgn_... dingen \
   --url http://localhost:8080
 ```
 
-Folders become areas, lists become projects, and the TickTick inbox becomes
-the Inbox. Times of day, reminders and completed tasks are not imported.
+Folders become areas, lists become projects, subtasks become checklist items,
+the TickTick inbox becomes the Inbox and a list named Someday goes to Someday.
+A start or due date becomes the when-date; a due date with the highest
+priority becomes a deadline. Completed and canceled tasks go to the Logbook.
+Times of day and reminders are not imported. The backup does not say which
+lists are closed; skip them with `--closed "List A,List B"`.
 
 ### Todoist
 
@@ -481,7 +513,7 @@ For anything else, make a spreadsheet with these English column names (only
 | `tags`     | Tag names separated by commas or semicolons                                                                                       |
 | `when`     | `YYYY-MM-DD`, `today`, `tomorrow`, `someday`, `anytime` or `inbox`; empty means Inbox, or Anytime when there is a project or area |
 | `deadline` | `YYYY-MM-DD`                                                                                                                      |
-| `done`     | `yes`, `true`, `1` or `x` for a completed task                                                                                    |
+| `done`     | `yes`, `y`, `true`, `1`, `x` or `done` for a completed task                                                                       |
 
 ```sh
 node packages/mcp/dist/import/cli.js csv tasks.csv --url http://localhost:8080
@@ -491,9 +523,11 @@ An example file is in [examples/import-example.csv](examples/import-example.csv)
 
 ## Known limitations
 
-- Web only; native apps for Android and macOS are planned in separate
-  repositories.
-- No shared projects or teams.
+- Web only (installable as a PWA); native apps are planned (see the
+  [roadmap](ROADMAP.md)).
+- No sharing of areas and projects with other people yet; that comes after
+  the beta.
+- Calendars are read-only ICS feeds; no CalDAV.
 - MCP over HTTP needs an agent token; OAuth for claude.ai connectors is not
   supported yet.
 
@@ -558,8 +592,8 @@ contract test (see [Compatibility](#compatibility)).
   what you had for it. `removed` lists spaces from your cursor you are no
   longer a member of: drop their data. `cursor` is the full new cursor; pull
   again while `hasMore` (at most 500 changes per answer).
-- `POST /api/sync/push` with `{ changes, cursor? }` answers
-  `{ applied, duplicates, cursor?, placed? }`. With your cursor, the answer's
+- `POST /api/sync/push` with `{ changes, cursor? }` (at most 1000 changes)
+  answers `{ applied, duplicates, cursor?, placed? }`. With your cursor, the answer's
   `cursor` holds the spaces where nothing but this push happened since, moved
   past it; merge it (highest per space) to skip pulling your own changes back.
 - `GET /api/sync/snapshot[?space=<id>]` answers `{ protocol, entities, spaces,
@@ -609,9 +643,10 @@ date) and `duration` (minutes, 1 to 1440, or null).
   made stricter. A contract test pins the entity types, their fields and the
   pull, push and snapshot shapes in a checked-in snapshot
   (`apps/server/test/contract/`), so a change shows up in review. Older
-  clients (protocol 3 and below: the web app and MCP plugin from
+  clients (protocol 3 and below: the web app and the stdio MCP server from
   1.0.0-alpha.9 and earlier) get `426 client_outdated` and must update; the
-  web app does that by itself on its next reload.
+  web app does that by itself on its next reload. The MCP server over `/mcp`
+  runs in Dingen itself and is always current.
 - **MCP tools.** The tools may still change until 1.0. The MCP server info
   reports the Dingen version with the protocol, for example
   `1.0.0-beta.1+protocol.4`.

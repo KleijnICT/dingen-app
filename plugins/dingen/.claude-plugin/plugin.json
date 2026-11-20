@@ -17,8 +17,8 @@
     },
     "dingen_token": {
       "type": "string",
-      "title": "API token",
-      "description": "An API token from the Account page in Dingen (starts with dgn_)",
+      "title": "Agent token",
+      "description": "The token of an agent from Settings, Agents in Dingen (starts with dgn_)",
       "required": true,
       "sensitive": true
     }
