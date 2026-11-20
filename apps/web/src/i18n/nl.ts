@@ -419,7 +419,6 @@ export const nl: Messages = {
   'reminder.settings.testTitle': 'Dingen',
   'reminder.settings.testBody': 'Herinneringen werken op dit apparaat.',
   // --- uitnodigingen ---
-  'settings.tab.invitations': 'Uitnodigingen',
   'auth.error.invite_required':
     'Op deze server kun je alleen op uitnodiging een account maken. Vraag de beheerder om een uitnodigingslink.',
   'auth.error.invite_invalid': 'Deze uitnodigingslink is niet geldig. Vraag om een nieuwe.',
@@ -429,10 +428,6 @@ export const nl: Messages = {
   'invite.welcome': 'Je bent uitgenodigd. Maak je account aan.',
   'invite.intro':
     'Nodig iemand uit met een link die één keer werkt en na 14 dagen verloopt. Iedereen met de link kan een account maken, dus stuur hem alleen naar wie je bedoelt.',
-  'invite.modeClosed':
-    'Registreren is op deze server gesloten, dus uitnodigingen werken niet. Zet DINGEN_REGISTRATION=invite om ze te gebruiken.',
-  'invite.modeOpen':
-    'Registreren is op deze server open: iedereen kan een account maken, met of zonder uitnodiging.',
   'invite.create': 'Uitnodigingslink maken',
   'invite.reveal': 'Kopieer deze link nu; hij is maar één keer te zien.',
   'invite.copy': 'Link kopiëren',
@@ -571,4 +566,79 @@ export const nl: Messages = {
   'activity.retry': 'Opnieuw',
   'activity.loading': 'Laden…',
   'activity.end': 'Dat is alles.',
+  // --- beheer (plan 32) ---
+  'settings.tab.admin': 'Beheer',
+  'auth.error.account_blocked': 'Dit account is geblokkeerd. Vraag de beheerder van deze server.',
+  'admin.users.title': 'Gebruikers',
+  'admin.users.you': '(jij)',
+  'admin.users.admin': 'Beheerder',
+  'admin.users.blocked': 'Geblokkeerd sinds {date}',
+  'admin.users.totp': 'Tweestapsverificatie aan',
+  'admin.users.joined': 'lid sinds {date}',
+  'admin.users.lastActive': 'laatst actief {date}',
+  'admin.users.neverActive': 'nooit actief',
+  'admin.users.actions': 'Acties voor {email}',
+  'admin.users.makeAdmin': 'Beheerder maken',
+  'admin.users.unmakeAdmin': 'Geen beheerder meer',
+  'admin.users.block': 'Blokkeren',
+  'admin.users.blockQuestion':
+    '{email} blokkeren? Diegene wordt overal uitgelogd en de agents stoppen. De gegevens blijven.',
+  'admin.users.unblock': 'Deblokkeren',
+  'admin.users.resetLink': 'Resetlink maken',
+  'admin.users.resetReveal':
+    'Link om het wachtwoord van {email} opnieuw in te stellen. Hij werkt één keer; stuur hem alleen naar diegene.',
+  'admin.users.totpOff': 'Tweestapsverificatie uitzetten',
+  'admin.users.totpOffQuestion':
+    'Tweestapsverificatie van {email} uitzetten? Inloggen gaat dan alleen met het wachtwoord, tot diegene het weer aanzet.',
+  'admin.users.totpOffDone': 'Tweestapsverificatie staat uit voor {email}.',
+  'admin.users.delete': 'Definitief verwijderen',
+  'admin.users.deleteQuestion':
+    'Dit verwijdert {email} met alle gegevens: taken, projecten, gebieden, agents en agenda’s. Eerst wordt een back-up gemaakt. Typ het e-mailadres om te bevestigen.',
+  'admin.users.deleteType': 'E-mailadres van het account',
+  'admin.users.deleteConfirm': 'Account verwijderen',
+  'admin.users.deleted': '{email} is verwijderd. De back-up van daarvoor is {file}.',
+  'admin.error.self': 'Dat kan niet met je eigen account.',
+  'admin.error.last_admin': 'Deze server heeft minstens één beheerder nodig.',
+  'admin.error.not_blocked': 'Blokkeer het account voordat je het verwijdert.',
+  'admin.error.confirm_mismatch': 'Dat is niet het e-mailadres van dit account.',
+  'admin.error.shared_space':
+    'Dit account is eigenaar van een gedeelde ruimte waar anderen in zitten. Verwijderen kan nog niet.',
+  'admin.error.invalid_backup': 'Deze back-up kan niet worden teruggezet: {reason}',
+  'admin.registration.title': 'Registratie',
+  'admin.registration.label': 'Wie kan een account maken',
+  'admin.registration.closed': 'Niemand',
+  'admin.registration.invite': 'Wie een uitnodiging heeft',
+  'admin.registration.open': 'Iedereen',
+  'admin.registration.closedHelp': 'Niemand kan op deze server een nieuw account maken.',
+  'admin.registration.inviteHelp':
+    'Alleen wie een uitnodigingslink van een beheerder heeft, kan een account maken.',
+  'admin.registration.openHelp': 'Iedereen die deze server kan bereiken, kan een account maken.',
+  'admin.backups.title': 'Back-ups',
+  'admin.backups.intro':
+    'Dingen maakt elke nacht een back-up en vóór elke update. Download er een om ergens anders een kopie te bewaren.',
+  'admin.backups.now': 'Nu een back-up maken',
+  'admin.backups.working': 'Back-up maken…',
+  'admin.backups.made': 'Back-up gemaakt.',
+  'admin.backups.none': 'Nog geen back-ups',
+  'admin.backups.noneText': 'De nachtelijke back-ups en die van vóór updates komen hier te staan.',
+  'admin.backups.kind.daily': 'Nachtelijk',
+  'admin.backups.kind.pre-update': 'Vóór een update',
+  'admin.backups.kind.pre-restore': 'Vóór terugzetten',
+  'admin.backups.kind.pre-delete': 'Vóór verwijderen van een account',
+  'admin.backups.kind.manual': 'Met de hand',
+  'admin.backups.download': 'Downloaden',
+  'admin.backups.restore': 'Terugzetten',
+  'admin.backups.showAll': 'Alle {count} tonen',
+  'admin.backups.restoreQuestion':
+    'De back-up van {date} terugzetten? Alles wat daarna veranderd is, gaat verloren, voor elk account. Eerst wordt een back-up van de huidige stand gemaakt, daarna herstart de server.',
+  'admin.backups.restoreWord': 'terugzetten',
+  'admin.backups.restoreType': 'Typ ‘{word}’ om te bevestigen',
+  'admin.backups.restoring':
+    'Bezig met terugzetten. De server herstart; deze pagina laadt opnieuw zodra hij er weer is.',
+  'admin.mail.title': 'E-mail',
+  'admin.mail.configured': 'E-mail is ingesteld. Berichten komen van {from}.',
+  'admin.mail.notConfigured':
+    'E-mail is niet ingesteld, dus wie een wachtwoord vergeet kan het niet zelf opnieuw instellen; maak hierboven een resetlink. Zet de SMTP-variabelen om het aan te zetten (zie de README).',
+  'admin.mail.test': 'Testmail sturen',
+  'admin.mail.testSent': 'Testmail gestuurd naar {email}.',
 }

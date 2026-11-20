@@ -2045,12 +2045,20 @@ button.link.danger {
   gap: var(--space-2);
   align-items: flex-start;
 }
-.data-tab section + section {
+/* Administration (plan 32): the same sections, but lists and questions take the whole width. */
+.admin-tab section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.data-tab section + section,
+.admin-tab section + section {
   margin-top: var(--space-5);
   padding-top: var(--space-4);
   border-top: 1px solid var(--line);
 }
-.data-tab h2 {
+.data-tab h2,
+.admin-tab h2 {
   margin: 0;
   font-size: var(--text-md);
 }
@@ -2411,16 +2419,39 @@ button.review-mark {
 }
 
 /* --- uitnodigingen --- */
-.invite-mode {
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  padding: var(--row-x) var(--space-3);
-}
 .invite-status {
   color: var(--muted);
 }
 .invite-status.invite-open {
   color: var(--ok);
+}
+
+/* --- beheer (plan 32): Settings → Administration --- */
+.admin-tab .empty-state {
+  padding: var(--space-3) 0;
+}
+.admin-email {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.admin-meta {
+  font-size: var(--text-sm);
+}
+.admin-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.admin-tab section > .admin-confirm {
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+.admin-confirm-field {
+  flex-wrap: wrap;
+}
+.admin-confirm-actions {
+  justify-content: flex-start;
 }
 
 /* --- Members (plan 19): people as initials in a circle, agents as icon in a rounded square --- */

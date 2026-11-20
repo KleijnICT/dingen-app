@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { type AuthStatus, api, errorText, type RegistrationMode } from '../api.js'
+import { api, errorText } from '../api.js'
 import { currentBase } from '../base.js'
 import { formatDate, useT } from '../i18n/index.js'
 import { inviteLink } from '../invite.js'
@@ -20,14 +20,14 @@ interface Invitation {
 const day = (iso: string) => formatDate(new Date(iso), { dateStyle: 'medium' })
 
 /**
- * Tabblad "Invitations" (alleen voor de beheerder): een eenmalige link maken
- * en kopiëren, de lijst met status zien en open uitnodigingen intrekken. De
- * link is maar één keer te zien; de server bewaart alleen een hash.
+ * Uitnodigingen, in Beheer → Registratie wanneer registreren op uitnodiging
+ * is: een eenmalige link maken en kopiëren, de lijst met status zien en open
+ * uitnodigingen intrekken. De link is maar één keer te zien; de server
+ * bewaart alleen een hash.
  */
 export function InvitationSettings() {
   const t = useT()
   const [invitations, setInvitations] = useState<Invitation[]>([])
-  const [mode, setMode] = useState<RegistrationMode | null>(null)
   const [fresh, setFresh] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -35,12 +35,8 @@ export function InvitationSettings() {
 
   const load = useCallback(async () => {
     try {
-      const [list, status] = await Promise.all([
-        api.get<{ invitations: Invitation[] }>('/api/invitations'),
-        api.get<AuthStatus>('/api/auth/status'),
-      ])
+      const list = await api.get<{ invitations: Invitation[] }>('/api/invitations')
       setInvitations(list.invitations)
-      setMode(status.registration ?? 'closed')
     } catch (err) {
       setError(errorText(err))
     }
@@ -103,15 +99,10 @@ export function InvitationSettings() {
   }
 
   return (
-    <div className="settings-form">
+    <div className="settings-form invitations">
       <p className="muted">{t('invite.intro')}</p>
-      {mode && mode !== 'invite' && (
-        <p className="invite-mode">
-          {t(mode === 'open' ? 'invite.modeOpen' : 'invite.modeClosed')}
-        </p>
-      )}
       <div>
-        <button type="button" className="button-primary" onClick={create} disabled={busy}>
+        <button type="button" className="button-secondary" onClick={create} disabled={busy}>
           {t('invite.create')}
         </button>
       </div>

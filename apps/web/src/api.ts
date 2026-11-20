@@ -50,6 +50,8 @@ export const api = {
     }),
   patch: <T>(path: string, body: unknown) =>
     request<T>(path, { method: 'PATCH', body: JSON.stringify(body) }),
+  put: <T>(path: string, body: unknown) =>
+    request<T>(path, { method: 'PUT', body: JSON.stringify(body) }),
 }
 
 export interface User {
@@ -64,6 +66,8 @@ export interface User {
   hasPassword?: boolean
   /** The day Today's "new tasks" banner was last dismissed; null = never. */
   todaySeenOn?: string | null
+  /** Blocked by an administrator (never true for a signed-in user). */
+  blocked?: boolean
 }
 
 export type RegistrationMode = 'closed' | 'open' | 'invite'
@@ -102,6 +106,7 @@ const AUTH_ERRORS = new Set([
   'invite_expired',
   'invite_used',
   'invite_revoked',
+  'account_blocked',
 ])
 
 export function errorText(err: unknown): string {
