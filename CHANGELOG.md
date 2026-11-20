@@ -5,9 +5,11 @@
 - A new, simpler review. Every project and area has a review frequency
   (every N days, weeks, months or years; every week unless you change it, in
   the `…` menu of the project or area). Once that time has passed since its
-  last review, it shows on the Review page: a list of what is due, grouped by
-  date, with the selected project or area beside it, fully editable. "Mark
-  reviewed" moves on to the next one. Someday projects come along too.
+  last review, it shows on the Review page: a list of what is due that slides
+  out of the sidebar, in sidebar order, with the selected project or area
+  beside it, fully editable. An area shows only its own tasks; its projects
+  have their own review. "Mark reviewed" moves on to the next one. Someday
+  projects come along too.
   The daily, weekly and monthly reviews with their steps are gone, and so are
   the review signals and the review notice in Today. No database migration.
 - MCP: `review_queue` lists what is due for review and `mark_reviewed` marks
