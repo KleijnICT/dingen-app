@@ -493,3 +493,133 @@ describe('two-step verification', () => {
     expect(() => service.verify('u1', '000000')).toThrow('too_many_attempts')
   })
 })
+
+describe('blocked accounts, two-step verification and reset links', () => {
+  async function enableTwoStep(call: ReturnType<typeof setup>['call'], cookie: string) {
+    const started = await call('POST', '/api/auth/two-step/setup', undefined, { cookie })
+    const secret = started.body.secret as string
+    const code = totpCode(secret, totpStep(Date.now()))
+    expect((await call('POST', '/api/auth/two-step/enable', { code }, { cookie })).status).toBe(200)
+    return secret
+  }
+  const block = (
+    call: ReturnType<typeof setup>['call'],
+    cookie: string,
+    id: string,
+    blocked = true,
+  ) => call('PATCH', `/api/admin/users/${id}`, { blocked }, { cookie })
+
+  it('lists totpEnabled per user in Administration', async () => {
+    const { call, register } = setup()
+    const admin = await register('admin@example.com')
+    const bob = await register('bob@example.com')
+    await enableTwoStep(call, bob.cookie)
+    const list = await call('GET', '/api/admin/users', undefined, { cookie: admin.cookie })
+    const byEmail = Object.fromEntries(
+      (list.body.users as { email: string; totpEnabled: boolean }[]).map((u) => [
+        u.email,
+        u.totpEnabled,
+      ]),
+    )
+    expect(byEmail).toEqual({ 'admin@example.com': false, 'bob@example.com': true })
+    await call('POST', `/api/admin/users/${bob.id}/totp/disable`, undefined, {
+      cookie: admin.cookie,
+    })
+    const after = await call('GET', '/api/admin/users', undefined, { cookie: admin.cookie })
+    expect(after.body.users[1].totpEnabled).toBe(false)
+  })
+
+  it('refuses a blocked account at the password, before any challenge', async () => {
+    const { call, register, login } = setup()
+    const admin = await register('admin@example.com')
+    const bob = await register('bob@example.com')
+    await enableTwoStep(call, bob.cookie)
+    expect((await block(call, admin.cookie, bob.id)).status).toBe(200)
+    const tried = await login('bob@example.com')
+    expect(tried.status).toBe(403)
+    expect(tried.body.error).toBe('account_blocked')
+    expect(tried.body.challenge).toBeUndefined()
+  })
+
+  it('fails a pending two-step challenge once the account is blocked', async () => {
+    const { call, register, login } = setup()
+    const admin = await register('admin@example.com')
+    const bob = await register('bob@example.com')
+    const secret = await enableTwoStep(call, bob.cookie)
+    const first = await login('bob@example.com')
+    expect(first.body.twoStep).toBe(true)
+
+    expect((await block(call, admin.cookie, bob.id)).status).toBe(200)
+    const code = totpCode(secret, totpStep(Date.now()) + 1)
+    const answer = await call('POST', '/api/auth/login/two-step', {
+      challenge: first.body.challenge,
+      code,
+    })
+    expect(answer.status).toBe(403)
+    expect(answer.body.error).toBe('account_blocked')
+    expect(answer.cookie).toBe('')
+
+    // The challenge is gone, also after unblocking.
+    await block(call, admin.cookie, bob.id, false)
+    const later = await call('POST', '/api/auth/login/two-step', {
+      challenge: first.body.challenge,
+      code,
+    })
+    expect(later.status).toBe(410)
+  })
+
+  it('does not let a blocked account use a reset link, nor get a new one', async () => {
+    const { call, register, db } = setup({ mail: false })
+    const admin = await register('admin@example.com')
+    const bob = await register('bob@example.com')
+    const made = await call('POST', `/api/admin/users/${bob.id}/reset-link`, undefined, {
+      cookie: admin.cookie,
+    })
+    expect(made.status).toBe(201)
+    await block(call, admin.cookie, bob.id)
+
+    const check = await call('GET', `/api/auth/reset/${made.body.token}`)
+    expect(check.status).toBe(403)
+    expect(check.body.error).toBe('account_blocked')
+    const used = await call('POST', '/api/auth/reset', {
+      token: made.body.token,
+      password: 'bobsnieuwe',
+    })
+    expect(used.status).toBe(403)
+    expect(used.body.error).toBe('account_blocked')
+    // The link is not used up.
+    const row = db.select().from(passwordResets).where(eq(passwordResets.userId, bob.id)).get()
+    expect(row?.usedAt).toBeNull()
+
+    const another = await call('POST', `/api/admin/users/${bob.id}/reset-link`, undefined, {
+      cookie: admin.cookie,
+    })
+    expect(another.status).toBe(409)
+    expect(another.body.error).toBe('account_blocked')
+
+    // Unblocked, the old link works again (until it expires).
+    await block(call, admin.cookie, bob.id, false)
+    const works = await call('POST', '/api/auth/reset', {
+      token: made.body.token,
+      password: 'bobsnieuwe',
+    })
+    expect(works.status).toBe(200)
+  })
+
+  it('mails no reset link to a blocked account, with the same answer', async () => {
+    const { call, register, db, mail, outbox } = setup()
+    const admin = await register('admin@example.com')
+    const bob = await register('bob@example.com')
+    await block(call, admin.cookie, bob.id)
+    const resets = new PasswordResetService(db, mail)
+    const { result, sent } = resets.request('bob@example.com', {
+      clientKey: 'test',
+      locale: 'en',
+      base: 'https://dingen.example.com',
+    })
+    await sent
+    expect(result).toBe('ok')
+    expect(outbox).toHaveLength(0)
+    expect(db.select().from(passwordResets).all()).toHaveLength(0)
+  })
+})

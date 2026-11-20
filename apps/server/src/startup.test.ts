@@ -209,3 +209,59 @@ describe('openDatabase', () => {
     expect(fs.existsSync(`${databasePath}-wal`)).toBe(false)
   })
 })
+
+describe('block 3 migrations', () => {
+  it('takes a database at 0010 to the end, after a backup', async () => {
+    const journalFile = path.join(migrations, 'meta/_journal.json')
+    const full = fs.readFileSync(journalFile, 'utf8')
+    const journal = JSON.parse(full) as { entries: { tag: string }[] }
+    const tags = journal.entries.map((e) => e.tag)
+    expect(tags.slice(-3)).toEqual([
+      '0010_push_language',
+      '0011_mail_reset_totp',
+      '0012_blocked_users',
+    ])
+    // A server of before block 3: the journal up to 0010.
+    const upTo = tags.indexOf('0010_push_language') + 1
+    fs.writeFileSync(
+      journalFile,
+      JSON.stringify({ ...journal, entries: journal.entries.slice(0, upTo) }),
+    )
+    await existingDatabase()
+    const columns = () => {
+      const db = new Database(databasePath, { readonly: true })
+      try {
+        return (db.prepare('pragma table_info(users)').all() as { name: string }[]).map(
+          (c) => c.name,
+        )
+      } finally {
+        db.close()
+      }
+    }
+    expect(columns()).not.toContain('totp_secret')
+    expect(columns()).not.toContain('blocked_at')
+    expect(listBackups(backupDir)).toEqual([])
+
+    // The update: all migrations again.
+    fs.writeFileSync(journalFile, full)
+    ;(await prepareDatabase(options())).close()
+    expect(columns()).toEqual(
+      expect.arrayContaining(['totp_secret', 'totp_enabled_at', 'blocked_at']),
+    )
+    expect(emails()).toEqual(['blijft@example.com'])
+    const backups = listBackups(backupDir)
+    expect(backups).toHaveLength(1)
+    expect(backups[0]?.kind).toBe('pre-update')
+    // The backup is the database as it was, at 0010.
+    const old = new Database(backups[0]?.file ?? '', { readonly: true })
+    try {
+      const names = (old.prepare('pragma table_info(users)').all() as { name: string }[]).map(
+        (c) => c.name,
+      )
+      expect(names).not.toContain('blocked_at')
+      expect(() => old.prepare('select count(*) from password_resets')).toThrow()
+    } finally {
+      old.close()
+    }
+  })
+})
