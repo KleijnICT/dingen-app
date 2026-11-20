@@ -24,7 +24,8 @@ export const authenticate = createMiddleware<AppEnv>(async (c, next) => {
   } else if (header?.startsWith('Bearer ')) {
     const resolved = c.get('agents').resolveToken(header.slice('Bearer '.length).trim())
     const user = resolved ? auth.findById(resolved.userId) : null
-    if (resolved && user) {
+    // A blocked account's API and agent tokens resolve to nobody (also on /mcp).
+    if (resolved && user && !user.blocked) {
       c.set('user', user)
       c.set('userId', user.id)
       c.set('authSource', 'token')
@@ -64,6 +65,21 @@ export const requireAuth = createMiddleware<AppEnv>(async (c, next) => {
 export const requireSession = createMiddleware<AppEnv>(async (c, next) => {
   if (!c.get('user')) return c.json({ error: 'unauthorized' }, 401)
   if (c.get('authSource') !== 'session') return c.json({ error: 'session_required' }, 403)
+  await next()
+})
+
+/**
+ * Administration (everything under /api/admin): an administrator in a browser
+ * session, or the Home Assistant ingress user. Agent and API tokens never
+ * pass, also not with an `all` grant or of an administrator (403
+ * `session_required`): a leaked token must not be able to manage accounts or
+ * restore the server.
+ */
+export const requireAdmin = createMiddleware<AppEnv>(async (c, next) => {
+  const user = c.get('user')
+  if (!user) return c.json({ error: 'unauthorized' }, 401)
+  if (c.get('authSource') !== 'session') return c.json({ error: 'session_required' }, 403)
+  if (!user.isAdmin) return c.json({ error: 'forbidden' }, 403)
   await next()
 })
 

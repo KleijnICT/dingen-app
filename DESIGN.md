@@ -48,6 +48,7 @@ The root font size is 15px, so `1rem` is 15px.
 | `--red`, `--error`                                                                    | The one red: errors, late deadlines, destructive text            |
 | `--error-fill`                                                                        | Filled destructive button                                        |
 | `--ok`                                                                                | Success                                                          |
+| `--qr-dark`, `--qr-light`                                                             | A QR code's modules and tile; the same in dark, for cameras      |
 | `--inbox`, `--today`, `--upcoming`, `--someday`, `--logbook`, `--review`, `--evening` | The lists' own colours, for their icons                          |
 | `--area-*`                                                                            | The nine colours a user can give an area                         |
 

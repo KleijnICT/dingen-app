@@ -2,6 +2,40 @@
 
 ## Unreleased
 
+- Mail: set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`,
+  `SMTP_FROM` and `SMTP_SECURE`, and `DINGEN_PUBLIC_URL` (the address people
+  open Dingen on, used for links in mail). Settings → Administration shows
+  whether mail is set up and sends a test mail.
+- Password reset: with mail set up the sign-in screen offers "Forgot
+  password?": a link that works once, for an hour, mailed in English or
+  Dutch, without telling whether an address has an account. An
+  administrator can also make a one-time reset link (24 hours) for a user to
+  pass on by hand. A reset signs the account out everywhere; agents' tokens
+  keep working.
+- Two-step verification with an authenticator app, optional for everyone
+  (Settings → Account), with ten recovery codes. Administration shows who
+  has it on and can turn it off for someone who lost their phone.
+- Administration in Settings, for administrators (replaces the Invitations
+  tab): the users with when they joined and were last active; make someone
+  an administrator; block an account (signed out everywhere, no sign-in, no
+  two-step step or reset link, its API and agent tokens and Home Assistant
+  access refused, no notifications) and unblock it; delete a blocked
+  account permanently with all its own data, after typing its email address
+  and with a backup first. Nobody can block, delete or unadmin themselves or
+  the last administrator. Everything under `/api/admin` is for
+  administrators in a browser session (or Home Assistant) only; agent and
+  API tokens are refused.
+- Registration in the app: who may create an account (nobody, with an
+  invitation, anyone) is chosen in Administration and stored in the
+  database; `DINGEN_REGISTRATION` is only the starting value, and an
+  existing server keeps its current setting.
+- Backups in the app: the backups are listed with date, kind and size; back
+  up now, download one, or restore one after typing "restore". A restore
+  makes its own backup first and restarts the server's database in place;
+  devices load a fresh copy.
+- Two database migrations, with a backup first: `0011_mail_reset_totp`
+  (reset links, recovery codes and two-step settings) and
+  `0012_blocked_users` (`blocked_at` on `users`).
 - A calmer, more consistent look (the first step of a redesign): one set of
   design tokens for space, type, radius, shadow and motion, a finished dark
   theme, quiet buttons with one primary per screen, one icon button, one

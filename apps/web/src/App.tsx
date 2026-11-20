@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { AuthScreen } from './AuthScreen.js'
 import { type AuthStatus, api, errorText, type User } from './api.js'
 import { useT } from './i18n/index.js'
+import { resetFromSearch } from './reset.js'
 import { Shell } from './Shell.js'
 import { EngineContext } from './store/context.js'
 import { SyncEngine } from './store/engine.js'
@@ -31,6 +32,11 @@ export function App() {
   const bootstrap = useCallback(async () => {
     try {
       const status = await api.get<AuthStatus>('/api/auth/status')
+      // A reset link shows "Choose a new password", also to someone signed in.
+      if (resetFromSearch(window.location.search)) {
+        setState({ kind: 'anonymous', status })
+        return
+      }
       try {
         const { user } = await api.get<{ user: User }>('/api/auth/me')
         signIn(user)

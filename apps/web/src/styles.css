@@ -26,6 +26,9 @@
   --error: var(--red);
   --error-fill: var(--red);
   --ok: #2f9e5b;
+  /* A QR code: dark on light in both themes, because cameras read that best. */
+  --qr-dark: #1c1c1e;
+  --qr-light: #ffffff;
 
   /* --- Colour: lists --- */
   --inbox: #3a86d6;
@@ -137,6 +140,8 @@
     --red: #ff6b5e;
     --error-fill: #d6463a;
     --ok: #4cc27a;
+    --qr-dark: #1c1c1e; /* the same as light: see above */
+    --qr-light: #ffffff;
 
     --inbox: #6aa5ec;
     --today: #f2c230;
@@ -2045,12 +2050,20 @@ button.link.danger {
   gap: var(--space-2);
   align-items: flex-start;
 }
-.data-tab section + section {
+/* Administration (plan 32): the same sections, but lists and questions take the whole width. */
+.admin-tab section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.data-tab section + section,
+.admin-tab section + section {
   margin-top: var(--space-5);
   padding-top: var(--space-4);
   border-top: 1px solid var(--line);
 }
-.data-tab h2 {
+.data-tab h2,
+.admin-tab h2 {
   margin: 0;
   font-size: var(--text-md);
 }
@@ -2411,16 +2424,109 @@ button.review-mark {
 }
 
 /* --- uitnodigingen --- */
-.invite-mode {
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  padding: var(--row-x) var(--space-3);
-}
 .invite-status {
   color: var(--muted);
 }
 .invite-status.invite-open {
   color: var(--ok);
+}
+
+/* --- Two-step verification (plan 32) --- */
+.two-step {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--line);
+}
+.two-step-on {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+.two-step-status {
+  color: var(--ok);
+}
+.two-step-setup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+.qr-code {
+  flex: none;
+  width: 168px;
+  height: 168px;
+  border-radius: var(--r-md);
+}
+.qr-code-tile {
+  fill: var(--qr-light);
+}
+.qr-code-modules {
+  fill: var(--qr-dark);
+}
+.two-step-key {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  font-size: var(--text-sm);
+}
+.two-step-key code {
+  font-size: var(--text-md);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+.two-step-actions {
+  justify-content: flex-start;
+  gap: var(--space-4);
+}
+.recovery-codes {
+  display: grid;
+  grid-template-columns: repeat(2, max-content);
+  gap: var(--space-2) var(--space-6);
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--bg);
+  user-select: all;
+}
+.recovery-codes code {
+  font-size: var(--text-md);
+}
+/* A one-time code: wide digits, so six of them read at a glance. */
+input.code-input {
+  font-family: var(--font-mono);
+  letter-spacing: 0.2em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Administration (plan 32): Settings → Administration --- */
+.admin-tab .empty-state {
+  padding: var(--space-3) 0;
+}
+.admin-email {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.admin-meta {
+  font-size: var(--text-sm);
+}
+.admin-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.admin-tab section > .admin-confirm {
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+.admin-confirm-field {
+  flex-wrap: wrap;
+}
+.admin-confirm-actions {
+  justify-content: flex-start;
 }
 
 /* --- Members (plan 19): people as initials in a circle, agents as icon in a rounded square --- */
@@ -3493,6 +3599,14 @@ button.crumb-link:hover {
    Narrow screens (720px and below). The one mobile block: it comes last, so it wins.
    ============================================================================= */
 @media (max-width: 720px) {
+  .two-step-setup {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .recovery-codes {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-2) var(--space-4);
+  }
   /* The sidebar becomes a drawer; the content gets the whole width. */
   .app {
     grid-template-columns: 1fr;

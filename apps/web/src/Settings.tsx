@@ -5,20 +5,21 @@ import {
   CalendarDays,
   Info,
   Settings as SettingsIcon,
+  ShieldCheck,
   Tags,
-  Ticket,
   UserRound,
   X,
 } from 'lucide-react'
 import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { ApiError, api, errorText, type User } from './api.js'
 import { underPrefix, withBase } from './base.js'
+import { AdminSettings } from './components/AdminSettings.js'
 import { AgentSettings } from './components/AgentSettings.js'
 import { CalendarSettings } from './components/CalendarSettings.js'
-import { InvitationSettings } from './components/InvitationSettings.js'
 import { PaneHeader } from './components/Pane.js'
 import { ReminderSettings } from './components/ReminderSettings.js'
 import { TagSettings } from './components/TagSettings.js'
+import { TwoStepSettings } from './components/TwoStepSettings.js'
 import { LOCALES, type Locale, setLocale, useLocale, useT } from './i18n/index.js'
 
 const TABS = [
@@ -28,8 +29,8 @@ const TABS = [
   { id: 'tags', icon: Tags },
   { id: 'calendars', icon: CalendarDays },
   { id: 'data', icon: ArrowDownUp },
-  // --- uitnodigingen: alleen voor de beheerder ---
-  { id: 'invitations', icon: Ticket, adminOnly: true },
+  // --- beheer: alleen voor beheerders (plan 32) ---
+  { id: 'admin', icon: ShieldCheck, adminOnly: true },
   { id: 'about', icon: Info },
 ] as const
 type TabId = (typeof TABS)[number]['id']
@@ -108,7 +109,7 @@ export function Settings({ user, onSignedOut, onClose }: Props) {
           {tab === 'tags' && <TagSettings />}
           {tab === 'calendars' && <CalendarSettings />}
           {tab === 'data' && <DataTab />}
-          {tab === 'invitations' && user.isAdmin && <InvitationSettings />}
+          {tab === 'admin' && user.isAdmin && <AdminSettings me={user} />}
           {tab === 'about' && <About />}
         </div>
       </div>
@@ -151,6 +152,8 @@ function Account({ user, onSignedOut }: { user: User; onSignedOut: () => void })
         <p className="muted">{t('account.homeAssistant', { email: user.email })}</p>
       )}
       <PasswordForm hasPassword={user.hasPassword !== false} />
+      {/* Two-step verification guards signing in with a password; without one there is nothing to guard. */}
+      {user.hasPassword !== false && <TwoStepSettings />}
       {!ingress && (
         <div>
           <button type="button" className="button-secondary" onClick={logout}>
