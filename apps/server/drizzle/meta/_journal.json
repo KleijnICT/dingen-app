@@ -85,6 +85,13 @@
       "when": 1795176849173,
       "tag": "0011_mail_reset_totp",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1795177961204,
+      "tag": "0012_blocked_users",
+      "breakpoints": true
     }
   ]
 }

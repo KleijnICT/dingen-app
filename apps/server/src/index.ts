@@ -1,17 +1,9 @@
-import fs from 'node:fs'
-import path from 'node:path'
 import { serve } from '@hono/node-server'
-import { createApp, defaultPush } from './app.js'
-import { BackupScheduler } from './backup-scheduler.js'
 import { applyLogLevel, loadConfig } from './config.js'
-import { migrationsFolder, type OpenedDatabase } from './db.js'
-import { resetToDemo } from './demo/seed.js'
+import type { AppBindings } from './env.js'
 import { DataDirLock } from './lock.js'
-import { MailService } from './mail/service.js'
-import { ChangeLogPruner } from './prune.js'
-import { ReminderPlanner } from './push/planner.js'
-import { prepareDatabase, StartupError } from './startup.js'
-import { mountWeb } from './static.js'
+import { ServerRuntime } from './runtime.js'
+import { StartupError } from './startup.js'
 
 const config = loadConfig()
 applyLogLevel(config.logLevel)
@@ -39,104 +31,34 @@ try {
 process.on('exit', () => lock?.release())
 
 // A backup before SQL or data migrations; if a migration fails, that backup
-// comes back and the server stops (see startup.ts).
-let opened: OpenedDatabase
+// comes back and the server stops (see startup.ts). The runtime holds the
+// database, the app and the timers, and can swap them for a restore from
+// Administration (see runtime.ts).
+let runtime: ServerRuntime
 try {
-  opened = await prepareDatabase({
-    databasePath: config.databasePath,
-    backupDir: config.backupDir,
-    migrationsFolder,
-  })
+  runtime = await ServerRuntime.start(config)
 } catch (err) {
   if (!(err instanceof StartupError)) throw err
   for (const line of err.message.split('\n')) console.error(line)
   process.exit(1)
 }
-const { db, sqlite, sqliteVersion } = opened
 
-if (config.demo) {
-  console.warn('DEMO MODE (DINGEN_DEMO): wiping all accounts and data and writing the demo set.')
-  const seeded = await resetToDemo(db, { timezone: config.timezone })
-  for (const user of seeded.users) {
-    console.warn(`Demo account ${user.email}: ${user.entities} entities`)
-  }
-  console.warn('Demo mode: passwordless sign-in is on. Data resets on every restart.')
-}
-
-// Mail settings come from the environment only; the password is never logged.
-const mail = new MailService(config.mail)
-if (config.mail) {
-  console.log(
-    `Mail: SMTP ${config.mail.host}:${config.mail.port}${config.mail.secure ? ' (TLS)' : ''}, from ${config.mail.from}`,
-  )
-  if (!config.publicUrl) {
-    console.warn(
-      'DINGEN_PUBLIC_URL is not set: links in mail use the address of the request. Set it to the address people open Dingen on.',
+serve(
+  { fetch: (req, env) => runtime.fetch(req, env as AppBindings), port: config.port },
+  (info) => {
+    console.log(
+      `Dingen ${config.version}${config.build ? ` (${config.build})` : ''} listening on http://localhost:${info.port}`,
     )
-  }
-} else {
-  console.log('Mail is off (no SMTP_HOST and SMTP_FROM); "Forgot password?" is hidden.')
-}
-
-const push = defaultPush(db)
-const app = createApp({
-  push,
-  mail,
-  publicUrl: config.publicUrl,
-  db,
-  version: config.version,
-  build: config.build,
-  sqliteVersion,
-  registration: config.registration,
-  timezone: config.timezone,
-  demo: config.demo,
-  ...(config.homeAssistant ? { ingressTrusted: config.homeAssistant.ingressTrusted } : {}),
-})
-
-// Onbekende API-paden krijgen JSON, nooit de SPA-fallback.
-app.all('/api/*', (c) => c.json({ error: 'not_found' }, 404))
-
-if (fs.existsSync(path.join(config.webDist, 'index.html'))) {
-  mountWeb(app, config.webDist)
-} else {
-  console.warn(`Web build not found at ${config.webDist}; serving the API only.`)
-}
-
-new ReminderPlanner(db, push, { timezone: config.timezone }).start()
-
-// The change log keeps a year (see prune.ts): pruned daily after the nightly
-// backup, and at startup when overdue.
-const backups = config.backups
-  ? new BackupScheduler(sqlite, {
-      backupDir: config.backupDir,
-      migrationsFolder,
-      timezone: config.timezone,
-      afterBackup: () => void pruner.tick(),
-    })
-  : null
-const pruner = new ChangeLogPruner(sqlite, {
-  timezone: config.timezone,
-  ...(backups ? { backupPending: () => backups.due() } : {}),
-})
-if (backups) backups.start()
-else {
-  console.log('Nightly backups are off (DINGEN_BACKUPS); backups before an update are still made.')
-}
-pruner.start()
-
-serve({ fetch: app.fetch, port: config.port }, (info) => {
-  console.log(
-    `Dingen ${config.version}${config.build ? ` (${config.build})` : ''} listening on http://localhost:${info.port}`,
-  )
-  console.log(`Database: ${config.databasePath}`)
-})
+    console.log(`Database: ${config.databasePath}`)
+  },
+)
 
 if (config.homeAssistant) {
   // Home Assistant ingress: the same app, but the listener marks its requests,
   // so ingressGate only lets the Supervisor in and signs in the HA user.
   serve(
     {
-      fetch: (req, env) => app.fetch(req, { ...(env as object), ingress: true }),
+      fetch: (req, env) => runtime.fetch(req, { ...(env as object), ingress: true }),
       port: config.homeAssistant.ingressPort,
     },
     (info) => console.log(`Home Assistant ingress listening on port ${info.port}`),

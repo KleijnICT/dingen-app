@@ -50,6 +50,8 @@ export const api = {
     }),
   patch: <T>(path: string, body: unknown) =>
     request<T>(path, { method: 'PATCH', body: JSON.stringify(body) }),
+  put: <T>(path: string, body: unknown) =>
+    request<T>(path, { method: 'PUT', body: JSON.stringify(body) }),
 }
 
 export interface User {
@@ -66,6 +68,8 @@ export interface User {
   todaySeenOn?: string | null
   /** Two-step verification (TOTP) is on. */
   twoStep?: boolean
+  /** Blocked by an administrator (never true for a signed-in user). */
+  blocked?: boolean
 }
 
 export type RegistrationMode = 'closed' | 'open' | 'invite'
@@ -114,6 +118,7 @@ const AUTH_ERRORS = new Set([
   'reset_invalid',
   'reset_expired',
   'reset_used',
+  'account_blocked',
 ])
 
 export function errorText(err: unknown): string {

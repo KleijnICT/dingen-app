@@ -24,7 +24,10 @@ const ATTEMPT_WINDOW_MS = 15 * 60 * 1000
 
 export type ChallengeResult =
   | { ok: true; userId: string; recoveryCodeUsed: boolean }
-  | { ok: false; problem: 'invalid_code' | 'challenge_expired' | 'too_many_attempts' }
+  | {
+      ok: false
+      problem: 'invalid_code' | 'challenge_expired' | 'too_many_attempts' | 'account_blocked'
+    }
 
 interface Challenge {
   userId: string
@@ -191,6 +194,20 @@ export class TwoStepService {
     if (!challenge || challenge.expiresAt <= now.getTime()) {
       this.challenges.delete(key)
       return { ok: false, problem: 'challenge_expired' }
+    }
+    // Blocked after the password was accepted: the sign-in ends here.
+    const account = this.db
+      .select({ blockedAt: users.blockedAt })
+      .from(users)
+      .where(eq(users.id, challenge.userId))
+      .get()
+    if (!account) {
+      this.challenges.delete(key)
+      return { ok: false, problem: 'challenge_expired' }
+    }
+    if (account.blockedAt) {
+      this.challenges.delete(key)
+      return { ok: false, problem: 'account_blocked' }
     }
     let kind: 'totp' | 'recovery' | null
     try {

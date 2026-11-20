@@ -15,9 +15,15 @@ import Database from 'better-sqlite3'
  */
 
 /** What made a back-up. */
-export type BackupKind = 'daily' | 'pre-update' | 'pre-restore' | 'manual'
+export type BackupKind = 'daily' | 'pre-update' | 'pre-restore' | 'pre-delete' | 'manual'
 
-export const BACKUP_KINDS: readonly BackupKind[] = ['daily', 'pre-update', 'pre-restore', 'manual']
+export const BACKUP_KINDS: readonly BackupKind[] = [
+  'daily',
+  'pre-update',
+  'pre-restore',
+  'pre-delete',
+  'manual',
+]
 
 /** How many back-ups stay (see `planRetention`). Manual back-ups are never removed. */
 export interface RetentionPolicy {
@@ -31,6 +37,8 @@ export interface RetentionPolicy {
   preUpdate: number
   /** The newest back-ups made before a restore. */
   preRestore: number
+  /** The newest back-ups made before an administrator deleted an account. */
+  preDelete: number
 }
 
 export const RETENTION: RetentionPolicy = {
@@ -39,6 +47,7 @@ export const RETENTION: RetentionPolicy = {
   monthly: 3,
   preUpdate: 10,
   preRestore: 10,
+  preDelete: 10,
 }
 
 /** The pre-update rule from before plan 24; kept as a name. */
@@ -145,7 +154,7 @@ function stamp(now: Date): string {
 }
 
 const NAME =
-  /^dingen-(daily|pre-update|pre-restore|manual)-(\d{4}-\d{2}-\d{2})T(\d{2})(\d{2})(\d{2})Z-([0-9a-z]+)(?:-\d+)?\.db$/
+  /^dingen-(daily|pre-update|pre-restore|pre-delete|manual)-(\d{4}-\d{2}-\d{2})T(\d{2})(\d{2})(\d{2})Z-([0-9a-z]+)(?:-\d+)?\.db$/
 const LEGACY_NAME = /^dingen-(\d{4}-\d{2}-\d{2})-([0-9a-z]+)-([0-9a-z]+)(?:-\d+)?\.db$/
 
 export interface ParsedName {
@@ -229,8 +238,8 @@ export function isoWeek(at: Date): string {
 /**
  * Which back-ups to keep and which to remove (pure). Daily: the `daily`
  * newest, plus the newest of each of the `weekly` most recent ISO weeks and of
- * each of the `monthly` most recent months. Pre-update and pre-restore: the
- * newest few. Manual: always kept.
+ * each of the `monthly` most recent months. Pre-update, pre-restore and
+ * pre-delete: the newest few. Manual: always kept.
  */
 export function planRetention(
   entries: readonly BackupEntry[],
@@ -244,6 +253,7 @@ export function planRetention(
   for (const e of entries) if (e.kind === 'manual') keep.add(e.name)
   for (const e of newest('pre-update').slice(0, policy.preUpdate)) keep.add(e.name)
   for (const e of newest('pre-restore').slice(0, policy.preRestore)) keep.add(e.name)
+  for (const e of newest('pre-delete').slice(0, policy.preDelete)) keep.add(e.name)
 
   const daily = newest('daily')
   for (const e of daily.slice(0, policy.daily)) keep.add(e.name)

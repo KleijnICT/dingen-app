@@ -1,6 +1,5 @@
 import { Hono } from 'hono'
 import { z } from 'zod'
-import { requireAdmin } from '../auth/middleware.js'
 import { type PasswordResetService, resetLink } from '../auth/reset.js'
 import type { TwoStepService } from '../auth/two-step.js'
 import type { AppEnv } from '../env.js'
@@ -20,16 +19,11 @@ export interface AdminSecurityOptions {
 
 /**
  * Administration of mail, password resets and two-step verification (plan
- * 32). Mounted under `/api/admin`; every route needs an administrator in a
- * browser session (`requireAdmin`), never an agent token.
+ * 32). Mounted by `adminRoutes` under `/api/admin`, behind its `requireAdmin`.
  */
 export function adminSecurityRoutes(options: AdminSecurityOptions) {
   const app = new Hono<AppEnv>()
   const { mail, resets, twoStep } = options
-
-  app.use('/mail', requireAdmin)
-  app.use('/mail/*', requireAdmin)
-  app.use('/users/*', requireAdmin)
 
   // Does mail work? No secrets: whether SMTP is set, and the sender.
   app.get('/mail', (c) => c.json({ configured: mail.isConfigured(), from: mail.from() }))
@@ -56,6 +50,7 @@ export function adminSecurityRoutes(options: AdminSecurityOptions) {
   app.post('/users/:id/reset-link', (c) => {
     const created = resets.createByAdmin(c.req.param('id'), c.get('userId'))
     if (!created) return c.json({ error: 'not_found' }, 404)
+    if (created === 'blocked') return c.json({ error: 'account_blocked' }, 409)
     return c.json(
       {
         token: created.token,

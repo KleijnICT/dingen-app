@@ -1,5 +1,6 @@
 import { newTask, ulid } from '@dingen/core'
 import { afterAll, describe, expect, it } from 'vitest'
+import { writeRegistration } from './admin/registration.js'
 import { createApp } from './app.js'
 import { openDatabase } from './db.js'
 
@@ -164,6 +165,8 @@ describe('API-tokens en scheiding', () => {
   })
 
   it('houdt de data van twee gebruikers gescheiden over de HTTP-laag', async () => {
+    // The stored mode wins over the starting value (plan 32); this database already has one.
+    writeRegistration(database.db, 'open')
     const openApp = createApp({
       db: database.db,
       version: 'test',

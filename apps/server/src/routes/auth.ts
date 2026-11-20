@@ -3,7 +3,7 @@ import { type Context, Hono } from 'hono'
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
 import { z } from 'zod'
 import { requireAuth, requireSession, SESSION_COOKIE } from '../auth/middleware.js'
-import type { PasswordResetService } from '../auth/reset.js'
+import type { PasswordResetService, ResetProblem } from '../auth/reset.js'
 import { AuthError } from '../auth/service.js'
 import type { TwoStepService } from '../auth/two-step.js'
 import { DEMO_ACCOUNTS, demoAccount } from '../demo/accounts.js'
@@ -82,6 +82,10 @@ export function appBase(c: Ctx, publicUrl: string | null): string {
   return `${isSecure(c) ? 'https' : url.protocol.replace(':', '')}://${url.host}`
 }
 
+function resetStatus(problem: ResetProblem): 403 | 404 | 410 {
+  return problem === 'reset_invalid' ? 404 : problem === 'account_blocked' ? 403 : 410
+}
+
 function handleAuthError(c: Ctx, err: unknown) {
   if (err instanceof AuthError) {
     const status =
@@ -93,7 +97,7 @@ function handleAuthError(c: Ctx, err: unknown) {
               err.code === 'totp_not_started' ||
               err.code === 'invalid_code'
             ? 400
-            : err.code.startsWith('invite_')
+            : err.code.startsWith('invite_') || err.code === 'account_blocked'
               ? 403
               : 401
     return c.json({ error: err.code }, status)
@@ -140,6 +144,7 @@ export function authRoutes(options: AuthRouteOptions) {
     const account = demoAccount(c.req.param('email'))
     const user = account ? c.get('auth').findByEmail(account.email) : null
     if (!user) return c.json({ error: 'not_found' }, 404)
+    if (user.blocked) return c.json({ error: 'account_blocked' }, 403)
     startSession(c, user.id)
     return c.json({ user })
   })
@@ -189,7 +194,13 @@ export function authRoutes(options: AuthRouteOptions) {
     const result = twoStep.answerChallenge(parsed.data.challenge, parsed.data.code)
     if (!result.ok) {
       const status =
-        result.problem === 'too_many_attempts' ? 429 : result.problem === 'invalid_code' ? 401 : 410
+        result.problem === 'too_many_attempts'
+          ? 429
+          : result.problem === 'invalid_code'
+            ? 401
+            : result.problem === 'account_blocked'
+              ? 403
+              : 410
       return c.json({ error: result.problem }, status)
     }
     const user = c.get('auth').findById(result.userId)
@@ -220,7 +231,7 @@ export function authRoutes(options: AuthRouteOptions) {
     const check = resets.check(c.req.param('token'))
     return check.ok
       ? c.json({ ok: true, expiresAt: check.expiresAt })
-      : c.json({ error: check.problem }, check.problem === 'reset_invalid' ? 404 : 410)
+      : c.json({ error: check.problem }, resetStatus(check.problem))
   })
 
   // A new password with a reset link; every session of that account is signed out.
@@ -228,7 +239,7 @@ export function authRoutes(options: AuthRouteOptions) {
     const parsed = Reset.safeParse(await c.req.json().catch(() => null))
     if (!parsed.success) return c.json({ error: 'invalid_body', issues: parsed.error.issues }, 400)
     const result = await resets.complete(parsed.data.token, parsed.data.password)
-    if (result !== 'ok') return c.json({ error: result }, result === 'reset_invalid' ? 404 : 410)
+    if (result !== 'ok') return c.json({ error: result }, resetStatus(result))
     return c.json({ ok: true })
   })
 

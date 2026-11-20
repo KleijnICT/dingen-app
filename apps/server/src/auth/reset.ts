@@ -19,7 +19,8 @@ export const RESET_PER_ADDRESS = 3
 export const RESET_PER_CLIENT = 10
 const RESET_WINDOW_MS = 60 * 60 * 1000
 
-export type ResetProblem = 'reset_invalid' | 'reset_expired' | 'reset_used'
+/** `account_blocked`: the account was blocked by an administrator; its links do not work. */
+export type ResetProblem = 'reset_invalid' | 'reset_expired' | 'reset_used' | 'account_blocked'
 
 type Row = typeof passwordResets.$inferSelect
 
@@ -41,6 +42,13 @@ function check(
   if (!row) return { ok: false, problem: 'reset_invalid' }
   if (row.usedAt) return { ok: false, problem: 'reset_used' }
   if (row.expiresAt <= now.toISOString()) return { ok: false, problem: 'reset_expired' }
+  const user = db
+    .select({ blockedAt: users.blockedAt })
+    .from(users)
+    .where(eq(users.id, row.userId))
+    .get()
+  if (!user) return { ok: false, problem: 'reset_invalid' }
+  if (user.blockedAt) return { ok: false, problem: 'account_blocked' }
   return { ok: true, row }
 }
 
@@ -82,16 +90,22 @@ export class PasswordResetService {
   }
 
   /**
-   * A link made by an administrator for `userId` (24 hours), or null when
-   * there is no such account. For the admin to pass on by hand.
+   * A link made by an administrator for `userId` (24 hours), for the admin to
+   * pass on by hand; null when there is no such account, `blocked` when the
+   * account is blocked (its links would not work).
    */
   createByAdmin(
     userId: string,
     adminId: string,
     now = new Date(),
-  ): { token: string; expiresAt: string } | null {
-    const exists = this.db.select({ id: users.id }).from(users).where(eq(users.id, userId)).get()
-    if (!exists) return null
+  ): { token: string; expiresAt: string } | 'blocked' | null {
+    const row = this.db
+      .select({ blockedAt: users.blockedAt })
+      .from(users)
+      .where(eq(users.id, userId))
+      .get()
+    if (!row) return null
+    if (row.blockedAt) return 'blocked'
     return this.create(userId, { createdBy: adminId, ttlMs: RESET_ADMIN_TTL_MS, now })
   }
 
@@ -123,12 +137,13 @@ export class PasswordResetService {
     }
     const sent = Promise.resolve().then(async () => {
       const user = this.db
-        .select({ id: users.id, email: users.email })
+        .select({ id: users.id, email: users.email, blockedAt: users.blockedAt })
         .from(users)
         .where(eq(users.email, email))
         .get()
-      // Home Assistant accounts have a placeholder address that never receives mail.
-      if (!user || user.email.endsWith(`@${HA_EMAIL_DOMAIN}`)) return
+      // Home Assistant accounts have a placeholder address that never receives mail;
+      // a blocked account gets no link (the answer stays the same).
+      if (!user || user.blockedAt || user.email.endsWith(`@${HA_EMAIL_DOMAIN}`)) return
       const { token } = this.create(user.id, { now })
       const message = resetMail(options.locale, user.email, resetLink(options.base, token))
       await this.mail.send({ to: user.email, ...message }).catch(() => {

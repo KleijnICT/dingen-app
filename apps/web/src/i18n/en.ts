@@ -427,7 +427,6 @@ export const en = {
   'reminder.settings.testTitle': 'Dingen',
   'reminder.settings.testBody': 'Reminders work on this device.',
   // --- uitnodigingen ---
-  'settings.tab.invitations': 'Invitations',
   'auth.error.invite_required':
     'This server is invite-only. Ask its administrator for an invitation link.',
   'auth.error.invite_invalid': 'This invitation link is not valid. Ask for a new one.',
@@ -438,10 +437,6 @@ export const en = {
   'invite.welcome': 'You have been invited. Create your account.',
   'invite.intro':
     'Invite someone with a link that works once and expires after 14 days. Anyone with the link can create an account, so send it only to the person you mean.',
-  'invite.modeClosed':
-    'Registration on this server is closed, so invitations do not work. Set DINGEN_REGISTRATION=invite to use them.',
-  'invite.modeOpen':
-    'Registration on this server is open: anyone can create an account, with or without an invitation.',
   'invite.create': 'Create invitation link',
   'invite.reveal': 'Copy this link now; it is shown only once.',
   'invite.copy': 'Copy link',
@@ -622,6 +617,80 @@ export const en = {
     'Enter your password, or a code from the app, to turn two-step verification off.',
   'twoStep.passwordOrCode': 'Password or code',
   'twoStep.wrong': 'That password or code is not correct.',
+  // --- beheer (plan 32) ---
+  'settings.tab.admin': 'Administration',
+  'auth.error.account_blocked': 'This account is blocked. Ask the administrator of this server.',
+  'admin.users.title': 'Users',
+  'admin.users.you': '(you)',
+  'admin.users.admin': 'Administrator',
+  'admin.users.blocked': 'Blocked since {date}',
+  'admin.users.totp': 'Two-step verification on',
+  'admin.users.joined': 'joined {date}',
+  'admin.users.lastActive': 'last active {date}',
+  'admin.users.neverActive': 'never active',
+  'admin.users.actions': 'Actions for {email}',
+  'admin.users.makeAdmin': 'Make administrator',
+  'admin.users.unmakeAdmin': 'Remove as administrator',
+  'admin.users.block': 'Block',
+  'admin.users.blockQuestion':
+    'Block {email}? They are signed out everywhere and their agents stop working. Their data stays.',
+  'admin.users.unblock': 'Unblock',
+  'admin.users.resetLink': 'Create reset link',
+  'admin.users.resetReveal':
+    'Password reset link for {email}. It works once; send it only to them.',
+  'admin.users.totpOff': 'Turn off two-step verification',
+  'admin.users.totpOffQuestion':
+    'Turn off two-step verification for {email}? They sign in with only their password until they turn it on again.',
+  'admin.users.totpOffDone': 'Two-step verification is off for {email}.',
+  'admin.users.delete': 'Delete permanently',
+  'admin.users.deleteQuestion':
+    'This deletes {email} with all their data: tasks, projects, areas, agents and calendars. A backup is made first. Type the email address to confirm.',
+  'admin.users.deleteType': 'Email address of the account',
+  'admin.users.deleteConfirm': 'Delete account',
+  'admin.users.deleted': '{email} is deleted. The backup made before is {file}.',
+  'admin.error.self': 'You cannot do this to your own account.',
+  'admin.error.last_admin': 'This server needs at least one administrator.',
+  'admin.error.not_blocked': 'Block the account before you delete it.',
+  'admin.error.confirm_mismatch': 'That is not the email address of this account.',
+  'admin.error.shared_space':
+    'This account owns a shared space that others are in. It cannot be deleted yet.',
+  'admin.error.invalid_backup': 'This backup cannot be restored: {reason}',
+  'admin.registration.title': 'Registration',
+  'admin.registration.label': 'Who can create an account',
+  'admin.registration.closed': 'Nobody',
+  'admin.registration.invite': 'People with an invitation',
+  'admin.registration.open': 'Anyone',
+  'admin.registration.closedHelp': 'Nobody can create a new account on this server.',
+  'admin.registration.inviteHelp':
+    'Only someone with an invitation link from an administrator can create an account.',
+  'admin.registration.openHelp': 'Anyone who can reach this server can create an account.',
+  'admin.backups.title': 'Backups',
+  'admin.backups.intro':
+    'Dingen makes a backup every night and before every update. Download one to keep a copy somewhere else.',
+  'admin.backups.now': 'Back up now',
+  'admin.backups.working': 'Making a backup…',
+  'admin.backups.made': 'Backup made.',
+  'admin.backups.none': 'No backups yet',
+  'admin.backups.noneText': 'The nightly backups and the ones before updates show up here.',
+  'admin.backups.kind.daily': 'Nightly',
+  'admin.backups.kind.pre-update': 'Before an update',
+  'admin.backups.kind.pre-restore': 'Before a restore',
+  'admin.backups.kind.pre-delete': 'Before deleting an account',
+  'admin.backups.kind.manual': 'Made by hand',
+  'admin.backups.download': 'Download',
+  'admin.backups.restore': 'Restore',
+  'admin.backups.showAll': 'Show all {count}',
+  'admin.backups.restoreQuestion':
+    'Put back the backup of {date}? Everything changed after it is lost, for every account. A backup of the current state is made first, then the server restarts.',
+  'admin.backups.restoreWord': 'restore',
+  'admin.backups.restoreType': 'Type “{word}” to confirm',
+  'admin.backups.restoring': 'Restoring. The server restarts; this page reloads when it is back.',
+  'admin.mail.title': 'Email',
+  'admin.mail.configured': 'Email is set up. Messages are sent from {from}.',
+  'admin.mail.notConfigured':
+    'Email is not set up, so people cannot reset a forgotten password themselves; create a reset link for them above. Set the SMTP variables to turn it on (see the README).',
+  'admin.mail.test': 'Send test email',
+  'admin.mail.testSent': 'Test email sent to {email}.',
 } as const
 
 export type MessageKey = keyof typeof en

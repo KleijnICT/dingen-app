@@ -84,6 +84,12 @@ export const users = sqliteTable('users', {
   totpEnabledAt: text('totp_enabled_at'),
   /** The time step of the last accepted code, so a code cannot be used twice. */
   totpLastStep: integer('totp_last_step'),
+  /**
+   * When an administrator blocked the account (ISO), or null. A blocked
+   * account cannot sign in and its sessions, API tokens and agent tokens do
+   * not work; its data stays until the account is deleted.
+   */
+  blockedAt: text('blocked_at'),
 })
 
 export type SpaceKind = 'personal' | 'shared'
