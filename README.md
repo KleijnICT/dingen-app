@@ -6,6 +6,11 @@ repeating tasks and checklists. Open source, web-based and self-hosted with
 Docker. Claude (or any MCP client) can read and manage your tasks through the
 built-in MCP server.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/screenshots/today-dark.webp">
+  <img src=".github/screenshots/today-light.webp" alt="Today in Dingen: the tasks for the day grouped into morning, afternoon and evening, with the sidebar of lists, areas and projects" width="1100">
+</picture>
+
 > **Status: beta (1.0.0-beta.1).** Dingen is used daily by its author and is
 > feature complete for self-hosting. From this beta on the sync protocol stays
 > compatible until 2.0 (see [Compatibility](#compatibility)); the MCP tools may
@@ -551,6 +556,8 @@ every start it wipes the whole database**: all accounts, sessions, API tokens,
 invitations, calendars and tasks. It then writes a fixed set of demo data with
 dates relative to today, so every list is filled: Sam Rivera (a freelance web
 designer, the administrator), Morgan Rivera (a teacher) and an empty account.
+Sam also follows two calendars, each linked to an area; the server writes
+their appointments itself, relative to today, without fetching anything.
 The sign-in screen shows a button per demo account that signs in without a
 password. Never set it on a server with data you want to keep.
 

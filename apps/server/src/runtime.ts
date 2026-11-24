@@ -7,6 +7,7 @@ import { createApp, defaultPush } from './app.js'
 import { BackupScheduler } from './backup-scheduler.js'
 import type { Config } from './config.js'
 import { type Db, migrationsFolder as defaultMigrations, type OpenedDatabase } from './db.js'
+import { demoFetchFeed } from './demo/calendar.js'
 import { resetToDemo } from './demo/seed.js'
 import type { AppBindings, AppEnv } from './env.js'
 import { MailService } from './mail/service.js'
@@ -148,6 +149,7 @@ export class ServerRuntime {
       registration: config.registration,
       timezone: config.timezone,
       demo: config.demo,
+      ...(config.demo ? { fetchFeed: demoFetchFeed(config.timezone) } : {}),
       ...(config.homeAssistant ? { ingressTrusted: config.homeAssistant.ingressTrusted } : {}),
       backups: {
         sqlite,

@@ -1,5 +1,7 @@
 import {
   type Area,
+  addDays,
+  type CalendarEventsResponse,
   type ChecklistItem,
   entitySchemas,
   type Heading,
@@ -15,6 +17,7 @@ import { AgentService } from './agents/service.js'
 import { createApp } from './app.js'
 import { openDatabase } from './db.js'
 import { DEMO_ACCOUNTS } from './demo/accounts.js'
+import { DEMO_CALENDARS, demoFetchFeed } from './demo/calendar.js'
 import { buildDemoSet } from './demo/dataset.js'
 import { resetToDemo } from './demo/seed.js'
 import { todayIn } from './demo/time.js'
@@ -260,6 +263,61 @@ describe('demo sign-in', () => {
     expect(
       (await app.request('/api/auth/demo/someone@example.com', { method: 'POST' })).status,
     ).toBe(404)
+  })
+
+  it('gives Sam calendars with an area and appointments relative to today', async () => {
+    const { db, sqliteVersion } = freshDb()
+    await resetToDemo(db, { timezone, now })
+    const app = createApp({
+      db,
+      version: 't',
+      sqliteVersion,
+      demo: true,
+      timezone,
+      fetchFeed: demoFetchFeed(
+        timezone,
+        () => now,
+        async () => {
+          throw new Error('a demo feed went to the network')
+        },
+      ),
+    })
+    const res = await app.request('/api/auth/demo/sam@example.com', { method: 'POST' })
+    const cookie = (res.headers.get('set-cookie') ?? '').split(';')[0] as string
+    const to = addDays(today, 14)
+    const events = await app.request(`/api/calendars/events?from=${today}&to=${to}`, {
+      headers: { cookie },
+    })
+    const body = (await events.json()) as CalendarEventsResponse
+    expect(body.failed).toEqual([])
+    expect(body.calendars.map((c) => c.name)).toEqual(DEMO_CALENDARS.map((c) => c.name))
+
+    // Every calendar belongs to one of Sam's areas.
+    const areas = new Map(
+      (buildDemoSet({ now, timezone, today })['sam@example.com'] ?? [])
+        .filter((r) => r.entityType === 'area')
+        .map((r) => [r.data.title, r.id]),
+    )
+    const pull = await app.request('/api/calendars', { headers: { cookie } })
+    const list = (await pull.json()).calendars as { name: string; areaId: string | null }[]
+    for (const c of DEMO_CALENDARS) {
+      const areaId = list.find((x) => x.name === c.name)?.areaId
+      expect(areaId).toBeTruthy()
+      expect(areas.has(c.area)).toBe(true)
+    }
+
+    expect(body.events).toHaveLength(DEMO_CALENDARS.flatMap((c) => c.events).length)
+    const todays = body.events.filter((e) => e.startDate === today)
+    expect(todays.map((e) => [e.startTime, e.title])).toEqual([
+      ['09:30', 'Stand-up with Fieldnote'],
+      ['14:00', 'Design review: Crumb & Co.'],
+      ['18:30', 'Dinner at Mum’s'],
+    ])
+    expect(body.events.find((e) => e.title === 'Morgan’s birthday')).toMatchObject({
+      allDay: true,
+      startDate: addDays(today, 3),
+      endDate: addDays(today, 3),
+    })
   })
 
   it('does not let a password open a demo account', async () => {

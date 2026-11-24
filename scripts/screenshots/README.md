@@ -38,6 +38,10 @@ Every width is rendered at its own device scale, not scaled down afterwards, so 
 sharp. Animations, transitions and the text caret are off, the mouse is out of the window,
 and the version label reads `Dingen <version>` without a build hash.
 
+The repository's own README shows the hero: `today-light-2200.webp` and
+`today-dark-2200.webp`, copied to `.github/screenshots/today-{light,dark}.webp`. Refresh those
+two when Today's look changes.
+
 The demo's dates are relative to the day the script runs, so weekday names and dates in the
 shots follow the calendar. To add or change a shot, edit `SHOTS` at the top of
 `capture.mjs`. When a view fails to open, the script leaves `<name>-failed.png` in the output

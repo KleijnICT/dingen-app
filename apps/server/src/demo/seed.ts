@@ -25,6 +25,7 @@ import { createPersonalSpace } from '../spaces/service.js'
 import { SyncService } from '../sync.js'
 import { DEMO_ACCOUNTS } from './accounts.js'
 import { samAgents } from './agents.js'
+import { DEMO_CALENDARS, demoFeedUrl } from './calendar.js'
 import { buildDemoSet } from './dataset.js'
 import { todayIn } from './time.js'
 
@@ -108,6 +109,23 @@ export async function resetToDemo(db: Db, options: DemoSeedOptions): Promise<Dem
   // Sam's agents and their recent work, through the normal push with each actor's grants.
   const sam = created.find((u) => u.email === 'sam@example.com')
   if (sam) {
+    // Sam's calendars, each with its area; demo mode writes their feeds itself (`demoFetchFeed`).
+    const samRecords = set[sam.email] ?? []
+    db.insert(calendars)
+      .values(
+        DEMO_CALENDARS.map((c, i) => ({
+          id: ulid(),
+          userId: sam.id,
+          name: c.name,
+          color: c.color,
+          areaId:
+            samRecords.find((r) => r.entityType === 'area' && r.data.title === c.area)?.id ?? null,
+          kind: 'ics',
+          url: demoFeedUrl(c.key),
+          createdAt: new Date(now.getTime() - 60 * 86_400_000 + i * 60_000).toISOString(),
+        })),
+      )
+      .run()
     const ctx = { now, timezone: options.timezone, today: todayIn(options.timezone, now) }
     const story = samAgents(ctx, sam.id, set[sam.email] ?? [])
     db.transaction((tx) => {
