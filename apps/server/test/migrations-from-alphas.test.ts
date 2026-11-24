@@ -12,19 +12,20 @@ import { prepareDatabase } from '../src/startup.js'
 import { SyncService } from '../src/sync.js'
 
 /**
- * Plan 33: a database of every released alpha migrates to the latest schema
+ * Plan 33: a database of every release (the alphas and the betas) migrates to the latest schema
  * through the real startup path (backup first, SQL migrations, data
  * migrations) and keeps its data. The databases are SQL dumps in
  * fixtures/alphas, made by that release's own code (see generate.sh and
  * seed.ts there): two accounts, an agent or API token, areas, a project with
  * headings, tasks with checklist items, tags with capitals, a repeating task
  * and its instance, evening and time (before dayparts) or dayparts, a
- * reminder, completed and deleted items, a step-by-step review, a calendar,
+ * reminder, completed and deleted items, a step-by-step review (the alphas), a calendar,
  * and the change log of all that.
  */
 
 const FIXTURES = path.join(import.meta.dirname, 'fixtures', 'alphas')
-const RELEASES = [1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `1.0.0-alpha.${n}`)
+const ALPHAS = [1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `1.0.0-alpha.${n}`)
+const RELEASES = [...ALPHAS, '1.0.0-beta.1']
 /** Releases from before dayparts (plan 25): tasks had `evening` and `time`. */
 const BEFORE_DAYPARTS = new Set(RELEASES.slice(0, 5))
 /** Releases from before agents: an API token, and no actor on changes. */
@@ -67,7 +68,9 @@ describe('migrating the database of every alpha release', () => {
   for (const version of RELEASES) {
     it(`${version}: migrates to the latest schema after a backup and keeps the data`, async () => {
       const { databasePath, backupDir, before } = restoreFixture(version)
-      expect(before.reviews).toBe(1)
+      // The step-by-step review existed in the alphas only (dropped in 1.0.0-beta.1).
+      const reviews = ALPHAS.includes(version) ? 1 : 0
+      expect(before.reviews).toBe(reviews)
       const journal = readJournal(migrationsFolder)
       expect(before.migrations).toBeLessThan(journal.length)
 
@@ -88,7 +91,7 @@ describe('migrating the database of every alpha release', () => {
         try {
           const n = (sql: string) => (old.prepare(sql).get() as { n: number }).n
           expect(n('select count(*) as n from __drizzle_migrations')).toBe(before.migrations)
-          expect(n("select count(*) as n from entities where entity_type = 'review'")).toBe(1)
+          expect(n("select count(*) as n from entities where entity_type = 'review'")).toBe(reviews)
         } finally {
           old.close()
         }

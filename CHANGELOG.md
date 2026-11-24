@@ -1,5 +1,31 @@
 # Changelog
 
+## 1.0.0-beta.2
+
+Faster capture, Today per area and calendars that belong to an area. A
+pre-release; `:latest` points to it. The update runs one small database
+migration (with a backup first). The sync protocol is unchanged (4), so apps
+from 1.0.0-beta.1 keep syncing. Reload the web app to get the new version.
+
+- Quick capture: Enter in the title of a new task saves it and starts the
+  next one, on every page that adds tasks. Enter in an empty title or Escape
+  ends the run. Enter in the title of an existing task still closes the panel.
+- Today has an area filter in the filter popover: only the tasks and projects
+  of one area. The choice is kept per device until you clear it.
+- A calendar can belong to an area (Settings → Calendars). With the area
+  filter on, Today hides the appointments of calendars that belong to another
+  area; calendars without an area always show. The database migration
+  `0014_calendar_area` adds the column; `/api/calendars` and
+  `/api/calendars/events` report `areaId`.
+- MCP: `update_task` with `project` or `area` and `when` in one call on an
+  Inbox task now keeps the given `when` (a date, today or someday); it used
+  to end up Anytime.
+- Demo mode: Sam follows two calendars, each linked to an area. The server
+  writes their appointments itself, relative to today, without fetching
+  anything.
+- The README shows a screenshot of Today, in light and dark.
+- The migration tests now also cover a database of 1.0.0-beta.1.
+
 ## 1.0.0-beta.1
 
 The first beta: phases 1 and 2 of the roadmap are complete. From this release

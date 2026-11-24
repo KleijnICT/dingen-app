@@ -28,6 +28,7 @@ rm -f "$db" "$db-wal" "$db-shm"
 (cd "$tree/apps/server" && npx tsx seed.ts "$db" "$version")
 {
   echo "-- Test database of Dingen $version, made by generate.sh with seed.ts."
-  sqlite3 "$db" .dump
+  # Newer sqlite3 versions also dump the creation of sqlite_sequence, which cannot be run.
+  sqlite3 "$db" .dump | grep -v '^CREATE TABLE IF NOT EXISTS sqlite_sequence('
 } >"$out"
 echo "Wrote $out"

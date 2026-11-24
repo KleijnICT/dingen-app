@@ -1,6 +1,6 @@
 # Contributing
 
-Dingen is in beta (1.0.0-beta.1). The most useful contribution right now is a
+Dingen is in beta (1.0.0-beta.2). The most useful contribution right now is a
 clear issue: what you did, what you expected, what happened, and the version
 (the image tag you run, or `version` from `/api/health`).
 
@@ -27,6 +27,6 @@ pnpm check   # must pass: lint (Biome), build, typecheck and tests (Vitest)
   update its snapshot only for an additive change.
 - A change to the database schema is a new migration in
   `apps/server/drizzle/`; the migration tests run it on a database of every
-  alpha release.
+  earlier release.
 
 By contributing you agree that your contribution is licensed under GPL-3.0.

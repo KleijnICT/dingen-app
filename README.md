@@ -11,7 +11,7 @@ built-in MCP server.
   <img src=".github/screenshots/today-light.webp" alt="Today in Dingen: the tasks for the day grouped into morning, afternoon and evening, with the sidebar of lists, areas and projects" width="1100">
 </picture>
 
-> **Status: beta (1.0.0-beta.1).** Dingen is used daily by its author and is
+> **Status: beta (1.0.0-beta.2).** Dingen is used daily by its author and is
 > feature complete for self-hosting. From this beta on the sync protocol stays
 > compatible until 2.0 (see [Compatibility](#compatibility)); the MCP tools may
 > still change until 1.0. Back up your data volume and please

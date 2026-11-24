@@ -5,7 +5,7 @@ previous one is done, with an exception now and then.
 
 ## Now: the beta
 
-Phases 1 and 2 are done, and Dingen is in beta: 1.0.0-beta.1 is out. What the
+Phases 1 and 2 are done, and Dingen is in beta: 1.0.0-beta.2 is out. What the
 beta promises:
 
 - The sync protocol (4) stays compatible until 2.0: it only grows, with new
