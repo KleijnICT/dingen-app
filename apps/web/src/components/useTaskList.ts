@@ -40,8 +40,11 @@ export interface TaskList {
   askingDelete: boolean
   cancelDelete: () => void
   rowProps: (task: Task, extra?: Partial<RowProps>) => RowProps
-  /** Opens a freshly created task in the panel; it is removed again if left empty. */
-  openNew: (id: string) => void
+  /**
+   * Creates a task (with the page's `createNew`) and opens it in the panel; it is removed again
+   * if left empty. Enter in its title saves it and adds the next one, for a quick brain dump.
+   */
+  addNew: () => void
   /** The detail panel for the open task; render it once on the page. */
   panel: ReactNode
 }
@@ -60,7 +63,11 @@ const rowButton = (id: string) =>
  * one page. `tasks` is every task the page can show. The open task lives in the address bar
  * (`?task=`), so it survives a reload and Search can open one.
  */
-export function useTaskList(tasks: Task[], toggle: (task: Task) => void): TaskList {
+export function useTaskList(
+  tasks: Task[],
+  toggle: (task: Task) => void,
+  createNew?: () => Task,
+): TaskList {
   const param = useTaskParam()
   const [rawSelection, setSelection] = useState<Selection>(EMPTY_SELECTION)
   const [selecting, setSelecting] = useState(false)
@@ -282,13 +289,15 @@ export function useTaskList(tasks: Task[], toggle: (task: Task) => void): TaskLi
     applySelection,
   ])
 
-  const openNew = useCallback(
-    (id: string) => {
-      setNewId(id)
-      open(id, 'title')
-    },
-    [open],
-  )
+  // The page's latest `createNew`: the next task goes after the one just added.
+  const createRef = useRef(createNew)
+  createRef.current = createNew
+  const addNew = useCallback(() => {
+    const task = createRef.current?.()
+    if (!task) return
+    setNewId(task.id)
+    open(task.id, 'title')
+  }, [open])
 
   const selected = count === 1 && selectedId ? tasks.find((t) => t.id === selectedId) : undefined
 
@@ -327,6 +336,7 @@ export function useTaskList(tasks: Task[], toggle: (task: Task) => void): TaskLi
     task: openTask,
     focus,
     onClose: close,
+    onNext: openId && openId === newId ? addNew : undefined,
     onToggle: toggle,
     onOpen: (id: string) => open(id, 'panel'),
   })
@@ -340,7 +350,7 @@ export function useTaskList(tasks: Task[], toggle: (task: Task) => void): TaskLi
     askingDelete,
     cancelDelete: () => setAskingDelete(false),
     rowProps,
-    openNew,
+    addNew,
     panel,
   }
 }

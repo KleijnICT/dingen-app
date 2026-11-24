@@ -110,7 +110,20 @@ describe('/api/calendars', () => {
       name: 'Gezin',
       color: null,
     })
-    expect((await patched.json()).calendar).toMatchObject({ name: 'Gezin', color: null })
+    expect((await patched.json()).calendar).toMatchObject({
+      name: 'Gezin',
+      color: null,
+      areaId: null,
+    })
+    // Een gebied erbij, in de lijst en bij de afspraken terug te zien, en er weer af.
+    const withArea = await call(alice, 'PATCH', `/api/calendars/${calendar.id}`, {
+      areaId: 'area-1',
+    })
+    expect((await withArea.json()).calendar).toMatchObject({ name: 'Gezin', areaId: 'area-1' })
+    const events = await call(alice, 'GET', '/api/calendars/events?from=2026-06-01&to=2026-06-02')
+    expect((await events.json()).calendars).toMatchObject([{ id: calendar.id, areaId: 'area-1' }])
+    const cleared = await call(alice, 'PATCH', `/api/calendars/${calendar.id}`, { areaId: null })
+    expect((await cleared.json()).calendar.areaId).toBeNull()
     expect((await call(alice, 'PATCH', `/api/calendars/${calendar.id}`, {})).status).toBe(400)
     expect(
       (await call(alice, 'PATCH', `/api/calendars/${calendar.id}`, { color: 'chartreuse' })).status,

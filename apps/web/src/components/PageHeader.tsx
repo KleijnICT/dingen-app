@@ -1,3 +1,4 @@
+import type { Area } from '@dingen/core'
 import { ListFilter, type LucideIcon, X } from 'lucide-react'
 import { type ReactNode, useCallback, useContext, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -75,6 +76,10 @@ export interface PageFilters {
   /** The list whose duration filter shows here; null when there is none to show. */
   durationList?: DurationFilterList | null
   maxDuration?: number | null
+  /** The areas to filter on (Today); none hides the area filter. */
+  areas?: Area[]
+  area?: string | null
+  onArea?: (areaId: string | null) => void
   /** More filters for the same popover (the Logbook's kinds, people and period). */
   extra?: ReactNode
   /** Whether one of those extra filters is on. */
@@ -91,6 +96,9 @@ export function FilterButton({
   onTag,
   durationList,
   maxDuration,
+  areas = [],
+  area = null,
+  onArea,
   extra,
   extraActive = false,
 }: PageFilters) {
@@ -103,8 +111,10 @@ export function FilterButton({
   useDismiss(open, close, root, button)
 
   const hasTags = tags.length > 0 || tag !== null
-  if (!hasTags && !durationList && !extra) return null
-  const active = tag !== null || (maxDuration ?? null) !== null || extraActive
+  const hasAreas = Boolean(onArea) && areas.length > 0
+  if (!hasTags && !durationList && !hasAreas && !extra) return null
+  const active =
+    tag !== null || (maxDuration ?? null) !== null || (hasAreas && area !== null) || extraActive
   const label = t('filter.button')
 
   return (
@@ -124,6 +134,31 @@ export function FilterButton({
       {open && (
         <Sheet label={label} align="end" className="filter-popover" onClose={close}>
           {extra && <SheetSection inset>{extra}</SheetSection>}
+          {hasAreas && (
+            <SheetSection inset title={t('area.filter')}>
+              <fieldset className="filter-chips" aria-label={t('area.filter')}>
+                <button
+                  type="button"
+                  className={`chip small ${area === null ? 'active' : ''}`}
+                  aria-pressed={area === null}
+                  onClick={() => onArea?.(null)}
+                >
+                  {t('tags.all')}
+                </button>
+                {areas.map((a) => (
+                  <button
+                    type="button"
+                    key={a.id}
+                    className={`chip small ${area === a.id ? 'active' : ''}`}
+                    aria-pressed={area === a.id}
+                    onClick={() => onArea?.(area === a.id ? null : a.id)}
+                  >
+                    {a.title}
+                  </button>
+                ))}
+              </fieldset>
+            </SheetSection>
+          )}
           {hasTags && (
             <SheetSection inset title={t('tags.label')}>
               <TagFilter present={present} active={tag} onChange={onTag} />
@@ -141,11 +176,25 @@ export function FilterButton({
 }
 
 /** The filters that are on, as small chips under the subtitle; × turns one off. */
-export function ActiveFilters({ tag, onTag, durationList, maxDuration }: PageFilters) {
+export function ActiveFilters({
+  tag,
+  onTag,
+  durationList,
+  maxDuration,
+  area = null,
+  onArea,
+}: PageFilters) {
   const t = useT()
   const ws = useWorkspace()
   const text = useDurationText()
   const chips: { key: string; label: string; clear: () => void }[] = []
+  if (area !== null && onArea) {
+    chips.push({
+      key: 'area',
+      label: ws.areaById.get(area)?.title ?? '',
+      clear: () => onArea(null),
+    })
+  }
   if (tag !== null) {
     chips.push({ key: 'tag', label: ws.tagById.get(tag)?.title ?? '', clear: () => onTag(null) })
   }

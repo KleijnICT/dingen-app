@@ -175,6 +175,7 @@ export const nl: Messages = {
   'duration.customLabel': 'Andere duur, in minuten',
   'duration.clear': 'Duur weghalen',
   'duration.filter': 'Duur',
+  'area.filter': 'Gebied',
   'filter.button': 'Filteren',
   'filter.clear': 'Filter weghalen: {name}',
   'duration.atMost': '≤ {d}',
@@ -368,6 +369,10 @@ export const nl: Messages = {
   'calendar.add': 'Agenda toevoegen',
   'calendar.checking': 'Controleren…',
   'calendar.rename': 'Naam van de agenda',
+  'calendar.area': 'Gebied',
+  'calendar.area.none': 'Geen gebied',
+  'calendar.area.hint':
+    'Met een gebiedfilter aan in Vandaag zijn afspraken uit agenda’s van een ander gebied verborgen.',
   'calendar.remove': 'Verwijderen',
   'calendar.actions': 'Acties voor {name}',
   'calendar.removeQuestion':

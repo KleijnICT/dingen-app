@@ -153,11 +153,12 @@ export function LogbookPage({ list, user, focusSignal }: Props) {
 function NewTaskBar({ focusSignal }: { focusSignal: number }) {
   const engine = useEngine()
   const ws = useWorkspace()
-  const taskList = useTaskList([], (task: Task) => toggleTask(engine, ws, task))
-
-  function addNew() {
-    taskList.openNew(createInboxTask(engine, ws).id)
-  }
+  const taskList = useTaskList(
+    [],
+    (task: Task) => toggleTask(engine, ws, task),
+    () => createInboxTask(engine, ws),
+  )
+  const addNew = taskList.addNew
   useOnSignal(focusSignal, addNew)
 
   return (

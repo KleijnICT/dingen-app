@@ -1,0 +1,1 @@
+ALTER TABLE `calendars` ADD `area_id` text;

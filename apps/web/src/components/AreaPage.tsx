@@ -48,12 +48,11 @@ export function AreaPage({ area, focusSignal, headerExtra, showProjects = true }
   const tasks = splitSomeday(filtered)
   const projectGroups = splitSomeday(projects)
 
-  const taskList = useTaskList([...shown, ...completed], toggle)
-
   // A new task goes into this area, after its last open task.
-  function addNew() {
-    taskList.openNew(createListTask(engine, { areaId: area.id }, all, tagFilter).id)
-  }
+  const taskList = useTaskList([...shown, ...completed], toggle, () =>
+    createListTask(engine, { areaId: area.id }, all, tagFilter),
+  )
+  const addNew = taskList.addNew
   useOnSignal(focusSignal, addNew)
 
   const rowProps = (task: Task): RowProps => taskList.rowProps(task, { showWhen: true })

@@ -182,6 +182,7 @@ export const en = {
   'duration.customLabel': 'Other duration, in minutes',
   'duration.clear': 'Remove duration',
   'duration.filter': 'Duration',
+  'area.filter': 'Area',
   'filter.button': 'Filter',
   'filter.clear': 'Remove filter: {name}',
   'duration.atMost': '≤ {d}',
@@ -376,6 +377,10 @@ export const en = {
   'calendar.add': 'Add calendar',
   'calendar.checking': 'Checking…',
   'calendar.rename': 'Calendar name',
+  'calendar.area': 'Area',
+  'calendar.area.none': 'No area',
+  'calendar.area.hint':
+    'With an area filter on in Today, appointments from calendars of another area are hidden.',
   'calendar.remove': 'Remove',
   'calendar.actions': 'Actions for {name}',
   'calendar.removeQuestion':

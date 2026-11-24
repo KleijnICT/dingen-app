@@ -17,6 +17,7 @@ export interface CalendarSummary {
   id: string
   name: string
   color: string | null
+  areaId: string | null
   /** Alleen de host van de URL; de URL zelf is geheim. */
   host: string
   createdAt: string
@@ -139,7 +140,7 @@ export class CalendarService {
   /** Voegt een agenda toe nadat de feed één keer goed is opgehaald en gelezen. */
   async add(
     userId: string,
-    input: { name: string; url: string; color: CalendarColor | null },
+    input: { name: string; url: string; color: CalendarColor | null; areaId?: string | null },
   ): Promise<CalendarSummary> {
     const url = normalizeFeedUrl(input.url).toString()
     const feed = parseFeed(await this.fetchFeed(url))
@@ -148,6 +149,7 @@ export class CalendarService {
       userId,
       name: input.name,
       color: input.color,
+      areaId: input.areaId ?? null,
       kind: 'ics',
       url,
       createdAt: new Date(this.now()).toISOString(),
@@ -160,11 +162,16 @@ export class CalendarService {
   update(
     userId: string,
     id: string,
-    patch: { name?: string | undefined; color?: CalendarColor | null | undefined },
+    patch: {
+      name?: string | undefined
+      color?: CalendarColor | null | undefined
+      areaId?: string | null | undefined
+    },
   ): CalendarSummary | null {
-    const set: { name?: string; color?: string | null } = {}
+    const set: { name?: string; color?: string | null; areaId?: string | null } = {}
     if (patch.name !== undefined) set.name = patch.name
     if (patch.color !== undefined) set.color = patch.color
+    if (patch.areaId !== undefined) set.areaId = patch.areaId
     if (Object.keys(set).length > 0) {
       this.db
         .update(calendars)
@@ -209,7 +216,12 @@ export class CalendarService {
     events.sort((a, b) => a.start.localeCompare(b.start) || a.id.localeCompare(b.id))
     return {
       timezone: range.timezone,
-      calendars: rows.map((row) => ({ id: row.id, name: row.name, color: row.color })),
+      calendars: rows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        color: row.color,
+        areaId: row.areaId,
+      })),
       events,
       failed,
     }
@@ -258,6 +270,7 @@ function summary(row: {
   id: string
   name: string
   color: string | null
+  areaId: string | null
   url: string
   createdAt: string
 }): CalendarSummary {
@@ -267,5 +280,12 @@ function summary(row: {
   } catch {
     // Opgeslagen URL's zijn genormaliseerd; dit is een vangnet.
   }
-  return { id: row.id, name: row.name, color: row.color, host, createdAt: row.createdAt }
+  return {
+    id: row.id,
+    name: row.name,
+    color: row.color,
+    areaId: row.areaId,
+    host,
+    createdAt: row.createdAt,
+  }
 }

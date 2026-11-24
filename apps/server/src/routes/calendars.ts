@@ -7,16 +7,19 @@ import type { AppEnv } from '../env.js'
 
 const Color = z.enum(AREA_COLORS).nullable()
 const Name = z.string().trim().min(1).max(100)
+/** Het id van een gebied van de gebruiker; de server kent gebieden alleen als sync-entiteit. */
+const AreaId = z.string().min(1).max(64).nullable()
 
 const AddBody = z.object({
   name: Name,
   url: z.string().min(1).max(4096),
   color: Color.default(null),
+  areaId: AreaId.default(null),
 })
 
 const PatchBody = z
-  .object({ name: Name.optional(), color: Color.optional() })
-  .refine((b) => b.name !== undefined || b.color !== undefined)
+  .object({ name: Name.optional(), color: Color.optional(), areaId: AreaId.optional() })
+  .refine((b) => b.name !== undefined || b.color !== undefined || b.areaId !== undefined)
 
 const Day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
 const RangeQuery = z

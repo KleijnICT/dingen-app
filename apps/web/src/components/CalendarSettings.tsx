@@ -1,9 +1,10 @@
-import { AREA_COLORS, type AreaColorId } from '@dingen/core'
+import { AREA_COLORS, type Area, type AreaColorId, views } from '@dingen/core'
 import { Trash2 } from 'lucide-react'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { ApiError, api, errorText } from '../api.js'
 import { refreshCalendar } from '../calendar.js'
 import { type MessageKey, useT } from '../i18n/index.js'
+import { useWorkspace } from '../store/context.js'
 import { areaColorVar, knownColor } from './AreaIcons.js'
 import { MoreMenu } from './Menu.js'
 
@@ -11,6 +12,7 @@ interface CalendarSummary {
   id: string
   name: string
   color: string | null
+  areaId: string | null
   host: string
   createdAt: string
 }
@@ -85,7 +87,10 @@ export function CalendarSettings() {
     }
   }
 
-  async function update(id: string, patch: { name?: string; color?: string | null }) {
+  async function update(
+    id: string,
+    patch: { name?: string; color?: string | null; areaId?: string | null },
+  ) {
     setError(null)
     try {
       await api.patch(`/api/calendars/${id}`, patch)
@@ -116,6 +121,7 @@ export function CalendarSettings() {
             calendar={cal}
             onRename={(next) => update(cal.id, { name: next })}
             onColor={(color) => update(cal.id, { color })}
+            onArea={(areaId) => update(cal.id, { areaId })}
             onRemove={() => remove(cal.id)}
           />
         ))}
@@ -156,17 +162,23 @@ function CalendarItem({
   calendar,
   onRename,
   onColor,
+  onArea,
   onRemove,
 }: {
   calendar: CalendarSummary
   onRename: (name: string) => void
   onColor: (color: string | null) => void
+  onArea: (areaId: string | null) => void
   onRemove: () => void
 }) {
   const t = useT()
   const [name, setName] = useState(calendar.name)
   useEffect(() => setName(calendar.name), [calendar.name])
   const color = knownColor(calendar.color) ?? 'gray'
+  const ws = useWorkspace()
+  const areas: Area[] = [...ws.areaById.values()].sort(views.byOrder)
+  // An area that is gone counts as none.
+  const areaId = calendar.areaId && ws.areaById.has(calendar.areaId) ? calendar.areaId : ''
 
   function commit() {
     const next = name.trim()
@@ -227,6 +239,24 @@ function CalendarItem({
           />
         ))}
       </div>
+      {areas.length > 0 && (
+        <label className="calendar-area">
+          <span className="muted">{t('calendar.area')}</span>
+          <select
+            className="move-select calendar-area-select"
+            value={areaId}
+            title={t('calendar.area.hint')}
+            onChange={(e) => onArea(e.target.value || null)}
+          >
+            <option value="">{t('calendar.area.none')}</option>
+            {areas.map((area) => (
+              <option key={area.id} value={area.id}>
+                {area.title}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
     </li>
   )
 }

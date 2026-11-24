@@ -31,6 +31,11 @@ export interface CalendarInfo {
   id: string
   name: string
   color: string | null
+  /**
+   * Het gebied waar de agenda bij hoort; null is geen (dan valt hij buiten het gebiedfilter).
+   * Ontbreekt in afspraken die een oudere versie in de cache heeft gezet.
+   */
+  areaId?: string | null
 }
 
 /** Antwoord van `GET /api/calendars/events`. */

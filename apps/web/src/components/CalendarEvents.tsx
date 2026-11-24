@@ -1,18 +1,32 @@
 import { type CalendarEvent, eventSpan, eventsOnDay } from '@dingen/core'
+import { filterEventsByArea } from '../areaFilter.js'
 import { useCalendarData } from '../calendar.js'
 import { type DaypartSlot, eventsByDaypart } from '../dayparts.js'
 import { useT } from '../i18n/index.js'
+import { useWorkspace } from '../store/context.js'
 import { areaColorVar } from './AreaIcons.js'
 
 /**
  * De afspraken van één dag, compact boven de taken: hele dagen eerst, dan op
  * tijd. Alleen lezen; niets is aan te klikken. Geen afspraken, geen blok.
  * Met `slot` alleen die van één dagdeel (Vandaag): de afspraken die dan
- * beginnen, of bij `none` de hele dagen en wat eerder begon.
+ * beginnen, of bij `none` de hele dagen en wat eerder begon. Met `area` (het
+ * gebiedfilter van Vandaag) zonder de afspraken uit agenda's van een ander gebied.
  */
-export function DayEvents({ date, slot }: { date: string; slot?: DaypartSlot }) {
+export function DayEvents({
+  date,
+  slot,
+  area = null,
+}: {
+  date: string
+  slot?: DaypartSlot
+  area?: string | null
+}) {
   const t = useT()
-  const { calendars, events } = useCalendarData()
+  const ws = useWorkspace()
+  const data = useCalendarData()
+  const { calendars } = data
+  const events = filterEventsByArea(data.events, calendars, area, ws)
   const day = slot ? eventsByDaypart(events, date)[slot] : eventsOnDay(events, date)
   if (day.length === 0) return null
   const colorOf = new Map(calendars.map((c) => [c.id, c.color]))

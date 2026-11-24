@@ -215,6 +215,8 @@ export const calendars = sqliteTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
     color: text('color'),
+    /** Het gebied waar de agenda bij hoort (voor het gebiedfilter van Vandaag); null is geen. */
+    areaId: text('area_id'),
     /** Nu altijd 'ics'; ruimte voor 'caldav'. */
     kind: text('kind').notNull().default('ics'),
     url: text('url').notNull(),

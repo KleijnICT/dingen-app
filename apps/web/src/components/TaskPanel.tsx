@@ -83,6 +83,8 @@ interface Props {
   task: Task | undefined
   focus: PanelFocus | null
   onClose: () => void
+  /** Set while the open task was just created: adds the next new task in its place. */
+  onNext?: (() => void) | undefined
   onToggle: (task: Task) => void
   /** Shows another task in the panel (a duplicate that was just made). */
   onOpen: (id: string) => void
@@ -92,7 +94,7 @@ interface Props {
  * The detail panel for the open task. It slides in from the right when it opens; another task
  * replaces its content without closing it.
  */
-export function TaskPanel({ task, focus, onClose, onToggle, onOpen }: Props) {
+export function TaskPanel({ task, focus, onClose, onNext, onToggle, onOpen }: Props) {
   const slot = useContext(PanelSlot)
   const mode = usePanelMode()
   const panelWidth = usePanelWidth()
@@ -182,6 +184,7 @@ export function TaskPanel({ task, focus, onClose, onToggle, onOpen }: Props) {
             mode={mode}
             headActions={headActions}
             onClose={onClose}
+            onNext={onNext}
             onToggle={() => onToggle(shown)}
             onOpen={onOpen}
           />
@@ -258,6 +261,7 @@ interface EditorProps {
   /** The panel head's right side, for the `…` menu and Close. */
   headActions: HTMLElement | null
   onClose: () => void
+  onNext?: (() => void) | undefined
   onToggle: () => void
   onOpen: (id: string) => void
 }
@@ -273,7 +277,7 @@ const FOCUS_ON_ADD: Partial<Record<OptionalField, string>> = {
  * Every field of a task, saved as it changes. Only the header and OK always show; every other
  * field shows with a value, while it has focus, or right after adding it from the Add row.
  */
-function TaskEditor({ task, mode, headActions, onClose, onToggle, onOpen }: EditorProps) {
+function TaskEditor({ task, mode, headActions, onClose, onNext, onToggle, onOpen }: EditorProps) {
   const engine = useEngine()
   const ws = useWorkspace()
   const t = useT()
@@ -402,7 +406,12 @@ function TaskEditor({ task, mode, headActions, onClose, onToggle, onOpen }: Edit
   function onTitleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
       e.preventDefault()
-      close()
+      // A new task with a title: save it and go on to the next one. Enter in an empty title
+      // (or Escape) ends the run.
+      if (onNext && title.trim()) {
+        commit()
+        onNext()
+      } else close()
     }
   }
 

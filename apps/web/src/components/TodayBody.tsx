@@ -1,6 +1,7 @@
 import { type Daypart, type Task, views } from '@dingen/core'
 import { useDndContext } from '@dnd-kit/core'
 import type { ReactNode } from 'react'
+import { filterEventsByArea } from '../areaFilter.js'
 import { useCalendarData } from '../calendar.js'
 import {
   type DaypartSlot,
@@ -13,6 +14,7 @@ import {
 import type { TaskGroupInfo } from '../dnd.js'
 import { useLocale, useT } from '../i18n/index.js'
 import { navigate } from '../router.js'
+import { useWorkspace } from '../store/context.js'
 import type { MoveTarget } from '../taskActions.js'
 import { DayEvents } from './CalendarEvents.js'
 
@@ -31,6 +33,8 @@ interface Props {
   view: 'manual' | 'grouped'
   /** Focus mode: only tasks, no events, no projects, no empty groups. */
   focus?: boolean
+  /** The area filter; hides the events of calendars that belong to another area. */
+  area?: string | null
   /** The projects planned for today; above the tasks without a daypart. */
   projects: ReactNode
   /** A sortable group of rows (ListPage's `group`). */
@@ -57,6 +61,7 @@ export function TodayBody({
   tasks,
   view,
   focus = false,
+  area = null,
   projects,
   group,
   groupByContainer,
@@ -64,7 +69,9 @@ export function TodayBody({
   const t = useT()
   const locale = useLocale()
   const dragging = useDndContext().active !== null
-  const { events } = useCalendarData()
+  const ws = useWorkspace()
+  const calendar = useCalendarData()
+  const events = filterEventsByArea(calendar.events, calendar.calendars, area, ws)
   const byPart = tasksByDaypart(tasks)
   const eventsByPart = eventsByDaypart(focus ? [] : events, today)
   const todayWhen = { kind: 'date', date: today } as const
@@ -93,7 +100,7 @@ export function TodayBody({
 
   return (
     <>
-      {!focus && <DayEvents date={today} slot="none" />}
+      {!focus && <DayEvents date={today} slot="none" area={area} />}
       {!focus && projects}
       {rows('none', byPart.none)}
       {SLOTS.filter((slot): slot is Daypart => slot !== 'none').map((slot) => {
@@ -113,7 +120,7 @@ export function TodayBody({
                 </span>
               )}
             </h2>
-            {!focus && <DayEvents date={today} slot={slot} />}
+            {!focus && <DayEvents date={today} slot={slot} area={area} />}
             {rows(slot, items)}
           </section>
         )

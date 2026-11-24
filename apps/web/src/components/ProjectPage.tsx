@@ -71,12 +71,11 @@ export function ProjectPage({ project, focusSignal, headerExtra }: Props) {
   const progress = views.progress(project.id, ws.tasks)
   const area = project.areaId ? ws.areaById.get(project.areaId) : undefined
 
-  const taskList = useTaskList([...shownOpen, ...sections.completed], toggle)
-
   // A new task goes into this project, after its last task without a heading.
-  function addNew() {
-    taskList.openNew(createListTask(engine, { projectId: project.id }, all, tagFilter).id)
-  }
+  const taskList = useTaskList([...shownOpen, ...sections.completed], toggle, () =>
+    createListTask(engine, { projectId: project.id }, all, tagFilter),
+  )
+  const addNew = taskList.addNew
   useOnSignal(focusSignal, addNew)
 
   function addHeading() {

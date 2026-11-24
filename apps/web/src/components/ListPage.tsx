@@ -1,6 +1,7 @@
 import { type Daypart, type Project, type Task, views } from '@dingen/core'
 import { Focus } from 'lucide-react'
 import { useState } from 'react'
+import { filterAreas, filterByArea, setTodayArea, useTodayArea } from '../areaFilter.js'
 import { daysWithEvents, rangeFor, useCalendarData } from '../calendar.js'
 import { listTarget, type TaskGroupInfo } from '../dnd.js'
 import { filterByDuration, hasDurationFilter, useDurationFilter } from '../duration.js'
@@ -76,8 +77,13 @@ export function ListPage({
     engine,
     list.id === 'today' ? views.byTodayOrder : views.byOrder,
   )
-  const present = new Set(visible.flatMap((task) => task.tagIds))
-  const tagged = tagFilter ? all.filter((task) => task.tagIds.includes(tagFilter)) : all
+  // Today can be narrowed to one area (kept per device); an area that is gone filters nothing.
+  const storedArea = useTodayArea()
+  const areaFilter =
+    list.id === 'today' && storedArea && ws.areaById.has(storedArea) ? storedArea : null
+  const inArea = filterByArea(all, areaFilter, ws)
+  const present = new Set(filterByArea(visible, areaFilter, ws).flatMap((task) => task.tagIds))
+  const tagged = tagFilter ? inArea.filter((task) => task.tagIds.includes(tagFilter)) : inArea
   const shown = filterByDuration(tagged, maxDuration)
   // The duration filter shows once a task here has a duration, or while it is on.
   const filters: PageFilters = {
@@ -91,14 +97,17 @@ export function ListPage({
         : null,
     maxDuration,
   }
-  const projects = listProjects(list.id, ws)
-
-  const taskList = useTaskList(shown, toggle)
+  const listed = listProjects(list.id, ws)
+  if (list.id === 'today') {
+    filters.areas = filterAreas(visible, listed, areaFilter, ws)
+    filters.area = areaFilter
+    filters.onArea = setTodayArea
+  }
+  const projects = areaFilter ? listed.filter((p) => p.areaId === areaFilter) : listed
 
   // A new task goes to the Inbox, from any list (a project or area page adds to itself); the panel keeps it open here.
-  function addNew() {
-    taskList.openNew(createInboxTask(engine, ws, tagFilter).id)
-  }
+  const taskList = useTaskList(shown, toggle, () => createInboxTask(engine, ws, tagFilter))
+  const addNew = taskList.addNew
 
   // `n` anywhere in the window adds a task.
   useOnSignal(focusSignal, addNew)
@@ -140,6 +149,7 @@ export function ListPage({
           tasks={shown}
           view={todayView}
           focus={focus}
+          area={areaFilter}
           projects={projects.length > 0 && <ul className="tasks">{projects.map(projectRow)}</ul>}
           group={group}
           groupByContainer={groupByContainer}
