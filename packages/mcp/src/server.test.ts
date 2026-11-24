@@ -130,6 +130,26 @@ describe('mcp', () => {
     expect(await call('list_tasks', { list: 'today' })).toEqual([])
   })
 
+  it('keeps the given when while moving a task out of the Inbox', async () => {
+    for (const [when, area] of [
+      ['someday', 'Werk'],
+      ['2030-01-15', 'Werk'],
+    ] as const) {
+      const task = await call('create_task', { title: `Uit de Inbox ${when}` })
+      expect(task.when).toBe('inbox')
+      const moved = await call('update_task', { id: task.id, area, when })
+      expect(moved.area).toBe(area)
+      expect(moved.when).toBe(when)
+      await call('delete_task', { id: task.id })
+    }
+    const plain = await call('create_task', { title: 'Uit de Inbox zonder when' })
+    expect((await call('update_task', { id: plain.id, area: 'Werk' })).when).toBe('anytime')
+    const stay = await call('create_task', { title: 'Inbox met gebied' })
+    expect((await call('update_task', { id: stay.id, area: 'Werk', when: 'inbox' })).when).toBe(
+      'anytime',
+    )
+  })
+
   it('repeats after completion', async () => {
     const task = await call('create_task', {
       title: 'Planten water geven',

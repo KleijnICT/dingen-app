@@ -424,7 +424,6 @@ export function createMcpServer(client: DingenClient, options: McpServerOptions 
         if (input.duration !== undefined && input.duration !== task.duration) {
           fields.duration = input.duration
         }
-        if (input.when !== undefined) fields.when = parseWhen(input.when, ws.today)
         if (input.deadline !== undefined) {
           fields.deadline = input.deadline === null ? null : parseDate(input.deadline, ws.today)
         }
@@ -437,6 +436,13 @@ export function createMcpServer(client: DingenClient, options: McpServerOptions 
           input.heading !== undefined
         ) {
           Object.assign(fields, moveFieldsFor(ws, task, input))
+        }
+        // After the move: leaving the Inbox defaults to Anytime, a given `when` wins.
+        // Only 'inbox' loses from a move into a project or area.
+        if (input.when !== undefined) {
+          const when = parseWhen(input.when, ws.today)
+          const intoContainer = fields.projectId != null || fields.areaId != null
+          if (!(when.kind === 'inbox' && intoContainer)) fields.when = when
         }
         Object.assign(fields, scheduleInput({ ...task, ...fields } as Task, input, ws.today))
         commitTask(client, ws, task, fields)
