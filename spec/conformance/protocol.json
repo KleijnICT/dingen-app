@@ -1,0 +1,263 @@
+{
+  "suite": "protocol",
+  "version": 1,
+  "description": "Small helpers of the sync protocol: cursors and the protocol header.",
+  "cases": [
+    {
+      "name": "merge {\"s1\":5} with {\"s1\":9}",
+      "op": "mergeCursor",
+      "input": {
+        "base": {
+          "s1": 5
+        },
+        "update": {
+          "s1": 9
+        }
+      },
+      "expected": {
+        "s1": 9
+      }
+    },
+    {
+      "name": "merge {\"s1\":9} with {\"s1\":5}",
+      "op": "mergeCursor",
+      "input": {
+        "base": {
+          "s1": 9
+        },
+        "update": {
+          "s1": 5
+        }
+      },
+      "expected": {
+        "s1": 9
+      }
+    },
+    {
+      "name": "merge {\"s1\":5} with {\"s2\":3}",
+      "op": "mergeCursor",
+      "input": {
+        "base": {
+          "s1": 5
+        },
+        "update": {
+          "s2": 3
+        }
+      },
+      "expected": {
+        "s1": 5,
+        "s2": 3
+      }
+    },
+    {
+      "name": "merge {\"s1\":5,\"s2\":7} with {\"s2\":8,\"s3\":0}",
+      "op": "mergeCursor",
+      "input": {
+        "base": {
+          "s1": 5,
+          "s2": 7
+        },
+        "update": {
+          "s2": 8,
+          "s3": 0
+        }
+      },
+      "expected": {
+        "s1": 5,
+        "s2": 8,
+        "s3": 0
+      }
+    },
+    {
+      "name": "merge {\"s1\":5} with null",
+      "op": "mergeCursor",
+      "input": {
+        "base": {
+          "s1": 5
+        },
+        "update": null
+      },
+      "expected": {
+        "s1": 5
+      }
+    },
+    {
+      "name": "merge {} with {\"s1\":1}",
+      "op": "mergeCursor",
+      "input": {
+        "base": {},
+        "update": {
+          "s1": 1
+        }
+      },
+      "expected": {
+        "s1": 1
+      }
+    },
+    {
+      "name": "parse the cursor \"{}\"",
+      "op": "parseCursor",
+      "input": {
+        "raw": "{}"
+      },
+      "expected": {}
+    },
+    {
+      "name": "parse the cursor \"{\\\"s1\\\":5}\"",
+      "op": "parseCursor",
+      "input": {
+        "raw": "{\"s1\":5}"
+      },
+      "expected": {
+        "s1": 5
+      }
+    },
+    {
+      "name": "parse the cursor \"{\\\"s1\\\":5,\\\"s2\\\":0}\"",
+      "op": "parseCursor",
+      "input": {
+        "raw": "{\"s1\":5,\"s2\":0}"
+      },
+      "expected": {
+        "s1": 5,
+        "s2": 0
+      }
+    },
+    {
+      "name": "parse the cursor \"\"",
+      "op": "parseCursor",
+      "input": {
+        "raw": ""
+      },
+      "expected": null
+    },
+    {
+      "name": "parse the cursor \"null\"",
+      "op": "parseCursor",
+      "input": {
+        "raw": "null"
+      },
+      "expected": null
+    },
+    {
+      "name": "parse the cursor \"[]\"",
+      "op": "parseCursor",
+      "input": {
+        "raw": "[]"
+      },
+      "expected": null
+    },
+    {
+      "name": "parse the cursor \"{\\\"s1\\\":-1}\"",
+      "op": "parseCursor",
+      "input": {
+        "raw": "{\"s1\":-1}"
+      },
+      "expected": null
+    },
+    {
+      "name": "parse the cursor \"{\\\"s1\\\":1.5}\"",
+      "op": "parseCursor",
+      "input": {
+        "raw": "{\"s1\":1.5}"
+      },
+      "expected": null
+    },
+    {
+      "name": "parse the cursor \"{\\\"s1\\\":\\\"5\\\"}\"",
+      "op": "parseCursor",
+      "input": {
+        "raw": "{\"s1\":\"5\"}"
+      },
+      "expected": null
+    },
+    {
+      "name": "parse the cursor \"{\\\"\\\":1}\"",
+      "op": "parseCursor",
+      "input": {
+        "raw": "{\"\":1}"
+      },
+      "expected": null
+    },
+    {
+      "name": "parse the cursor \"not json\"",
+      "op": "parseCursor",
+      "input": {
+        "raw": "not json"
+      },
+      "expected": null
+    },
+    {
+      "name": "the protocol of header \"4\"",
+      "op": "requestProtocol",
+      "input": {
+        "header": "4"
+      },
+      "expected": 4
+    },
+    {
+      "name": "the protocol of header \"5\"",
+      "op": "requestProtocol",
+      "input": {
+        "header": "5"
+      },
+      "expected": 5
+    },
+    {
+      "name": "the protocol of header \"1\"",
+      "op": "requestProtocol",
+      "input": {
+        "header": "1"
+      },
+      "expected": 1
+    },
+    {
+      "name": "the protocol of header \"0\"",
+      "op": "requestProtocol",
+      "input": {
+        "header": "0"
+      },
+      "expected": 0
+    },
+    {
+      "name": "the protocol of header \"-1\"",
+      "op": "requestProtocol",
+      "input": {
+        "header": "-1"
+      },
+      "expected": 0
+    },
+    {
+      "name": "the protocol of header \"4.5\"",
+      "op": "requestProtocol",
+      "input": {
+        "header": "4.5"
+      },
+      "expected": 0
+    },
+    {
+      "name": "the protocol of header \"four\"",
+      "op": "requestProtocol",
+      "input": {
+        "header": "four"
+      },
+      "expected": 0
+    },
+    {
+      "name": "the protocol of header \"\"",
+      "op": "requestProtocol",
+      "input": {
+        "header": ""
+      },
+      "expected": 0
+    },
+    {
+      "name": "the protocol of header null",
+      "op": "requestProtocol",
+      "input": {
+        "header": null
+      },
+      "expected": 0
+    }
+  ]
+}

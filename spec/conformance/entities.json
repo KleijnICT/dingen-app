@@ -1,0 +1,1471 @@
+{
+  "suite": "entities",
+  "version": 1,
+  "description": "Entities: defaults for fields that are absent, what is valid, and a new entity.",
+  "cases": [
+    {
+      "name": "a area with only the required fields gets the defaults",
+      "op": "parse",
+      "input": {
+        "entityType": "area",
+        "data": {
+          "id": "0000000000000000000000A001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "title": "Home",
+          "order": "a0"
+        }
+      },
+      "expected": {
+        "ok": true,
+        "entity": {
+          "id": "0000000000000000000000A001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "title": "Home",
+          "order": "a0",
+          "icon": null,
+          "color": null,
+          "reviewedAt": null,
+          "reviewEvery": null
+        }
+      }
+    },
+    {
+      "name": "a project with only the required fields gets the defaults",
+      "op": "parse",
+      "input": {
+        "entityType": "project",
+        "data": {
+          "id": "0000000000000000000000P001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "title": "Paint the fence",
+          "notes": "",
+          "areaId": null,
+          "status": "open",
+          "when": {
+            "kind": "anytime"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "order": "a0",
+          "completedAt": null
+        }
+      },
+      "expected": {
+        "ok": true,
+        "entity": {
+          "id": "0000000000000000000000P001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "title": "Paint the fence",
+          "notes": "",
+          "areaId": null,
+          "status": "open",
+          "when": {
+            "kind": "anytime"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "order": "a0",
+          "completedAt": null,
+          "reviewedAt": null,
+          "reviewEvery": null
+        }
+      }
+    },
+    {
+      "name": "a heading with only the required fields gets the defaults",
+      "op": "parse",
+      "input": {
+        "entityType": "heading",
+        "data": {
+          "id": "0000000000000000000000H001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "projectId": "0000000000000000000000P001",
+          "title": "Later",
+          "order": "a0"
+        }
+      },
+      "expected": {
+        "ok": true,
+        "entity": {
+          "id": "0000000000000000000000H001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "projectId": "0000000000000000000000P001",
+          "title": "Later",
+          "order": "a0"
+        }
+      }
+    },
+    {
+      "name": "a task with only the required fields gets the defaults",
+      "op": "parse",
+      "input": {
+        "entityType": "task",
+        "data": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "title": "Buy paint",
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "order": "a0",
+          "completedAt": null
+        }
+      },
+      "expected": {
+        "ok": true,
+        "entity": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "title": "Buy paint",
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": null,
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a0",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null
+        }
+      }
+    },
+    {
+      "name": "a checklistItem with only the required fields gets the defaults",
+      "op": "parse",
+      "input": {
+        "entityType": "checklistItem",
+        "data": {
+          "id": "0000000000000000000000C001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "taskId": "0000000000000000000000T001",
+          "title": "Brush",
+          "done": false,
+          "order": "a0"
+        }
+      },
+      "expected": {
+        "ok": true,
+        "entity": {
+          "id": "0000000000000000000000C001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "taskId": "0000000000000000000000T001",
+          "title": "Brush",
+          "done": false,
+          "order": "a0"
+        }
+      }
+    },
+    {
+      "name": "a tag with only the required fields gets the defaults",
+      "op": "parse",
+      "input": {
+        "entityType": "tag",
+        "data": {
+          "id": "0000000000000000000000G001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "title": "errand",
+          "parentId": null,
+          "order": "a0"
+        }
+      },
+      "expected": {
+        "ok": true,
+        "entity": {
+          "id": "0000000000000000000000G001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "title": "errand",
+          "parentId": null,
+          "order": "a0"
+        }
+      }
+    },
+    {
+      "name": "a task with a date, daypart, duration and reminder",
+      "op": "parse",
+      "input": {
+        "entityType": "task",
+        "data": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "title": "Buy paint",
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "date",
+            "date": "2026-03-10"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "order": "a0",
+          "completedAt": null,
+          "daypart": "evening",
+          "duration": 45,
+          "reminder": {
+            "daysBefore": 1,
+            "time": "20:00"
+          }
+        }
+      },
+      "expected": {
+        "ok": true,
+        "entity": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "title": "Buy paint",
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "date",
+            "date": "2026-03-10"
+          },
+          "daypart": "evening",
+          "duration": 45,
+          "reminder": {
+            "daysBefore": 1,
+            "time": "20:00"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a0",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null
+        }
+      }
+    },
+    {
+      "name": "a task with a repeat rule",
+      "op": "parse",
+      "input": {
+        "entityType": "task",
+        "data": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "title": "Buy paint",
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "repeat": {
+            "unit": "week",
+            "every": 1,
+            "basis": "schedule",
+            "weekdays": [
+              1,
+              3
+            ],
+            "start": "2026-03-02",
+            "until": null,
+            "deadlineDays": null
+          },
+          "order": "a0",
+          "completedAt": null
+        }
+      },
+      "expected": {
+        "ok": true,
+        "entity": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "title": "Buy paint",
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": null,
+          "deadline": null,
+          "tagIds": [],
+          "repeat": {
+            "unit": "week",
+            "every": 1,
+            "basis": "schedule",
+            "weekdays": [
+              1,
+              3
+            ],
+            "start": "2026-03-02",
+            "until": null,
+            "deadlineDays": null
+          },
+          "templateId": null,
+          "order": "a0",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null
+        }
+      }
+    },
+    {
+      "name": "a task assigned to an agent",
+      "op": "parse",
+      "input": {
+        "entityType": "task",
+        "data": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "title": "Buy paint",
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "order": "a0",
+          "completedAt": null,
+          "assigneeId": "agent:01JABCDEFGHJKMNPQRSTVWXYZ0"
+        }
+      },
+      "expected": {
+        "ok": true,
+        "entity": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "title": "Buy paint",
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": null,
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a0",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": "agent:01JABCDEFGHJKMNPQRSTVWXYZ0"
+        }
+      }
+    },
+    {
+      "name": "a task a time with an offset",
+      "op": "parse",
+      "input": {
+        "entityType": "task",
+        "data": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T09:00:00+01:00",
+          "deleted": false,
+          "title": "Buy paint",
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "order": "a0",
+          "completedAt": null
+        }
+      },
+      "expected": {
+        "ok": true,
+        "entity": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T09:00:00+01:00",
+          "deleted": false,
+          "title": "Buy paint",
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": null,
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a0",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null
+        }
+      }
+    },
+    {
+      "name": "a task a lowercase id",
+      "op": "parse",
+      "input": {
+        "entityType": "task",
+        "data": {
+          "id": "0000000000000000000000t001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "title": "Buy paint",
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "order": "a0",
+          "completedAt": null
+        }
+      },
+      "expected": {
+        "ok": false
+      }
+    },
+    {
+      "name": "a task an id with the letter I",
+      "op": "parse",
+      "input": {
+        "entityType": "task",
+        "data": {
+          "id": "0000000000000000000000000I",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "title": "Buy paint",
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "order": "a0",
+          "completedAt": null
+        }
+      },
+      "expected": {
+        "ok": false
+      }
+    },
+    {
+      "name": "a task an unknown status",
+      "op": "parse",
+      "input": {
+        "entityType": "task",
+        "data": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "title": "Buy paint",
+          "notes": "",
+          "status": "done",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "order": "a0",
+          "completedAt": null
+        }
+      },
+      "expected": {
+        "ok": false
+      }
+    },
+    {
+      "name": "a task a date that is not a calendar date",
+      "op": "parse",
+      "input": {
+        "entityType": "task",
+        "data": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "title": "Buy paint",
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "date",
+            "date": "10-03-2026"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "order": "a0",
+          "completedAt": null
+        }
+      },
+      "expected": {
+        "ok": false
+      }
+    },
+    {
+      "name": "a task a when without its date",
+      "op": "parse",
+      "input": {
+        "entityType": "task",
+        "data": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "title": "Buy paint",
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "date"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "order": "a0",
+          "completedAt": null
+        }
+      },
+      "expected": {
+        "ok": false
+      }
+    },
+    {
+      "name": "a task a duration of 0",
+      "op": "parse",
+      "input": {
+        "entityType": "task",
+        "data": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "title": "Buy paint",
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "order": "a0",
+          "completedAt": null,
+          "duration": 0
+        }
+      },
+      "expected": {
+        "ok": false
+      }
+    },
+    {
+      "name": "a task a duration over a day",
+      "op": "parse",
+      "input": {
+        "entityType": "task",
+        "data": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "title": "Buy paint",
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "order": "a0",
+          "completedAt": null,
+          "duration": 1441
+        }
+      },
+      "expected": {
+        "ok": false
+      }
+    },
+    {
+      "name": "a task a duration that is not whole",
+      "op": "parse",
+      "input": {
+        "entityType": "task",
+        "data": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "title": "Buy paint",
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "order": "a0",
+          "completedAt": null,
+          "duration": 1.5
+        }
+      },
+      "expected": {
+        "ok": false
+      }
+    },
+    {
+      "name": "a task a reminder time of 24:00",
+      "op": "parse",
+      "input": {
+        "entityType": "task",
+        "data": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "title": "Buy paint",
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "date",
+            "date": "2026-03-10"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "order": "a0",
+          "completedAt": null,
+          "reminder": {
+            "daysBefore": 0,
+            "time": "24:00"
+          }
+        }
+      },
+      "expected": {
+        "ok": false
+      }
+    },
+    {
+      "name": "a task an empty order",
+      "op": "parse",
+      "input": {
+        "entityType": "task",
+        "data": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "title": "Buy paint",
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "order": "",
+          "completedAt": null
+        }
+      },
+      "expected": {
+        "ok": false
+      }
+    },
+    {
+      "name": "a task a deadline with a time",
+      "op": "parse",
+      "input": {
+        "entityType": "task",
+        "data": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "title": "Buy paint",
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "deadline": "2026-03-10T00:00:00Z",
+          "tagIds": [],
+          "repeat": null,
+          "order": "a0",
+          "completedAt": null
+        }
+      },
+      "expected": {
+        "ok": false
+      }
+    },
+    {
+      "name": "a task without a title",
+      "op": "parse",
+      "input": {
+        "entityType": "task",
+        "data": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "order": "a0",
+          "completedAt": null
+        }
+      },
+      "expected": {
+        "ok": false
+      }
+    },
+    {
+      "name": "a task a weekday 7 in the rule",
+      "op": "parse",
+      "input": {
+        "entityType": "task",
+        "data": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "title": "Buy paint",
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "repeat": {
+            "unit": "week",
+            "every": 1,
+            "basis": "schedule",
+            "weekdays": [
+              7
+            ],
+            "start": "2026-03-02",
+            "until": null,
+            "deadlineDays": null
+          },
+          "order": "a0",
+          "completedAt": null
+        }
+      },
+      "expected": {
+        "ok": false
+      }
+    },
+    {
+      "name": "a task an interval of 0",
+      "op": "parse",
+      "input": {
+        "entityType": "task",
+        "data": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "title": "Buy paint",
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "repeat": {
+            "unit": "day",
+            "every": 0,
+            "basis": "schedule",
+            "weekdays": [],
+            "start": "2026-03-02",
+            "until": null,
+            "deadlineDays": null
+          },
+          "order": "a0",
+          "completedAt": null
+        }
+      },
+      "expected": {
+        "ok": false
+      }
+    },
+    {
+      "name": "a create with every required field",
+      "op": "validateChange",
+      "input": {
+        "change": {
+          "id": "0000000000000000000000X001",
+          "entityType": "task",
+          "entityId": "0000000000000000000000T001",
+          "fields": {
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "title": "Buy paint",
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "order": "a0",
+            "completedAt": null
+          },
+          "ts": "000000000001000:00000:A",
+          "clientId": "A"
+        },
+        "existing": null
+      },
+      "expected": {
+        "ok": true
+      }
+    },
+    {
+      "name": "a create that lacks a required field",
+      "op": "validateChange",
+      "input": {
+        "change": {
+          "id": "0000000000000000000000X001",
+          "entityType": "task",
+          "entityId": "0000000000000000000000T001",
+          "fields": {
+            "title": "Only a title"
+          },
+          "ts": "000000000001000:00000:A",
+          "clientId": "A"
+        },
+        "existing": null
+      },
+      "expected": {
+        "ok": false
+      }
+    },
+    {
+      "name": "a create with an unknown field",
+      "op": "validateChange",
+      "input": {
+        "change": {
+          "id": "0000000000000000000000X001",
+          "entityType": "task",
+          "entityId": "0000000000000000000000T001",
+          "fields": {
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "title": "Buy paint",
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "order": "a0",
+            "completedAt": null,
+            "color": "red"
+          },
+          "ts": "000000000001000:00000:A",
+          "clientId": "A"
+        },
+        "existing": null
+      },
+      "expected": {
+        "ok": false
+      }
+    },
+    {
+      "name": "a create with its own id in the fields",
+      "op": "validateChange",
+      "input": {
+        "change": {
+          "id": "0000000000000000000000X001",
+          "entityType": "task",
+          "entityId": "0000000000000000000000T001",
+          "fields": {
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "title": "Buy paint",
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "order": "a0",
+            "completedAt": null,
+            "id": "0000000000000000000000T001"
+          },
+          "ts": "000000000001000:00000:A",
+          "clientId": "A"
+        },
+        "existing": null
+      },
+      "expected": {
+        "ok": true
+      }
+    },
+    {
+      "name": "a create with another id in the fields",
+      "op": "validateChange",
+      "input": {
+        "change": {
+          "id": "0000000000000000000000X001",
+          "entityType": "task",
+          "entityId": "0000000000000000000000T001",
+          "fields": {
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "title": "Buy paint",
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "order": "a0",
+            "completedAt": null,
+            "id": "0000000000000000000000T002"
+          },
+          "ts": "000000000001000:00000:A",
+          "clientId": "A"
+        },
+        "existing": null
+      },
+      "expected": {
+        "ok": false
+      }
+    },
+    {
+      "name": "a change of one field",
+      "op": "validateChange",
+      "input": {
+        "change": {
+          "id": "0000000000000000000000X001",
+          "entityType": "task",
+          "entityId": "0000000000000000000000T001",
+          "fields": {
+            "title": "Renamed"
+          },
+          "ts": "000000000001000:00000:A",
+          "clientId": "A"
+        },
+        "existing": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": null,
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null,
+          "title": "Task 1"
+        }
+      },
+      "expected": {
+        "ok": true
+      }
+    },
+    {
+      "name": "a change with a wrong value",
+      "op": "validateChange",
+      "input": {
+        "change": {
+          "id": "0000000000000000000000X001",
+          "entityType": "task",
+          "entityId": "0000000000000000000000T001",
+          "fields": {
+            "status": "done"
+          },
+          "ts": "000000000001000:00000:A",
+          "clientId": "A"
+        },
+        "existing": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": null,
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null,
+          "title": "Task 1"
+        }
+      },
+      "expected": {
+        "ok": false
+      }
+    },
+    {
+      "name": "a change with an unknown field",
+      "op": "validateChange",
+      "input": {
+        "change": {
+          "id": "0000000000000000000000X001",
+          "entityType": "task",
+          "entityId": "0000000000000000000000T001",
+          "fields": {
+            "color": "red"
+          },
+          "ts": "000000000001000:00000:A",
+          "clientId": "A"
+        },
+        "existing": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": null,
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null,
+          "title": "Task 1"
+        }
+      },
+      "expected": {
+        "ok": false
+      }
+    },
+    {
+      "name": "a deletion",
+      "op": "validateChange",
+      "input": {
+        "change": {
+          "id": "0000000000000000000000X001",
+          "entityType": "task",
+          "entityId": "0000000000000000000000T001",
+          "fields": {
+            "deleted": true
+          },
+          "ts": "000000000001000:00000:A",
+          "clientId": "A"
+        },
+        "existing": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": null,
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null,
+          "title": "Task 1"
+        }
+      },
+      "expected": {
+        "ok": true
+      }
+    },
+    {
+      "name": "a change on data that still has retired fields",
+      "op": "validateChange",
+      "input": {
+        "change": {
+          "id": "0000000000000000000000X001",
+          "entityType": "task",
+          "entityId": "0000000000000000000000T001",
+          "fields": {
+            "title": "Renamed"
+          },
+          "ts": "000000000001000:00000:A",
+          "clientId": "A"
+        },
+        "existing": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": null,
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null,
+          "title": "Task 1",
+          "evening": false,
+          "time": null
+        }
+      },
+      "expected": {
+        "ok": true
+      }
+    },
+    {
+      "name": "a change that sets a retired field",
+      "op": "validateChange",
+      "input": {
+        "change": {
+          "id": "0000000000000000000000X001",
+          "entityType": "task",
+          "entityId": "0000000000000000000000T001",
+          "fields": {
+            "evening": true
+          },
+          "ts": "000000000001000:00000:A",
+          "clientId": "A"
+        },
+        "existing": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": null,
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null,
+          "title": "Task 1"
+        }
+      },
+      "expected": {
+        "ok": false
+      }
+    },
+    {
+      "name": "a new task",
+      "op": "new",
+      "input": {
+        "now": "2026-03-10T09:30:00.000Z",
+        "entityType": "task",
+        "fields": {
+          "title": "Call the plumber"
+        }
+      },
+      "expected": {
+        "id": "$1",
+        "createdAt": "2026-03-10T09:30:00.000Z",
+        "deleted": false,
+        "notes": "",
+        "status": "open",
+        "projectId": null,
+        "headingId": null,
+        "areaId": null,
+        "when": {
+          "kind": "inbox"
+        },
+        "daypart": null,
+        "duration": null,
+        "reminder": null,
+        "deadline": null,
+        "tagIds": [],
+        "repeat": null,
+        "templateId": null,
+        "order": "a0",
+        "todayOrder": null,
+        "completedAt": null,
+        "assigneeId": null,
+        "title": "Call the plumber"
+      }
+    },
+    {
+      "name": "a new project",
+      "op": "new",
+      "input": {
+        "now": "2026-03-10T09:30:00.000Z",
+        "entityType": "project",
+        "fields": {
+          "title": "Fix the leak"
+        }
+      },
+      "expected": {
+        "id": "$1",
+        "createdAt": "2026-03-10T09:30:00.000Z",
+        "deleted": false,
+        "notes": "",
+        "areaId": null,
+        "status": "open",
+        "when": {
+          "kind": "anytime"
+        },
+        "deadline": null,
+        "tagIds": [],
+        "order": "a0",
+        "completedAt": null,
+        "reviewedAt": null,
+        "reviewEvery": null,
+        "title": "Fix the leak"
+      }
+    },
+    {
+      "name": "a new area",
+      "op": "new",
+      "input": {
+        "now": "2026-03-10T09:30:00.000Z",
+        "entityType": "area",
+        "fields": {
+          "title": "Home"
+        }
+      },
+      "expected": {
+        "id": "$1",
+        "createdAt": "2026-03-10T09:30:00.000Z",
+        "deleted": false,
+        "order": "a0",
+        "icon": null,
+        "color": null,
+        "reviewedAt": null,
+        "reviewEvery": null,
+        "title": "Home"
+      }
+    },
+    {
+      "name": "a new heading",
+      "op": "new",
+      "input": {
+        "now": "2026-03-10T09:30:00.000Z",
+        "entityType": "heading",
+        "fields": {
+          "title": "Later",
+          "projectId": "0000000000000000000000P001"
+        }
+      },
+      "expected": {
+        "id": "$1",
+        "createdAt": "2026-03-10T09:30:00.000Z",
+        "deleted": false,
+        "order": "a0",
+        "title": "Later",
+        "projectId": "0000000000000000000000P001"
+      }
+    },
+    {
+      "name": "a new checklist item",
+      "op": "new",
+      "input": {
+        "now": "2026-03-10T09:30:00.000Z",
+        "entityType": "checklistItem",
+        "fields": {
+          "title": "Wrench",
+          "taskId": "0000000000000000000000T001"
+        }
+      },
+      "expected": {
+        "id": "$1",
+        "createdAt": "2026-03-10T09:30:00.000Z",
+        "deleted": false,
+        "done": false,
+        "order": "a0",
+        "title": "Wrench",
+        "taskId": "0000000000000000000000T001"
+      }
+    },
+    {
+      "name": "a new tag",
+      "op": "new",
+      "input": {
+        "now": "2026-03-10T09:30:00.000Z",
+        "entityType": "tag",
+        "fields": {
+          "title": "  Deep  WORK "
+        }
+      },
+      "expected": {
+        "id": "$1",
+        "createdAt": "2026-03-10T09:30:00.000Z",
+        "deleted": false,
+        "parentId": null,
+        "order": "a0",
+        "title": "deep work"
+      }
+    }
+  ]
+}

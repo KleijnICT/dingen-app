@@ -1,0 +1,380 @@
+{
+  "suite": "dates",
+  "version": 1,
+  "description": "Arithmetic with calendar dates (YYYY-MM-DD), without time zones.",
+  "cases": [
+    {
+      "name": "2026-03-10 + 1 days",
+      "op": "addDays",
+      "input": {
+        "date": "2026-03-10",
+        "days": 1
+      },
+      "expected": "2026-03-11"
+    },
+    {
+      "name": "2026-03-10 + -10 days",
+      "op": "addDays",
+      "input": {
+        "date": "2026-03-10",
+        "days": -10
+      },
+      "expected": "2026-02-28"
+    },
+    {
+      "name": "2026-12-31 + 1 days",
+      "op": "addDays",
+      "input": {
+        "date": "2026-12-31",
+        "days": 1
+      },
+      "expected": "2027-01-01"
+    },
+    {
+      "name": "2026-01-01 + -1 days",
+      "op": "addDays",
+      "input": {
+        "date": "2026-01-01",
+        "days": -1
+      },
+      "expected": "2025-12-31"
+    },
+    {
+      "name": "2028-02-28 + 1 days",
+      "op": "addDays",
+      "input": {
+        "date": "2028-02-28",
+        "days": 1
+      },
+      "expected": "2028-02-29"
+    },
+    {
+      "name": "2026-02-28 + 1 days",
+      "op": "addDays",
+      "input": {
+        "date": "2026-02-28",
+        "days": 1
+      },
+      "expected": "2026-03-01"
+    },
+    {
+      "name": "2026-03-28 + 2 days",
+      "op": "addDays",
+      "input": {
+        "date": "2026-03-28",
+        "days": 2
+      },
+      "expected": "2026-03-30"
+    },
+    {
+      "name": "2026-10-24 + 2 days",
+      "op": "addDays",
+      "input": {
+        "date": "2026-10-24",
+        "days": 2
+      },
+      "expected": "2026-10-26"
+    },
+    {
+      "name": "2026-03-10 + 0 days",
+      "op": "addDays",
+      "input": {
+        "date": "2026-03-10",
+        "days": 0
+      },
+      "expected": "2026-03-10"
+    },
+    {
+      "name": "2026-03-10 + 3650 days",
+      "op": "addDays",
+      "input": {
+        "date": "2026-03-10",
+        "days": 3650
+      },
+      "expected": "2036-03-07"
+    },
+    {
+      "name": "2026-01-31 + 1 months",
+      "op": "addMonths",
+      "input": {
+        "date": "2026-01-31",
+        "months": 1,
+        "dayOfMonth": null
+      },
+      "expected": "2026-02-28"
+    },
+    {
+      "name": "2028-01-31 + 1 months",
+      "op": "addMonths",
+      "input": {
+        "date": "2028-01-31",
+        "months": 1,
+        "dayOfMonth": null
+      },
+      "expected": "2028-02-29"
+    },
+    {
+      "name": "2026-03-31 + -1 months",
+      "op": "addMonths",
+      "input": {
+        "date": "2026-03-31",
+        "months": -1,
+        "dayOfMonth": null
+      },
+      "expected": "2026-02-28"
+    },
+    {
+      "name": "2026-11-15 + 3 months",
+      "op": "addMonths",
+      "input": {
+        "date": "2026-11-15",
+        "months": 3,
+        "dayOfMonth": null
+      },
+      "expected": "2027-02-15"
+    },
+    {
+      "name": "2026-02-28 + 1 months, day 31",
+      "op": "addMonths",
+      "input": {
+        "date": "2026-02-28",
+        "months": 1,
+        "dayOfMonth": 31
+      },
+      "expected": "2026-03-31"
+    },
+    {
+      "name": "2026-02-28 + 2 months, day 31",
+      "op": "addMonths",
+      "input": {
+        "date": "2026-02-28",
+        "months": 2,
+        "dayOfMonth": 31
+      },
+      "expected": "2026-04-30"
+    },
+    {
+      "name": "2026-01-15 + 0 months, day 31",
+      "op": "addMonths",
+      "input": {
+        "date": "2026-01-15",
+        "months": 0,
+        "dayOfMonth": 31
+      },
+      "expected": "2026-01-31"
+    },
+    {
+      "name": "2026-02-10 + 0 months, day 30",
+      "op": "addMonths",
+      "input": {
+        "date": "2026-02-10",
+        "months": 0,
+        "dayOfMonth": 30
+      },
+      "expected": "2026-02-28"
+    },
+    {
+      "name": "2026-05-31 + 12 months",
+      "op": "addMonths",
+      "input": {
+        "date": "2026-05-31",
+        "months": 12,
+        "dayOfMonth": null
+      },
+      "expected": "2027-05-31"
+    },
+    {
+      "name": "2026-05-31 + -17 months",
+      "op": "addMonths",
+      "input": {
+        "date": "2026-05-31",
+        "months": -17,
+        "dayOfMonth": null
+      },
+      "expected": "2024-12-31"
+    },
+    {
+      "name": "2028-02-29 + 1 years",
+      "op": "addYears",
+      "input": {
+        "date": "2028-02-29",
+        "years": 1,
+        "dayOfMonth": null
+      },
+      "expected": "2029-02-28"
+    },
+    {
+      "name": "2028-02-29 + 4 years",
+      "op": "addYears",
+      "input": {
+        "date": "2028-02-29",
+        "years": 4,
+        "dayOfMonth": null
+      },
+      "expected": "2032-02-29"
+    },
+    {
+      "name": "2027-02-28 + 1 years, day 29",
+      "op": "addYears",
+      "input": {
+        "date": "2027-02-28",
+        "years": 1,
+        "dayOfMonth": 29
+      },
+      "expected": "2028-02-29"
+    },
+    {
+      "name": "2026-07-04 + -2 years",
+      "op": "addYears",
+      "input": {
+        "date": "2026-07-04",
+        "years": -2,
+        "dayOfMonth": null
+      },
+      "expected": "2024-07-04"
+    },
+    {
+      "name": "weekday of 2026-03-08",
+      "op": "weekday",
+      "input": {
+        "date": "2026-03-08"
+      },
+      "expected": 0
+    },
+    {
+      "name": "day of the month of 2026-03-08",
+      "op": "dayOfMonth",
+      "input": {
+        "date": "2026-03-08"
+      },
+      "expected": 8
+    },
+    {
+      "name": "weekday of 2026-03-09",
+      "op": "weekday",
+      "input": {
+        "date": "2026-03-09"
+      },
+      "expected": 1
+    },
+    {
+      "name": "day of the month of 2026-03-09",
+      "op": "dayOfMonth",
+      "input": {
+        "date": "2026-03-09"
+      },
+      "expected": 9
+    },
+    {
+      "name": "weekday of 2026-03-14",
+      "op": "weekday",
+      "input": {
+        "date": "2026-03-14"
+      },
+      "expected": 6
+    },
+    {
+      "name": "day of the month of 2026-03-14",
+      "op": "dayOfMonth",
+      "input": {
+        "date": "2026-03-14"
+      },
+      "expected": 14
+    },
+    {
+      "name": "weekday of 2028-02-29",
+      "op": "weekday",
+      "input": {
+        "date": "2028-02-29"
+      },
+      "expected": 2
+    },
+    {
+      "name": "day of the month of 2028-02-29",
+      "op": "dayOfMonth",
+      "input": {
+        "date": "2028-02-29"
+      },
+      "expected": 29
+    },
+    {
+      "name": "weekday of 2000-01-01",
+      "op": "weekday",
+      "input": {
+        "date": "2000-01-01"
+      },
+      "expected": 6
+    },
+    {
+      "name": "day of the month of 2000-01-01",
+      "op": "dayOfMonth",
+      "input": {
+        "date": "2000-01-01"
+      },
+      "expected": 1
+    },
+    {
+      "name": "days from 2026-03-10 to 2026-03-10",
+      "op": "daysBetween",
+      "input": {
+        "from": "2026-03-10",
+        "to": "2026-03-10"
+      },
+      "expected": 0
+    },
+    {
+      "name": "days from 2026-03-10 to 2026-03-11",
+      "op": "daysBetween",
+      "input": {
+        "from": "2026-03-10",
+        "to": "2026-03-11"
+      },
+      "expected": 1
+    },
+    {
+      "name": "days from 2026-03-10 to 2026-03-01",
+      "op": "daysBetween",
+      "input": {
+        "from": "2026-03-10",
+        "to": "2026-03-01"
+      },
+      "expected": -9
+    },
+    {
+      "name": "days from 2026-03-27 to 2026-03-30",
+      "op": "daysBetween",
+      "input": {
+        "from": "2026-03-27",
+        "to": "2026-03-30"
+      },
+      "expected": 3
+    },
+    {
+      "name": "days from 2026-10-23 to 2026-10-26",
+      "op": "daysBetween",
+      "input": {
+        "from": "2026-10-23",
+        "to": "2026-10-26"
+      },
+      "expected": 3
+    },
+    {
+      "name": "days from 2026-01-01 to 2027-01-01",
+      "op": "daysBetween",
+      "input": {
+        "from": "2026-01-01",
+        "to": "2027-01-01"
+      },
+      "expected": 365
+    },
+    {
+      "name": "days from 2028-01-01 to 2029-01-01",
+      "op": "daysBetween",
+      "input": {
+        "from": "2028-01-01",
+        "to": "2029-01-01"
+      },
+      "expected": 366
+    }
+  ]
+}

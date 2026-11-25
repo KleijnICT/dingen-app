@@ -1,0 +1,107 @@
+{
+  "suite": "tags",
+  "version": 1,
+  "description": "Tag titles are lowercase, trimmed, with single spaces.",
+  "cases": [
+    {
+      "name": "normalize \"Work\"",
+      "op": "normalize",
+      "input": {
+        "title": "Work"
+      },
+      "expected": "work"
+    },
+    {
+      "name": "normalize \"  Home  \"",
+      "op": "normalize",
+      "input": {
+        "title": "  Home  "
+      },
+      "expected": "home"
+    },
+    {
+      "name": "normalize \"Deep   Work\"",
+      "op": "normalize",
+      "input": {
+        "title": "Deep   Work"
+      },
+      "expected": "deep work"
+    },
+    {
+      "name": "normalize \"ÉÉN ding\"",
+      "op": "normalize",
+      "input": {
+        "title": "ÉÉN ding"
+      },
+      "expected": "één ding"
+    },
+    {
+      "name": "normalize \"at\\tthe\\noffice\"",
+      "op": "normalize",
+      "input": {
+        "title": "at\tthe\noffice"
+      },
+      "expected": "at the office"
+    },
+    {
+      "name": "normalize \"already fine\"",
+      "op": "normalize",
+      "input": {
+        "title": "already fine"
+      },
+      "expected": "already fine"
+    },
+    {
+      "name": "normalize \"\"",
+      "op": "normalize",
+      "input": {
+        "title": ""
+      },
+      "expected": ""
+    },
+    {
+      "name": "normalize \"ΑΒΓ\"",
+      "op": "normalize",
+      "input": {
+        "title": "ΑΒΓ"
+      },
+      "expected": "αβγ"
+    },
+    {
+      "name": "same tag: \"Work\" and \"work\"",
+      "op": "same",
+      "input": {
+        "a": "Work",
+        "b": "work"
+      },
+      "expected": true
+    },
+    {
+      "name": "same tag: \" deep  work\" and \"Deep Work \"",
+      "op": "same",
+      "input": {
+        "a": " deep  work",
+        "b": "Deep Work "
+      },
+      "expected": true
+    },
+    {
+      "name": "same tag: \"work\" and \"works\"",
+      "op": "same",
+      "input": {
+        "a": "work",
+        "b": "works"
+      },
+      "expected": false
+    },
+    {
+      "name": "same tag: \"één\" and \"ÉÉN\"",
+      "op": "same",
+      "input": {
+        "a": "één",
+        "b": "ÉÉN"
+      },
+      "expected": true
+    }
+  ]
+}

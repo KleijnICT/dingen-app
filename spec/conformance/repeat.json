@@ -1,0 +1,4109 @@
+{
+  "suite": "repeat",
+  "version": 1,
+  "description": "Repeat rules: which dates fit, and the next occurrence.",
+  "cases": [
+    {
+      "name": "every day: which dates fit",
+      "op": "matches",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "dates": [
+          "2026-03-01",
+          "2026-03-02",
+          "2026-03-03",
+          "2026-03-05",
+          "2026-03-08",
+          "2026-03-09",
+          "2026-03-10",
+          "2026-03-12",
+          "2026-03-13",
+          "2026-03-15",
+          "2026-03-16",
+          "2026-03-17",
+          "2026-03-22",
+          "2026-03-31",
+          "2026-04-01",
+          "2026-04-15",
+          "2026-04-30",
+          "2026-06-01",
+          "2027-02-28",
+          "2027-06-01",
+          "2028-02-29",
+          "2028-06-01",
+          "2029-02-28",
+          "2032-02-29"
+        ]
+      },
+      "expected": [
+        "2026-03-02",
+        "2026-03-03",
+        "2026-03-05",
+        "2026-03-08",
+        "2026-03-09",
+        "2026-03-10",
+        "2026-03-12",
+        "2026-03-13",
+        "2026-03-15",
+        "2026-03-16",
+        "2026-03-17",
+        "2026-03-22",
+        "2026-03-31",
+        "2026-04-01",
+        "2026-04-15",
+        "2026-04-30",
+        "2026-06-01",
+        "2027-02-28",
+        "2027-06-01",
+        "2028-02-29",
+        "2028-06-01",
+        "2029-02-28",
+        "2032-02-29"
+      ]
+    },
+    {
+      "name": "every day: next after 2026-03-02, not before 2026-03-02",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-02",
+        "notBefore": "2026-03-02"
+      },
+      "expected": "2026-03-03"
+    },
+    {
+      "name": "every day: next after 2026-03-10, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-10",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-11"
+    },
+    {
+      "name": "every day: next after 2026-03-05, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-05",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-10"
+    },
+    {
+      "name": "every day: next after 2026-03-12, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-12",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-13"
+    },
+    {
+      "name": "every day: next after 2026-01-01, not before 2026-01-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-01-01",
+        "notBefore": "2026-01-01"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every day: next after 2027-06-01, not before 2027-06-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2027-06-01",
+        "notBefore": "2027-06-01"
+      },
+      "expected": "2027-06-02"
+    },
+    {
+      "name": "every day: first occurrence, today 2026-02-20",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-02-20"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every day: first occurrence, today 2026-03-02",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-03-02"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every day: first occurrence, today 2026-03-10",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-03-10"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every day: one interval after 2026-03-31",
+      "op": "addInterval",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "date": "2026-03-31"
+      },
+      "expected": "2026-04-01"
+    },
+    {
+      "name": "every 3 days: which dates fit",
+      "op": "matches",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 3,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "dates": [
+          "2026-03-01",
+          "2026-03-02",
+          "2026-03-03",
+          "2026-03-05",
+          "2026-03-08",
+          "2026-03-09",
+          "2026-03-10",
+          "2026-03-12",
+          "2026-03-13",
+          "2026-03-15",
+          "2026-03-16",
+          "2026-03-17",
+          "2026-03-22",
+          "2026-03-31",
+          "2026-04-01",
+          "2026-04-15",
+          "2026-04-30",
+          "2026-06-01",
+          "2027-02-28",
+          "2027-06-01",
+          "2028-02-29",
+          "2028-06-01",
+          "2029-02-28",
+          "2032-02-29"
+        ]
+      },
+      "expected": [
+        "2026-03-02",
+        "2026-03-05",
+        "2026-03-08",
+        "2026-03-17",
+        "2026-04-01",
+        "2027-02-28",
+        "2027-06-01",
+        "2028-02-29",
+        "2028-06-01",
+        "2032-02-29"
+      ]
+    },
+    {
+      "name": "every 3 days: next after 2026-03-02, not before 2026-03-02",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 3,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-02",
+        "notBefore": "2026-03-02"
+      },
+      "expected": "2026-03-05"
+    },
+    {
+      "name": "every 3 days: next after 2026-03-10, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 3,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-10",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-11"
+    },
+    {
+      "name": "every 3 days: next after 2026-03-05, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 3,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-05",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-11"
+    },
+    {
+      "name": "every 3 days: next after 2026-03-12, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 3,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-12",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-14"
+    },
+    {
+      "name": "every 3 days: next after 2026-01-01, not before 2026-01-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 3,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-01-01",
+        "notBefore": "2026-01-01"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every 3 days: next after 2027-06-01, not before 2027-06-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 3,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2027-06-01",
+        "notBefore": "2027-06-01"
+      },
+      "expected": "2027-06-04"
+    },
+    {
+      "name": "every 3 days: first occurrence, today 2026-02-20",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 3,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-02-20"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every 3 days: first occurrence, today 2026-03-02",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 3,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-03-02"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every 3 days: first occurrence, today 2026-03-10",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 3,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-03-10"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every 3 days: one interval after 2026-03-31",
+      "op": "addInterval",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 3,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "date": "2026-03-31"
+      },
+      "expected": "2026-04-03"
+    },
+    {
+      "name": "every week, weekday of the start (Monday): which dates fit",
+      "op": "matches",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "dates": [
+          "2026-03-01",
+          "2026-03-02",
+          "2026-03-03",
+          "2026-03-05",
+          "2026-03-08",
+          "2026-03-09",
+          "2026-03-10",
+          "2026-03-12",
+          "2026-03-13",
+          "2026-03-15",
+          "2026-03-16",
+          "2026-03-17",
+          "2026-03-22",
+          "2026-03-31",
+          "2026-04-01",
+          "2026-04-15",
+          "2026-04-30",
+          "2026-06-01",
+          "2027-02-28",
+          "2027-06-01",
+          "2028-02-29",
+          "2028-06-01",
+          "2029-02-28",
+          "2032-02-29"
+        ]
+      },
+      "expected": [
+        "2026-03-02",
+        "2026-03-09",
+        "2026-03-16",
+        "2026-06-01"
+      ]
+    },
+    {
+      "name": "every week, weekday of the start (Monday): next after 2026-03-02, not before 2026-03-02",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-02",
+        "notBefore": "2026-03-02"
+      },
+      "expected": "2026-03-09"
+    },
+    {
+      "name": "every week, weekday of the start (Monday): next after 2026-03-10, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-10",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-16"
+    },
+    {
+      "name": "every week, weekday of the start (Monday): next after 2026-03-05, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-05",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-16"
+    },
+    {
+      "name": "every week, weekday of the start (Monday): next after 2026-03-12, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-12",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-16"
+    },
+    {
+      "name": "every week, weekday of the start (Monday): next after 2026-01-01, not before 2026-01-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-01-01",
+        "notBefore": "2026-01-01"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every week, weekday of the start (Monday): next after 2027-06-01, not before 2027-06-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2027-06-01",
+        "notBefore": "2027-06-01"
+      },
+      "expected": "2027-06-07"
+    },
+    {
+      "name": "every week, weekday of the start (Monday): first occurrence, today 2026-02-20",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-02-20"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every week, weekday of the start (Monday): first occurrence, today 2026-03-02",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-03-02"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every week, weekday of the start (Monday): first occurrence, today 2026-03-10",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-03-10"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every week, weekday of the start (Monday): one interval after 2026-03-31",
+      "op": "addInterval",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "date": "2026-03-31"
+      },
+      "expected": "2026-04-07"
+    },
+    {
+      "name": "every week on Monday and Thursday: which dates fit",
+      "op": "matches",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [
+            1,
+            4
+          ],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "dates": [
+          "2026-03-01",
+          "2026-03-02",
+          "2026-03-03",
+          "2026-03-05",
+          "2026-03-08",
+          "2026-03-09",
+          "2026-03-10",
+          "2026-03-12",
+          "2026-03-13",
+          "2026-03-15",
+          "2026-03-16",
+          "2026-03-17",
+          "2026-03-22",
+          "2026-03-31",
+          "2026-04-01",
+          "2026-04-15",
+          "2026-04-30",
+          "2026-06-01",
+          "2027-02-28",
+          "2027-06-01",
+          "2028-02-29",
+          "2028-06-01",
+          "2029-02-28",
+          "2032-02-29"
+        ]
+      },
+      "expected": [
+        "2026-03-02",
+        "2026-03-05",
+        "2026-03-09",
+        "2026-03-12",
+        "2026-03-16",
+        "2026-04-30",
+        "2026-06-01",
+        "2028-06-01"
+      ]
+    },
+    {
+      "name": "every week on Monday and Thursday: next after 2026-03-02, not before 2026-03-02",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [
+            1,
+            4
+          ],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-02",
+        "notBefore": "2026-03-02"
+      },
+      "expected": "2026-03-05"
+    },
+    {
+      "name": "every week on Monday and Thursday: next after 2026-03-10, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [
+            1,
+            4
+          ],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-10",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-12"
+    },
+    {
+      "name": "every week on Monday and Thursday: next after 2026-03-05, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [
+            1,
+            4
+          ],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-05",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-12"
+    },
+    {
+      "name": "every week on Monday and Thursday: next after 2026-03-12, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [
+            1,
+            4
+          ],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-12",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-16"
+    },
+    {
+      "name": "every week on Monday and Thursday: next after 2026-01-01, not before 2026-01-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [
+            1,
+            4
+          ],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-01-01",
+        "notBefore": "2026-01-01"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every week on Monday and Thursday: next after 2027-06-01, not before 2027-06-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [
+            1,
+            4
+          ],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2027-06-01",
+        "notBefore": "2027-06-01"
+      },
+      "expected": "2027-06-03"
+    },
+    {
+      "name": "every week on Monday and Thursday: first occurrence, today 2026-02-20",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [
+            1,
+            4
+          ],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-02-20"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every week on Monday and Thursday: first occurrence, today 2026-03-02",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [
+            1,
+            4
+          ],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-03-02"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every week on Monday and Thursday: first occurrence, today 2026-03-10",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [
+            1,
+            4
+          ],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-03-10"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every week on Monday and Thursday: one interval after 2026-03-31",
+      "op": "addInterval",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [
+            1,
+            4
+          ],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "date": "2026-03-31"
+      },
+      "expected": "2026-04-07"
+    },
+    {
+      "name": "every 2 weeks on Tuesday and Sunday: which dates fit",
+      "op": "matches",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [
+            2,
+            0
+          ],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "dates": [
+          "2026-03-01",
+          "2026-03-02",
+          "2026-03-03",
+          "2026-03-05",
+          "2026-03-08",
+          "2026-03-09",
+          "2026-03-10",
+          "2026-03-12",
+          "2026-03-13",
+          "2026-03-15",
+          "2026-03-16",
+          "2026-03-17",
+          "2026-03-22",
+          "2026-03-31",
+          "2026-04-01",
+          "2026-04-15",
+          "2026-04-30",
+          "2026-06-01",
+          "2027-02-28",
+          "2027-06-01",
+          "2028-02-29",
+          "2028-06-01",
+          "2029-02-28",
+          "2032-02-29"
+        ]
+      },
+      "expected": [
+        "2026-03-03",
+        "2026-03-08",
+        "2026-03-17",
+        "2026-03-22",
+        "2026-03-31",
+        "2028-02-29",
+        "2032-02-29"
+      ]
+    },
+    {
+      "name": "every 2 weeks on Tuesday and Sunday: next after 2026-03-02, not before 2026-03-02",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [
+            2,
+            0
+          ],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-02",
+        "notBefore": "2026-03-02"
+      },
+      "expected": "2026-03-03"
+    },
+    {
+      "name": "every 2 weeks on Tuesday and Sunday: next after 2026-03-10, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [
+            2,
+            0
+          ],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-10",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-17"
+    },
+    {
+      "name": "every 2 weeks on Tuesday and Sunday: next after 2026-03-05, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [
+            2,
+            0
+          ],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-05",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-17"
+    },
+    {
+      "name": "every 2 weeks on Tuesday and Sunday: next after 2026-03-12, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [
+            2,
+            0
+          ],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-12",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-17"
+    },
+    {
+      "name": "every 2 weeks on Tuesday and Sunday: next after 2026-01-01, not before 2026-01-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [
+            2,
+            0
+          ],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-01-01",
+        "notBefore": "2026-01-01"
+      },
+      "expected": "2026-03-03"
+    },
+    {
+      "name": "every 2 weeks on Tuesday and Sunday: next after 2027-06-01, not before 2027-06-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [
+            2,
+            0
+          ],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2027-06-01",
+        "notBefore": "2027-06-01"
+      },
+      "expected": "2027-06-08"
+    },
+    {
+      "name": "every 2 weeks on Tuesday and Sunday: first occurrence, today 2026-02-20",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [
+            2,
+            0
+          ],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-02-20"
+      },
+      "expected": "2026-03-03"
+    },
+    {
+      "name": "every 2 weeks on Tuesday and Sunday: first occurrence, today 2026-03-02",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [
+            2,
+            0
+          ],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-03-02"
+      },
+      "expected": "2026-03-03"
+    },
+    {
+      "name": "every 2 weeks on Tuesday and Sunday: first occurrence, today 2026-03-10",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [
+            2,
+            0
+          ],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-03-10"
+      },
+      "expected": "2026-03-17"
+    },
+    {
+      "name": "every 2 weeks on Tuesday and Sunday: one interval after 2026-03-31",
+      "op": "addInterval",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [
+            2,
+            0
+          ],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "date": "2026-03-31"
+      },
+      "expected": "2026-04-14"
+    },
+    {
+      "name": "every 2 weeks, start on a Sunday: which dates fit",
+      "op": "matches",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [
+            0,
+            3
+          ],
+          "start": "2026-03-08",
+          "until": null,
+          "deadlineDays": null
+        },
+        "dates": [
+          "2026-03-01",
+          "2026-03-02",
+          "2026-03-03",
+          "2026-03-05",
+          "2026-03-08",
+          "2026-03-09",
+          "2026-03-10",
+          "2026-03-12",
+          "2026-03-13",
+          "2026-03-15",
+          "2026-03-16",
+          "2026-03-17",
+          "2026-03-22",
+          "2026-03-31",
+          "2026-04-01",
+          "2026-04-15",
+          "2026-04-30",
+          "2026-06-01",
+          "2027-02-28",
+          "2027-06-01",
+          "2028-02-29",
+          "2028-06-01",
+          "2029-02-28",
+          "2032-02-29"
+        ]
+      },
+      "expected": [
+        "2026-03-08",
+        "2026-03-22",
+        "2026-04-01",
+        "2026-04-15",
+        "2029-02-28",
+        "2032-02-29"
+      ]
+    },
+    {
+      "name": "every 2 weeks, start on a Sunday: next after 2026-03-02, not before 2026-03-02",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [
+            0,
+            3
+          ],
+          "start": "2026-03-08",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-02",
+        "notBefore": "2026-03-02"
+      },
+      "expected": "2026-03-08"
+    },
+    {
+      "name": "every 2 weeks, start on a Sunday: next after 2026-03-10, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [
+            0,
+            3
+          ],
+          "start": "2026-03-08",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-10",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-18"
+    },
+    {
+      "name": "every 2 weeks, start on a Sunday: next after 2026-03-05, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [
+            0,
+            3
+          ],
+          "start": "2026-03-08",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-05",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-18"
+    },
+    {
+      "name": "every 2 weeks, start on a Sunday: next after 2026-03-12, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [
+            0,
+            3
+          ],
+          "start": "2026-03-08",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-12",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-18"
+    },
+    {
+      "name": "every 2 weeks, start on a Sunday: next after 2026-01-01, not before 2026-01-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [
+            0,
+            3
+          ],
+          "start": "2026-03-08",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-01-01",
+        "notBefore": "2026-01-01"
+      },
+      "expected": "2026-03-08"
+    },
+    {
+      "name": "every 2 weeks, start on a Sunday: next after 2027-06-01, not before 2027-06-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [
+            0,
+            3
+          ],
+          "start": "2026-03-08",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2027-06-01",
+        "notBefore": "2027-06-01"
+      },
+      "expected": "2027-06-09"
+    },
+    {
+      "name": "every 2 weeks, start on a Sunday: first occurrence, today 2026-02-20",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [
+            0,
+            3
+          ],
+          "start": "2026-03-08",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-02-20"
+      },
+      "expected": "2026-03-08"
+    },
+    {
+      "name": "every 2 weeks, start on a Sunday: first occurrence, today 2026-03-02",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [
+            0,
+            3
+          ],
+          "start": "2026-03-08",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-03-02"
+      },
+      "expected": "2026-03-08"
+    },
+    {
+      "name": "every 2 weeks, start on a Sunday: first occurrence, today 2026-03-10",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [
+            0,
+            3
+          ],
+          "start": "2026-03-08",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-03-10"
+      },
+      "expected": "2026-03-08"
+    },
+    {
+      "name": "every 2 weeks, start on a Sunday: one interval after 2026-03-31",
+      "op": "addInterval",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [
+            0,
+            3
+          ],
+          "start": "2026-03-08",
+          "until": null,
+          "deadlineDays": null
+        },
+        "date": "2026-03-31"
+      },
+      "expected": "2026-04-14"
+    },
+    {
+      "name": "every month on the 31st: which dates fit",
+      "op": "matches",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-01-31",
+          "until": null,
+          "deadlineDays": null
+        },
+        "dates": [
+          "2026-03-01",
+          "2026-03-02",
+          "2026-03-03",
+          "2026-03-05",
+          "2026-03-08",
+          "2026-03-09",
+          "2026-03-10",
+          "2026-03-12",
+          "2026-03-13",
+          "2026-03-15",
+          "2026-03-16",
+          "2026-03-17",
+          "2026-03-22",
+          "2026-03-31",
+          "2026-04-01",
+          "2026-04-15",
+          "2026-04-30",
+          "2026-06-01",
+          "2027-02-28",
+          "2027-06-01",
+          "2028-02-29",
+          "2028-06-01",
+          "2029-02-28",
+          "2032-02-29"
+        ]
+      },
+      "expected": [
+        "2026-03-31",
+        "2026-04-30",
+        "2027-02-28",
+        "2028-02-29",
+        "2029-02-28",
+        "2032-02-29"
+      ]
+    },
+    {
+      "name": "every month on the 31st: next after 2026-03-02, not before 2026-03-02",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-01-31",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-02",
+        "notBefore": "2026-03-02"
+      },
+      "expected": "2026-03-31"
+    },
+    {
+      "name": "every month on the 31st: next after 2026-03-10, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-01-31",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-10",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-31"
+    },
+    {
+      "name": "every month on the 31st: next after 2026-03-05, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-01-31",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-05",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-31"
+    },
+    {
+      "name": "every month on the 31st: next after 2026-03-12, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-01-31",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-12",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-31"
+    },
+    {
+      "name": "every month on the 31st: next after 2026-01-01, not before 2026-01-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-01-31",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-01-01",
+        "notBefore": "2026-01-01"
+      },
+      "expected": "2026-01-31"
+    },
+    {
+      "name": "every month on the 31st: next after 2027-06-01, not before 2027-06-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-01-31",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2027-06-01",
+        "notBefore": "2027-06-01"
+      },
+      "expected": "2027-06-30"
+    },
+    {
+      "name": "every month on the 31st: first occurrence, today 2026-02-20",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-01-31",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-02-20"
+      },
+      "expected": "2026-01-31"
+    },
+    {
+      "name": "every month on the 31st: first occurrence, today 2026-03-02",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-01-31",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-03-02"
+      },
+      "expected": "2026-01-31"
+    },
+    {
+      "name": "every month on the 31st: first occurrence, today 2026-03-10",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-01-31",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-03-10"
+      },
+      "expected": "2026-01-31"
+    },
+    {
+      "name": "every month on the 31st: one interval after 2026-03-31",
+      "op": "addInterval",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-01-31",
+          "until": null,
+          "deadlineDays": null
+        },
+        "date": "2026-03-31"
+      },
+      "expected": "2026-04-30"
+    },
+    {
+      "name": "every 3 months on the 15th: which dates fit",
+      "op": "matches",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 3,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-01-15",
+          "until": null,
+          "deadlineDays": null
+        },
+        "dates": [
+          "2026-03-01",
+          "2026-03-02",
+          "2026-03-03",
+          "2026-03-05",
+          "2026-03-08",
+          "2026-03-09",
+          "2026-03-10",
+          "2026-03-12",
+          "2026-03-13",
+          "2026-03-15",
+          "2026-03-16",
+          "2026-03-17",
+          "2026-03-22",
+          "2026-03-31",
+          "2026-04-01",
+          "2026-04-15",
+          "2026-04-30",
+          "2026-06-01",
+          "2027-02-28",
+          "2027-06-01",
+          "2028-02-29",
+          "2028-06-01",
+          "2029-02-28",
+          "2032-02-29"
+        ]
+      },
+      "expected": [
+        "2026-04-15"
+      ]
+    },
+    {
+      "name": "every 3 months on the 15th: next after 2026-03-02, not before 2026-03-02",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 3,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-01-15",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-02",
+        "notBefore": "2026-03-02"
+      },
+      "expected": "2026-04-15"
+    },
+    {
+      "name": "every 3 months on the 15th: next after 2026-03-10, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 3,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-01-15",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-10",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-04-15"
+    },
+    {
+      "name": "every 3 months on the 15th: next after 2026-03-05, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 3,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-01-15",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-05",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-04-15"
+    },
+    {
+      "name": "every 3 months on the 15th: next after 2026-03-12, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 3,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-01-15",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-12",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-04-15"
+    },
+    {
+      "name": "every 3 months on the 15th: next after 2026-01-01, not before 2026-01-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 3,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-01-15",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-01-01",
+        "notBefore": "2026-01-01"
+      },
+      "expected": "2026-01-15"
+    },
+    {
+      "name": "every 3 months on the 15th: next after 2027-06-01, not before 2027-06-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 3,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-01-15",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2027-06-01",
+        "notBefore": "2027-06-01"
+      },
+      "expected": "2027-07-15"
+    },
+    {
+      "name": "every 3 months on the 15th: first occurrence, today 2026-02-20",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 3,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-01-15",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-02-20"
+      },
+      "expected": "2026-01-15"
+    },
+    {
+      "name": "every 3 months on the 15th: first occurrence, today 2026-03-02",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 3,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-01-15",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-03-02"
+      },
+      "expected": "2026-01-15"
+    },
+    {
+      "name": "every 3 months on the 15th: first occurrence, today 2026-03-10",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 3,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-01-15",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-03-10"
+      },
+      "expected": "2026-01-15"
+    },
+    {
+      "name": "every 3 months on the 15th: one interval after 2026-03-31",
+      "op": "addInterval",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 3,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-01-15",
+          "until": null,
+          "deadlineDays": null
+        },
+        "date": "2026-03-31"
+      },
+      "expected": "2026-06-15"
+    },
+    {
+      "name": "every year on 29 February: which dates fit",
+      "op": "matches",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2028-02-29",
+          "until": null,
+          "deadlineDays": null
+        },
+        "dates": [
+          "2026-03-01",
+          "2026-03-02",
+          "2026-03-03",
+          "2026-03-05",
+          "2026-03-08",
+          "2026-03-09",
+          "2026-03-10",
+          "2026-03-12",
+          "2026-03-13",
+          "2026-03-15",
+          "2026-03-16",
+          "2026-03-17",
+          "2026-03-22",
+          "2026-03-31",
+          "2026-04-01",
+          "2026-04-15",
+          "2026-04-30",
+          "2026-06-01",
+          "2027-02-28",
+          "2027-06-01",
+          "2028-02-29",
+          "2028-06-01",
+          "2029-02-28",
+          "2032-02-29"
+        ]
+      },
+      "expected": [
+        "2028-02-29",
+        "2029-02-28",
+        "2032-02-29"
+      ]
+    },
+    {
+      "name": "every year on 29 February: next after 2026-03-02, not before 2026-03-02",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2028-02-29",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-02",
+        "notBefore": "2026-03-02"
+      },
+      "expected": "2028-02-29"
+    },
+    {
+      "name": "every year on 29 February: next after 2026-03-10, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2028-02-29",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-10",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2028-02-29"
+    },
+    {
+      "name": "every year on 29 February: next after 2026-03-05, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2028-02-29",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-05",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2028-02-29"
+    },
+    {
+      "name": "every year on 29 February: next after 2026-03-12, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2028-02-29",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-12",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2028-02-29"
+    },
+    {
+      "name": "every year on 29 February: next after 2026-01-01, not before 2026-01-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2028-02-29",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-01-01",
+        "notBefore": "2026-01-01"
+      },
+      "expected": "2028-02-29"
+    },
+    {
+      "name": "every year on 29 February: next after 2027-06-01, not before 2027-06-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2028-02-29",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2027-06-01",
+        "notBefore": "2027-06-01"
+      },
+      "expected": "2028-02-29"
+    },
+    {
+      "name": "every year on 29 February: first occurrence, today 2026-02-20",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2028-02-29",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-02-20"
+      },
+      "expected": "2028-02-29"
+    },
+    {
+      "name": "every year on 29 February: first occurrence, today 2026-03-02",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2028-02-29",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-03-02"
+      },
+      "expected": "2028-02-29"
+    },
+    {
+      "name": "every year on 29 February: first occurrence, today 2026-03-10",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2028-02-29",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-03-10"
+      },
+      "expected": "2028-02-29"
+    },
+    {
+      "name": "every year on 29 February: one interval after 2026-03-31",
+      "op": "addInterval",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2028-02-29",
+          "until": null,
+          "deadlineDays": null
+        },
+        "date": "2026-03-31"
+      },
+      "expected": "2027-03-29"
+    },
+    {
+      "name": "every 2 years: which dates fit",
+      "op": "matches",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-06-01",
+          "until": null,
+          "deadlineDays": null
+        },
+        "dates": [
+          "2026-03-01",
+          "2026-03-02",
+          "2026-03-03",
+          "2026-03-05",
+          "2026-03-08",
+          "2026-03-09",
+          "2026-03-10",
+          "2026-03-12",
+          "2026-03-13",
+          "2026-03-15",
+          "2026-03-16",
+          "2026-03-17",
+          "2026-03-22",
+          "2026-03-31",
+          "2026-04-01",
+          "2026-04-15",
+          "2026-04-30",
+          "2026-06-01",
+          "2027-02-28",
+          "2027-06-01",
+          "2028-02-29",
+          "2028-06-01",
+          "2029-02-28",
+          "2032-02-29"
+        ]
+      },
+      "expected": [
+        "2026-06-01",
+        "2028-06-01"
+      ]
+    },
+    {
+      "name": "every 2 years: next after 2026-03-02, not before 2026-03-02",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-06-01",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-02",
+        "notBefore": "2026-03-02"
+      },
+      "expected": "2026-06-01"
+    },
+    {
+      "name": "every 2 years: next after 2026-03-10, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-06-01",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-10",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-06-01"
+    },
+    {
+      "name": "every 2 years: next after 2026-03-05, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-06-01",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-05",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-06-01"
+    },
+    {
+      "name": "every 2 years: next after 2026-03-12, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-06-01",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-12",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-06-01"
+    },
+    {
+      "name": "every 2 years: next after 2026-01-01, not before 2026-01-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-06-01",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-01-01",
+        "notBefore": "2026-01-01"
+      },
+      "expected": "2026-06-01"
+    },
+    {
+      "name": "every 2 years: next after 2027-06-01, not before 2027-06-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-06-01",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2027-06-01",
+        "notBefore": "2027-06-01"
+      },
+      "expected": "2028-06-01"
+    },
+    {
+      "name": "every 2 years: first occurrence, today 2026-02-20",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-06-01",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-02-20"
+      },
+      "expected": "2026-06-01"
+    },
+    {
+      "name": "every 2 years: first occurrence, today 2026-03-02",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-06-01",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-03-02"
+      },
+      "expected": "2026-06-01"
+    },
+    {
+      "name": "every 2 years: first occurrence, today 2026-03-10",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-06-01",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-03-10"
+      },
+      "expected": "2026-06-01"
+    },
+    {
+      "name": "every 2 years: one interval after 2026-03-31",
+      "op": "addInterval",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 2,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-06-01",
+          "until": null,
+          "deadlineDays": null
+        },
+        "date": "2026-03-31"
+      },
+      "expected": "2028-03-01"
+    },
+    {
+      "name": "every day until 12 March: which dates fit",
+      "op": "matches",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": "2026-03-12",
+          "deadlineDays": null
+        },
+        "dates": [
+          "2026-03-01",
+          "2026-03-02",
+          "2026-03-03",
+          "2026-03-05",
+          "2026-03-08",
+          "2026-03-09",
+          "2026-03-10",
+          "2026-03-12",
+          "2026-03-13",
+          "2026-03-15",
+          "2026-03-16",
+          "2026-03-17",
+          "2026-03-22",
+          "2026-03-31",
+          "2026-04-01",
+          "2026-04-15",
+          "2026-04-30",
+          "2026-06-01",
+          "2027-02-28",
+          "2027-06-01",
+          "2028-02-29",
+          "2028-06-01",
+          "2029-02-28",
+          "2032-02-29"
+        ]
+      },
+      "expected": [
+        "2026-03-02",
+        "2026-03-03",
+        "2026-03-05",
+        "2026-03-08",
+        "2026-03-09",
+        "2026-03-10",
+        "2026-03-12"
+      ]
+    },
+    {
+      "name": "every day until 12 March: next after 2026-03-02, not before 2026-03-02",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": "2026-03-12",
+          "deadlineDays": null
+        },
+        "after": "2026-03-02",
+        "notBefore": "2026-03-02"
+      },
+      "expected": "2026-03-03"
+    },
+    {
+      "name": "every day until 12 March: next after 2026-03-10, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": "2026-03-12",
+          "deadlineDays": null
+        },
+        "after": "2026-03-10",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-11"
+    },
+    {
+      "name": "every day until 12 March: next after 2026-03-05, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": "2026-03-12",
+          "deadlineDays": null
+        },
+        "after": "2026-03-05",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-10"
+    },
+    {
+      "name": "every day until 12 March: next after 2026-03-12, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": "2026-03-12",
+          "deadlineDays": null
+        },
+        "after": "2026-03-12",
+        "notBefore": "2026-03-10"
+      },
+      "expected": null
+    },
+    {
+      "name": "every day until 12 March: next after 2026-01-01, not before 2026-01-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": "2026-03-12",
+          "deadlineDays": null
+        },
+        "after": "2026-01-01",
+        "notBefore": "2026-01-01"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every day until 12 March: next after 2027-06-01, not before 2027-06-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": "2026-03-12",
+          "deadlineDays": null
+        },
+        "after": "2027-06-01",
+        "notBefore": "2027-06-01"
+      },
+      "expected": null
+    },
+    {
+      "name": "every day until 12 March: first occurrence, today 2026-02-20",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": "2026-03-12",
+          "deadlineDays": null
+        },
+        "today": "2026-02-20"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every day until 12 March: first occurrence, today 2026-03-02",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": "2026-03-12",
+          "deadlineDays": null
+        },
+        "today": "2026-03-02"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every day until 12 March: first occurrence, today 2026-03-10",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": "2026-03-12",
+          "deadlineDays": null
+        },
+        "today": "2026-03-10"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every day until 12 March: one interval after 2026-03-31",
+      "op": "addInterval",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": "2026-03-12",
+          "deadlineDays": null
+        },
+        "date": "2026-03-31"
+      },
+      "expected": "2026-04-01"
+    },
+    {
+      "name": "every week, with a deadline: which dates fit",
+      "op": "matches",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": 2
+        },
+        "dates": [
+          "2026-03-01",
+          "2026-03-02",
+          "2026-03-03",
+          "2026-03-05",
+          "2026-03-08",
+          "2026-03-09",
+          "2026-03-10",
+          "2026-03-12",
+          "2026-03-13",
+          "2026-03-15",
+          "2026-03-16",
+          "2026-03-17",
+          "2026-03-22",
+          "2026-03-31",
+          "2026-04-01",
+          "2026-04-15",
+          "2026-04-30",
+          "2026-06-01",
+          "2027-02-28",
+          "2027-06-01",
+          "2028-02-29",
+          "2028-06-01",
+          "2029-02-28",
+          "2032-02-29"
+        ]
+      },
+      "expected": [
+        "2026-03-02",
+        "2026-03-09",
+        "2026-03-16",
+        "2026-06-01"
+      ]
+    },
+    {
+      "name": "every week, with a deadline: next after 2026-03-02, not before 2026-03-02",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": 2
+        },
+        "after": "2026-03-02",
+        "notBefore": "2026-03-02"
+      },
+      "expected": "2026-03-09"
+    },
+    {
+      "name": "every week, with a deadline: next after 2026-03-10, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": 2
+        },
+        "after": "2026-03-10",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-16"
+    },
+    {
+      "name": "every week, with a deadline: next after 2026-03-05, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": 2
+        },
+        "after": "2026-03-05",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-16"
+    },
+    {
+      "name": "every week, with a deadline: next after 2026-03-12, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": 2
+        },
+        "after": "2026-03-12",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-16"
+    },
+    {
+      "name": "every week, with a deadline: next after 2026-01-01, not before 2026-01-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": 2
+        },
+        "after": "2026-01-01",
+        "notBefore": "2026-01-01"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every week, with a deadline: next after 2027-06-01, not before 2027-06-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": 2
+        },
+        "after": "2027-06-01",
+        "notBefore": "2027-06-01"
+      },
+      "expected": "2027-06-07"
+    },
+    {
+      "name": "every week, with a deadline: first occurrence, today 2026-02-20",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": 2
+        },
+        "today": "2026-02-20"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every week, with a deadline: first occurrence, today 2026-03-02",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": 2
+        },
+        "today": "2026-03-02"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every week, with a deadline: first occurrence, today 2026-03-10",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": 2
+        },
+        "today": "2026-03-10"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every week, with a deadline: one interval after 2026-03-31",
+      "op": "addInterval",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": 2
+        },
+        "date": "2026-03-31"
+      },
+      "expected": "2026-04-07"
+    },
+    {
+      "name": "every 10 days after completion: next after 2026-03-02, not before 2026-03-02",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 10,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-02",
+        "notBefore": "2026-03-02"
+      },
+      "expected": "2026-03-12"
+    },
+    {
+      "name": "every 10 days after completion: next after 2026-03-10, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 10,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-10",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-20"
+    },
+    {
+      "name": "every 10 days after completion: next after 2026-03-05, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 10,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-05",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-15"
+    },
+    {
+      "name": "every 10 days after completion: next after 2026-03-12, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 10,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-12",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-22"
+    },
+    {
+      "name": "every 10 days after completion: next after 2026-01-01, not before 2026-01-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 10,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-01-01",
+        "notBefore": "2026-01-01"
+      },
+      "expected": "2026-01-11"
+    },
+    {
+      "name": "every 10 days after completion: next after 2027-06-01, not before 2027-06-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 10,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2027-06-01",
+        "notBefore": "2027-06-01"
+      },
+      "expected": "2027-06-11"
+    },
+    {
+      "name": "every 10 days after completion: first occurrence, today 2026-02-20",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 10,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-02-20"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every 10 days after completion: first occurrence, today 2026-03-02",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 10,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-03-02"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every 10 days after completion: first occurrence, today 2026-03-10",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 10,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-03-10"
+      },
+      "expected": "2026-03-10"
+    },
+    {
+      "name": "every 10 days after completion: one interval after 2026-03-31",
+      "op": "addInterval",
+      "input": {
+        "rule": {
+          "unit": "day",
+          "every": 10,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "date": "2026-03-31"
+      },
+      "expected": "2026-04-10"
+    },
+    {
+      "name": "every 2 weeks after completion: next after 2026-03-02, not before 2026-03-02",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-02",
+        "notBefore": "2026-03-02"
+      },
+      "expected": "2026-03-16"
+    },
+    {
+      "name": "every 2 weeks after completion: next after 2026-03-10, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-10",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-24"
+    },
+    {
+      "name": "every 2 weeks after completion: next after 2026-03-05, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-05",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-19"
+    },
+    {
+      "name": "every 2 weeks after completion: next after 2026-03-12, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-12",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-03-26"
+    },
+    {
+      "name": "every 2 weeks after completion: next after 2026-01-01, not before 2026-01-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-01-01",
+        "notBefore": "2026-01-01"
+      },
+      "expected": "2026-01-15"
+    },
+    {
+      "name": "every 2 weeks after completion: next after 2027-06-01, not before 2027-06-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2027-06-01",
+        "notBefore": "2027-06-01"
+      },
+      "expected": "2027-06-15"
+    },
+    {
+      "name": "every 2 weeks after completion: first occurrence, today 2026-02-20",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-02-20"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every 2 weeks after completion: first occurrence, today 2026-03-02",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-03-02"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every 2 weeks after completion: first occurrence, today 2026-03-10",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-03-10"
+      },
+      "expected": "2026-03-10"
+    },
+    {
+      "name": "every 2 weeks after completion: one interval after 2026-03-31",
+      "op": "addInterval",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 2,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": null,
+          "deadlineDays": null
+        },
+        "date": "2026-03-31"
+      },
+      "expected": "2026-04-14"
+    },
+    {
+      "name": "every month after completion, start on the 31st: next after 2026-03-02, not before 2026-03-02",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 1,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-01-31",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-02",
+        "notBefore": "2026-03-02"
+      },
+      "expected": "2026-04-30"
+    },
+    {
+      "name": "every month after completion, start on the 31st: next after 2026-03-10, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 1,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-01-31",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-10",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-04-30"
+    },
+    {
+      "name": "every month after completion, start on the 31st: next after 2026-03-05, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 1,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-01-31",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-05",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-04-30"
+    },
+    {
+      "name": "every month after completion, start on the 31st: next after 2026-03-12, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 1,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-01-31",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-12",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-04-30"
+    },
+    {
+      "name": "every month after completion, start on the 31st: next after 2026-01-01, not before 2026-01-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 1,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-01-31",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-01-01",
+        "notBefore": "2026-01-01"
+      },
+      "expected": "2026-02-28"
+    },
+    {
+      "name": "every month after completion, start on the 31st: next after 2027-06-01, not before 2027-06-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 1,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-01-31",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2027-06-01",
+        "notBefore": "2027-06-01"
+      },
+      "expected": "2027-07-31"
+    },
+    {
+      "name": "every month after completion, start on the 31st: first occurrence, today 2026-02-20",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 1,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-01-31",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-02-20"
+      },
+      "expected": "2026-02-20"
+    },
+    {
+      "name": "every month after completion, start on the 31st: first occurrence, today 2026-03-02",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 1,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-01-31",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-03-02"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every month after completion, start on the 31st: first occurrence, today 2026-03-10",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 1,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-01-31",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-03-10"
+      },
+      "expected": "2026-03-10"
+    },
+    {
+      "name": "every month after completion, start on the 31st: one interval after 2026-03-31",
+      "op": "addInterval",
+      "input": {
+        "rule": {
+          "unit": "month",
+          "every": 1,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-01-31",
+          "until": null,
+          "deadlineDays": null
+        },
+        "date": "2026-03-31"
+      },
+      "expected": "2026-04-30"
+    },
+    {
+      "name": "every year after completion until 2027: next after 2026-03-02, not before 2026-03-02",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 1,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": "2027-06-30",
+          "deadlineDays": null
+        },
+        "after": "2026-03-02",
+        "notBefore": "2026-03-02"
+      },
+      "expected": "2027-03-02"
+    },
+    {
+      "name": "every year after completion until 2027: next after 2026-03-10, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 1,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": "2027-06-30",
+          "deadlineDays": null
+        },
+        "after": "2026-03-10",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2027-03-02"
+    },
+    {
+      "name": "every year after completion until 2027: next after 2026-03-05, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 1,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": "2027-06-30",
+          "deadlineDays": null
+        },
+        "after": "2026-03-05",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2027-03-02"
+    },
+    {
+      "name": "every year after completion until 2027: next after 2026-03-12, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 1,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": "2027-06-30",
+          "deadlineDays": null
+        },
+        "after": "2026-03-12",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2027-03-02"
+    },
+    {
+      "name": "every year after completion until 2027: next after 2026-01-01, not before 2026-01-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 1,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": "2027-06-30",
+          "deadlineDays": null
+        },
+        "after": "2026-01-01",
+        "notBefore": "2026-01-01"
+      },
+      "expected": "2027-01-02"
+    },
+    {
+      "name": "every year after completion until 2027: next after 2027-06-01, not before 2027-06-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 1,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": "2027-06-30",
+          "deadlineDays": null
+        },
+        "after": "2027-06-01",
+        "notBefore": "2027-06-01"
+      },
+      "expected": null
+    },
+    {
+      "name": "every year after completion until 2027: first occurrence, today 2026-02-20",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 1,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": "2027-06-30",
+          "deadlineDays": null
+        },
+        "today": "2026-02-20"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every year after completion until 2027: first occurrence, today 2026-03-02",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 1,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": "2027-06-30",
+          "deadlineDays": null
+        },
+        "today": "2026-03-02"
+      },
+      "expected": "2026-03-02"
+    },
+    {
+      "name": "every year after completion until 2027: first occurrence, today 2026-03-10",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 1,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": "2027-06-30",
+          "deadlineDays": null
+        },
+        "today": "2026-03-10"
+      },
+      "expected": "2026-03-10"
+    },
+    {
+      "name": "every year after completion until 2027: one interval after 2026-03-31",
+      "op": "addInterval",
+      "input": {
+        "rule": {
+          "unit": "year",
+          "every": 1,
+          "basis": "completion",
+          "weekdays": [],
+          "start": "2026-03-02",
+          "until": "2027-06-30",
+          "deadlineDays": null
+        },
+        "date": "2026-03-31"
+      },
+      "expected": "2027-03-02"
+    },
+    {
+      "name": "starts in the future: which dates fit",
+      "op": "matches",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-04-01",
+          "until": null,
+          "deadlineDays": null
+        },
+        "dates": [
+          "2026-03-01",
+          "2026-03-02",
+          "2026-03-03",
+          "2026-03-05",
+          "2026-03-08",
+          "2026-03-09",
+          "2026-03-10",
+          "2026-03-12",
+          "2026-03-13",
+          "2026-03-15",
+          "2026-03-16",
+          "2026-03-17",
+          "2026-03-22",
+          "2026-03-31",
+          "2026-04-01",
+          "2026-04-15",
+          "2026-04-30",
+          "2026-06-01",
+          "2027-02-28",
+          "2027-06-01",
+          "2028-02-29",
+          "2028-06-01",
+          "2029-02-28",
+          "2032-02-29"
+        ]
+      },
+      "expected": [
+        "2026-04-01",
+        "2026-04-15",
+        "2029-02-28"
+      ]
+    },
+    {
+      "name": "starts in the future: next after 2026-03-02, not before 2026-03-02",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-04-01",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-02",
+        "notBefore": "2026-03-02"
+      },
+      "expected": "2026-04-01"
+    },
+    {
+      "name": "starts in the future: next after 2026-03-10, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-04-01",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-10",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-04-01"
+    },
+    {
+      "name": "starts in the future: next after 2026-03-05, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-04-01",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-05",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-04-01"
+    },
+    {
+      "name": "starts in the future: next after 2026-03-12, not before 2026-03-10",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-04-01",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-03-12",
+        "notBefore": "2026-03-10"
+      },
+      "expected": "2026-04-01"
+    },
+    {
+      "name": "starts in the future: next after 2026-01-01, not before 2026-01-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-04-01",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2026-01-01",
+        "notBefore": "2026-01-01"
+      },
+      "expected": "2026-04-01"
+    },
+    {
+      "name": "starts in the future: next after 2027-06-01, not before 2027-06-01",
+      "op": "next",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-04-01",
+          "until": null,
+          "deadlineDays": null
+        },
+        "after": "2027-06-01",
+        "notBefore": "2027-06-01"
+      },
+      "expected": "2027-06-02"
+    },
+    {
+      "name": "starts in the future: first occurrence, today 2026-02-20",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-04-01",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-02-20"
+      },
+      "expected": "2026-04-01"
+    },
+    {
+      "name": "starts in the future: first occurrence, today 2026-03-02",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-04-01",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-03-02"
+      },
+      "expected": "2026-04-01"
+    },
+    {
+      "name": "starts in the future: first occurrence, today 2026-03-10",
+      "op": "first",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-04-01",
+          "until": null,
+          "deadlineDays": null
+        },
+        "today": "2026-03-10"
+      },
+      "expected": "2026-04-01"
+    },
+    {
+      "name": "starts in the future: one interval after 2026-03-31",
+      "op": "addInterval",
+      "input": {
+        "rule": {
+          "unit": "week",
+          "every": 1,
+          "basis": "schedule",
+          "weekdays": [],
+          "start": "2026-04-01",
+          "until": null,
+          "deadlineDays": null
+        },
+        "date": "2026-03-31"
+      },
+      "expected": "2026-04-07"
+    },
+    {
+      "name": "checklist of the template: nothing to do",
+      "op": "checklistMirror",
+      "input": {
+        "templateItems": [
+          {
+            "id": "0000000000000000000000C001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "done": false,
+            "order": "a1",
+            "title": "Item 1",
+            "taskId": "0000000000000000000000T002"
+          },
+          {
+            "id": "0000000000000000000000C002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "done": false,
+            "order": "a2",
+            "title": "Item 2",
+            "taskId": "0000000000000000000000T002"
+          }
+        ],
+        "instanceItems": [
+          {
+            "id": "0000000000000000000000C011",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "done": false,
+            "order": "a11",
+            "title": "Item 1",
+            "taskId": "0000000000000000000000T001"
+          },
+          {
+            "id": "0000000000000000000000C012",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "done": true,
+            "order": "a12",
+            "title": "Item 2",
+            "taskId": "0000000000000000000000T001"
+          }
+        ]
+      },
+      "expected": {
+        "update": [
+          {
+            "id": "0000000000000000000000C001",
+            "fields": {
+              "order": "a11"
+            }
+          },
+          {
+            "id": "0000000000000000000000C002",
+            "fields": {
+              "order": "a12"
+            }
+          }
+        ],
+        "create": [],
+        "remove": []
+      }
+    },
+    {
+      "name": "checklist of the template: a renamed item",
+      "op": "checklistMirror",
+      "input": {
+        "templateItems": [
+          {
+            "id": "0000000000000000000000C001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "done": false,
+            "order": "a1",
+            "title": "Item 1",
+            "taskId": "0000000000000000000000T002"
+          },
+          {
+            "id": "0000000000000000000000C002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "done": false,
+            "order": "a2",
+            "title": "Item 2",
+            "taskId": "0000000000000000000000T002"
+          }
+        ],
+        "instanceItems": [
+          {
+            "id": "0000000000000000000000C011",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "done": false,
+            "order": "a11",
+            "title": "Renamed",
+            "taskId": "0000000000000000000000T001"
+          },
+          {
+            "id": "0000000000000000000000C012",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "done": false,
+            "order": "a12",
+            "title": "Item 2",
+            "taskId": "0000000000000000000000T001"
+          }
+        ]
+      },
+      "expected": {
+        "update": [
+          {
+            "id": "0000000000000000000000C001",
+            "fields": {
+              "title": "Renamed",
+              "order": "a11"
+            }
+          },
+          {
+            "id": "0000000000000000000000C002",
+            "fields": {
+              "order": "a12"
+            }
+          }
+        ],
+        "create": [],
+        "remove": []
+      }
+    },
+    {
+      "name": "checklist of the template: an added item",
+      "op": "checklistMirror",
+      "input": {
+        "templateItems": [
+          {
+            "id": "0000000000000000000000C001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "done": false,
+            "order": "a1",
+            "title": "Item 1",
+            "taskId": "0000000000000000000000T002"
+          }
+        ],
+        "instanceItems": [
+          {
+            "id": "0000000000000000000000C011",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "done": false,
+            "order": "a11",
+            "title": "Item 1",
+            "taskId": "0000000000000000000000T001"
+          },
+          {
+            "id": "0000000000000000000000C012",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "done": false,
+            "order": "a12",
+            "title": "New",
+            "taskId": "0000000000000000000000T001"
+          }
+        ]
+      },
+      "expected": {
+        "update": [
+          {
+            "id": "0000000000000000000000C001",
+            "fields": {
+              "order": "a11"
+            }
+          }
+        ],
+        "create": [
+          {
+            "title": "New",
+            "order": "a12"
+          }
+        ],
+        "remove": []
+      }
+    },
+    {
+      "name": "checklist of the template: a removed item",
+      "op": "checklistMirror",
+      "input": {
+        "templateItems": [
+          {
+            "id": "0000000000000000000000C001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "done": false,
+            "order": "a1",
+            "title": "Item 1",
+            "taskId": "0000000000000000000000T002"
+          },
+          {
+            "id": "0000000000000000000000C002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "done": false,
+            "order": "a2",
+            "title": "Item 2",
+            "taskId": "0000000000000000000000T002"
+          },
+          {
+            "id": "0000000000000000000000C003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "done": false,
+            "order": "a3",
+            "title": "Item 3",
+            "taskId": "0000000000000000000000T002"
+          }
+        ],
+        "instanceItems": [
+          {
+            "id": "0000000000000000000000C011",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "done": false,
+            "order": "a11",
+            "title": "Item 1",
+            "taskId": "0000000000000000000000T001"
+          }
+        ]
+      },
+      "expected": {
+        "update": [
+          {
+            "id": "0000000000000000000000C001",
+            "fields": {
+              "order": "a11"
+            }
+          }
+        ],
+        "create": [],
+        "remove": [
+          "0000000000000000000000C002",
+          "0000000000000000000000C003"
+        ]
+      }
+    },
+    {
+      "name": "checklist of the template: a reordered row",
+      "op": "checklistMirror",
+      "input": {
+        "templateItems": [
+          {
+            "id": "0000000000000000000000C001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "done": false,
+            "order": "a1",
+            "title": "Item 1",
+            "taskId": "0000000000000000000000T002"
+          },
+          {
+            "id": "0000000000000000000000C002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "done": false,
+            "order": "a2",
+            "title": "Item 2",
+            "taskId": "0000000000000000000000T002"
+          }
+        ],
+        "instanceItems": [
+          {
+            "id": "0000000000000000000000C012",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "done": false,
+            "order": "a0",
+            "title": "Item 2",
+            "taskId": "0000000000000000000000T001"
+          },
+          {
+            "id": "0000000000000000000000C011",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "done": false,
+            "order": "a5",
+            "title": "Item 1",
+            "taskId": "0000000000000000000000T001"
+          }
+        ]
+      },
+      "expected": {
+        "update": [
+          {
+            "id": "0000000000000000000000C001",
+            "fields": {
+              "title": "Item 2",
+              "order": "a0"
+            }
+          },
+          {
+            "id": "0000000000000000000000C002",
+            "fields": {
+              "title": "Item 1",
+              "order": "a5"
+            }
+          }
+        ],
+        "create": [],
+        "remove": []
+      }
+    },
+    {
+      "name": "checklist of the template: deleted items do not count",
+      "op": "checklistMirror",
+      "input": {
+        "templateItems": [
+          {
+            "id": "0000000000000000000000C001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "done": false,
+            "order": "a1",
+            "title": "Item 1",
+            "taskId": "0000000000000000000000T002"
+          },
+          {
+            "id": "0000000000000000000000C002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": true,
+            "done": false,
+            "order": "a2",
+            "title": "Item 2",
+            "taskId": "0000000000000000000000T002"
+          }
+        ],
+        "instanceItems": [
+          {
+            "id": "0000000000000000000000C011",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "done": false,
+            "order": "a11",
+            "title": "Item 1",
+            "taskId": "0000000000000000000000T001"
+          },
+          {
+            "id": "0000000000000000000000C012",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": true,
+            "done": false,
+            "order": "a12",
+            "title": "Item 12",
+            "taskId": "0000000000000000000000T001"
+          }
+        ]
+      },
+      "expected": {
+        "update": [
+          {
+            "id": "0000000000000000000000C001",
+            "fields": {
+              "order": "a11"
+            }
+          }
+        ],
+        "create": [],
+        "remove": []
+      }
+    }
+  ]
+}

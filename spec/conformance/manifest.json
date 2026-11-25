@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "syncProtocol": 4,
+  "suites": [
+    {
+      "suite": "hlc",
+      "file": "hlc.json",
+      "cases": 18
+    },
+    {
+      "suite": "apply-change",
+      "file": "apply-change.json",
+      "cases": 10
+    },
+    {
+      "suite": "order",
+      "file": "order.json",
+      "cases": 29
+    },
+    {
+      "suite": "dates",
+      "file": "dates.json",
+      "cases": 41
+    },
+    {
+      "suite": "repeat",
+      "file": "repeat.json",
+      "cases": 189
+    },
+    {
+      "suite": "views",
+      "file": "views.json",
+      "cases": 7
+    },
+    {
+      "suite": "dayparts",
+      "file": "dayparts.json",
+      "cases": 12
+    },
+    {
+      "suite": "duration",
+      "file": "duration.json",
+      "cases": 28
+    },
+    {
+      "suite": "tags",
+      "file": "tags.json",
+      "cases": 12
+    },
+    {
+      "suite": "reminders",
+      "file": "reminders.json",
+      "cases": 15
+    },
+    {
+      "suite": "protocol",
+      "file": "protocol.json",
+      "cases": 26
+    },
+    {
+      "suite": "entities",
+      "file": "entities.json",
+      "cases": 41
+    },
+    {
+      "suite": "actions",
+      "file": "actions.json",
+      "cases": 64
+    }
+  ]
+}

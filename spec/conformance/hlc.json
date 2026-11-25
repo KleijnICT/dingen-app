@@ -1,0 +1,327 @@
+{
+  "suite": "hlc",
+  "version": 1,
+  "description": "Timestamps of the hybrid logical clock.",
+  "cases": [
+    {
+      "name": "format 1767600000000/0",
+      "op": "format",
+      "input": {
+        "wall": 1767600000000,
+        "counter": 0,
+        "clientId": "ABCD1234"
+      },
+      "expected": "001767600000000:00000:ABCD1234"
+    },
+    {
+      "name": "format 1767600000000/7",
+      "op": "format",
+      "input": {
+        "wall": 1767600000000,
+        "counter": 7,
+        "clientId": "ABCD1234"
+      },
+      "expected": "001767600000000:00007:ABCD1234"
+    },
+    {
+      "name": "format 1/99999",
+      "op": "format",
+      "input": {
+        "wall": 1,
+        "counter": 99999,
+        "clientId": "Z"
+      },
+      "expected": "000000000000001:99999:Z"
+    },
+    {
+      "name": "format 0/0",
+      "op": "format",
+      "input": {
+        "wall": 0,
+        "counter": 0,
+        "clientId": "0"
+      },
+      "expected": "000000000000000:00000:0"
+    },
+    {
+      "name": "parse 001767600000000:00000:ABCD1234",
+      "op": "parse",
+      "input": {
+        "ts": "001767600000000:00000:ABCD1234"
+      },
+      "expected": {
+        "wall": 1767600000000,
+        "counter": 0,
+        "clientId": "ABCD1234"
+      }
+    },
+    {
+      "name": "parse 000000000000001:99999:Z",
+      "op": "parse",
+      "input": {
+        "ts": "000000000000001:99999:Z"
+      },
+      "expected": {
+        "wall": 1,
+        "counter": 99999,
+        "clientId": "Z"
+      }
+    },
+    {
+      "name": "compare 001767600000000:00000:ABCD1234 with 001767600000001:00000:ABCD1234",
+      "op": "compare",
+      "input": {
+        "a": "001767600000000:00000:ABCD1234",
+        "b": "001767600000001:00000:ABCD1234"
+      },
+      "expected": -1
+    },
+    {
+      "name": "compare 001767600000000:00002:ABCD1234 with 001767600000000:00010:ABCD1234",
+      "op": "compare",
+      "input": {
+        "a": "001767600000000:00002:ABCD1234",
+        "b": "001767600000000:00010:ABCD1234"
+      },
+      "expected": -1
+    },
+    {
+      "name": "compare 001767600000000:00000:B with 001767600000000:00000:A",
+      "op": "compare",
+      "input": {
+        "a": "001767600000000:00000:B",
+        "b": "001767600000000:00000:A"
+      },
+      "expected": 1
+    },
+    {
+      "name": "compare 001767600000000:00000:A with 001767600000000:00000:A",
+      "op": "compare",
+      "input": {
+        "a": "001767600000000:00000:A",
+        "b": "001767600000000:00000:A"
+      },
+      "expected": 0
+    },
+    {
+      "name": "compare 000999999999999:99999:Z with 001000000000000:00000:A",
+      "op": "compare",
+      "input": {
+        "a": "000999999999999:99999:Z",
+        "b": "001000000000000:00000:A"
+      },
+      "expected": -1
+    },
+    {
+      "name": "the wall clock moves on",
+      "op": "clock",
+      "input": {
+        "clientId": "LOCAL",
+        "steps": [
+          {
+            "do": "now",
+            "wall": 1000
+          },
+          {
+            "do": "now",
+            "wall": 1001
+          },
+          {
+            "do": "now",
+            "wall": 1005
+          }
+        ]
+      },
+      "expected": [
+        "000000000001000:00000:LOCAL",
+        "000000000001001:00000:LOCAL",
+        "000000000001005:00000:LOCAL"
+      ]
+    },
+    {
+      "name": "several stamps in one millisecond",
+      "op": "clock",
+      "input": {
+        "clientId": "LOCAL",
+        "steps": [
+          {
+            "do": "now",
+            "wall": 1000
+          },
+          {
+            "do": "now",
+            "wall": 1000
+          },
+          {
+            "do": "now",
+            "wall": 1000
+          },
+          {
+            "do": "now",
+            "wall": 1001
+          }
+        ]
+      },
+      "expected": [
+        "000000000001000:00000:LOCAL",
+        "000000000001000:00001:LOCAL",
+        "000000000001000:00002:LOCAL",
+        "000000000001001:00000:LOCAL"
+      ]
+    },
+    {
+      "name": "the wall clock jumps back",
+      "op": "clock",
+      "input": {
+        "clientId": "LOCAL",
+        "steps": [
+          {
+            "do": "now",
+            "wall": 5000
+          },
+          {
+            "do": "now",
+            "wall": 4000
+          },
+          {
+            "do": "now",
+            "wall": 4500
+          },
+          {
+            "do": "now",
+            "wall": 5001
+          }
+        ]
+      },
+      "expected": [
+        "000000000005000:00000:LOCAL",
+        "000000000005000:00001:LOCAL",
+        "000000000005000:00002:LOCAL",
+        "000000000005001:00000:LOCAL"
+      ]
+    },
+    {
+      "name": "a remote stamp from the future",
+      "op": "clock",
+      "input": {
+        "clientId": "LOCAL",
+        "steps": [
+          {
+            "do": "now",
+            "wall": 1000
+          },
+          {
+            "do": "receive",
+            "wall": 1001,
+            "remote": "000000000009000:00004:REMOTE"
+          },
+          {
+            "do": "now",
+            "wall": 1002
+          },
+          {
+            "do": "now",
+            "wall": 1003
+          },
+          {
+            "do": "now",
+            "wall": 9001
+          }
+        ]
+      },
+      "expected": [
+        "000000000001000:00000:LOCAL",
+        null,
+        "000000000009000:00006:LOCAL",
+        "000000000009000:00007:LOCAL",
+        "000000000009001:00000:LOCAL"
+      ]
+    },
+    {
+      "name": "a remote stamp from the past",
+      "op": "clock",
+      "input": {
+        "clientId": "LOCAL",
+        "steps": [
+          {
+            "do": "now",
+            "wall": 5000
+          },
+          {
+            "do": "receive",
+            "wall": 5000,
+            "remote": "000000000001000:00009:REMOTE"
+          },
+          {
+            "do": "now",
+            "wall": 5000
+          }
+        ]
+      },
+      "expected": [
+        "000000000005000:00000:LOCAL",
+        null,
+        "000000000005000:00002:LOCAL"
+      ]
+    },
+    {
+      "name": "a remote stamp in the same millisecond",
+      "op": "clock",
+      "input": {
+        "clientId": "LOCAL",
+        "steps": [
+          {
+            "do": "now",
+            "wall": 5000
+          },
+          {
+            "do": "now",
+            "wall": 5000
+          },
+          {
+            "do": "receive",
+            "wall": 4000,
+            "remote": "000000000005000:00007:REMOTE"
+          },
+          {
+            "do": "now",
+            "wall": 4000
+          }
+        ]
+      },
+      "expected": [
+        "000000000005000:00000:LOCAL",
+        "000000000005000:00001:LOCAL",
+        null,
+        "000000000005000:00009:LOCAL"
+      ]
+    },
+    {
+      "name": "a remote stamp, local wall clock ahead of both",
+      "op": "clock",
+      "input": {
+        "clientId": "LOCAL",
+        "steps": [
+          {
+            "do": "now",
+            "wall": 1000
+          },
+          {
+            "do": "receive",
+            "wall": 8000,
+            "remote": "000000000002000:00003:REMOTE"
+          },
+          {
+            "do": "now",
+            "wall": 8000
+          }
+        ]
+      },
+      "expected": [
+        "000000000001000:00000:LOCAL",
+        null,
+        "000000000008000:00001:LOCAL"
+      ]
+    }
+  ]
+}

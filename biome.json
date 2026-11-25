@@ -7,6 +7,7 @@
       "!**/dist",
       "!**/drizzle/meta",
       "!**/test/contract/*.json",
+      "!spec/conformance/*.json",
       "!docs",
       "!**/SKILL.md",
       "!.claude"

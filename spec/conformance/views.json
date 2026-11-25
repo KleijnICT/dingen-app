@@ -1,0 +1,5216 @@
+{
+  "suite": "views",
+  "version": 1,
+  "description": "The lists: which tasks and projects are in Inbox, Today, Upcoming, Anytime, Someday and the Logbook, and in which order.",
+  "cases": [
+    {
+      "name": "every list on 2026-03-08",
+      "op": "lists",
+      "input": {
+        "today": "2026-03-08",
+        "tasks": [
+          {
+            "id": "0000000000000000000000T001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a1",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 1"
+          },
+          {
+            "id": "0000000000000000000000T002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-10"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a2",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 2"
+          },
+          {
+            "id": "0000000000000000000000T003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P001",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-09"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a3",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 3"
+          },
+          {
+            "id": "0000000000000000000000T004",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "date",
+              "date": "2026-03-11"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a4",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 4"
+          },
+          {
+            "id": "0000000000000000000000T005",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P001",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a5",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 5"
+          },
+          {
+            "id": "0000000000000000000000T006",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "someday"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a6",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 6"
+          },
+          {
+            "id": "0000000000000000000000T007",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": "2026-03-10",
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a7",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 7"
+          },
+          {
+            "id": "0000000000000000000000T008",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": "2026-03-15",
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a8",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 8"
+          },
+          {
+            "id": "0000000000000000000000T009",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "someday"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": "2026-03-08",
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a9",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 9"
+          },
+          {
+            "id": "0000000000000000000000T010",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P001",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-20"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": "2026-03-12",
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a10",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 10"
+          },
+          {
+            "id": "0000000000000000000000T011",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P002",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a11",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 11"
+          },
+          {
+            "id": "0000000000000000000000T012",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P002",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-10"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a12",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 12"
+          },
+          {
+            "id": "0000000000000000000000T013",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P003",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a13",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 13"
+          },
+          {
+            "id": "0000000000000000000000T014",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "completed",
+            "projectId": "0000000000000000000000P003",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a14",
+            "todayOrder": null,
+            "completedAt": "2026-03-02T10:00:00.000Z",
+            "assigneeId": null,
+            "title": "Task 14"
+          },
+          {
+            "id": "0000000000000000000000T015",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "completed",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-09"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a15",
+            "todayOrder": null,
+            "completedAt": "2026-03-09T18:00:00.000Z",
+            "assigneeId": null,
+            "title": "Task 15"
+          },
+          {
+            "id": "0000000000000000000000T016",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "canceled",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a16",
+            "todayOrder": null,
+            "completedAt": "2026-03-09T19:00:00.000Z",
+            "assigneeId": null,
+            "title": "Task 16"
+          },
+          {
+            "id": "0000000000000000000000T017",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": true,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-10"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a17",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 17"
+          },
+          {
+            "id": "0000000000000000000000T018",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": {
+              "unit": "day",
+              "every": 1,
+              "basis": "schedule",
+              "weekdays": [],
+              "start": "2026-03-02",
+              "until": null,
+              "deadlineDays": null
+            },
+            "templateId": null,
+            "order": "a18",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 18"
+          },
+          {
+            "id": "0000000000000000000000T019",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "date",
+              "date": "2026-03-10"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": "0000000000000000000000T018",
+            "order": "a19",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 19"
+          },
+          {
+            "id": "0000000000000000000000T020",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "date",
+              "date": "2026-03-10"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a20",
+            "todayOrder": "Zz",
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 20"
+          },
+          {
+            "id": "0000000000000000000000T021",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P004",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-09"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a21",
+            "todayOrder": "a15",
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 21"
+          },
+          {
+            "id": "0000000000000000000000T022",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-11"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a0",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 22"
+          },
+          {
+            "id": "0000000000000000000000T023",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P005",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a23",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 23"
+          },
+          {
+            "id": "0000000000000000000000T024",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P006",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a24",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 24"
+          },
+          {
+            "id": "0000000000000000000000T025",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a25",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 25"
+          },
+          {
+            "id": "0000000000000000000000T026",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P001",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-11"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a0",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 26"
+          },
+          {
+            "id": "0000000000000000000000T027",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": true,
+            "notes": "",
+            "status": "completed",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a27",
+            "todayOrder": null,
+            "completedAt": "2026-03-09T18:00:00.001Z",
+            "assigneeId": null,
+            "title": "Task 27"
+          }
+        ],
+        "projects": [
+          {
+            "id": "0000000000000000000000P001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a1",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 1"
+          },
+          {
+            "id": "0000000000000000000000P002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "someday"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a2",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 2"
+          },
+          {
+            "id": "0000000000000000000000P003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "completed",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a3",
+            "completedAt": "2026-03-01T10:00:00.000Z",
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 3"
+          },
+          {
+            "id": "0000000000000000000000P004",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": "0000000000000000000000A001",
+            "status": "open",
+            "when": {
+              "kind": "date",
+              "date": "2026-03-20"
+            },
+            "deadline": "2026-04-01",
+            "tagIds": [],
+            "order": "a4",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 4"
+          },
+          {
+            "id": "0000000000000000000000P005",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": "2026-03-09",
+            "tagIds": [],
+            "order": "a5",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 5"
+          },
+          {
+            "id": "0000000000000000000000P006",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": true,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "date",
+              "date": "2026-03-10"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a6",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 6"
+          },
+          {
+            "id": "0000000000000000000000P007",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "canceled",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a7",
+            "completedAt": "2026-03-05T10:00:00.000Z",
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 7"
+          }
+        ],
+        "areas": [
+          {
+            "id": "0000000000000000000000A001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "order": "a1",
+            "icon": null,
+            "color": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Area 1"
+          }
+        ],
+        "headings": [],
+        "tags": [],
+        "checklist": []
+      },
+      "expected": {
+        "tasks": {
+          "inbox": [
+            "0000000000000000000000T022",
+            "0000000000000000000000T001",
+            "0000000000000000000000T002"
+          ],
+          "today": [
+            "0000000000000000000000T009"
+          ],
+          "upcoming": [
+            {
+              "id": "0000000000000000000000T021",
+              "date": "2026-03-09"
+            },
+            {
+              "id": "0000000000000000000000T003",
+              "date": "2026-03-09"
+            },
+            {
+              "id": "0000000000000000000000T012",
+              "date": "2026-03-10"
+            },
+            {
+              "id": "0000000000000000000000T019",
+              "date": "2026-03-10"
+            },
+            {
+              "id": "0000000000000000000000T002",
+              "date": "2026-03-10"
+            },
+            {
+              "id": "0000000000000000000000T020",
+              "date": "2026-03-10"
+            },
+            {
+              "id": "0000000000000000000000T007",
+              "date": "2026-03-10"
+            },
+            {
+              "id": "0000000000000000000000T022",
+              "date": "2026-03-11"
+            },
+            {
+              "id": "0000000000000000000000T026",
+              "date": "2026-03-11"
+            },
+            {
+              "id": "0000000000000000000000T004",
+              "date": "2026-03-11"
+            },
+            {
+              "id": "0000000000000000000000T008",
+              "date": "2026-03-15"
+            },
+            {
+              "id": "0000000000000000000000T010",
+              "date": "2026-03-20"
+            }
+          ],
+          "anytime": [
+            "0000000000000000000000T023",
+            "0000000000000000000000T005",
+            "0000000000000000000000T007",
+            "0000000000000000000000T008"
+          ],
+          "someday": [
+            "0000000000000000000000T006",
+            "0000000000000000000000T009"
+          ],
+          "logbook": [
+            "0000000000000000000000T016",
+            "0000000000000000000000T015",
+            "0000000000000000000000T014"
+          ]
+        },
+        "projects": {
+          "today": [],
+          "upcoming": [
+            {
+              "id": "0000000000000000000000P004",
+              "date": "2026-03-20"
+            },
+            {
+              "id": "0000000000000000000000P005",
+              "date": "2026-03-09"
+            }
+          ],
+          "someday": [
+            "0000000000000000000000P002"
+          ],
+          "logbook": [
+            "0000000000000000000000P007",
+            "0000000000000000000000P003"
+          ]
+        }
+      }
+    },
+    {
+      "name": "every list on 2026-03-10",
+      "op": "lists",
+      "input": {
+        "today": "2026-03-10",
+        "tasks": [
+          {
+            "id": "0000000000000000000000T001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a1",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 1"
+          },
+          {
+            "id": "0000000000000000000000T002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-10"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a2",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 2"
+          },
+          {
+            "id": "0000000000000000000000T003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P001",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-09"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a3",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 3"
+          },
+          {
+            "id": "0000000000000000000000T004",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "date",
+              "date": "2026-03-11"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a4",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 4"
+          },
+          {
+            "id": "0000000000000000000000T005",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P001",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a5",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 5"
+          },
+          {
+            "id": "0000000000000000000000T006",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "someday"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a6",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 6"
+          },
+          {
+            "id": "0000000000000000000000T007",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": "2026-03-10",
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a7",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 7"
+          },
+          {
+            "id": "0000000000000000000000T008",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": "2026-03-15",
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a8",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 8"
+          },
+          {
+            "id": "0000000000000000000000T009",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "someday"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": "2026-03-08",
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a9",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 9"
+          },
+          {
+            "id": "0000000000000000000000T010",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P001",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-20"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": "2026-03-12",
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a10",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 10"
+          },
+          {
+            "id": "0000000000000000000000T011",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P002",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a11",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 11"
+          },
+          {
+            "id": "0000000000000000000000T012",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P002",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-10"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a12",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 12"
+          },
+          {
+            "id": "0000000000000000000000T013",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P003",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a13",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 13"
+          },
+          {
+            "id": "0000000000000000000000T014",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "completed",
+            "projectId": "0000000000000000000000P003",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a14",
+            "todayOrder": null,
+            "completedAt": "2026-03-02T10:00:00.000Z",
+            "assigneeId": null,
+            "title": "Task 14"
+          },
+          {
+            "id": "0000000000000000000000T015",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "completed",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-09"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a15",
+            "todayOrder": null,
+            "completedAt": "2026-03-09T18:00:00.000Z",
+            "assigneeId": null,
+            "title": "Task 15"
+          },
+          {
+            "id": "0000000000000000000000T016",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "canceled",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a16",
+            "todayOrder": null,
+            "completedAt": "2026-03-09T19:00:00.000Z",
+            "assigneeId": null,
+            "title": "Task 16"
+          },
+          {
+            "id": "0000000000000000000000T017",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": true,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-10"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a17",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 17"
+          },
+          {
+            "id": "0000000000000000000000T018",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": {
+              "unit": "day",
+              "every": 1,
+              "basis": "schedule",
+              "weekdays": [],
+              "start": "2026-03-02",
+              "until": null,
+              "deadlineDays": null
+            },
+            "templateId": null,
+            "order": "a18",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 18"
+          },
+          {
+            "id": "0000000000000000000000T019",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "date",
+              "date": "2026-03-10"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": "0000000000000000000000T018",
+            "order": "a19",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 19"
+          },
+          {
+            "id": "0000000000000000000000T020",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "date",
+              "date": "2026-03-10"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a20",
+            "todayOrder": "Zz",
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 20"
+          },
+          {
+            "id": "0000000000000000000000T021",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P004",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-09"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a21",
+            "todayOrder": "a15",
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 21"
+          },
+          {
+            "id": "0000000000000000000000T022",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-11"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a0",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 22"
+          },
+          {
+            "id": "0000000000000000000000T023",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P005",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a23",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 23"
+          },
+          {
+            "id": "0000000000000000000000T024",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P006",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a24",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 24"
+          },
+          {
+            "id": "0000000000000000000000T025",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a25",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 25"
+          },
+          {
+            "id": "0000000000000000000000T026",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P001",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-11"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a0",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 26"
+          },
+          {
+            "id": "0000000000000000000000T027",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": true,
+            "notes": "",
+            "status": "completed",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a27",
+            "todayOrder": null,
+            "completedAt": "2026-03-09T18:00:00.001Z",
+            "assigneeId": null,
+            "title": "Task 27"
+          }
+        ],
+        "projects": [
+          {
+            "id": "0000000000000000000000P001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a1",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 1"
+          },
+          {
+            "id": "0000000000000000000000P002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "someday"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a2",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 2"
+          },
+          {
+            "id": "0000000000000000000000P003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "completed",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a3",
+            "completedAt": "2026-03-01T10:00:00.000Z",
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 3"
+          },
+          {
+            "id": "0000000000000000000000P004",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": "0000000000000000000000A001",
+            "status": "open",
+            "when": {
+              "kind": "date",
+              "date": "2026-03-20"
+            },
+            "deadline": "2026-04-01",
+            "tagIds": [],
+            "order": "a4",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 4"
+          },
+          {
+            "id": "0000000000000000000000P005",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": "2026-03-09",
+            "tagIds": [],
+            "order": "a5",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 5"
+          },
+          {
+            "id": "0000000000000000000000P006",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": true,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "date",
+              "date": "2026-03-10"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a6",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 6"
+          },
+          {
+            "id": "0000000000000000000000P007",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "canceled",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a7",
+            "completedAt": "2026-03-05T10:00:00.000Z",
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 7"
+          }
+        ],
+        "areas": [
+          {
+            "id": "0000000000000000000000A001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "order": "a1",
+            "icon": null,
+            "color": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Area 1"
+          }
+        ],
+        "headings": [],
+        "tags": [],
+        "checklist": []
+      },
+      "expected": {
+        "tasks": {
+          "inbox": [
+            "0000000000000000000000T022",
+            "0000000000000000000000T001",
+            "0000000000000000000000T002"
+          ],
+          "today": [
+            "0000000000000000000000T020",
+            "0000000000000000000000T012",
+            "0000000000000000000000T021",
+            "0000000000000000000000T019",
+            "0000000000000000000000T002",
+            "0000000000000000000000T003",
+            "0000000000000000000000T007",
+            "0000000000000000000000T009"
+          ],
+          "upcoming": [
+            {
+              "id": "0000000000000000000000T022",
+              "date": "2026-03-11"
+            },
+            {
+              "id": "0000000000000000000000T026",
+              "date": "2026-03-11"
+            },
+            {
+              "id": "0000000000000000000000T004",
+              "date": "2026-03-11"
+            },
+            {
+              "id": "0000000000000000000000T008",
+              "date": "2026-03-15"
+            },
+            {
+              "id": "0000000000000000000000T010",
+              "date": "2026-03-20"
+            }
+          ],
+          "anytime": [
+            "0000000000000000000000T023",
+            "0000000000000000000000T005",
+            "0000000000000000000000T008"
+          ],
+          "someday": [
+            "0000000000000000000000T006",
+            "0000000000000000000000T009"
+          ],
+          "logbook": [
+            "0000000000000000000000T016",
+            "0000000000000000000000T015",
+            "0000000000000000000000T014"
+          ]
+        },
+        "projects": {
+          "today": [
+            "0000000000000000000000P005"
+          ],
+          "upcoming": [
+            {
+              "id": "0000000000000000000000P004",
+              "date": "2026-03-20"
+            }
+          ],
+          "someday": [
+            "0000000000000000000000P002"
+          ],
+          "logbook": [
+            "0000000000000000000000P007",
+            "0000000000000000000000P003"
+          ]
+        }
+      }
+    },
+    {
+      "name": "every list on 2026-03-11",
+      "op": "lists",
+      "input": {
+        "today": "2026-03-11",
+        "tasks": [
+          {
+            "id": "0000000000000000000000T001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a1",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 1"
+          },
+          {
+            "id": "0000000000000000000000T002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-10"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a2",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 2"
+          },
+          {
+            "id": "0000000000000000000000T003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P001",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-09"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a3",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 3"
+          },
+          {
+            "id": "0000000000000000000000T004",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "date",
+              "date": "2026-03-11"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a4",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 4"
+          },
+          {
+            "id": "0000000000000000000000T005",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P001",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a5",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 5"
+          },
+          {
+            "id": "0000000000000000000000T006",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "someday"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a6",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 6"
+          },
+          {
+            "id": "0000000000000000000000T007",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": "2026-03-10",
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a7",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 7"
+          },
+          {
+            "id": "0000000000000000000000T008",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": "2026-03-15",
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a8",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 8"
+          },
+          {
+            "id": "0000000000000000000000T009",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "someday"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": "2026-03-08",
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a9",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 9"
+          },
+          {
+            "id": "0000000000000000000000T010",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P001",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-20"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": "2026-03-12",
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a10",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 10"
+          },
+          {
+            "id": "0000000000000000000000T011",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P002",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a11",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 11"
+          },
+          {
+            "id": "0000000000000000000000T012",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P002",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-10"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a12",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 12"
+          },
+          {
+            "id": "0000000000000000000000T013",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P003",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a13",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 13"
+          },
+          {
+            "id": "0000000000000000000000T014",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "completed",
+            "projectId": "0000000000000000000000P003",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a14",
+            "todayOrder": null,
+            "completedAt": "2026-03-02T10:00:00.000Z",
+            "assigneeId": null,
+            "title": "Task 14"
+          },
+          {
+            "id": "0000000000000000000000T015",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "completed",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-09"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a15",
+            "todayOrder": null,
+            "completedAt": "2026-03-09T18:00:00.000Z",
+            "assigneeId": null,
+            "title": "Task 15"
+          },
+          {
+            "id": "0000000000000000000000T016",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "canceled",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a16",
+            "todayOrder": null,
+            "completedAt": "2026-03-09T19:00:00.000Z",
+            "assigneeId": null,
+            "title": "Task 16"
+          },
+          {
+            "id": "0000000000000000000000T017",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": true,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-10"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a17",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 17"
+          },
+          {
+            "id": "0000000000000000000000T018",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": {
+              "unit": "day",
+              "every": 1,
+              "basis": "schedule",
+              "weekdays": [],
+              "start": "2026-03-02",
+              "until": null,
+              "deadlineDays": null
+            },
+            "templateId": null,
+            "order": "a18",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 18"
+          },
+          {
+            "id": "0000000000000000000000T019",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "date",
+              "date": "2026-03-10"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": "0000000000000000000000T018",
+            "order": "a19",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 19"
+          },
+          {
+            "id": "0000000000000000000000T020",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "date",
+              "date": "2026-03-10"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a20",
+            "todayOrder": "Zz",
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 20"
+          },
+          {
+            "id": "0000000000000000000000T021",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P004",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-09"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a21",
+            "todayOrder": "a15",
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 21"
+          },
+          {
+            "id": "0000000000000000000000T022",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-11"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a0",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 22"
+          },
+          {
+            "id": "0000000000000000000000T023",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P005",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a23",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 23"
+          },
+          {
+            "id": "0000000000000000000000T024",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P006",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a24",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 24"
+          },
+          {
+            "id": "0000000000000000000000T025",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a25",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 25"
+          },
+          {
+            "id": "0000000000000000000000T026",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P001",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-11"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a0",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 26"
+          },
+          {
+            "id": "0000000000000000000000T027",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": true,
+            "notes": "",
+            "status": "completed",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a27",
+            "todayOrder": null,
+            "completedAt": "2026-03-09T18:00:00.001Z",
+            "assigneeId": null,
+            "title": "Task 27"
+          }
+        ],
+        "projects": [
+          {
+            "id": "0000000000000000000000P001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a1",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 1"
+          },
+          {
+            "id": "0000000000000000000000P002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "someday"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a2",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 2"
+          },
+          {
+            "id": "0000000000000000000000P003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "completed",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a3",
+            "completedAt": "2026-03-01T10:00:00.000Z",
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 3"
+          },
+          {
+            "id": "0000000000000000000000P004",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": "0000000000000000000000A001",
+            "status": "open",
+            "when": {
+              "kind": "date",
+              "date": "2026-03-20"
+            },
+            "deadline": "2026-04-01",
+            "tagIds": [],
+            "order": "a4",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 4"
+          },
+          {
+            "id": "0000000000000000000000P005",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": "2026-03-09",
+            "tagIds": [],
+            "order": "a5",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 5"
+          },
+          {
+            "id": "0000000000000000000000P006",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": true,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "date",
+              "date": "2026-03-10"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a6",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 6"
+          },
+          {
+            "id": "0000000000000000000000P007",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "canceled",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a7",
+            "completedAt": "2026-03-05T10:00:00.000Z",
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 7"
+          }
+        ],
+        "areas": [
+          {
+            "id": "0000000000000000000000A001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "order": "a1",
+            "icon": null,
+            "color": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Area 1"
+          }
+        ],
+        "headings": [],
+        "tags": [],
+        "checklist": []
+      },
+      "expected": {
+        "tasks": {
+          "inbox": [
+            "0000000000000000000000T022",
+            "0000000000000000000000T001",
+            "0000000000000000000000T002"
+          ],
+          "today": [
+            "0000000000000000000000T020",
+            "0000000000000000000000T022",
+            "0000000000000000000000T026",
+            "0000000000000000000000T012",
+            "0000000000000000000000T021",
+            "0000000000000000000000T019",
+            "0000000000000000000000T002",
+            "0000000000000000000000T003",
+            "0000000000000000000000T004",
+            "0000000000000000000000T007",
+            "0000000000000000000000T009"
+          ],
+          "upcoming": [
+            {
+              "id": "0000000000000000000000T008",
+              "date": "2026-03-15"
+            },
+            {
+              "id": "0000000000000000000000T010",
+              "date": "2026-03-20"
+            }
+          ],
+          "anytime": [
+            "0000000000000000000000T023",
+            "0000000000000000000000T005",
+            "0000000000000000000000T008"
+          ],
+          "someday": [
+            "0000000000000000000000T006",
+            "0000000000000000000000T009"
+          ],
+          "logbook": [
+            "0000000000000000000000T016",
+            "0000000000000000000000T015",
+            "0000000000000000000000T014"
+          ]
+        },
+        "projects": {
+          "today": [
+            "0000000000000000000000P005"
+          ],
+          "upcoming": [
+            {
+              "id": "0000000000000000000000P004",
+              "date": "2026-03-20"
+            }
+          ],
+          "someday": [
+            "0000000000000000000000P002"
+          ],
+          "logbook": [
+            "0000000000000000000000P007",
+            "0000000000000000000000P003"
+          ]
+        }
+      }
+    },
+    {
+      "name": "every list on 2026-03-12",
+      "op": "lists",
+      "input": {
+        "today": "2026-03-12",
+        "tasks": [
+          {
+            "id": "0000000000000000000000T001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a1",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 1"
+          },
+          {
+            "id": "0000000000000000000000T002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-10"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a2",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 2"
+          },
+          {
+            "id": "0000000000000000000000T003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P001",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-09"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a3",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 3"
+          },
+          {
+            "id": "0000000000000000000000T004",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "date",
+              "date": "2026-03-11"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a4",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 4"
+          },
+          {
+            "id": "0000000000000000000000T005",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P001",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a5",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 5"
+          },
+          {
+            "id": "0000000000000000000000T006",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "someday"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a6",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 6"
+          },
+          {
+            "id": "0000000000000000000000T007",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": "2026-03-10",
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a7",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 7"
+          },
+          {
+            "id": "0000000000000000000000T008",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": "2026-03-15",
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a8",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 8"
+          },
+          {
+            "id": "0000000000000000000000T009",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "someday"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": "2026-03-08",
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a9",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 9"
+          },
+          {
+            "id": "0000000000000000000000T010",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P001",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-20"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": "2026-03-12",
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a10",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 10"
+          },
+          {
+            "id": "0000000000000000000000T011",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P002",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a11",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 11"
+          },
+          {
+            "id": "0000000000000000000000T012",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P002",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-10"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a12",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 12"
+          },
+          {
+            "id": "0000000000000000000000T013",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P003",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a13",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 13"
+          },
+          {
+            "id": "0000000000000000000000T014",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "completed",
+            "projectId": "0000000000000000000000P003",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a14",
+            "todayOrder": null,
+            "completedAt": "2026-03-02T10:00:00.000Z",
+            "assigneeId": null,
+            "title": "Task 14"
+          },
+          {
+            "id": "0000000000000000000000T015",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "completed",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-09"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a15",
+            "todayOrder": null,
+            "completedAt": "2026-03-09T18:00:00.000Z",
+            "assigneeId": null,
+            "title": "Task 15"
+          },
+          {
+            "id": "0000000000000000000000T016",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "canceled",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a16",
+            "todayOrder": null,
+            "completedAt": "2026-03-09T19:00:00.000Z",
+            "assigneeId": null,
+            "title": "Task 16"
+          },
+          {
+            "id": "0000000000000000000000T017",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": true,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-10"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a17",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 17"
+          },
+          {
+            "id": "0000000000000000000000T018",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": {
+              "unit": "day",
+              "every": 1,
+              "basis": "schedule",
+              "weekdays": [],
+              "start": "2026-03-02",
+              "until": null,
+              "deadlineDays": null
+            },
+            "templateId": null,
+            "order": "a18",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 18"
+          },
+          {
+            "id": "0000000000000000000000T019",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "date",
+              "date": "2026-03-10"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": "0000000000000000000000T018",
+            "order": "a19",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 19"
+          },
+          {
+            "id": "0000000000000000000000T020",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "date",
+              "date": "2026-03-10"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a20",
+            "todayOrder": "Zz",
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 20"
+          },
+          {
+            "id": "0000000000000000000000T021",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P004",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-09"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a21",
+            "todayOrder": "a15",
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 21"
+          },
+          {
+            "id": "0000000000000000000000T022",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-11"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a0",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 22"
+          },
+          {
+            "id": "0000000000000000000000T023",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P005",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a23",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 23"
+          },
+          {
+            "id": "0000000000000000000000T024",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P006",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a24",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 24"
+          },
+          {
+            "id": "0000000000000000000000T025",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a25",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 25"
+          },
+          {
+            "id": "0000000000000000000000T026",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P001",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-11"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a0",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 26"
+          },
+          {
+            "id": "0000000000000000000000T027",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": true,
+            "notes": "",
+            "status": "completed",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a27",
+            "todayOrder": null,
+            "completedAt": "2026-03-09T18:00:00.001Z",
+            "assigneeId": null,
+            "title": "Task 27"
+          }
+        ],
+        "projects": [
+          {
+            "id": "0000000000000000000000P001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a1",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 1"
+          },
+          {
+            "id": "0000000000000000000000P002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "someday"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a2",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 2"
+          },
+          {
+            "id": "0000000000000000000000P003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "completed",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a3",
+            "completedAt": "2026-03-01T10:00:00.000Z",
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 3"
+          },
+          {
+            "id": "0000000000000000000000P004",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": "0000000000000000000000A001",
+            "status": "open",
+            "when": {
+              "kind": "date",
+              "date": "2026-03-20"
+            },
+            "deadline": "2026-04-01",
+            "tagIds": [],
+            "order": "a4",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 4"
+          },
+          {
+            "id": "0000000000000000000000P005",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": "2026-03-09",
+            "tagIds": [],
+            "order": "a5",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 5"
+          },
+          {
+            "id": "0000000000000000000000P006",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": true,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "date",
+              "date": "2026-03-10"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a6",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 6"
+          },
+          {
+            "id": "0000000000000000000000P007",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "canceled",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a7",
+            "completedAt": "2026-03-05T10:00:00.000Z",
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 7"
+          }
+        ],
+        "areas": [
+          {
+            "id": "0000000000000000000000A001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "order": "a1",
+            "icon": null,
+            "color": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Area 1"
+          }
+        ],
+        "headings": [],
+        "tags": [],
+        "checklist": []
+      },
+      "expected": {
+        "tasks": {
+          "inbox": [
+            "0000000000000000000000T022",
+            "0000000000000000000000T001",
+            "0000000000000000000000T002"
+          ],
+          "today": [
+            "0000000000000000000000T020",
+            "0000000000000000000000T022",
+            "0000000000000000000000T026",
+            "0000000000000000000000T010",
+            "0000000000000000000000T012",
+            "0000000000000000000000T021",
+            "0000000000000000000000T019",
+            "0000000000000000000000T002",
+            "0000000000000000000000T003",
+            "0000000000000000000000T004",
+            "0000000000000000000000T007",
+            "0000000000000000000000T009"
+          ],
+          "upcoming": [
+            {
+              "id": "0000000000000000000000T008",
+              "date": "2026-03-15"
+            }
+          ],
+          "anytime": [
+            "0000000000000000000000T023",
+            "0000000000000000000000T005",
+            "0000000000000000000000T008"
+          ],
+          "someday": [
+            "0000000000000000000000T006",
+            "0000000000000000000000T009"
+          ],
+          "logbook": [
+            "0000000000000000000000T016",
+            "0000000000000000000000T015",
+            "0000000000000000000000T014"
+          ]
+        },
+        "projects": {
+          "today": [
+            "0000000000000000000000P005"
+          ],
+          "upcoming": [
+            {
+              "id": "0000000000000000000000P004",
+              "date": "2026-03-20"
+            }
+          ],
+          "someday": [
+            "0000000000000000000000P002"
+          ],
+          "logbook": [
+            "0000000000000000000000P007",
+            "0000000000000000000000P003"
+          ]
+        }
+      }
+    },
+    {
+      "name": "every list on 2026-03-21",
+      "op": "lists",
+      "input": {
+        "today": "2026-03-21",
+        "tasks": [
+          {
+            "id": "0000000000000000000000T001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a1",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 1"
+          },
+          {
+            "id": "0000000000000000000000T002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-10"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a2",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 2"
+          },
+          {
+            "id": "0000000000000000000000T003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P001",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-09"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a3",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 3"
+          },
+          {
+            "id": "0000000000000000000000T004",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "date",
+              "date": "2026-03-11"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a4",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 4"
+          },
+          {
+            "id": "0000000000000000000000T005",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P001",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a5",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 5"
+          },
+          {
+            "id": "0000000000000000000000T006",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "someday"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a6",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 6"
+          },
+          {
+            "id": "0000000000000000000000T007",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": "2026-03-10",
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a7",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 7"
+          },
+          {
+            "id": "0000000000000000000000T008",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": "2026-03-15",
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a8",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 8"
+          },
+          {
+            "id": "0000000000000000000000T009",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "someday"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": "2026-03-08",
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a9",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 9"
+          },
+          {
+            "id": "0000000000000000000000T010",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P001",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-20"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": "2026-03-12",
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a10",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 10"
+          },
+          {
+            "id": "0000000000000000000000T011",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P002",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a11",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 11"
+          },
+          {
+            "id": "0000000000000000000000T012",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P002",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-10"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a12",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 12"
+          },
+          {
+            "id": "0000000000000000000000T013",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P003",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a13",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 13"
+          },
+          {
+            "id": "0000000000000000000000T014",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "completed",
+            "projectId": "0000000000000000000000P003",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a14",
+            "todayOrder": null,
+            "completedAt": "2026-03-02T10:00:00.000Z",
+            "assigneeId": null,
+            "title": "Task 14"
+          },
+          {
+            "id": "0000000000000000000000T015",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "completed",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-09"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a15",
+            "todayOrder": null,
+            "completedAt": "2026-03-09T18:00:00.000Z",
+            "assigneeId": null,
+            "title": "Task 15"
+          },
+          {
+            "id": "0000000000000000000000T016",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "canceled",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a16",
+            "todayOrder": null,
+            "completedAt": "2026-03-09T19:00:00.000Z",
+            "assigneeId": null,
+            "title": "Task 16"
+          },
+          {
+            "id": "0000000000000000000000T017",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": true,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-10"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a17",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 17"
+          },
+          {
+            "id": "0000000000000000000000T018",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": {
+              "unit": "day",
+              "every": 1,
+              "basis": "schedule",
+              "weekdays": [],
+              "start": "2026-03-02",
+              "until": null,
+              "deadlineDays": null
+            },
+            "templateId": null,
+            "order": "a18",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 18"
+          },
+          {
+            "id": "0000000000000000000000T019",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "date",
+              "date": "2026-03-10"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": "0000000000000000000000T018",
+            "order": "a19",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 19"
+          },
+          {
+            "id": "0000000000000000000000T020",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "date",
+              "date": "2026-03-10"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a20",
+            "todayOrder": "Zz",
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 20"
+          },
+          {
+            "id": "0000000000000000000000T021",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P004",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-09"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a21",
+            "todayOrder": "a15",
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 21"
+          },
+          {
+            "id": "0000000000000000000000T022",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-11"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a0",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 22"
+          },
+          {
+            "id": "0000000000000000000000T023",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P005",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a23",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 23"
+          },
+          {
+            "id": "0000000000000000000000T024",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P006",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a24",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 24"
+          },
+          {
+            "id": "0000000000000000000000T025",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a25",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 25"
+          },
+          {
+            "id": "0000000000000000000000T026",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P001",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "date",
+              "date": "2026-03-11"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a0",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 26"
+          },
+          {
+            "id": "0000000000000000000000T027",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": true,
+            "notes": "",
+            "status": "completed",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a27",
+            "todayOrder": null,
+            "completedAt": "2026-03-09T18:00:00.001Z",
+            "assigneeId": null,
+            "title": "Task 27"
+          }
+        ],
+        "projects": [
+          {
+            "id": "0000000000000000000000P001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a1",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 1"
+          },
+          {
+            "id": "0000000000000000000000P002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "someday"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a2",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 2"
+          },
+          {
+            "id": "0000000000000000000000P003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "completed",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a3",
+            "completedAt": "2026-03-01T10:00:00.000Z",
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 3"
+          },
+          {
+            "id": "0000000000000000000000P004",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": "0000000000000000000000A001",
+            "status": "open",
+            "when": {
+              "kind": "date",
+              "date": "2026-03-20"
+            },
+            "deadline": "2026-04-01",
+            "tagIds": [],
+            "order": "a4",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 4"
+          },
+          {
+            "id": "0000000000000000000000P005",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": "2026-03-09",
+            "tagIds": [],
+            "order": "a5",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 5"
+          },
+          {
+            "id": "0000000000000000000000P006",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": true,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "date",
+              "date": "2026-03-10"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a6",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 6"
+          },
+          {
+            "id": "0000000000000000000000P007",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "canceled",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a7",
+            "completedAt": "2026-03-05T10:00:00.000Z",
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 7"
+          }
+        ],
+        "areas": [
+          {
+            "id": "0000000000000000000000A001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "order": "a1",
+            "icon": null,
+            "color": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Area 1"
+          }
+        ],
+        "headings": [],
+        "tags": [],
+        "checklist": []
+      },
+      "expected": {
+        "tasks": {
+          "inbox": [
+            "0000000000000000000000T022",
+            "0000000000000000000000T001",
+            "0000000000000000000000T002"
+          ],
+          "today": [
+            "0000000000000000000000T020",
+            "0000000000000000000000T022",
+            "0000000000000000000000T026",
+            "0000000000000000000000T010",
+            "0000000000000000000000T012",
+            "0000000000000000000000T021",
+            "0000000000000000000000T019",
+            "0000000000000000000000T002",
+            "0000000000000000000000T003",
+            "0000000000000000000000T004",
+            "0000000000000000000000T007",
+            "0000000000000000000000T008",
+            "0000000000000000000000T009"
+          ],
+          "upcoming": [],
+          "anytime": [
+            "0000000000000000000000T023",
+            "0000000000000000000000T005"
+          ],
+          "someday": [
+            "0000000000000000000000T006",
+            "0000000000000000000000T009"
+          ],
+          "logbook": [
+            "0000000000000000000000T016",
+            "0000000000000000000000T015",
+            "0000000000000000000000T014"
+          ]
+        },
+        "projects": {
+          "today": [
+            "0000000000000000000000P004",
+            "0000000000000000000000P005"
+          ],
+          "upcoming": [],
+          "someday": [
+            "0000000000000000000000P002"
+          ],
+          "logbook": [
+            "0000000000000000000000P007",
+            "0000000000000000000000P003"
+          ]
+        }
+      }
+    },
+    {
+      "name": "an empty account",
+      "op": "lists",
+      "input": {
+        "today": "2026-03-10",
+        "tasks": [],
+        "projects": [],
+        "areas": [],
+        "headings": [],
+        "tags": [],
+        "checklist": []
+      },
+      "expected": {
+        "tasks": {
+          "inbox": [],
+          "today": [],
+          "upcoming": [],
+          "anytime": [],
+          "someday": [],
+          "logbook": []
+        },
+        "projects": {
+          "today": [],
+          "upcoming": [],
+          "someday": [],
+          "logbook": []
+        }
+      }
+    },
+    {
+      "name": "areas, projects, headings and their tasks",
+      "op": "containers",
+      "input": {
+        "tasks": [
+          {
+            "id": "0000000000000000000000T001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P001",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a1",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 1"
+          },
+          {
+            "id": "0000000000000000000000T002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P001",
+            "headingId": "0000000000000000000000H001",
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a0",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 2"
+          },
+          {
+            "id": "0000000000000000000000T003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "completed",
+            "projectId": "0000000000000000000000P001",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a3",
+            "todayOrder": null,
+            "completedAt": "2026-03-10T09:30:00.000Z",
+            "assigneeId": null,
+            "title": "Task 3"
+          },
+          {
+            "id": "0000000000000000000000T004",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "canceled",
+            "projectId": "0000000000000000000000P001",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a4",
+            "todayOrder": null,
+            "completedAt": "2026-03-10T09:30:00.000Z",
+            "assigneeId": null,
+            "title": "Task 4"
+          },
+          {
+            "id": "0000000000000000000000T005",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": true,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P001",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a5",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 5"
+          },
+          {
+            "id": "0000000000000000000000T006",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P001",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": {
+              "unit": "day",
+              "every": 1,
+              "basis": "schedule",
+              "weekdays": [],
+              "start": "2026-03-02",
+              "until": null,
+              "deadlineDays": null
+            },
+            "templateId": null,
+            "order": "a6",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 6"
+          },
+          {
+            "id": "0000000000000000000000T007",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a7",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 7"
+          },
+          {
+            "id": "0000000000000000000000T008",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "someday"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a1",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 8"
+          },
+          {
+            "id": "0000000000000000000000T009",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": "0000000000000000000000P002",
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a9",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Task 9"
+          },
+          {
+            "id": "0000000000000000000000T010",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "completed",
+            "projectId": null,
+            "headingId": null,
+            "areaId": "0000000000000000000000A001",
+            "when": {
+              "kind": "anytime"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a10",
+            "todayOrder": null,
+            "completedAt": "2026-03-10T09:30:00.000Z",
+            "assigneeId": null,
+            "title": "Task 10"
+          }
+        ],
+        "projects": [
+          {
+            "id": "0000000000000000000000P001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a2",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 1"
+          },
+          {
+            "id": "0000000000000000000000P002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": "0000000000000000000000A001",
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a1",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 2"
+          },
+          {
+            "id": "0000000000000000000000P003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": "0000000000000000000000A001",
+            "status": "open",
+            "when": {
+              "kind": "someday"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a0",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 3"
+          },
+          {
+            "id": "0000000000000000000000P004",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": "0000000000000000000000A001",
+            "status": "completed",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a4",
+            "completedAt": "2026-03-10T09:30:00.000Z",
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 4"
+          },
+          {
+            "id": "0000000000000000000000P005",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a1",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Project 5"
+          }
+        ],
+        "areas": [
+          {
+            "id": "0000000000000000000000A002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "order": "a1",
+            "icon": null,
+            "color": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Area 2"
+          },
+          {
+            "id": "0000000000000000000000A001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "order": "a1",
+            "icon": null,
+            "color": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Area 1"
+          },
+          {
+            "id": "0000000000000000000000A003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": true,
+            "order": "a3",
+            "icon": null,
+            "color": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Area 3"
+          }
+        ],
+        "headings": [
+          {
+            "id": "0000000000000000000000H001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "order": "a2",
+            "title": "Heading 1",
+            "projectId": "0000000000000000000000P001"
+          },
+          {
+            "id": "0000000000000000000000H002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "order": "a1",
+            "title": "Heading 2",
+            "projectId": "0000000000000000000000P001"
+          },
+          {
+            "id": "0000000000000000000000H003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": true,
+            "order": "a3",
+            "title": "Heading 3",
+            "projectId": "0000000000000000000000P001"
+          },
+          {
+            "id": "0000000000000000000000H004",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "order": "a4",
+            "title": "Heading 4",
+            "projectId": "0000000000000000000000P002"
+          }
+        ],
+        "tags": [],
+        "checklist": [
+          {
+            "id": "0000000000000000000000C001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "done": true,
+            "order": "a2",
+            "title": "Item 1",
+            "taskId": "0000000000000000000000T001"
+          },
+          {
+            "id": "0000000000000000000000C002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "done": false,
+            "order": "a1",
+            "title": "Item 2",
+            "taskId": "0000000000000000000000T001"
+          },
+          {
+            "id": "0000000000000000000000C003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": true,
+            "done": true,
+            "order": "a3",
+            "title": "Item 3",
+            "taskId": "0000000000000000000000T001"
+          },
+          {
+            "id": "0000000000000000000000C004",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "done": false,
+            "order": "a4",
+            "title": "Item 4",
+            "taskId": "0000000000000000000000T002"
+          }
+        ]
+      },
+      "expected": {
+        "areas": [
+          "0000000000000000000000A001",
+          "0000000000000000000000A002"
+        ],
+        "looseProjects": [
+          "0000000000000000000000P005",
+          "0000000000000000000000P001"
+        ],
+        "projectsByArea": {
+          "0000000000000000000000A002": [],
+          "0000000000000000000000A001": [
+            "0000000000000000000000P003",
+            "0000000000000000000000P002"
+          ],
+          "0000000000000000000000A003": []
+        },
+        "tasksByArea": {
+          "0000000000000000000000A002": [],
+          "0000000000000000000000A001": [
+            "0000000000000000000000T008",
+            "0000000000000000000000T010",
+            "0000000000000000000000T007"
+          ],
+          "0000000000000000000000A003": []
+        },
+        "tasksByProject": {
+          "0000000000000000000000P001": [
+            "0000000000000000000000T002",
+            "0000000000000000000000T001",
+            "0000000000000000000000T003",
+            "0000000000000000000000T004"
+          ],
+          "0000000000000000000000P002": [
+            "0000000000000000000000T009"
+          ],
+          "0000000000000000000000P003": [],
+          "0000000000000000000000P004": [],
+          "0000000000000000000000P005": []
+        },
+        "headingsByProject": {
+          "0000000000000000000000P001": [
+            "0000000000000000000000H002",
+            "0000000000000000000000H001"
+          ],
+          "0000000000000000000000P002": [
+            "0000000000000000000000H004"
+          ],
+          "0000000000000000000000P003": [],
+          "0000000000000000000000P004": [],
+          "0000000000000000000000P005": []
+        },
+        "progressByProject": {
+          "0000000000000000000000P001": 0.3333333333333333,
+          "0000000000000000000000P002": 0,
+          "0000000000000000000000P003": 0,
+          "0000000000000000000000P004": 0,
+          "0000000000000000000000P005": 0
+        },
+        "checklistByTask": {
+          "0000000000000000000000T001": {
+            "items": [
+              "0000000000000000000000C002",
+              "0000000000000000000000C001"
+            ],
+            "done": 1,
+            "total": 2
+          },
+          "0000000000000000000000T002": {
+            "items": [
+              "0000000000000000000000C004"
+            ],
+            "done": 0,
+            "total": 1
+          },
+          "0000000000000000000000T003": {
+            "items": [],
+            "done": 0,
+            "total": 0
+          },
+          "0000000000000000000000T004": {
+            "items": [],
+            "done": 0,
+            "total": 0
+          },
+          "0000000000000000000000T005": {
+            "items": [],
+            "done": 0,
+            "total": 0
+          },
+          "0000000000000000000000T006": {
+            "items": [],
+            "done": 0,
+            "total": 0
+          },
+          "0000000000000000000000T007": {
+            "items": [],
+            "done": 0,
+            "total": 0
+          },
+          "0000000000000000000000T008": {
+            "items": [],
+            "done": 0,
+            "total": 0
+          },
+          "0000000000000000000000T009": {
+            "items": [],
+            "done": 0,
+            "total": 0
+          },
+          "0000000000000000000000T010": {
+            "items": [],
+            "done": 0,
+            "total": 0
+          }
+        }
+      }
+    }
+  ]
+}

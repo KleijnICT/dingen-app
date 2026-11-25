@@ -1,0 +1,502 @@
+{
+  "suite": "order",
+  "version": 1,
+  "description": "Order keys (fractional indexing) and sorting.",
+  "cases": [
+    {
+      "name": "the first key",
+      "op": "between",
+      "input": {
+        "before": null,
+        "after": null
+      },
+      "expected": "a0"
+    },
+    {
+      "name": "between a0 and null",
+      "op": "between",
+      "input": {
+        "before": "a0",
+        "after": null
+      },
+      "expected": "a1"
+    },
+    {
+      "name": "between null and a0",
+      "op": "between",
+      "input": {
+        "before": null,
+        "after": "a0"
+      },
+      "expected": "Zz"
+    },
+    {
+      "name": "between a0 and a1",
+      "op": "between",
+      "input": {
+        "before": "a0",
+        "after": "a1"
+      },
+      "expected": "a0V"
+    },
+    {
+      "name": "between a0 and a0V",
+      "op": "between",
+      "input": {
+        "before": "a0",
+        "after": "a0V"
+      },
+      "expected": "a0G"
+    },
+    {
+      "name": "between a0V and a1",
+      "op": "between",
+      "input": {
+        "before": "a0V",
+        "after": "a1"
+      },
+      "expected": "a0l"
+    },
+    {
+      "name": "between az and null",
+      "op": "between",
+      "input": {
+        "before": "az",
+        "after": null
+      },
+      "expected": "b00"
+    },
+    {
+      "name": "between Zz and a0",
+      "op": "between",
+      "input": {
+        "before": "Zz",
+        "after": "a0"
+      },
+      "expected": "ZzV"
+    },
+    {
+      "name": "between null and Zz",
+      "op": "between",
+      "input": {
+        "before": null,
+        "after": "Zz"
+      },
+      "expected": "Zy"
+    },
+    {
+      "name": "between a1 and a2",
+      "op": "between",
+      "input": {
+        "before": "a1",
+        "after": "a2"
+      },
+      "expected": "a1V"
+    },
+    {
+      "name": "between a0G and a0V",
+      "op": "between",
+      "input": {
+        "before": "a0G",
+        "after": "a0V"
+      },
+      "expected": "a0O"
+    },
+    {
+      "name": "between b00 and null",
+      "op": "between",
+      "input": {
+        "before": "b00",
+        "after": null
+      },
+      "expected": "b01"
+    },
+    {
+      "name": "between zzzzzzzzzzzzzzzzzzzzzzzzzzz and null",
+      "op": "between",
+      "input": {
+        "before": "zzzzzzzzzzzzzzzzzzzzzzzzzzz",
+        "after": null
+      },
+      "expected": "zzzzzzzzzzzzzzzzzzzzzzzzzzzV"
+    },
+    {
+      "name": "5 keys between null and null",
+      "op": "nBetween",
+      "input": {
+        "before": null,
+        "after": null,
+        "n": 5
+      },
+      "expected": [
+        "a0",
+        "a1",
+        "a2",
+        "a3",
+        "a4"
+      ]
+    },
+    {
+      "name": "3 keys between a0 and null",
+      "op": "nBetween",
+      "input": {
+        "before": "a0",
+        "after": null,
+        "n": 3
+      },
+      "expected": [
+        "a1",
+        "a2",
+        "a3"
+      ]
+    },
+    {
+      "name": "3 keys between null and a0",
+      "op": "nBetween",
+      "input": {
+        "before": null,
+        "after": "a0",
+        "n": 3
+      },
+      "expected": [
+        "Zx",
+        "Zy",
+        "Zz"
+      ]
+    },
+    {
+      "name": "4 keys between a0 and a1",
+      "op": "nBetween",
+      "input": {
+        "before": "a0",
+        "after": "a1",
+        "n": 4
+      },
+      "expected": [
+        "a08",
+        "a0G",
+        "a0V",
+        "a0l"
+      ]
+    },
+    {
+      "name": "1 keys between a0 and a1",
+      "op": "nBetween",
+      "input": {
+        "before": "a0",
+        "after": "a1",
+        "n": 1
+      },
+      "expected": [
+        "a0V"
+      ]
+    },
+    {
+      "name": "0 keys between null and null",
+      "op": "nBetween",
+      "input": {
+        "before": null,
+        "after": null,
+        "n": 0
+      },
+      "expected": []
+    },
+    {
+      "name": "into an empty row",
+      "op": "place",
+      "input": {
+        "siblings": [],
+        "index": 0,
+        "count": 1
+      },
+      "expected": {
+        "orders": [
+          "a0"
+        ],
+        "renumber": {}
+      }
+    },
+    {
+      "name": "at the start",
+      "op": "place",
+      "input": {
+        "siblings": [
+          {
+            "id": "0000000000000000000000T001",
+            "order": "a0"
+          },
+          {
+            "id": "0000000000000000000000T002",
+            "order": "a1"
+          },
+          {
+            "id": "0000000000000000000000T003",
+            "order": "a2"
+          }
+        ],
+        "index": 0,
+        "count": 1
+      },
+      "expected": {
+        "orders": [
+          "Zz"
+        ],
+        "renumber": {}
+      }
+    },
+    {
+      "name": "in the middle",
+      "op": "place",
+      "input": {
+        "siblings": [
+          {
+            "id": "0000000000000000000000T001",
+            "order": "a0"
+          },
+          {
+            "id": "0000000000000000000000T002",
+            "order": "a1"
+          },
+          {
+            "id": "0000000000000000000000T003",
+            "order": "a2"
+          }
+        ],
+        "index": 1,
+        "count": 1
+      },
+      "expected": {
+        "orders": [
+          "a0V"
+        ],
+        "renumber": {}
+      }
+    },
+    {
+      "name": "at the end",
+      "op": "place",
+      "input": {
+        "siblings": [
+          {
+            "id": "0000000000000000000000T001",
+            "order": "a0"
+          },
+          {
+            "id": "0000000000000000000000T002",
+            "order": "a1"
+          },
+          {
+            "id": "0000000000000000000000T003",
+            "order": "a2"
+          }
+        ],
+        "index": 3,
+        "count": 1
+      },
+      "expected": {
+        "orders": [
+          "a3"
+        ],
+        "renumber": {}
+      }
+    },
+    {
+      "name": "a block of three in the middle",
+      "op": "place",
+      "input": {
+        "siblings": [
+          {
+            "id": "0000000000000000000000T001",
+            "order": "a0"
+          },
+          {
+            "id": "0000000000000000000000T002",
+            "order": "a1"
+          }
+        ],
+        "index": 1,
+        "count": 3
+      },
+      "expected": {
+        "orders": [
+          "a0G",
+          "a0V",
+          "a0l"
+        ],
+        "renumber": {}
+      }
+    },
+    {
+      "name": "between two equal keys: the row is renumbered",
+      "op": "place",
+      "input": {
+        "siblings": [
+          {
+            "id": "0000000000000000000000T001",
+            "order": "a0"
+          },
+          {
+            "id": "0000000000000000000000T002",
+            "order": "a1"
+          },
+          {
+            "id": "0000000000000000000000T003",
+            "order": "a1"
+          },
+          {
+            "id": "0000000000000000000000T004",
+            "order": "a2"
+          }
+        ],
+        "index": 2,
+        "count": 1
+      },
+      "expected": {
+        "orders": [
+          "a2"
+        ],
+        "renumber": {
+          "0000000000000000000000T003": "a3",
+          "0000000000000000000000T004": "a4"
+        }
+      }
+    },
+    {
+      "name": "all keys equal",
+      "op": "place",
+      "input": {
+        "siblings": [
+          {
+            "id": "0000000000000000000000T001",
+            "order": "a0"
+          },
+          {
+            "id": "0000000000000000000000T002",
+            "order": "a0"
+          },
+          {
+            "id": "0000000000000000000000T003",
+            "order": "a0"
+          }
+        ],
+        "index": 1,
+        "count": 2
+      },
+      "expected": {
+        "orders": [
+          "a1",
+          "a2"
+        ],
+        "renumber": {
+          "0000000000000000000000T002": "a3",
+          "0000000000000000000000T003": "a4"
+        }
+      }
+    },
+    {
+      "name": "neighbours out of order",
+      "op": "place",
+      "input": {
+        "siblings": [
+          {
+            "id": "0000000000000000000000T001",
+            "order": "a0"
+          },
+          {
+            "id": "0000000000000000000000T002",
+            "order": "a5"
+          },
+          {
+            "id": "0000000000000000000000T003",
+            "order": "a3"
+          }
+        ],
+        "index": 2,
+        "count": 1
+      },
+      "expected": {
+        "orders": [
+          "a2"
+        ],
+        "renumber": {
+          "0000000000000000000000T002": "a1"
+        }
+      }
+    },
+    {
+      "name": "renumbering keeps keys that are already right",
+      "op": "place",
+      "input": {
+        "siblings": [
+          {
+            "id": "0000000000000000000000T001",
+            "order": "a0"
+          },
+          {
+            "id": "0000000000000000000000T002",
+            "order": "a1"
+          },
+          {
+            "id": "0000000000000000000000T003",
+            "order": "a1"
+          }
+        ],
+        "index": 2,
+        "count": 1
+      },
+      "expected": {
+        "orders": [
+          "a2"
+        ],
+        "renumber": {
+          "0000000000000000000000T003": "a3"
+        }
+      }
+    },
+    {
+      "name": "by order, then by id",
+      "op": "sort",
+      "input": {
+        "items": [
+          {
+            "id": "0000000000000000000000T003",
+            "order": "a1"
+          },
+          {
+            "id": "0000000000000000000000T001",
+            "order": "a1"
+          },
+          {
+            "id": "0000000000000000000000T002",
+            "order": "Zz"
+          },
+          {
+            "id": "0000000000000000000000T005",
+            "order": "a0V"
+          },
+          {
+            "id": "0000000000000000000000T004",
+            "order": "a0"
+          },
+          {
+            "id": "0000000000000000000000T006",
+            "order": "B"
+          },
+          {
+            "id": "0000000000000000000000T007",
+            "order": "b"
+          }
+        ]
+      },
+      "expected": [
+        "0000000000000000000000T006",
+        "0000000000000000000000T002",
+        "0000000000000000000000T004",
+        "0000000000000000000000T005",
+        "0000000000000000000000T001",
+        "0000000000000000000000T003",
+        "0000000000000000000000T007"
+      ]
+    }
+  ]
+}

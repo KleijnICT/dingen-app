@@ -1,0 +1,103 @@
+{
+  "suite": "dayparts",
+  "version": 1,
+  "description": "Parts of the day.",
+  "cases": [
+    {
+      "name": "the daypart of 00:00",
+      "op": "daypartOf",
+      "input": {
+        "time": "00:00"
+      },
+      "expected": "morning"
+    },
+    {
+      "name": "the daypart of 08:59",
+      "op": "daypartOf",
+      "input": {
+        "time": "08:59"
+      },
+      "expected": "morning"
+    },
+    {
+      "name": "the daypart of 11:59",
+      "op": "daypartOf",
+      "input": {
+        "time": "11:59"
+      },
+      "expected": "morning"
+    },
+    {
+      "name": "the daypart of 12:00",
+      "op": "daypartOf",
+      "input": {
+        "time": "12:00"
+      },
+      "expected": "afternoon"
+    },
+    {
+      "name": "the daypart of 13:30",
+      "op": "daypartOf",
+      "input": {
+        "time": "13:30"
+      },
+      "expected": "afternoon"
+    },
+    {
+      "name": "the daypart of 17:59",
+      "op": "daypartOf",
+      "input": {
+        "time": "17:59"
+      },
+      "expected": "afternoon"
+    },
+    {
+      "name": "the daypart of 18:00",
+      "op": "daypartOf",
+      "input": {
+        "time": "18:00"
+      },
+      "expected": "evening"
+    },
+    {
+      "name": "the daypart of 23:59",
+      "op": "daypartOf",
+      "input": {
+        "time": "23:59"
+      },
+      "expected": "evening"
+    },
+    {
+      "name": "the start of morning",
+      "op": "startTime",
+      "input": {
+        "daypart": "morning"
+      },
+      "expected": "09:00"
+    },
+    {
+      "name": "the start of afternoon",
+      "op": "startTime",
+      "input": {
+        "daypart": "afternoon"
+      },
+      "expected": "13:00"
+    },
+    {
+      "name": "the start of evening",
+      "op": "startTime",
+      "input": {
+        "daypart": "evening"
+      },
+      "expected": "19:00"
+    },
+    {
+      "name": "the start of no daypart",
+      "op": "startTime",
+      "input": {
+        "daypart": null
+      },
+      "expected": "09:00"
+    }
+  ]
+}

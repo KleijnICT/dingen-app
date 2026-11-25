@@ -16,7 +16,7 @@ beta promises:
 
 Version 1.0.0 follows after the beta.
 
-Done ahead of its phase: the Home Assistant app (phase 4), with Dingen in the
+Done ahead of its phase: the Home Assistant app (phase 5), with Dingen in the
 Home Assistant sidebar.
 
 ## 1. Feature complete (done)
@@ -35,17 +35,33 @@ Home Assistant sidebar.
 - Two-factor authentication (TOTP)
 - A website with documentation
 
-## 3. Sharing
+## 3. Native apps
 
-After the beta: sharing areas and projects with other people.
+In development, in parallel: Android; iOS, iPadOS and macOS; Linux; a
+terminal app for macOS and Linux; Windows. Native per platform, open source,
+working with any Dingen server.
 
-## 4. Home Assistant
+- The first version of each app is for daily use: sign in to a server, work
+  offline, all lists, areas and projects, and tasks with dates, repeats,
+  checklists and tags. Reminders are scheduled on the device.
+- Every app is built against the same specification and test set, in
+  [spec/](spec/README.md), so they behave like the web app.
+- After the first version: review, calendar events, quick capture from other
+  apps, push notifications through a relay, and location reminders (a
+  notification when you arrive at or leave a place).
+
+## 4. Sharing
+
+Sharing areas and projects with other people, in the web app and the native
+apps at once.
+
+## 5. Home Assistant
 
 - A Home Assistant app (add-on) with Dingen in the sidebar (available)
 - An integration: lists as to-do entities, sensors and actions for
   automations
 
-## 5. Hosted
+## 6. Hosted
 
 - A hosted service in the EU, next to self-hosting, with a free trial
 - PostgreSQL as an alternative to SQLite
@@ -53,13 +69,6 @@ After the beta: sharing areas and projects with other people.
 - Moving between hosted and self-hosted in both directions via export
 - OAuth for the MCP server, so Dingen works as a connector in Claude
 - Capture by e-mail to the Inbox
-
-## 6. Native apps
-
-In this order: Android; iOS, iPadOS and macOS; Linux; a terminal app for
-macOS and Linux; Windows. Native per platform, open source, working with any
-Dingen server, with push notifications through a relay. Location reminders:
-a notification when you arrive at or leave a place.
 
 ## Later
 

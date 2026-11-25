@@ -1,0 +1,580 @@
+{
+  "suite": "reminders",
+  "version": 1,
+  "description": "When a reminder is due.",
+  "cases": [
+    {
+      "name": "the moment: on the day itself",
+      "op": "moment",
+      "input": {
+        "task": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "date",
+            "date": "2026-03-10"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": {
+            "daysBefore": 0,
+            "time": "09:00"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null,
+          "title": "Task 1"
+        }
+      },
+      "expected": {
+        "date": "2026-03-10",
+        "time": "09:00"
+      }
+    },
+    {
+      "name": "the moment: two days before",
+      "op": "moment",
+      "input": {
+        "task": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "date",
+            "date": "2026-03-01"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": {
+            "daysBefore": 2,
+            "time": "18:30"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null,
+          "title": "Task 1"
+        }
+      },
+      "expected": {
+        "date": "2026-02-27",
+        "time": "18:30"
+      }
+    },
+    {
+      "name": "the moment: a year before",
+      "op": "moment",
+      "input": {
+        "task": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "date",
+            "date": "2026-03-10"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": {
+            "daysBefore": 365,
+            "time": "00:00"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null,
+          "title": "Task 1"
+        }
+      },
+      "expected": {
+        "date": "2025-03-10",
+        "time": "00:00"
+      }
+    },
+    {
+      "name": "the moment: no reminder",
+      "op": "moment",
+      "input": {
+        "task": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "date",
+            "date": "2026-03-10"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": null,
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null,
+          "title": "Task 1"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "the moment: no date",
+      "op": "moment",
+      "input": {
+        "task": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "anytime"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": {
+            "daysBefore": 0,
+            "time": "09:00"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null,
+          "title": "Task 1"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "the moment: completed",
+      "op": "moment",
+      "input": {
+        "task": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "notes": "",
+          "status": "completed",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "date",
+            "date": "2026-03-10"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": {
+            "daysBefore": 0,
+            "time": "09:00"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": "2026-03-10T09:30:00.000Z",
+          "assigneeId": null,
+          "title": "Task 1"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "the moment: canceled",
+      "op": "moment",
+      "input": {
+        "task": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "notes": "",
+          "status": "canceled",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "date",
+            "date": "2026-03-10"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": {
+            "daysBefore": 0,
+            "time": "09:00"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": "2026-03-10T09:30:00.000Z",
+          "assigneeId": null,
+          "title": "Task 1"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "the moment: deleted",
+      "op": "moment",
+      "input": {
+        "task": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": true,
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "date",
+            "date": "2026-03-10"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": {
+            "daysBefore": 0,
+            "time": "09:00"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null,
+          "title": "Task 1"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "the moment: a template",
+      "op": "moment",
+      "input": {
+        "task": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "date",
+            "date": "2026-03-10"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": {
+            "daysBefore": 0,
+            "time": "09:00"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "repeat": {
+            "unit": "day",
+            "every": 1,
+            "basis": "schedule",
+            "weekdays": [],
+            "start": "2026-03-02",
+            "until": null,
+            "deadlineDays": null
+          },
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null,
+          "title": "Task 1"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "setting a reminder: a new reminder",
+      "op": "fields",
+      "input": {
+        "task": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "date",
+            "date": "2026-03-10"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": null,
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null,
+          "title": "Task 1"
+        },
+        "reminder": {
+          "daysBefore": 1,
+          "time": "08:00"
+        }
+      },
+      "expected": {
+        "reminder": {
+          "daysBefore": 1,
+          "time": "08:00"
+        }
+      }
+    },
+    {
+      "name": "setting a reminder: the same reminder",
+      "op": "fields",
+      "input": {
+        "task": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "date",
+            "date": "2026-03-10"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": {
+            "daysBefore": 1,
+            "time": "08:00"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null,
+          "title": "Task 1"
+        },
+        "reminder": {
+          "daysBefore": 1,
+          "time": "08:00"
+        }
+      },
+      "expected": {}
+    },
+    {
+      "name": "setting a reminder: another time",
+      "op": "fields",
+      "input": {
+        "task": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "date",
+            "date": "2026-03-10"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": {
+            "daysBefore": 1,
+            "time": "08:00"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null,
+          "title": "Task 1"
+        },
+        "reminder": {
+          "daysBefore": 1,
+          "time": "08:15"
+        }
+      },
+      "expected": {
+        "reminder": {
+          "daysBefore": 1,
+          "time": "08:15"
+        }
+      }
+    },
+    {
+      "name": "setting a reminder: removing it",
+      "op": "fields",
+      "input": {
+        "task": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "date",
+            "date": "2026-03-10"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": {
+            "daysBefore": 1,
+            "time": "08:00"
+          },
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null,
+          "title": "Task 1"
+        },
+        "reminder": null
+      },
+      "expected": {
+        "reminder": null
+      }
+    },
+    {
+      "name": "setting a reminder: removing none",
+      "op": "fields",
+      "input": {
+        "task": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "date",
+            "date": "2026-03-10"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": null,
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null,
+          "title": "Task 1"
+        },
+        "reminder": null
+      },
+      "expected": {}
+    },
+    {
+      "name": "setting a reminder: on a task without a date",
+      "op": "fields",
+      "input": {
+        "task": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "someday"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": null,
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null,
+          "title": "Task 1"
+        },
+        "reminder": {
+          "daysBefore": 0,
+          "time": "09:00"
+        }
+      },
+      "expected": {}
+    }
+  ]
+}

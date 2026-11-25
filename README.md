@@ -528,7 +528,7 @@ An example file is in [examples/import-example.csv](examples/import-example.csv)
 
 ## Known limitations
 
-- Web only (installable as a PWA); native apps are planned (see the
+- Web only (installable as a PWA); native apps are in development (see the
   [roadmap](ROADMAP.md)).
 - No sharing of areas and projects with other people yet; that comes after
   the beta.

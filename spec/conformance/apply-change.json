@@ -1,0 +1,1018 @@
+{
+  "suite": "apply-change",
+  "version": 1,
+  "description": "Applying changes to a record: last writer wins per field.",
+  "cases": [
+    {
+      "name": "a create makes the record",
+      "op": "apply",
+      "input": {
+        "existing": null,
+        "changes": [
+          {
+            "id": "0000000000000000000000X001",
+            "entityType": "task",
+            "entityId": "0000000000000000000000T001",
+            "fields": {
+              "createdAt": "2026-01-05T08:00:00.000Z",
+              "deleted": false,
+              "notes": "",
+              "status": "open",
+              "projectId": null,
+              "headingId": null,
+              "areaId": null,
+              "when": {
+                "kind": "inbox"
+              },
+              "daypart": null,
+              "duration": null,
+              "reminder": null,
+              "deadline": null,
+              "tagIds": [],
+              "repeat": null,
+              "templateId": null,
+              "order": "a1",
+              "todayOrder": null,
+              "completedAt": null,
+              "assigneeId": null,
+              "title": "Buy milk"
+            },
+            "ts": "000000000001000:00000:A",
+            "clientId": "A"
+          }
+        ]
+      },
+      "expected": {
+        "entityType": "task",
+        "id": "0000000000000000000000T001",
+        "data": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": null,
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null,
+          "title": "Buy milk"
+        },
+        "fieldTs": {
+          "createdAt": "000000000001000:00000:A",
+          "deleted": "000000000001000:00000:A",
+          "notes": "000000000001000:00000:A",
+          "status": "000000000001000:00000:A",
+          "projectId": "000000000001000:00000:A",
+          "headingId": "000000000001000:00000:A",
+          "areaId": "000000000001000:00000:A",
+          "when": "000000000001000:00000:A",
+          "daypart": "000000000001000:00000:A",
+          "duration": "000000000001000:00000:A",
+          "reminder": "000000000001000:00000:A",
+          "deadline": "000000000001000:00000:A",
+          "tagIds": "000000000001000:00000:A",
+          "repeat": "000000000001000:00000:A",
+          "templateId": "000000000001000:00000:A",
+          "order": "000000000001000:00000:A",
+          "todayOrder": "000000000001000:00000:A",
+          "completedAt": "000000000001000:00000:A",
+          "assigneeId": "000000000001000:00000:A",
+          "title": "000000000001000:00000:A"
+        }
+      }
+    },
+    {
+      "name": "a later change wins",
+      "op": "apply",
+      "input": {
+        "existing": null,
+        "changes": [
+          {
+            "id": "0000000000000000000000X001",
+            "entityType": "task",
+            "entityId": "0000000000000000000000T001",
+            "fields": {
+              "createdAt": "2026-01-05T08:00:00.000Z",
+              "deleted": false,
+              "notes": "",
+              "status": "open",
+              "projectId": null,
+              "headingId": null,
+              "areaId": null,
+              "when": {
+                "kind": "inbox"
+              },
+              "daypart": null,
+              "duration": null,
+              "reminder": null,
+              "deadline": null,
+              "tagIds": [],
+              "repeat": null,
+              "templateId": null,
+              "order": "a1",
+              "todayOrder": null,
+              "completedAt": null,
+              "assigneeId": null,
+              "title": "Buy milk"
+            },
+            "ts": "000000000001000:00000:A",
+            "clientId": "A"
+          },
+          {
+            "id": "0000000000000000000000X002",
+            "entityType": "task",
+            "entityId": "0000000000000000000000T001",
+            "fields": {
+              "title": "Buy oat milk"
+            },
+            "ts": "000000000002000:00000:B",
+            "clientId": "B"
+          }
+        ]
+      },
+      "expected": {
+        "entityType": "task",
+        "id": "0000000000000000000000T001",
+        "data": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": null,
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null,
+          "title": "Buy oat milk"
+        },
+        "fieldTs": {
+          "createdAt": "000000000001000:00000:A",
+          "deleted": "000000000001000:00000:A",
+          "notes": "000000000001000:00000:A",
+          "status": "000000000001000:00000:A",
+          "projectId": "000000000001000:00000:A",
+          "headingId": "000000000001000:00000:A",
+          "areaId": "000000000001000:00000:A",
+          "when": "000000000001000:00000:A",
+          "daypart": "000000000001000:00000:A",
+          "duration": "000000000001000:00000:A",
+          "reminder": "000000000001000:00000:A",
+          "deadline": "000000000001000:00000:A",
+          "tagIds": "000000000001000:00000:A",
+          "repeat": "000000000001000:00000:A",
+          "templateId": "000000000001000:00000:A",
+          "order": "000000000001000:00000:A",
+          "todayOrder": "000000000001000:00000:A",
+          "completedAt": "000000000001000:00000:A",
+          "assigneeId": "000000000001000:00000:A",
+          "title": "000000000002000:00000:B"
+        }
+      }
+    },
+    {
+      "name": "an older change that arrives late loses on that field only",
+      "op": "apply",
+      "input": {
+        "existing": null,
+        "changes": [
+          {
+            "id": "0000000000000000000000X001",
+            "entityType": "task",
+            "entityId": "0000000000000000000000T001",
+            "fields": {
+              "createdAt": "2026-01-05T08:00:00.000Z",
+              "deleted": false,
+              "notes": "",
+              "status": "open",
+              "projectId": null,
+              "headingId": null,
+              "areaId": null,
+              "when": {
+                "kind": "inbox"
+              },
+              "daypart": null,
+              "duration": null,
+              "reminder": null,
+              "deadline": null,
+              "tagIds": [],
+              "repeat": null,
+              "templateId": null,
+              "order": "a1",
+              "todayOrder": null,
+              "completedAt": null,
+              "assigneeId": null,
+              "title": "Buy milk"
+            },
+            "ts": "000000000001000:00000:A",
+            "clientId": "A"
+          },
+          {
+            "id": "0000000000000000000000X002",
+            "entityType": "task",
+            "entityId": "0000000000000000000000T001",
+            "fields": {
+              "title": "Newest title"
+            },
+            "ts": "000000000003000:00000:A",
+            "clientId": "A"
+          },
+          {
+            "id": "0000000000000000000000X003",
+            "entityType": "task",
+            "entityId": "0000000000000000000000T001",
+            "fields": {
+              "title": "Late title",
+              "notes": "Late notes"
+            },
+            "ts": "000000000002000:00000:B",
+            "clientId": "B"
+          }
+        ]
+      },
+      "expected": {
+        "entityType": "task",
+        "id": "0000000000000000000000T001",
+        "data": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "notes": "Late notes",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": null,
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null,
+          "title": "Newest title"
+        },
+        "fieldTs": {
+          "createdAt": "000000000001000:00000:A",
+          "deleted": "000000000001000:00000:A",
+          "notes": "000000000002000:00000:B",
+          "status": "000000000001000:00000:A",
+          "projectId": "000000000001000:00000:A",
+          "headingId": "000000000001000:00000:A",
+          "areaId": "000000000001000:00000:A",
+          "when": "000000000001000:00000:A",
+          "daypart": "000000000001000:00000:A",
+          "duration": "000000000001000:00000:A",
+          "reminder": "000000000001000:00000:A",
+          "deadline": "000000000001000:00000:A",
+          "tagIds": "000000000001000:00000:A",
+          "repeat": "000000000001000:00000:A",
+          "templateId": "000000000001000:00000:A",
+          "order": "000000000001000:00000:A",
+          "todayOrder": "000000000001000:00000:A",
+          "completedAt": "000000000001000:00000:A",
+          "assigneeId": "000000000001000:00000:A",
+          "title": "000000000003000:00000:A"
+        }
+      }
+    },
+    {
+      "name": "changes to different fields merge",
+      "op": "apply",
+      "input": {
+        "existing": null,
+        "changes": [
+          {
+            "id": "0000000000000000000000X001",
+            "entityType": "task",
+            "entityId": "0000000000000000000000T001",
+            "fields": {
+              "createdAt": "2026-01-05T08:00:00.000Z",
+              "deleted": false,
+              "notes": "",
+              "status": "open",
+              "projectId": null,
+              "headingId": null,
+              "areaId": null,
+              "when": {
+                "kind": "inbox"
+              },
+              "daypart": null,
+              "duration": null,
+              "reminder": null,
+              "deadline": null,
+              "tagIds": [],
+              "repeat": null,
+              "templateId": null,
+              "order": "a1",
+              "todayOrder": null,
+              "completedAt": null,
+              "assigneeId": null,
+              "title": "Buy milk"
+            },
+            "ts": "000000000001000:00000:A",
+            "clientId": "A"
+          },
+          {
+            "id": "0000000000000000000000X002",
+            "entityType": "task",
+            "entityId": "0000000000000000000000T001",
+            "fields": {
+              "notes": "From B"
+            },
+            "ts": "000000000002000:00000:B",
+            "clientId": "B"
+          },
+          {
+            "id": "0000000000000000000000X003",
+            "entityType": "task",
+            "entityId": "0000000000000000000000T001",
+            "fields": {
+              "title": "From A"
+            },
+            "ts": "000000000003000:00000:A",
+            "clientId": "A"
+          }
+        ]
+      },
+      "expected": {
+        "entityType": "task",
+        "id": "0000000000000000000000T001",
+        "data": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "notes": "From B",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": null,
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null,
+          "title": "From A"
+        },
+        "fieldTs": {
+          "createdAt": "000000000001000:00000:A",
+          "deleted": "000000000001000:00000:A",
+          "notes": "000000000002000:00000:B",
+          "status": "000000000001000:00000:A",
+          "projectId": "000000000001000:00000:A",
+          "headingId": "000000000001000:00000:A",
+          "areaId": "000000000001000:00000:A",
+          "when": "000000000001000:00000:A",
+          "daypart": "000000000001000:00000:A",
+          "duration": "000000000001000:00000:A",
+          "reminder": "000000000001000:00000:A",
+          "deadline": "000000000001000:00000:A",
+          "tagIds": "000000000001000:00000:A",
+          "repeat": "000000000001000:00000:A",
+          "templateId": "000000000001000:00000:A",
+          "order": "000000000001000:00000:A",
+          "todayOrder": "000000000001000:00000:A",
+          "completedAt": "000000000001000:00000:A",
+          "assigneeId": "000000000001000:00000:A",
+          "title": "000000000003000:00000:A"
+        }
+      }
+    },
+    {
+      "name": "the same stamp again changes nothing",
+      "op": "apply",
+      "input": {
+        "existing": null,
+        "changes": [
+          {
+            "id": "0000000000000000000000X001",
+            "entityType": "task",
+            "entityId": "0000000000000000000000T001",
+            "fields": {
+              "createdAt": "2026-01-05T08:00:00.000Z",
+              "deleted": false,
+              "notes": "",
+              "status": "open",
+              "projectId": null,
+              "headingId": null,
+              "areaId": null,
+              "when": {
+                "kind": "inbox"
+              },
+              "daypart": null,
+              "duration": null,
+              "reminder": null,
+              "deadline": null,
+              "tagIds": [],
+              "repeat": null,
+              "templateId": null,
+              "order": "a1",
+              "todayOrder": null,
+              "completedAt": null,
+              "assigneeId": null,
+              "title": "Buy milk"
+            },
+            "ts": "000000000001000:00000:A",
+            "clientId": "A"
+          },
+          {
+            "id": "0000000000000000000000X002",
+            "entityType": "task",
+            "entityId": "0000000000000000000000T001",
+            "fields": {
+              "title": "Same stamp"
+            },
+            "ts": "000000000001000:00000:A",
+            "clientId": "A"
+          }
+        ]
+      },
+      "expected": {
+        "entityType": "task",
+        "id": "0000000000000000000000T001",
+        "data": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": null,
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null,
+          "title": "Buy milk"
+        },
+        "fieldTs": {
+          "createdAt": "000000000001000:00000:A",
+          "deleted": "000000000001000:00000:A",
+          "notes": "000000000001000:00000:A",
+          "status": "000000000001000:00000:A",
+          "projectId": "000000000001000:00000:A",
+          "headingId": "000000000001000:00000:A",
+          "areaId": "000000000001000:00000:A",
+          "when": "000000000001000:00000:A",
+          "daypart": "000000000001000:00000:A",
+          "duration": "000000000001000:00000:A",
+          "reminder": "000000000001000:00000:A",
+          "deadline": "000000000001000:00000:A",
+          "tagIds": "000000000001000:00000:A",
+          "repeat": "000000000001000:00000:A",
+          "templateId": "000000000001000:00000:A",
+          "order": "000000000001000:00000:A",
+          "todayOrder": "000000000001000:00000:A",
+          "completedAt": "000000000001000:00000:A",
+          "assigneeId": "000000000001000:00000:A",
+          "title": "000000000001000:00000:A"
+        }
+      }
+    },
+    {
+      "name": "deleting is a field",
+      "op": "apply",
+      "input": {
+        "existing": null,
+        "changes": [
+          {
+            "id": "0000000000000000000000X001",
+            "entityType": "task",
+            "entityId": "0000000000000000000000T001",
+            "fields": {
+              "createdAt": "2026-01-05T08:00:00.000Z",
+              "deleted": false,
+              "notes": "",
+              "status": "open",
+              "projectId": null,
+              "headingId": null,
+              "areaId": null,
+              "when": {
+                "kind": "inbox"
+              },
+              "daypart": null,
+              "duration": null,
+              "reminder": null,
+              "deadline": null,
+              "tagIds": [],
+              "repeat": null,
+              "templateId": null,
+              "order": "a1",
+              "todayOrder": null,
+              "completedAt": null,
+              "assigneeId": null,
+              "title": "Buy milk"
+            },
+            "ts": "000000000001000:00000:A",
+            "clientId": "A"
+          },
+          {
+            "id": "0000000000000000000000X002",
+            "entityType": "task",
+            "entityId": "0000000000000000000000T001",
+            "fields": {
+              "deleted": true
+            },
+            "ts": "000000000002000:00000:B",
+            "clientId": "B"
+          }
+        ]
+      },
+      "expected": {
+        "entityType": "task",
+        "id": "0000000000000000000000T001",
+        "data": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": true,
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": null,
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null,
+          "title": "Buy milk"
+        },
+        "fieldTs": {
+          "createdAt": "000000000001000:00000:A",
+          "deleted": "000000000002000:00000:B",
+          "notes": "000000000001000:00000:A",
+          "status": "000000000001000:00000:A",
+          "projectId": "000000000001000:00000:A",
+          "headingId": "000000000001000:00000:A",
+          "areaId": "000000000001000:00000:A",
+          "when": "000000000001000:00000:A",
+          "daypart": "000000000001000:00000:A",
+          "duration": "000000000001000:00000:A",
+          "reminder": "000000000001000:00000:A",
+          "deadline": "000000000001000:00000:A",
+          "tagIds": "000000000001000:00000:A",
+          "repeat": "000000000001000:00000:A",
+          "templateId": "000000000001000:00000:A",
+          "order": "000000000001000:00000:A",
+          "todayOrder": "000000000001000:00000:A",
+          "completedAt": "000000000001000:00000:A",
+          "assigneeId": "000000000001000:00000:A",
+          "title": "000000000001000:00000:A"
+        }
+      }
+    },
+    {
+      "name": "a change after a deletion still applies",
+      "op": "apply",
+      "input": {
+        "existing": null,
+        "changes": [
+          {
+            "id": "0000000000000000000000X001",
+            "entityType": "task",
+            "entityId": "0000000000000000000000T001",
+            "fields": {
+              "createdAt": "2026-01-05T08:00:00.000Z",
+              "deleted": false,
+              "notes": "",
+              "status": "open",
+              "projectId": null,
+              "headingId": null,
+              "areaId": null,
+              "when": {
+                "kind": "inbox"
+              },
+              "daypart": null,
+              "duration": null,
+              "reminder": null,
+              "deadline": null,
+              "tagIds": [],
+              "repeat": null,
+              "templateId": null,
+              "order": "a1",
+              "todayOrder": null,
+              "completedAt": null,
+              "assigneeId": null,
+              "title": "Buy milk"
+            },
+            "ts": "000000000001000:00000:A",
+            "clientId": "A"
+          },
+          {
+            "id": "0000000000000000000000X002",
+            "entityType": "task",
+            "entityId": "0000000000000000000000T001",
+            "fields": {
+              "deleted": true
+            },
+            "ts": "000000000002000:00000:B",
+            "clientId": "B"
+          },
+          {
+            "id": "0000000000000000000000X003",
+            "entityType": "task",
+            "entityId": "0000000000000000000000T001",
+            "fields": {
+              "title": "Still renamed"
+            },
+            "ts": "000000000003000:00000:A",
+            "clientId": "A"
+          }
+        ]
+      },
+      "expected": {
+        "entityType": "task",
+        "id": "0000000000000000000000T001",
+        "data": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": true,
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": null,
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null,
+          "title": "Still renamed"
+        },
+        "fieldTs": {
+          "createdAt": "000000000001000:00000:A",
+          "deleted": "000000000002000:00000:B",
+          "notes": "000000000001000:00000:A",
+          "status": "000000000001000:00000:A",
+          "projectId": "000000000001000:00000:A",
+          "headingId": "000000000001000:00000:A",
+          "areaId": "000000000001000:00000:A",
+          "when": "000000000001000:00000:A",
+          "daypart": "000000000001000:00000:A",
+          "duration": "000000000001000:00000:A",
+          "reminder": "000000000001000:00000:A",
+          "deadline": "000000000001000:00000:A",
+          "tagIds": "000000000001000:00000:A",
+          "repeat": "000000000001000:00000:A",
+          "templateId": "000000000001000:00000:A",
+          "order": "000000000001000:00000:A",
+          "todayOrder": "000000000001000:00000:A",
+          "completedAt": "000000000001000:00000:A",
+          "assigneeId": "000000000001000:00000:A",
+          "title": "000000000003000:00000:A"
+        }
+      }
+    },
+    {
+      "name": "an id in the fields is ignored",
+      "op": "apply",
+      "input": {
+        "existing": null,
+        "changes": [
+          {
+            "id": "0000000000000000000000X001",
+            "entityType": "task",
+            "entityId": "0000000000000000000000T001",
+            "fields": {
+              "createdAt": "2026-01-05T08:00:00.000Z",
+              "deleted": false,
+              "notes": "",
+              "status": "open",
+              "projectId": null,
+              "headingId": null,
+              "areaId": null,
+              "when": {
+                "kind": "inbox"
+              },
+              "daypart": null,
+              "duration": null,
+              "reminder": null,
+              "deadline": null,
+              "tagIds": [],
+              "repeat": null,
+              "templateId": null,
+              "order": "a1",
+              "todayOrder": null,
+              "completedAt": null,
+              "assigneeId": null,
+              "title": "Buy milk",
+              "id": "0000000000000000000000T001"
+            },
+            "ts": "000000000001000:00000:A",
+            "clientId": "A"
+          }
+        ]
+      },
+      "expected": {
+        "entityType": "task",
+        "id": "0000000000000000000000T001",
+        "data": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": null,
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null,
+          "title": "Buy milk"
+        },
+        "fieldTs": {
+          "createdAt": "000000000001000:00000:A",
+          "deleted": "000000000001000:00000:A",
+          "notes": "000000000001000:00000:A",
+          "status": "000000000001000:00000:A",
+          "projectId": "000000000001000:00000:A",
+          "headingId": "000000000001000:00000:A",
+          "areaId": "000000000001000:00000:A",
+          "when": "000000000001000:00000:A",
+          "daypart": "000000000001000:00000:A",
+          "duration": "000000000001000:00000:A",
+          "reminder": "000000000001000:00000:A",
+          "deadline": "000000000001000:00000:A",
+          "tagIds": "000000000001000:00000:A",
+          "repeat": "000000000001000:00000:A",
+          "templateId": "000000000001000:00000:A",
+          "order": "000000000001000:00000:A",
+          "todayOrder": "000000000001000:00000:A",
+          "completedAt": "000000000001000:00000:A",
+          "assigneeId": "000000000001000:00000:A",
+          "title": "000000000001000:00000:A"
+        }
+      }
+    },
+    {
+      "name": "an unknown field is kept",
+      "op": "apply",
+      "input": {
+        "existing": null,
+        "changes": [
+          {
+            "id": "0000000000000000000000X001",
+            "entityType": "task",
+            "entityId": "0000000000000000000000T001",
+            "fields": {
+              "createdAt": "2026-01-05T08:00:00.000Z",
+              "deleted": false,
+              "notes": "",
+              "status": "open",
+              "projectId": null,
+              "headingId": null,
+              "areaId": null,
+              "when": {
+                "kind": "inbox"
+              },
+              "daypart": null,
+              "duration": null,
+              "reminder": null,
+              "deadline": null,
+              "tagIds": [],
+              "repeat": null,
+              "templateId": null,
+              "order": "a1",
+              "todayOrder": null,
+              "completedAt": null,
+              "assigneeId": null,
+              "title": "Buy milk"
+            },
+            "ts": "000000000001000:00000:A",
+            "clientId": "A"
+          },
+          {
+            "id": "0000000000000000000000X002",
+            "entityType": "task",
+            "entityId": "0000000000000000000000T001",
+            "fields": {
+              "fieldFromTheFuture": {
+                "any": "value"
+              }
+            },
+            "ts": "000000000002000:00000:B",
+            "clientId": "B"
+          }
+        ]
+      },
+      "expected": {
+        "entityType": "task",
+        "id": "0000000000000000000000T001",
+        "data": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "notes": "",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": null,
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null,
+          "title": "Buy milk",
+          "fieldFromTheFuture": {
+            "any": "value"
+          }
+        },
+        "fieldTs": {
+          "createdAt": "000000000001000:00000:A",
+          "deleted": "000000000001000:00000:A",
+          "notes": "000000000001000:00000:A",
+          "status": "000000000001000:00000:A",
+          "projectId": "000000000001000:00000:A",
+          "headingId": "000000000001000:00000:A",
+          "areaId": "000000000001000:00000:A",
+          "when": "000000000001000:00000:A",
+          "daypart": "000000000001000:00000:A",
+          "duration": "000000000001000:00000:A",
+          "reminder": "000000000001000:00000:A",
+          "deadline": "000000000001000:00000:A",
+          "tagIds": "000000000001000:00000:A",
+          "repeat": "000000000001000:00000:A",
+          "templateId": "000000000001000:00000:A",
+          "order": "000000000001000:00000:A",
+          "todayOrder": "000000000001000:00000:A",
+          "completedAt": "000000000001000:00000:A",
+          "assigneeId": "000000000001000:00000:A",
+          "title": "000000000001000:00000:A",
+          "fieldFromTheFuture": "000000000002000:00000:B"
+        }
+      }
+    },
+    {
+      "name": "onto an existing record",
+      "op": "apply",
+      "input": {
+        "existing": {
+          "entityType": "task",
+          "id": "0000000000000000000000T001",
+          "data": {
+            "id": "0000000000000000000000T001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a1",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Buy milk"
+          },
+          "fieldTs": {
+            "title": "000000000002000:00000:B"
+          }
+        },
+        "changes": [
+          {
+            "id": "0000000000000000000000X001",
+            "entityType": "task",
+            "entityId": "0000000000000000000000T001",
+            "fields": {
+              "title": "Older",
+              "notes": "No stamp yet, so this wins"
+            },
+            "ts": "000000000001000:00000:A",
+            "clientId": "A"
+          }
+        ]
+      },
+      "expected": {
+        "entityType": "task",
+        "id": "0000000000000000000000T001",
+        "data": {
+          "id": "0000000000000000000000T001",
+          "createdAt": "2026-01-05T08:00:00.000Z",
+          "deleted": false,
+          "notes": "No stamp yet, so this wins",
+          "status": "open",
+          "projectId": null,
+          "headingId": null,
+          "areaId": null,
+          "when": {
+            "kind": "inbox"
+          },
+          "daypart": null,
+          "duration": null,
+          "reminder": null,
+          "deadline": null,
+          "tagIds": [],
+          "repeat": null,
+          "templateId": null,
+          "order": "a1",
+          "todayOrder": null,
+          "completedAt": null,
+          "assigneeId": null,
+          "title": "Buy milk"
+        },
+        "fieldTs": {
+          "title": "000000000002000:00000:B",
+          "notes": "000000000001000:00000:A"
+        }
+      }
+    }
+  ]
+}

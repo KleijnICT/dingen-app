@@ -1,0 +1,264 @@
+{
+  "suite": "duration",
+  "version": 1,
+  "description": "Estimated duration in minutes.",
+  "cases": [
+    {
+      "name": "1 minutes, hour unit h",
+      "op": "format",
+      "input": {
+        "minutes": 1,
+        "hourUnit": "h"
+      },
+      "expected": "1m"
+    },
+    {
+      "name": "1 minutes, hour unit u",
+      "op": "format",
+      "input": {
+        "minutes": 1,
+        "hourUnit": "u"
+      },
+      "expected": "1m"
+    },
+    {
+      "name": "5 minutes, hour unit h",
+      "op": "format",
+      "input": {
+        "minutes": 5,
+        "hourUnit": "h"
+      },
+      "expected": "5m"
+    },
+    {
+      "name": "5 minutes, hour unit u",
+      "op": "format",
+      "input": {
+        "minutes": 5,
+        "hourUnit": "u"
+      },
+      "expected": "5m"
+    },
+    {
+      "name": "59 minutes, hour unit h",
+      "op": "format",
+      "input": {
+        "minutes": 59,
+        "hourUnit": "h"
+      },
+      "expected": "59m"
+    },
+    {
+      "name": "59 minutes, hour unit u",
+      "op": "format",
+      "input": {
+        "minutes": 59,
+        "hourUnit": "u"
+      },
+      "expected": "59m"
+    },
+    {
+      "name": "60 minutes, hour unit h",
+      "op": "format",
+      "input": {
+        "minutes": 60,
+        "hourUnit": "h"
+      },
+      "expected": "1h"
+    },
+    {
+      "name": "60 minutes, hour unit u",
+      "op": "format",
+      "input": {
+        "minutes": 60,
+        "hourUnit": "u"
+      },
+      "expected": "1u"
+    },
+    {
+      "name": "61 minutes, hour unit h",
+      "op": "format",
+      "input": {
+        "minutes": 61,
+        "hourUnit": "h"
+      },
+      "expected": "1h01"
+    },
+    {
+      "name": "61 minutes, hour unit u",
+      "op": "format",
+      "input": {
+        "minutes": 61,
+        "hourUnit": "u"
+      },
+      "expected": "1u01"
+    },
+    {
+      "name": "90 minutes, hour unit h",
+      "op": "format",
+      "input": {
+        "minutes": 90,
+        "hourUnit": "h"
+      },
+      "expected": "1h30"
+    },
+    {
+      "name": "90 minutes, hour unit u",
+      "op": "format",
+      "input": {
+        "minutes": 90,
+        "hourUnit": "u"
+      },
+      "expected": "1u30"
+    },
+    {
+      "name": "120 minutes, hour unit h",
+      "op": "format",
+      "input": {
+        "minutes": 120,
+        "hourUnit": "h"
+      },
+      "expected": "2h"
+    },
+    {
+      "name": "120 minutes, hour unit u",
+      "op": "format",
+      "input": {
+        "minutes": 120,
+        "hourUnit": "u"
+      },
+      "expected": "2u"
+    },
+    {
+      "name": "125 minutes, hour unit h",
+      "op": "format",
+      "input": {
+        "minutes": 125,
+        "hourUnit": "h"
+      },
+      "expected": "2h05"
+    },
+    {
+      "name": "125 minutes, hour unit u",
+      "op": "format",
+      "input": {
+        "minutes": 125,
+        "hourUnit": "u"
+      },
+      "expected": "2u05"
+    },
+    {
+      "name": "605 minutes, hour unit h",
+      "op": "format",
+      "input": {
+        "minutes": 605,
+        "hourUnit": "h"
+      },
+      "expected": "10h05"
+    },
+    {
+      "name": "605 minutes, hour unit u",
+      "op": "format",
+      "input": {
+        "minutes": 605,
+        "hourUnit": "u"
+      },
+      "expected": "10u05"
+    },
+    {
+      "name": "1440 minutes, hour unit h",
+      "op": "format",
+      "input": {
+        "minutes": 1440,
+        "hourUnit": "h"
+      },
+      "expected": "24h"
+    },
+    {
+      "name": "1440 minutes, hour unit u",
+      "op": "format",
+      "input": {
+        "minutes": 1440,
+        "hourUnit": "u"
+      },
+      "expected": "24u"
+    },
+    {
+      "name": "the total",
+      "op": "total",
+      "input": {
+        "durations": [
+          15,
+          null,
+          30,
+          60,
+          null,
+          5
+        ]
+      },
+      "expected": 110
+    },
+    {
+      "name": "the total of nothing",
+      "op": "total",
+      "input": {
+        "durations": []
+      },
+      "expected": 0
+    },
+    {
+      "name": "does 15 fit in 15",
+      "op": "fits",
+      "input": {
+        "duration": 15,
+        "max": 15
+      },
+      "expected": true
+    },
+    {
+      "name": "does 16 fit in 15",
+      "op": "fits",
+      "input": {
+        "duration": 16,
+        "max": 15
+      },
+      "expected": false
+    },
+    {
+      "name": "does null fit in 15",
+      "op": "fits",
+      "input": {
+        "duration": null,
+        "max": 15
+      },
+      "expected": false
+    },
+    {
+      "name": "does null fit in null",
+      "op": "fits",
+      "input": {
+        "duration": null,
+        "max": null
+      },
+      "expected": true
+    },
+    {
+      "name": "does 600 fit in null",
+      "op": "fits",
+      "input": {
+        "duration": 600,
+        "max": null
+      },
+      "expected": true
+    },
+    {
+      "name": "does 5 fit in 60",
+      "op": "fits",
+      "input": {
+        "duration": 5,
+        "max": 60
+      },
+      "expected": true
+    }
+  ]
+}
