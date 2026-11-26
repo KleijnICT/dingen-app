@@ -1,6 +1,6 @@
 {
   "suite": "actions",
-  "version": 1,
+  "version": 2,
   "description": "What the app writes when the user does something: completing, deleting, moving, repeating.",
   "cases": [
     {

@@ -1,6 +1,6 @@
 {
   "suite": "dates",
-  "version": 1,
+  "version": 2,
   "description": "Arithmetic with calendar dates (YYYY-MM-DD), without time zones.",
   "cases": [
     {

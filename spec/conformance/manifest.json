@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "syncProtocol": 4,
   "suites": [
     {
@@ -40,7 +40,7 @@
     {
       "suite": "duration",
       "file": "duration.json",
-      "cases": 28
+      "cases": 56
     },
     {
       "suite": "tags",
@@ -66,6 +66,26 @@
       "suite": "actions",
       "file": "actions.json",
       "cases": 64
+    },
+    {
+      "suite": "review",
+      "file": "review.json",
+      "cases": 46
+    },
+    {
+      "suite": "today",
+      "file": "today.json",
+      "cases": 25
+    },
+    {
+      "suite": "tag-tree",
+      "file": "tag-tree.json",
+      "cases": 16
+    },
+    {
+      "suite": "search",
+      "file": "search.json",
+      "cases": 9
     }
   ]
 }

@@ -1,6 +1,6 @@
 {
   "suite": "duration",
-  "version": 1,
+  "version": 2,
   "description": "Estimated duration in minutes.",
   "cases": [
     {
@@ -259,6 +259,230 @@
         "max": 60
       },
       "expected": true
+    },
+    {
+      "name": "parse \"45\"",
+      "op": "parse",
+      "input": {
+        "input": "45"
+      },
+      "expected": 45
+    },
+    {
+      "name": "parse \"45m\"",
+      "op": "parse",
+      "input": {
+        "input": "45m"
+      },
+      "expected": 45
+    },
+    {
+      "name": "parse \"45min\"",
+      "op": "parse",
+      "input": {
+        "input": "45min"
+      },
+      "expected": 45
+    },
+    {
+      "name": "parse \" 45 m \"",
+      "op": "parse",
+      "input": {
+        "input": " 45 m "
+      },
+      "expected": 45
+    },
+    {
+      "name": "parse \"1h\"",
+      "op": "parse",
+      "input": {
+        "input": "1h"
+      },
+      "expected": 60
+    },
+    {
+      "name": "parse \"1u\"",
+      "op": "parse",
+      "input": {
+        "input": "1u"
+      },
+      "expected": 60
+    },
+    {
+      "name": "parse \"1h30\"",
+      "op": "parse",
+      "input": {
+        "input": "1h30"
+      },
+      "expected": 90
+    },
+    {
+      "name": "parse \"1u30\"",
+      "op": "parse",
+      "input": {
+        "input": "1u30"
+      },
+      "expected": 90
+    },
+    {
+      "name": "parse \"1H30M\"",
+      "op": "parse",
+      "input": {
+        "input": "1H30M"
+      },
+      "expected": 90
+    },
+    {
+      "name": "parse \"2u5\"",
+      "op": "parse",
+      "input": {
+        "input": "2u5"
+      },
+      "expected": 125
+    },
+    {
+      "name": "parse \"1:30\"",
+      "op": "parse",
+      "input": {
+        "input": "1:30"
+      },
+      "expected": 90
+    },
+    {
+      "name": "parse \"0:05\"",
+      "op": "parse",
+      "input": {
+        "input": "0:05"
+      },
+      "expected": 5
+    },
+    {
+      "name": "parse \"1,5u\"",
+      "op": "parse",
+      "input": {
+        "input": "1,5u"
+      },
+      "expected": 90
+    },
+    {
+      "name": "parse \"1.5h\"",
+      "op": "parse",
+      "input": {
+        "input": "1.5h"
+      },
+      "expected": 90
+    },
+    {
+      "name": "parse \"1,25 u\"",
+      "op": "parse",
+      "input": {
+        "input": "1,25 u"
+      },
+      "expected": 75
+    },
+    {
+      "name": "parse \"0\"",
+      "op": "parse",
+      "input": {
+        "input": "0"
+      },
+      "expected": null
+    },
+    {
+      "name": "parse \"0.001h\"",
+      "op": "parse",
+      "input": {
+        "input": "0.001h"
+      },
+      "expected": null
+    },
+    {
+      "name": "parse \"1440\"",
+      "op": "parse",
+      "input": {
+        "input": "1440"
+      },
+      "expected": 1440
+    },
+    {
+      "name": "parse \"1441\"",
+      "op": "parse",
+      "input": {
+        "input": "1441"
+      },
+      "expected": null
+    },
+    {
+      "name": "parse \"24h\"",
+      "op": "parse",
+      "input": {
+        "input": "24h"
+      },
+      "expected": 1440
+    },
+    {
+      "name": "parse \"24h1\"",
+      "op": "parse",
+      "input": {
+        "input": "24h1"
+      },
+      "expected": null
+    },
+    {
+      "name": "parse \"\"",
+      "op": "parse",
+      "input": {
+        "input": ""
+      },
+      "expected": null
+    },
+    {
+      "name": "parse \"   \"",
+      "op": "parse",
+      "input": {
+        "input": "   "
+      },
+      "expected": null
+    },
+    {
+      "name": "parse \"abc\"",
+      "op": "parse",
+      "input": {
+        "input": "abc"
+      },
+      "expected": null
+    },
+    {
+      "name": "parse \"1h300\"",
+      "op": "parse",
+      "input": {
+        "input": "1h300"
+      },
+      "expected": null
+    },
+    {
+      "name": "parse \"-5\"",
+      "op": "parse",
+      "input": {
+        "input": "-5"
+      },
+      "expected": null
+    },
+    {
+      "name": "parse \"1:\"",
+      "op": "parse",
+      "input": {
+        "input": "1:"
+      },
+      "expected": null
+    },
+    {
+      "name": "parse \"1:300\"",
+      "op": "parse",
+      "input": {
+        "input": "1:300"
+      },
+      "expected": null
     }
   ]
 }

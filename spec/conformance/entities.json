@@ -1,6 +1,6 @@
 {
   "suite": "entities",
-  "version": 1,
+  "version": 2,
   "description": "Entities: defaults for fields that are absent, what is valid, and a new entity.",
   "cases": [
     {

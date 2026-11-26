@@ -7,7 +7,7 @@ import { mailLocale, testMail } from '../mail/messages.js'
 import { MailError, type MailService } from '../mail/service.js'
 import { appBase } from './auth.js'
 
-const TestMail = z.object({ language: z.string().max(35).optional() }).optional()
+export const TestMail = z.object({ language: z.string().max(35).optional() }).optional()
 
 export interface AdminSecurityOptions {
   mail: MailService

@@ -1,6 +1,6 @@
 {
   "suite": "repeat",
-  "version": 1,
+  "version": 2,
   "description": "Repeat rules: which dates fit, and the next occurrence.",
   "cases": [
     {

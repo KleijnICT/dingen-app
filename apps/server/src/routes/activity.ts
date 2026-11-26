@@ -9,7 +9,7 @@ const Instant = z
   .refine((s) => !Number.isNaN(Date.parse(s)), 'An ISO date or date-time')
   .optional()
 
-const ActivityQuery = z.object({
+export const ActivityQuery = z.object({
   kinds: z
     .string()
     .optional()

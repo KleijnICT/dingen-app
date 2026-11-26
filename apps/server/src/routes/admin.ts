@@ -12,13 +12,13 @@ import type { Db } from '../db.js'
 import type { AppEnv } from '../env.js'
 import { RestoreError } from '../restore.js'
 
-const UserPatch = z
+export const UserPatch = z
   .object({ isAdmin: z.boolean().optional(), blocked: z.boolean().optional() })
   .refine((v) => v.isAdmin !== undefined || v.blocked !== undefined, 'nothing to change')
 
-const DeleteBody = z.object({ confirm: z.string().min(1).max(254) })
+export const DeleteBody = z.object({ confirm: z.string().min(1).max(254) })
 
-const RegistrationBody = z.object({ mode: z.enum(['closed', 'open', 'invite']) })
+export const RegistrationBody = z.object({ mode: z.enum(['closed', 'open', 'invite']) })
 
 const STATUS: Record<AdminError['problem'], 400 | 404 | 409> = {
   not_found: 404,

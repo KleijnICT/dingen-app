@@ -1,6 +1,6 @@
 {
   "suite": "reminders",
-  "version": 1,
+  "version": 2,
   "description": "When a reminder is due.",
   "cases": [
     {

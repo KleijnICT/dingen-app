@@ -15,23 +15,23 @@ import type { AppEnv } from '../env.js'
 const Level = z.enum(AGENT_LEVELS)
 const Id = z.string().min(1).max(100)
 
-const Grant = z.discriminatedUnion('scope', [
+export const Grant = z.discriminatedUnion('scope', [
   z.object({ scope: z.literal('all'), level: Level }),
   z.object({ scope: z.literal('inbox'), level: Level }),
   z.object({ scope: z.literal('area'), id: Id, level: Level }),
   z.object({ scope: z.literal('project'), id: Id, level: Level }),
 ])
 
-const AgentBody = z.object({
+export const AgentBody = z.object({
   name: z.string().trim().min(1).max(100),
   icon: z.enum(AREA_ICONS),
   color: z.enum(AREA_COLORS),
   grants: z.array(Grant).max(200),
 })
 
-const AgentPatch = AgentBody.partial()
+export const AgentPatch = AgentBody.partial()
 
-const AccessQuery = z.object({ type: z.enum(['area', 'project']), id: Id })
+export const AccessQuery = z.object({ type: z.enum(['area', 'project']), id: Id })
 
 type Ctx = Context<AppEnv>
 

@@ -1,6 +1,6 @@
 {
   "suite": "tags",
-  "version": 1,
+  "version": 2,
   "description": "Tag titles are lowercase, trimmed, with single spaces.",
   "cases": [
     {

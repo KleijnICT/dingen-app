@@ -1,6 +1,6 @@
 {
   "suite": "apply-change",
-  "version": 1,
+  "version": 2,
   "description": "Applying changes to a record: last writer wins per field.",
   "cases": [
     {
