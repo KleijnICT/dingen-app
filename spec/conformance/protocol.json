@@ -1,6 +1,6 @@
 {
   "suite": "protocol",
-  "version": 1,
+  "version": 2,
   "description": "Small helpers of the sync protocol: cursors and the protocol header.",
   "cases": [
     {

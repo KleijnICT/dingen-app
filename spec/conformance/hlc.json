@@ -1,6 +1,6 @@
 {
   "suite": "hlc",
-  "version": 1,
+  "version": 2,
   "description": "Timestamps of the hybrid logical clock.",
   "cases": [
     {

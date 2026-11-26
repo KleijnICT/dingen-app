@@ -1,4 +1,4 @@
-import { addDays, type CalendarDate, parseTimestamp, type Task, toCalendarDate } from '@dingen/core'
+import { type CalendarDate, parseTimestamp, type Task, toCalendarDate } from '@dingen/core'
 import { useSyncExternalStore } from 'react'
 import { api, type User } from './api.js'
 import type { SyncEngine } from './store/engine.js'
@@ -57,23 +57,4 @@ export function whenSetOn(engine: SyncEngine, task: Task): CalendarDate | null {
   return ts ? toCalendarDate(new Date(parseTimestamp(ts).wall)) : null
 }
 
-/**
- * Today's tasks that arrived by themselves since the banner was last seen: their date came
- * after `seenOn` (or is today, if never seen) and was set on an earlier day. What you move to
- * Today yourself does not count.
- */
-export function newInToday(
-  tasks: Task[],
-  setOn: (task: Task) => CalendarDate | null,
-  today: CalendarDate,
-  seen: CalendarDate | null,
-): Task[] {
-  const after = seen ?? addDays(today, -1)
-  return tasks.filter((task) => {
-    if (task.status !== 'open' || task.when.kind !== 'date') return false
-    const date = task.when.date
-    if (date > today || date <= after) return false
-    const on = setOn(task)
-    return on !== null && on < date
-  })
-}
+export { newInToday } from '@dingen/core'

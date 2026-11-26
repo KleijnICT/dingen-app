@@ -1,6 +1,6 @@
 {
   "suite": "views",
-  "version": 1,
+  "version": 2,
   "description": "The lists: which tasks and projects are in Inbox, Today, Upcoming, Anytime, Someday and the Logbook, and in which order.",
   "cases": [
     {

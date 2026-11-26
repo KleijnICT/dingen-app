@@ -1,0 +1,2311 @@
+{
+  "suite": "search",
+  "version": 2,
+  "description": "Searching areas, open projects and open tasks.",
+  "cases": [
+    {
+      "name": "search \"tuin\"",
+      "op": "search",
+      "input": {
+        "query": "tuin",
+        "areas": [
+          {
+            "id": "0000000000000000000000A001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "order": "a1",
+            "icon": null,
+            "color": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Huis en tuin"
+          },
+          {
+            "id": "0000000000000000000000A002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "order": "a2",
+            "icon": null,
+            "color": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Werk"
+          }
+        ],
+        "projects": [
+          {
+            "id": "0000000000000000000000P001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a1",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Tuin opknappen"
+          },
+          {
+            "id": "0000000000000000000000P002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "completed",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a2",
+            "completedAt": "2026-03-10T09:30:00.000Z",
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Tuinhuis"
+          },
+          {
+            "id": "0000000000000000000000P003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a3",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Café openen"
+          }
+        ],
+        "tasks": [
+          {
+            "id": "0000000000000000000000T001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "In de tuin, achter het huis",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a1",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Gras maaien"
+          },
+          {
+            "id": "0000000000000000000000T002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a2",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Tuinslang kopen"
+          },
+          {
+            "id": "0000000000000000000000T003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "completed",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a3",
+            "todayOrder": null,
+            "completedAt": "2026-03-10T09:30:00.000Z",
+            "assigneeId": null,
+            "title": "Tuinset verven"
+          },
+          {
+            "id": "0000000000000000000000T004",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a4",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Crème brûlée maken"
+          },
+          {
+            "id": "0000000000000000000000T005",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a5",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Bel de CAFE"
+          },
+          {
+            "id": "0000000000000000000000T006",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": {
+              "unit": "day",
+              "every": 1,
+              "basis": "schedule",
+              "weekdays": [],
+              "start": "2026-03-02",
+              "until": null,
+              "deadlineDays": null
+            },
+            "templateId": null,
+            "order": "a6",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Tuin"
+          }
+        ],
+        "limit": 30
+      },
+      "expected": [
+        {
+          "kind": "area",
+          "id": "0000000000000000000000A001"
+        },
+        {
+          "kind": "project",
+          "id": "0000000000000000000000P001"
+        },
+        {
+          "kind": "task",
+          "id": "0000000000000000000000T002"
+        },
+        {
+          "kind": "task",
+          "id": "0000000000000000000000T006"
+        },
+        {
+          "kind": "task",
+          "id": "0000000000000000000000T001"
+        }
+      ]
+    },
+    {
+      "name": "search \"TUIN huis\"",
+      "op": "search",
+      "input": {
+        "query": "TUIN huis",
+        "areas": [
+          {
+            "id": "0000000000000000000000A001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "order": "a1",
+            "icon": null,
+            "color": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Huis en tuin"
+          },
+          {
+            "id": "0000000000000000000000A002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "order": "a2",
+            "icon": null,
+            "color": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Werk"
+          }
+        ],
+        "projects": [
+          {
+            "id": "0000000000000000000000P001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a1",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Tuin opknappen"
+          },
+          {
+            "id": "0000000000000000000000P002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "completed",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a2",
+            "completedAt": "2026-03-10T09:30:00.000Z",
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Tuinhuis"
+          },
+          {
+            "id": "0000000000000000000000P003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a3",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Café openen"
+          }
+        ],
+        "tasks": [
+          {
+            "id": "0000000000000000000000T001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "In de tuin, achter het huis",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a1",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Gras maaien"
+          },
+          {
+            "id": "0000000000000000000000T002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a2",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Tuinslang kopen"
+          },
+          {
+            "id": "0000000000000000000000T003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "completed",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a3",
+            "todayOrder": null,
+            "completedAt": "2026-03-10T09:30:00.000Z",
+            "assigneeId": null,
+            "title": "Tuinset verven"
+          },
+          {
+            "id": "0000000000000000000000T004",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a4",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Crème brûlée maken"
+          },
+          {
+            "id": "0000000000000000000000T005",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a5",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Bel de CAFE"
+          },
+          {
+            "id": "0000000000000000000000T006",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": {
+              "unit": "day",
+              "every": 1,
+              "basis": "schedule",
+              "weekdays": [],
+              "start": "2026-03-02",
+              "until": null,
+              "deadlineDays": null
+            },
+            "templateId": null,
+            "order": "a6",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Tuin"
+          }
+        ],
+        "limit": 30
+      },
+      "expected": [
+        {
+          "kind": "area",
+          "id": "0000000000000000000000A001"
+        },
+        {
+          "kind": "task",
+          "id": "0000000000000000000000T001"
+        }
+      ]
+    },
+    {
+      "name": "search \"cafe\"",
+      "op": "search",
+      "input": {
+        "query": "cafe",
+        "areas": [
+          {
+            "id": "0000000000000000000000A001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "order": "a1",
+            "icon": null,
+            "color": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Huis en tuin"
+          },
+          {
+            "id": "0000000000000000000000A002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "order": "a2",
+            "icon": null,
+            "color": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Werk"
+          }
+        ],
+        "projects": [
+          {
+            "id": "0000000000000000000000P001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a1",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Tuin opknappen"
+          },
+          {
+            "id": "0000000000000000000000P002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "completed",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a2",
+            "completedAt": "2026-03-10T09:30:00.000Z",
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Tuinhuis"
+          },
+          {
+            "id": "0000000000000000000000P003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a3",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Café openen"
+          }
+        ],
+        "tasks": [
+          {
+            "id": "0000000000000000000000T001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "In de tuin, achter het huis",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a1",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Gras maaien"
+          },
+          {
+            "id": "0000000000000000000000T002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a2",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Tuinslang kopen"
+          },
+          {
+            "id": "0000000000000000000000T003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "completed",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a3",
+            "todayOrder": null,
+            "completedAt": "2026-03-10T09:30:00.000Z",
+            "assigneeId": null,
+            "title": "Tuinset verven"
+          },
+          {
+            "id": "0000000000000000000000T004",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a4",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Crème brûlée maken"
+          },
+          {
+            "id": "0000000000000000000000T005",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a5",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Bel de CAFE"
+          },
+          {
+            "id": "0000000000000000000000T006",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": {
+              "unit": "day",
+              "every": 1,
+              "basis": "schedule",
+              "weekdays": [],
+              "start": "2026-03-02",
+              "until": null,
+              "deadlineDays": null
+            },
+            "templateId": null,
+            "order": "a6",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Tuin"
+          }
+        ],
+        "limit": 30
+      },
+      "expected": [
+        {
+          "kind": "project",
+          "id": "0000000000000000000000P003"
+        },
+        {
+          "kind": "task",
+          "id": "0000000000000000000000T005"
+        }
+      ]
+    },
+    {
+      "name": "search \"creme brulee\"",
+      "op": "search",
+      "input": {
+        "query": "creme brulee",
+        "areas": [
+          {
+            "id": "0000000000000000000000A001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "order": "a1",
+            "icon": null,
+            "color": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Huis en tuin"
+          },
+          {
+            "id": "0000000000000000000000A002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "order": "a2",
+            "icon": null,
+            "color": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Werk"
+          }
+        ],
+        "projects": [
+          {
+            "id": "0000000000000000000000P001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a1",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Tuin opknappen"
+          },
+          {
+            "id": "0000000000000000000000P002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "completed",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a2",
+            "completedAt": "2026-03-10T09:30:00.000Z",
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Tuinhuis"
+          },
+          {
+            "id": "0000000000000000000000P003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a3",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Café openen"
+          }
+        ],
+        "tasks": [
+          {
+            "id": "0000000000000000000000T001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "In de tuin, achter het huis",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a1",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Gras maaien"
+          },
+          {
+            "id": "0000000000000000000000T002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a2",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Tuinslang kopen"
+          },
+          {
+            "id": "0000000000000000000000T003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "completed",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a3",
+            "todayOrder": null,
+            "completedAt": "2026-03-10T09:30:00.000Z",
+            "assigneeId": null,
+            "title": "Tuinset verven"
+          },
+          {
+            "id": "0000000000000000000000T004",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a4",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Crème brûlée maken"
+          },
+          {
+            "id": "0000000000000000000000T005",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a5",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Bel de CAFE"
+          },
+          {
+            "id": "0000000000000000000000T006",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": {
+              "unit": "day",
+              "every": 1,
+              "basis": "schedule",
+              "weekdays": [],
+              "start": "2026-03-02",
+              "until": null,
+              "deadlineDays": null
+            },
+            "templateId": null,
+            "order": "a6",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Tuin"
+          }
+        ],
+        "limit": 30
+      },
+      "expected": [
+        {
+          "kind": "task",
+          "id": "0000000000000000000000T004"
+        }
+      ]
+    },
+    {
+      "name": "search \"werk\"",
+      "op": "search",
+      "input": {
+        "query": "werk",
+        "areas": [
+          {
+            "id": "0000000000000000000000A001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "order": "a1",
+            "icon": null,
+            "color": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Huis en tuin"
+          },
+          {
+            "id": "0000000000000000000000A002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "order": "a2",
+            "icon": null,
+            "color": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Werk"
+          }
+        ],
+        "projects": [
+          {
+            "id": "0000000000000000000000P001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a1",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Tuin opknappen"
+          },
+          {
+            "id": "0000000000000000000000P002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "completed",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a2",
+            "completedAt": "2026-03-10T09:30:00.000Z",
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Tuinhuis"
+          },
+          {
+            "id": "0000000000000000000000P003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a3",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Café openen"
+          }
+        ],
+        "tasks": [
+          {
+            "id": "0000000000000000000000T001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "In de tuin, achter het huis",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a1",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Gras maaien"
+          },
+          {
+            "id": "0000000000000000000000T002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a2",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Tuinslang kopen"
+          },
+          {
+            "id": "0000000000000000000000T003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "completed",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a3",
+            "todayOrder": null,
+            "completedAt": "2026-03-10T09:30:00.000Z",
+            "assigneeId": null,
+            "title": "Tuinset verven"
+          },
+          {
+            "id": "0000000000000000000000T004",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a4",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Crème brûlée maken"
+          },
+          {
+            "id": "0000000000000000000000T005",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a5",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Bel de CAFE"
+          },
+          {
+            "id": "0000000000000000000000T006",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": {
+              "unit": "day",
+              "every": 1,
+              "basis": "schedule",
+              "weekdays": [],
+              "start": "2026-03-02",
+              "until": null,
+              "deadlineDays": null
+            },
+            "templateId": null,
+            "order": "a6",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Tuin"
+          }
+        ],
+        "limit": 30
+      },
+      "expected": [
+        {
+          "kind": "area",
+          "id": "0000000000000000000000A002"
+        }
+      ]
+    },
+    {
+      "name": "search \"  \"",
+      "op": "search",
+      "input": {
+        "query": "  ",
+        "areas": [
+          {
+            "id": "0000000000000000000000A001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "order": "a1",
+            "icon": null,
+            "color": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Huis en tuin"
+          },
+          {
+            "id": "0000000000000000000000A002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "order": "a2",
+            "icon": null,
+            "color": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Werk"
+          }
+        ],
+        "projects": [
+          {
+            "id": "0000000000000000000000P001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a1",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Tuin opknappen"
+          },
+          {
+            "id": "0000000000000000000000P002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "completed",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a2",
+            "completedAt": "2026-03-10T09:30:00.000Z",
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Tuinhuis"
+          },
+          {
+            "id": "0000000000000000000000P003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a3",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Café openen"
+          }
+        ],
+        "tasks": [
+          {
+            "id": "0000000000000000000000T001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "In de tuin, achter het huis",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a1",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Gras maaien"
+          },
+          {
+            "id": "0000000000000000000000T002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a2",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Tuinslang kopen"
+          },
+          {
+            "id": "0000000000000000000000T003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "completed",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a3",
+            "todayOrder": null,
+            "completedAt": "2026-03-10T09:30:00.000Z",
+            "assigneeId": null,
+            "title": "Tuinset verven"
+          },
+          {
+            "id": "0000000000000000000000T004",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a4",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Crème brûlée maken"
+          },
+          {
+            "id": "0000000000000000000000T005",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a5",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Bel de CAFE"
+          },
+          {
+            "id": "0000000000000000000000T006",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": {
+              "unit": "day",
+              "every": 1,
+              "basis": "schedule",
+              "weekdays": [],
+              "start": "2026-03-02",
+              "until": null,
+              "deadlineDays": null
+            },
+            "templateId": null,
+            "order": "a6",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Tuin"
+          }
+        ],
+        "limit": 30
+      },
+      "expected": []
+    },
+    {
+      "name": "search \"xyz\"",
+      "op": "search",
+      "input": {
+        "query": "xyz",
+        "areas": [
+          {
+            "id": "0000000000000000000000A001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "order": "a1",
+            "icon": null,
+            "color": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Huis en tuin"
+          },
+          {
+            "id": "0000000000000000000000A002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "order": "a2",
+            "icon": null,
+            "color": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Werk"
+          }
+        ],
+        "projects": [
+          {
+            "id": "0000000000000000000000P001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a1",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Tuin opknappen"
+          },
+          {
+            "id": "0000000000000000000000P002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "completed",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a2",
+            "completedAt": "2026-03-10T09:30:00.000Z",
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Tuinhuis"
+          },
+          {
+            "id": "0000000000000000000000P003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a3",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Café openen"
+          }
+        ],
+        "tasks": [
+          {
+            "id": "0000000000000000000000T001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "In de tuin, achter het huis",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a1",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Gras maaien"
+          },
+          {
+            "id": "0000000000000000000000T002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a2",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Tuinslang kopen"
+          },
+          {
+            "id": "0000000000000000000000T003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "completed",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a3",
+            "todayOrder": null,
+            "completedAt": "2026-03-10T09:30:00.000Z",
+            "assigneeId": null,
+            "title": "Tuinset verven"
+          },
+          {
+            "id": "0000000000000000000000T004",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a4",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Crème brûlée maken"
+          },
+          {
+            "id": "0000000000000000000000T005",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a5",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Bel de CAFE"
+          },
+          {
+            "id": "0000000000000000000000T006",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": {
+              "unit": "day",
+              "every": 1,
+              "basis": "schedule",
+              "weekdays": [],
+              "start": "2026-03-02",
+              "until": null,
+              "deadlineDays": null
+            },
+            "templateId": null,
+            "order": "a6",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Tuin"
+          }
+        ],
+        "limit": 30
+      },
+      "expected": []
+    },
+    {
+      "name": "search \"tuin achter\"",
+      "op": "search",
+      "input": {
+        "query": "tuin achter",
+        "areas": [
+          {
+            "id": "0000000000000000000000A001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "order": "a1",
+            "icon": null,
+            "color": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Huis en tuin"
+          },
+          {
+            "id": "0000000000000000000000A002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "order": "a2",
+            "icon": null,
+            "color": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Werk"
+          }
+        ],
+        "projects": [
+          {
+            "id": "0000000000000000000000P001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a1",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Tuin opknappen"
+          },
+          {
+            "id": "0000000000000000000000P002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "completed",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a2",
+            "completedAt": "2026-03-10T09:30:00.000Z",
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Tuinhuis"
+          },
+          {
+            "id": "0000000000000000000000P003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a3",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Café openen"
+          }
+        ],
+        "tasks": [
+          {
+            "id": "0000000000000000000000T001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "In de tuin, achter het huis",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a1",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Gras maaien"
+          },
+          {
+            "id": "0000000000000000000000T002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a2",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Tuinslang kopen"
+          },
+          {
+            "id": "0000000000000000000000T003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "completed",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a3",
+            "todayOrder": null,
+            "completedAt": "2026-03-10T09:30:00.000Z",
+            "assigneeId": null,
+            "title": "Tuinset verven"
+          },
+          {
+            "id": "0000000000000000000000T004",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a4",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Crème brûlée maken"
+          },
+          {
+            "id": "0000000000000000000000T005",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a5",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Bel de CAFE"
+          },
+          {
+            "id": "0000000000000000000000T006",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": {
+              "unit": "day",
+              "every": 1,
+              "basis": "schedule",
+              "weekdays": [],
+              "start": "2026-03-02",
+              "until": null,
+              "deadlineDays": null
+            },
+            "templateId": null,
+            "order": "a6",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Tuin"
+          }
+        ],
+        "limit": 30
+      },
+      "expected": [
+        {
+          "kind": "task",
+          "id": "0000000000000000000000T001"
+        }
+      ]
+    },
+    {
+      "name": "search with a limit",
+      "op": "search",
+      "input": {
+        "query": "tuin",
+        "areas": [
+          {
+            "id": "0000000000000000000000A001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "order": "a1",
+            "icon": null,
+            "color": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Huis en tuin"
+          },
+          {
+            "id": "0000000000000000000000A002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "order": "a2",
+            "icon": null,
+            "color": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Werk"
+          }
+        ],
+        "projects": [
+          {
+            "id": "0000000000000000000000P001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a1",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Tuin opknappen"
+          },
+          {
+            "id": "0000000000000000000000P002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "completed",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a2",
+            "completedAt": "2026-03-10T09:30:00.000Z",
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Tuinhuis"
+          },
+          {
+            "id": "0000000000000000000000P003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "areaId": null,
+            "status": "open",
+            "when": {
+              "kind": "anytime"
+            },
+            "deadline": null,
+            "tagIds": [],
+            "order": "a3",
+            "completedAt": null,
+            "reviewedAt": null,
+            "reviewEvery": null,
+            "title": "Café openen"
+          }
+        ],
+        "tasks": [
+          {
+            "id": "0000000000000000000000T001",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "In de tuin, achter het huis",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a1",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Gras maaien"
+          },
+          {
+            "id": "0000000000000000000000T002",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a2",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Tuinslang kopen"
+          },
+          {
+            "id": "0000000000000000000000T003",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "completed",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a3",
+            "todayOrder": null,
+            "completedAt": "2026-03-10T09:30:00.000Z",
+            "assigneeId": null,
+            "title": "Tuinset verven"
+          },
+          {
+            "id": "0000000000000000000000T004",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a4",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Crème brûlée maken"
+          },
+          {
+            "id": "0000000000000000000000T005",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": null,
+            "templateId": null,
+            "order": "a5",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Bel de CAFE"
+          },
+          {
+            "id": "0000000000000000000000T006",
+            "createdAt": "2026-01-05T08:00:00.000Z",
+            "deleted": false,
+            "notes": "",
+            "status": "open",
+            "projectId": null,
+            "headingId": null,
+            "areaId": null,
+            "when": {
+              "kind": "inbox"
+            },
+            "daypart": null,
+            "duration": null,
+            "reminder": null,
+            "deadline": null,
+            "tagIds": [],
+            "repeat": {
+              "unit": "day",
+              "every": 1,
+              "basis": "schedule",
+              "weekdays": [],
+              "start": "2026-03-02",
+              "until": null,
+              "deadlineDays": null
+            },
+            "templateId": null,
+            "order": "a6",
+            "todayOrder": null,
+            "completedAt": null,
+            "assigneeId": null,
+            "title": "Tuin"
+          }
+        ],
+        "limit": 2
+      },
+      "expected": [
+        {
+          "kind": "area",
+          "id": "0000000000000000000000A001"
+        },
+        {
+          "kind": "project",
+          "id": "0000000000000000000000P001"
+        }
+      ]
+    }
+  ]
+}

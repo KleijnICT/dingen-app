@@ -1,6 +1,6 @@
 {
   "suite": "dayparts",
-  "version": 1,
+  "version": 2,
   "description": "Parts of the day.",
   "cases": [
     {

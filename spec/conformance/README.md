@@ -109,10 +109,18 @@ Rules the `lists` cases pin down:
 | duration  | `format`    | `minutes`, `hourUnit` (`h` or `u`) | The short form: `15m`, `1h`, `1h30`.                                                             |
 | duration  | `total`     | `durations` (minutes or `null`)    | The sum; `null` counts as 0.                                                                     |
 | duration  | `fits`      | `duration`, `max`                  | Does a task with this duration pass the filter "at most `max` minutes"?                          |
+| duration  | `parse`     | `input` (what the user typed)      | Minutes, or `null` when it is not a duration from 1 to 1440 minutes. See below.                  |
 | tags      | `normalize` | `title`                            | Trimmed, inner whitespace collapsed to one space, lowercase.                                     |
 | tags      | `same`      | `a`, `b`                           | Do both titles name the same tag?                                                                |
 | reminders | `moment`    | `task`                             | `{ date, time }` of the reminder in local clock time, or `null` when there is nothing to remind. |
 | reminders | `fields`    | `task`, `reminder`                 | The fields to write to set this reminder; `{}` when nothing changes or the task has no date.     |
+
+Reading a typed duration (`parse`): trim, lowercase, remove all whitespace,
+and replace the first `,` with `.`. Then, in this order: digits with an
+optional `m` or `min` are minutes; `H:MM` (one or two minute digits) is hours
+and minutes; a number (decimals allowed) followed by `u` or `h` and
+optionally one or two digits with an optional `m` is hours plus minutes.
+Round the result to whole minutes; it must be 1 to 1440.
 
 ## protocol
 
@@ -162,3 +170,56 @@ free, except that an entity is created before anything refers to it.
 | `toggleProject`        | `projectId`        | Complete or reopen a project.                                                                                                                                                                                                                       |
 | `deleteProject`        | `projectId`        | Delete a project with its headings and tasks.                                                                                                                                                                                                       |
 | `deleteArea`           | `areaId`           | Delete an area with its projects and tasks.                                                                                                                                                                                                         |
+
+## review
+
+| op             | input                                  | expected                                                                                                                                                                                                                  |
+| -------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `nextReviewOn` | `item` (an area or a project), `today` | The date from which it is due: the date of `reviewedAt` plus `reviewEvery` (default every week; months as `addMonths`), or `today` when never reviewed.                                                                   |
+| `isDue`        | `item`, `today`                        | Reviewable and `nextReviewOn` ≤ `today`. Reviewable: an area that is not deleted, or a project that is open (Someday included) and not deleted.                                                                           |
+| `queue`        | `today`, `areas`, `projects`           | The due items `{ kind, id, nextReviewOn }` in sidebar order: projects without an area, then each area followed by its projects, each by `order` then id. An item due on an earlier day is due all the same.               |
+| `selectAfter`  | `queue` (ids), `id`                    | The id to select after `id` is marked reviewed: the next one, else the one before, else `null`. When `id` is not in the queue: the first, or `null`.                                                                      |
+| `age`          | `reviewedAt` (or `null`), `today`      | How long ago, in the largest whole unit: under 7 days `day`, under 30 `week` (days / 7), under 365 `month` (days / 30), else `year` (days / 365), rounded down; `null` when never. A date after `today` counts as 0 days. |
+| `openCount`    | `entry` (`{ kind, id }`), `tasks`      | Open tasks that are not deleted and not templates: of a project, those with that `projectId`; of an area, those with that `areaId` and no project.                                                                        |
+
+The date of `reviewedAt` is its calendar date on the device's clock. The
+cases use instants at 12:00 UTC, which fall on the same date in every
+time zone from UTC−11 to UTC+11.
+
+## today
+
+| op                | input                             | expected                                                                                                                                                                                                                                                                                                          |
+| ----------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `nextWeek`        | `today`                           | "Next week" in the When picker: the next Monday; on a Monday the Monday a week later.                                                                                                                                                                                                                             |
+| `tasksByDaypart`  | `tasks` (`{ id, daypart }`)       | `{ none, morning, afternoon, evening }` with the ids, in the order given. Today shows `none` first.                                                                                                                                                                                                               |
+| `eventSpan`       | `event`, `date`                   | `allDay`, `single` (starts and ends that day), or for a timed event over several days `first`, `middle` or `last`.                                                                                                                                                                                                |
+| `eventsOnDay`     | `events`, `date`                  | The ids of the events on that day: all-day events and middle days first, then by time (the start time; `00:00` on the last day), then by title, then by id. These compare with JavaScript's `localeCompare` (the platform's default collation); the cases only use titles where that agrees with code-unit order. |
+| `eventsByDaypart` | `events`, `date`                  | The events of `eventsOnDay` per group: under the daypart of their start time when they start that day (`single`, `first`), else in `none`.                                                                                                                                                                        |
+| `newInToday`      | `tasks`, `setOn`, `today`, `seen` | The ids of the tasks that are new in Today (below).                                                                                                                                                                                                                                                               |
+
+"New in Today" (the banner with a dot per task): an open task with a date
+`d` where `seen` < `d` ≤ `today` (`seen` is `todaySeenOn`, api.md §3.4; when
+it is `null`, `d` must be `today`), and whose `when` was set on a day before
+`d`. `setOn` gives that day per task id: the calendar date, on the device's
+clock, of the wall time of the task's `fieldTs.when` (protocol.md §3);
+`null` when unknown, and then the task is not new.
+
+## tag-tree
+
+Tags are in spaces; `spaces` maps a tag id to its space id, or `null` when
+it is not known yet (a tag that has not synced). A tag with an unknown
+space counts as being in every space.
+
+| op               | input                                                        | expected                                                                                                                                                                                                                                                           |
+| ---------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `tree`           | `tags`                                                       | `{ id, depth }` of the live tags in tree order: each tag followed by its children, siblings by `order` then id. A tag whose parent is deleted or missing is at the top. Tags in a loop of parents come after the rest, each at the top with its children below it. |
+| `validParents`   | `tags`, `tagId`, `spaces`                                    | The tree (as `tree`) without the tag itself, its descendants and tags in another space.                                                                                                                                                                            |
+| `nameIssue`      | `tags`, `tagId` (or `null` for a new tag), `typed`, `spaces` | `"empty"` when the normalized name is empty; `"taken"` when another live tag has the same name (for a renamed tag: in the same space; for a new tag: anywhere); else `null`.                                                                                       |
+| `openTaskCounts` | `tasks`                                                      | Per tag id, the number of open tasks (not deleted, not templates) that have it; a tag listed twice on a task counts once. Tags without any are left out.                                                                                                           |
+| `deleteTag`      | `tasks`, `projects`, `tags`, `tagId`                         | The writes (as in `actions`): the tag comes off every task and project that has it, its live children get `parentId: null`, then the tag gets `deleted: true`.                                                                                                     |
+
+## search
+
+| op       | input                                          | expected                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| -------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `search` | `query`, `areas`, `projects`, `tasks`, `limit` | `{ kind, id }` of the hits, at most `limit`. Words are split on whitespace; text and words are compared after Unicode NFD, removing diacritics, and lowercasing. A hit holds every word. Areas and open projects match on the title; open tasks on the title, else on title and notes together. Order: areas, then projects, then tasks matching on the title, then tasks matching on the notes; within each in the input order. A query without words gives nothing. |

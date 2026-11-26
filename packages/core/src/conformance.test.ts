@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import * as actions from './actions.js'
+import { type CalendarEvent, eventSpan, eventsOnDay } from './calendar.js'
 import { addDays, addMonths, addYears, dayOfMonth, daysBetween, weekdayOf } from './dates.js'
 import { daypartOf, daypartStartTime } from './dayparts.js'
-import { fitsDuration, formatDuration, totalDuration } from './duration.js'
+import { fitsDuration, formatDuration, parseDuration, totalDuration } from './duration.js'
 import {
   type Area,
   type Change,
@@ -26,8 +27,20 @@ import { firstOrder, orderBetween, ordersBetween, placeBlockAt } from './order.j
 import { mergeCursor, parseCursorParam, requestProtocol, SYNC_PROTOCOL } from './protocol.js'
 import { reminderFields, reminderMoment } from './reminders.js'
 import { addInterval, checklistMirror, firstOccurrence, matches, nextOccurrence } from './repeat.js'
+import {
+  isDueForReview,
+  nextReviewOn,
+  type ReviewEntry,
+  reviewAge,
+  reviewOpenCount,
+  reviewQueue,
+  selectAfterReviewed,
+} from './review.js'
+import { searchWorkspace } from './search.js'
 import { applyChange, type EntityRecord } from './sync.js'
 import { normalizeTagTitle, sameTagTitle } from './tags.js'
+import { deleteTag, nameIssue, openTaskCounts, tagTree, validParents } from './tagTree.js'
+import { eventsByDaypart, newInToday, nextWeek, tasksByDaypart } from './today.js'
 import * as views from './views.js'
 
 /**
@@ -42,7 +55,7 @@ import * as views from './views.js'
  * change: raise `CONFORMANCE_VERSION`, run
  * `pnpm --filter @dingen/core test -u`, and commit the files with the change.
  */
-const CONFORMANCE_VERSION = 1
+const CONFORMANCE_VERSION = 2
 
 const DIR = '../../../spec/conformance'
 
@@ -832,6 +845,38 @@ suite('duration', 'Estimated duration in minutes.', (add) => {
       { duration, max },
       fitsDuration({ duration }, max),
     )
+  }
+  for (const input of [
+    '45',
+    '45m',
+    '45min',
+    ' 45 m ',
+    '1h',
+    '1u',
+    '1h30',
+    '1u30',
+    '1H30M',
+    '2u5',
+    '1:30',
+    '0:05',
+    '1,5u',
+    '1.5h',
+    '1,25 u',
+    '0',
+    '0.001h',
+    '1440',
+    '1441',
+    '24h',
+    '24h1',
+    '',
+    '   ',
+    'abc',
+    '1h300',
+    '-5',
+    '1:',
+    '1:300',
+  ]) {
+    add(`parse ${JSON.stringify(input)}`, 'parse', { input }, parseDuration(input))
   }
 })
 
@@ -1744,6 +1789,424 @@ suite(
 
 afterEach(() => {
   vi.useRealTimers()
+})
+
+// --- review ---
+
+suite(
+  'review',
+  'The review: which projects and areas are due, in which order, what comes next.',
+  (add) => {
+    const A1 = id('area', 1)
+    const A2 = id('area', 2)
+    const reviewed = (date: string) => `${date}T12:00:00.000Z`
+    const items: [string, Area | Project][] = [
+      ['an area never reviewed', area(1)],
+      ['an area reviewed today', area(2, { reviewedAt: reviewed(TODAY) })],
+      ['an area reviewed 7 days ago', area(3, { reviewedAt: reviewed('2026-03-03') })],
+      ['an area reviewed 6 days ago', area(4, { reviewedAt: reviewed('2026-03-04') })],
+      [
+        'a project every 3 days, reviewed 3 days ago',
+        project(1, { reviewEvery: { n: 3, unit: 'day' }, reviewedAt: reviewed('2026-03-07') }),
+      ],
+      [
+        'a project every 2 weeks, reviewed 10 days ago',
+        project(2, { reviewEvery: { n: 2, unit: 'week' }, reviewedAt: reviewed('2026-02-28') }),
+      ],
+      [
+        'a project every month, reviewed on 31 January',
+        project(3, { reviewEvery: { n: 1, unit: 'month' }, reviewedAt: reviewed('2026-01-31') }),
+      ],
+      [
+        'a project every year',
+        project(4, { reviewEvery: { n: 1, unit: 'year' }, reviewedAt: reviewed('2025-03-10') }),
+      ],
+      ['a project on Someday', project(5, { when: { kind: 'someday' } })],
+      [
+        'a completed project',
+        project(6, { status: 'completed', completedAt: '2026-03-01T10:00:00.000Z' }),
+      ],
+      [
+        'a canceled project',
+        project(7, { status: 'canceled', completedAt: '2026-03-01T10:00:00.000Z' }),
+      ],
+      ['a deleted project', project(8, { deleted: true })],
+      ['a deleted area', area(5, { deleted: true })],
+    ]
+    for (const [name, item] of items) {
+      add(
+        `next review of ${name}`,
+        'nextReviewOn',
+        { item, today: TODAY },
+        nextReviewOn(item, TODAY),
+      )
+      add(`is ${name} due`, 'isDue', { item, today: TODAY }, isDueForReview(item, TODAY))
+    }
+
+    const areas = [
+      area(1, { order: 'a2' }),
+      area(2, { order: 'a1', reviewedAt: reviewed(TODAY) }),
+      area(3, { order: 'a3', deleted: true }),
+    ]
+    const projects = [
+      project(1, { order: 'a2' }),
+      project(2, { order: 'a1', areaId: A1 }),
+      project(3, { order: 'a0', areaId: A2 }),
+      project(4, { order: 'a1', reviewedAt: reviewed(TODAY) }),
+      project(5, { order: 'a0', areaId: A1, status: 'completed', completedAt: CREATED }),
+      project(6, { order: 'a3', areaId: A1, when: { kind: 'someday' } }),
+    ]
+    const queue = reviewQueue({ areas, projects } as unknown as actions.Snapshot, TODAY)
+    const entries = (q: ReviewEntry[]) =>
+      q.map((e) => ({ kind: e.kind, id: e.item.id, nextReviewOn: e.nextReviewOn }))
+    add('the queue in sidebar order', 'queue', { today: TODAY, areas, projects }, entries(queue))
+    add(
+      'nothing due a day later than everything was reviewed',
+      'queue',
+      {
+        today: TODAY,
+        areas: [area(1, { reviewedAt: reviewed(TODAY) })],
+        projects: [project(1, { reviewedAt: reviewed(TODAY) })],
+      },
+      [],
+    )
+
+    const ids = queue.map((e) => e.item.id)
+    for (const [name, target] of [
+      ['the first', ids[0]],
+      ['one in the middle', ids[1]],
+      ['the last', ids.at(-1)],
+      ['one not in the queue', id('project', 99)],
+    ] as const) {
+      add(
+        `select after marking ${name} reviewed`,
+        'selectAfter',
+        { queue: ids, id: target },
+        selectAfterReviewed(queue, target as string),
+      )
+    }
+    const single = queue.slice(0, 1)
+    add(
+      'select after marking the only one reviewed',
+      'selectAfter',
+      { queue: [ids[0]], id: ids[0] },
+      selectAfterReviewed(single, ids[0] as string),
+    )
+    add(
+      'select in an empty queue',
+      'selectAfter',
+      { queue: [], id: ids[0] },
+      selectAfterReviewed([], ids[0] as string),
+    )
+
+    for (const date of [
+      null,
+      TODAY,
+      '2026-03-04',
+      '2026-03-03',
+      '2026-02-09',
+      '2026-02-08',
+      '2025-03-11',
+      '2025-03-10',
+      '2023-01-01',
+      '2026-03-12',
+    ]) {
+      const at = date === null ? null : reviewed(date)
+      add(
+        `age of a review on ${date}`,
+        'age',
+        { reviewedAt: at, today: TODAY },
+        reviewAge(at, TODAY),
+      )
+    }
+
+    const P1 = id('project', 1)
+    const tasks = [
+      task(1, { projectId: P1 }),
+      task(2, { projectId: P1, status: 'completed', completedAt: CREATED }),
+      task(3, { projectId: P1, deleted: true }),
+      task(4, { projectId: P1, repeat: rule() }),
+      task(5, { areaId: A1 }),
+      task(6, { areaId: A1, projectId: P1 }),
+      task(7, { areaId: A1, status: 'canceled', completedAt: CREATED }),
+      task(8),
+    ]
+    const entry = (kind: 'area' | 'project', itemId: string) =>
+      ({ kind, item: { id: itemId }, nextReviewOn: TODAY }) as unknown as ReviewEntry
+    add(
+      "a project's open tasks",
+      'openCount',
+      { entry: { kind: 'project', id: P1 }, tasks },
+      reviewOpenCount(entry('project', P1), tasks),
+    )
+    add(
+      'the open tasks right in an area',
+      'openCount',
+      { entry: { kind: 'area', id: A1 }, tasks },
+      reviewOpenCount(entry('area', A1), tasks),
+    )
+  },
+)
+
+// --- today ---
+
+suite(
+  'today',
+  "Today's layout: daypart groups with calendar events, Next week, and what is new in Today.",
+  (add) => {
+    for (const date of [
+      '2026-03-09',
+      '2026-03-10',
+      '2026-03-11',
+      '2026-03-12',
+      '2026-03-13',
+      '2026-03-14',
+      '2026-03-15',
+      '2026-12-31',
+    ]) {
+      add(`next week from ${date}`, 'nextWeek', { today: date }, nextWeek(date))
+    }
+
+    const tasks = [
+      { id: id('task', 1), daypart: 'evening' as const },
+      { id: id('task', 2), daypart: null },
+      { id: id('task', 3), daypart: 'morning' as const },
+      { id: id('task', 4), daypart: null },
+      { id: id('task', 5), daypart: 'evening' as const },
+    ]
+    const groupIds = (g: Record<string, { id: string }[]>) =>
+      Object.fromEntries(Object.entries(g).map(([k, v]) => [k, v.map((x) => x.id)]))
+    add(
+      'tasks per daypart, in the order given',
+      'tasksByDaypart',
+      { tasks },
+      groupIds(tasksByDaypart(tasks)),
+    )
+
+    const C = '00000000000000000000000C01'
+    const ev = (
+      key: string,
+      fields: Partial<CalendarEvent> & Pick<CalendarEvent, 'startDate' | 'endDate'>,
+    ): CalendarEvent => ({
+      id: `${C}:${key}:${fields.startDate}`,
+      calendarId: C,
+      title: key,
+      location: null,
+      allDay: false,
+      startTime: null,
+      endTime: null,
+      start: `${fields.startDate}T00:00:00.000Z`,
+      end: `${fields.endDate}T00:00:00.000Z`,
+      ...fields,
+    })
+    const events = [
+      ev('dinner', { startDate: TODAY, endDate: TODAY, startTime: '19:00', endTime: '21:00' }),
+      ev('standup', { startDate: TODAY, endDate: TODAY, startTime: '09:00', endTime: '09:15' }),
+      ev('lunch', { startDate: TODAY, endDate: TODAY, startTime: '12:00', endTime: '13:00' }),
+      ev('holiday', { startDate: TODAY, endDate: TODAY, allDay: true }),
+      ev('conference', { startDate: '2026-03-09', endDate: '2026-03-11', allDay: true }),
+      ev('night shift', {
+        startDate: '2026-03-09',
+        endDate: TODAY,
+        startTime: '22:00',
+        endTime: '06:00',
+      }),
+      ev('trip', {
+        startDate: '2026-03-08',
+        endDate: '2026-03-12',
+        startTime: '08:00',
+        endTime: '20:00',
+      }),
+      ev('flight', {
+        startDate: TODAY,
+        endDate: '2026-03-11',
+        startTime: '23:30',
+        endTime: '02:00',
+      }),
+      ev('alpha', { startDate: TODAY, endDate: TODAY, startTime: '09:00', endTime: '10:00' }),
+      ev('tomorrow', {
+        startDate: '2026-03-11',
+        endDate: '2026-03-11',
+        startTime: '09:00',
+        endTime: '10:00',
+      }),
+    ]
+    for (const e of events) {
+      if (e.startDate <= TODAY && e.endDate >= TODAY) {
+        add(`span of ${e.title} today`, 'eventSpan', { event: e, date: TODAY }, eventSpan(e, TODAY))
+      }
+    }
+    const eventIds = (list: CalendarEvent[]) => list.map((e) => e.id)
+    add(
+      'events on a day, in order',
+      'eventsOnDay',
+      { events, date: TODAY },
+      eventIds(eventsOnDay(events, TODAY)),
+    )
+    add(
+      'events per daypart',
+      'eventsByDaypart',
+      { events, date: TODAY },
+      groupIds(eventsByDaypart(events, TODAY)),
+    )
+
+    const onDate = (n: number, date: string, fields: Partial<Task> = {}) =>
+      task(n, { when: on(date), ...fields })
+    const planned = [
+      onDate(1, TODAY),
+      onDate(2, TODAY),
+      onDate(3, '2026-03-09'),
+      onDate(4, '2026-03-08'),
+      onDate(5, '2026-03-11'),
+      onDate(6, TODAY, { status: 'completed', completedAt: NOW }),
+      task(7, { when: { kind: 'anytime' } }),
+      onDate(8, TODAY),
+    ]
+    const setOn: Record<string, string | null> = {
+      [id('task', 1)]: '2026-03-01',
+      [id('task', 2)]: TODAY,
+      [id('task', 3)]: '2026-03-02',
+      [id('task', 4)]: '2026-03-01',
+      [id('task', 5)]: '2026-03-01',
+      [id('task', 6)]: '2026-03-01',
+      [id('task', 7)]: '2026-03-01',
+      [id('task', 8)]: null,
+    }
+    for (const seen of [null, '2026-03-09', '2026-03-08', '2026-03-07', TODAY]) {
+      add(
+        `new in Today, seen on ${seen}`,
+        'newInToday',
+        { tasks: planned, setOn, today: TODAY, seen },
+        newInToday(planned, (t) => setOn[t.id] ?? null, TODAY, seen).map((t) => t.id),
+      )
+    }
+  },
+)
+
+// --- tag-tree ---
+
+suite(
+  'tag-tree',
+  'Tags as a tree: the order, which parents a tag may get, names, counts and deleting.',
+  (add) => {
+    const G = (n: number) => id('tag', n)
+    const tags = [
+      tag(1, { order: 'a3' }),
+      tag(2, { order: 'a1' }),
+      tag(3, { order: 'a2', parentId: G(1) }),
+      tag(4, { order: 'a1', parentId: G(1) }),
+      tag(5, { order: 'a0', parentId: G(3) }),
+      tag(6, { order: 'a5', parentId: id('tag', 99) }),
+      tag(7, { order: 'a6', deleted: true }),
+      tag(8, { order: 'a7', parentId: G(9) }),
+      tag(9, { order: 'a8', parentId: G(8) }),
+      tag(10, { order: 'a9', parentId: G(7) }),
+    ]
+    const nodes = (list: { tag: Tag; depth: number }[]) =>
+      list.map((n) => ({ id: n.tag.id, depth: n.depth }))
+    add('the tree', 'tree', { tags }, nodes(tagTree(tags)))
+
+    const spaces: Record<string, string | null> = Object.fromEntries(
+      tags.map((t, i) => [t.id, i === 1 ? 'S2' : i === 5 ? null : 'S1']),
+    )
+    const spaceOf = (t: Tag) => spaces[t.id] ?? null
+    for (const n of [1, 2, 3, 5, 6]) {
+      const target = tags.find((t) => t.id === G(n)) as Tag
+      add(
+        `parents for tag ${n}`,
+        'validParents',
+        { tags, tagId: G(n), spaces },
+        nodes(validParents(tags, target, spaceOf)),
+      )
+    }
+
+    for (const [name, tagId, typed] of [
+      ['a new free name', null, 'errands'],
+      ['a new taken name', null, '  TAG   1 '],
+      ['an empty name', null, '   '],
+      ['renaming to its own name', G(1), 'Tag 1'],
+      ['renaming to a name in another space', G(2), 'tag 3'],
+      ['renaming to a name in the same space', G(3), 'tag 4'],
+      ['renaming to the name of a deleted tag', G(1), 'tag 7'],
+      ['renaming a tag of unknown space', G(6), 'tag 2'],
+    ] as const) {
+      const target = tagId ? (tags.find((t) => t.id === tagId) as Tag) : null
+      add(
+        `name check: ${name}`,
+        'nameIssue',
+        { tags, tagId, typed, spaces },
+        nameIssue(tags, target, typed, spaceOf),
+      )
+    }
+
+    const tasks = [
+      task(1, { tagIds: [G(1), G(2)] }),
+      task(2, { tagIds: [G(1), G(1)] }),
+      task(3, { tagIds: [G(2)], status: 'completed', completedAt: NOW }),
+      task(4, { tagIds: [G(2)], repeat: rule() }),
+      task(5, { tagIds: [G(3)], deleted: true }),
+    ]
+    add(
+      'open tasks per tag',
+      'openTaskCounts',
+      { tasks },
+      Object.fromEntries([...openTaskCounts(tasks)].sort(([a], [b]) => (a < b ? -1 : 1))),
+    )
+
+    const writes: Write[] = []
+    const writer: actions.Writer = {
+      create: (entityType, entity) => writes.push({ write: 'create', entityType, entity }),
+      mutate: (entityType, entityId, fields) =>
+        writes.push({ write: 'change', entityType, entityId, fields }),
+    }
+    const projects = [project(1, { tagIds: [G(1)] }), project(2)]
+    deleteTag(writer, { tasks, projects, tags }, G(1))
+    add('delete a tag', 'deleteTag', { tasks, projects, tags, tagId: G(1) }, writes)
+  },
+)
+
+// --- search ---
+
+suite('search', 'Searching areas, open projects and open tasks.', (add) => {
+  const areas = [area(1, { title: 'Huis en tuin' }), area(2, { title: 'Werk' })]
+  const projects = [
+    project(1, { title: 'Tuin opknappen' }),
+    project(2, { title: 'Tuinhuis', status: 'completed', completedAt: NOW }),
+    project(3, { title: 'Café openen' }),
+  ]
+  const tasks = [
+    task(1, { title: 'Gras maaien', notes: 'In de tuin, achter het huis' }),
+    task(2, { title: 'Tuinslang kopen' }),
+    task(3, { title: 'Tuinset verven', status: 'completed', completedAt: NOW }),
+    task(4, { title: 'Crème brûlée maken' }),
+    task(5, { title: 'Bel de CAFE' }),
+    task(6, { title: 'Tuin', repeat: rule() }),
+  ]
+  const hits = (list: ReturnType<typeof searchWorkspace>) =>
+    list.map((h) => ({ kind: h.kind, id: h.item.id }))
+  for (const query of [
+    'tuin',
+    'TUIN huis',
+    'cafe',
+    'creme brulee',
+    'werk',
+    '  ',
+    'xyz',
+    'tuin achter',
+  ]) {
+    add(
+      `search ${JSON.stringify(query)}`,
+      'search',
+      { query, areas, projects, tasks, limit: 30 },
+      hits(searchWorkspace({ areas, projects, tasks }, query)),
+    )
+  }
+  add(
+    'search with a limit',
+    'search',
+    { query: 'tuin', areas, projects, tasks, limit: 2 },
+    hits(searchWorkspace({ areas, projects, tasks }, 'tuin', 2)),
+  )
 })
 
 describe('conformance test set', () => {

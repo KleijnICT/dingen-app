@@ -1,16 +1,11 @@
 import {
   addDays,
-  type CalendarEvent,
-  DAYPARTS,
   type Daypart,
-  daypartOf,
-  eventSpan,
-  eventsOnDay,
   formatDuration,
+  nextWeek,
   type Task,
   totalDuration,
   type When,
-  weekdayOf,
 } from '@dingen/core'
 
 /**
@@ -21,16 +16,7 @@ import {
  * browser.
  */
 
-/** A group in Today: the tasks without a daypart (`none`, at the top) or a daypart. */
-export type DaypartSlot = Daypart | 'none'
-
-export const SLOTS: readonly DaypartSlot[] = ['none', ...DAYPARTS]
-
-/** The Monday of next week; on a Monday the one a week later, on a Sunday tomorrow. */
-export function nextWeek(today: string): string {
-  const daysToMonday = (8 - weekdayOf(today)) % 7 || 7
-  return addDays(today, daysToMonday)
-}
+export { type DaypartSlot, eventsByDaypart, nextWeek, SLOTS, tasksByDaypart } from '@dingen/core'
 
 export type WhenChoice = 'inbox' | 'today' | 'tomorrow' | 'nextWeek' | 'anytime' | 'someday'
 
@@ -72,38 +58,6 @@ export function whenOptions(when: When, today: string, forProject = false): When
 /** The fields for a When and a daypart: without a date there is no daypart. */
 export function whenFields(when: When, daypart: Daypart | null): Record<string, unknown> {
   return { when, daypart: when.kind === 'date' ? daypart : null }
-}
-
-/** Tasks per group, in the order given. */
-export function tasksByDaypart<T extends Pick<Task, 'daypart'>>(
-  tasks: readonly T[],
-): Record<DaypartSlot, T[]> {
-  const groups: Record<DaypartSlot, T[]> = { none: [], morning: [], afternoon: [], evening: [] }
-  for (const task of tasks) groups[task.daypart ?? 'none'].push(task)
-  return groups
-}
-
-/**
- * The events of a day per group, in the order of `eventsOnDay`. An event goes
- * under the daypart of its start time; all-day events and those that started
- * on an earlier day stay at the top.
- */
-export function eventsByDaypart(
-  events: readonly CalendarEvent[],
-  date: string,
-): Record<DaypartSlot, CalendarEvent[]> {
-  const groups: Record<DaypartSlot, CalendarEvent[]> = {
-    none: [],
-    morning: [],
-    afternoon: [],
-    evening: [],
-  }
-  for (const event of eventsOnDay([...events], date)) {
-    const span = eventSpan(event, date)
-    const start = span === 'single' || span === 'first' ? event.startTime : null
-    groups[start ? daypartOf(start) : 'none'].push(event)
-  }
-  return groups
 }
 
 /**

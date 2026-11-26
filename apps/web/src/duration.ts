@@ -1,4 +1,4 @@
-import { fitsDuration, formatDuration, MAX_DURATION, type Task } from '@dingen/core'
+import { fitsDuration, formatDuration, type Task } from '@dingen/core'
 import { useSyncExternalStore } from 'react'
 import { getLocale, useLocale } from './i18n/index.js'
 
@@ -19,26 +19,7 @@ export function useDurationText(): (minutes: number) => string {
   return (minutes) => durationText(minutes, locale)
 }
 
-/**
- * A typed-in duration in minutes, or null when it is not one. Plain numbers are
- * minutes; `1u30`, `1h30`, `2u`, `1:30`, `45m` and `1,5u` are read too.
- */
-export function parseDuration(input: string): number | null {
-  const text = input.trim().toLowerCase().replace(/\s+/g, '').replace(',', '.')
-  if (!text) return null
-  const plain = text.match(/^(\d+)(m|min)?$/)
-  const clock = text.match(/^(\d+):(\d{1,2})$/)
-  const hours = text.match(/^(\d+(?:\.\d+)?)[uh](?:(\d{1,2})m?)?$/)
-  const minutes = plain
-    ? Number(plain[1])
-    : clock
-      ? Number(clock[1]) * 60 + Number(clock[2])
-      : hours
-        ? Number(hours[1]) * 60 + (hours[2] ? Number(hours[2]) : 0)
-        : Number.NaN
-  const rounded = Math.round(minutes)
-  return rounded >= 1 && rounded <= MAX_DURATION ? rounded : null
-}
+export { parseDuration } from '@dingen/core'
 
 /** The tasks that fit in the filter's maximum; all of them without a filter. */
 export function filterByDuration<T extends Pick<Task, 'id' | 'duration'>>(
