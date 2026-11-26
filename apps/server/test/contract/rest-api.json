@@ -1,0 +1,4489 @@
+{
+  "authKinds": {
+    "none": "anyone",
+    "user": "a session or any agent token; else 401 unauthorized",
+    "session": "a session; else 401 unauthorized, a token 403 session_required",
+    "everything:read": "a session, or a token with an `all` grant of at least read; else 401 unauthorized, another token 403 agent_scope",
+    "everything:manage": "a session, or a token with an `all` grant at manage; else 401 unauthorized, another token 403 agent_scope",
+    "admin": "an administrator with a session; else 401 unauthorized, a token 403 session_required, a non-administrator 403 forbidden",
+    "admin:everything:manage": "an administrator with a session or a token with `all` at manage; else 401 unauthorized, another token 403 agent_scope, a non-administrator 403 forbidden",
+    "admin:everything:manage+session": "as admin:everything:manage, and a token gets 403 session_required"
+  },
+  "error": {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "error": {
+        "type": "string"
+      },
+      "issues": {
+        "type": "array",
+        "items": {}
+      },
+      "detail": {
+        "type": "string"
+      },
+      "message": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "error"
+    ],
+    "additionalProperties": false
+  },
+  "limits": {
+    "calendarRangeDays": 62,
+    "calendarRefreshMs": 900000,
+    "calendarRetryMs": 60000,
+    "activityDefaultLimit": 50,
+    "activityMaxLimit": 100,
+    "activityScanBudget": 5000,
+    "activityFoldGapMs": 300000,
+    "activityFoldSpanMs": 3600000,
+    "invitationTtlMs": 1209600000,
+    "resetMailTtlMs": 3600000,
+    "resetAdminTtlMs": 86400000,
+    "resetPerAddressPerHour": 3,
+    "resetPerClientPerHour": 10,
+    "twoStepChallengeTtlMs": 300000,
+    "recoveryCodes": 10,
+    "importMaxBytes": 52428800
+  },
+  "endpoints": {
+    "calendars.list": {
+      "package": "WP1",
+      "route": "GET /api/calendars",
+      "auth": "everything:read",
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "calendars": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "color": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "gray",
+                          "red",
+                          "orange",
+                          "yellow",
+                          "green",
+                          "mint",
+                          "blue",
+                          "indigo",
+                          "purple",
+                          "pink"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "areaId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "host": {
+                    "type": "string"
+                  },
+                  "createdAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "color",
+                  "areaId",
+                  "host",
+                  "createdAt"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "calendars"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": []
+    },
+    "calendars.add": {
+      "package": "WP1",
+      "route": "POST /api/calendars",
+      "auth": "everything:manage",
+      "body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "url": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "color": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "gray",
+                  "red",
+                  "orange",
+                  "yellow",
+                  "green",
+                  "mint",
+                  "blue",
+                  "indigo",
+                  "purple",
+                  "pink"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "areaId": {
+            "default": null,
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "url"
+        ]
+      },
+      "answers": {
+        "201": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "calendar": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "color": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "gray",
+                        "red",
+                        "orange",
+                        "yellow",
+                        "green",
+                        "mint",
+                        "blue",
+                        "indigo",
+                        "purple",
+                        "pink"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "areaId": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "host": {
+                  "type": "string"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "color",
+                "areaId",
+                "host",
+                "createdAt"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "calendar"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "400 invalid_body",
+        "400 invalid_url",
+        "400 feed_unreachable",
+        "400 feed_invalid",
+        "400 feed_too_large"
+      ]
+    },
+    "calendars.update": {
+      "package": "WP1",
+      "route": "PATCH /api/calendars/:id",
+      "auth": "everything:manage",
+      "body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "gray",
+                  "red",
+                  "orange",
+                  "yellow",
+                  "green",
+                  "mint",
+                  "blue",
+                  "indigo",
+                  "purple",
+                  "pink"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "areaId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "calendar": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "color": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "enum": [
+                        "gray",
+                        "red",
+                        "orange",
+                        "yellow",
+                        "green",
+                        "mint",
+                        "blue",
+                        "indigo",
+                        "purple",
+                        "pink"
+                      ]
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "areaId": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "host": {
+                  "type": "string"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "color",
+                "areaId",
+                "host",
+                "createdAt"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "calendar"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "400 invalid_body",
+        "404 not_found"
+      ]
+    },
+    "calendars.remove": {
+      "package": "WP1",
+      "route": "DELETE /api/calendars/:id",
+      "auth": "everything:manage",
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean",
+              "const": true
+            }
+          },
+          "required": [
+            "ok"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "404 not_found"
+      ]
+    },
+    "calendars.events": {
+      "package": "WP1",
+      "route": "GET /api/calendars/events",
+      "auth": "everything:read",
+      "query": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          },
+          "to": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          }
+        },
+        "required": [
+          "from",
+          "to"
+        ]
+      },
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "timezone": {
+              "type": "string"
+            },
+            "calendars": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "color": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "gray",
+                          "red",
+                          "orange",
+                          "yellow",
+                          "green",
+                          "mint",
+                          "blue",
+                          "indigo",
+                          "purple",
+                          "pink"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "areaId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "color",
+                  "areaId"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "events": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "calendarId": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "location": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "allDay": {
+                    "type": "boolean"
+                  },
+                  "startDate": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "endDate": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "startTime": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^\\d{2}:\\d{2}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "endTime": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^\\d{2}:\\d{2}$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "start": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  "end": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  }
+                },
+                "required": [
+                  "id",
+                  "calendarId",
+                  "title",
+                  "location",
+                  "allDay",
+                  "startDate",
+                  "endDate",
+                  "startTime",
+                  "endTime",
+                  "start",
+                  "end"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "failed": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "timezone",
+            "calendars",
+            "events",
+            "failed"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "400 invalid_range"
+      ]
+    },
+    "auth.me": {
+      "package": "WP2",
+      "route": "GET /api/auth/me",
+      "auth": "user",
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "user": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "isAdmin": {
+                  "type": "boolean"
+                },
+                "homeAssistant": {
+                  "type": "boolean"
+                },
+                "hasPassword": {
+                  "type": "boolean"
+                },
+                "todaySeenOn": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "twoStep": {
+                  "type": "boolean"
+                },
+                "blocked": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "email",
+                "createdAt",
+                "isAdmin",
+                "homeAssistant",
+                "hasPassword",
+                "todaySeenOn",
+                "twoStep",
+                "blocked"
+              ],
+              "additionalProperties": false
+            },
+            "source": {
+              "type": "string",
+              "enum": [
+                "session",
+                "token"
+              ]
+            },
+            "member": {
+              "type": "string"
+            },
+            "ingress": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "user",
+            "source",
+            "member",
+            "ingress"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": []
+    },
+    "auth.password": {
+      "package": "WP2",
+      "route": "POST /api/auth/password",
+      "auth": "session",
+      "body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 1024
+          }
+        },
+        "required": [
+          "password"
+        ]
+      },
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean",
+              "const": true
+            }
+          },
+          "required": [
+            "ok"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "400 invalid_body",
+        "400 password_required",
+        "401 invalid_credentials",
+        "429 too_many_attempts"
+      ]
+    },
+    "auth.twoStep": {
+      "package": "WP2",
+      "route": "GET /api/auth/two-step",
+      "auth": "session",
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "recoveryCodesLeft": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "enabled",
+            "recoveryCodesLeft"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": []
+    },
+    "auth.twoStep.setup": {
+      "package": "WP2",
+      "route": "POST /api/auth/two-step/setup",
+      "auth": "session",
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "secret": {
+              "type": "string"
+            },
+            "uri": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "secret",
+            "uri"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "409 totp_already_enabled"
+      ]
+    },
+    "auth.twoStep.enable": {
+      "package": "WP2",
+      "route": "POST /api/auth/two-step/enable",
+      "auth": "session",
+      "body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "code"
+        ]
+      },
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "recoveryCodes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "recoveryCodes"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "400 invalid_body",
+        "400 totp_not_started",
+        "400 invalid_code",
+        "409 totp_already_enabled",
+        "429 too_many_attempts"
+      ]
+    },
+    "auth.twoStep.disable": {
+      "package": "WP2",
+      "route": "POST /api/auth/two-step/disable",
+      "auth": "session",
+      "body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1024
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          }
+        }
+      },
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean",
+              "const": true
+            }
+          },
+          "required": [
+            "ok"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "400 invalid_body",
+        "401 invalid_credentials",
+        "401 invalid_code",
+        "429 too_many_attempts"
+      ]
+    },
+    "auth.todaySeen": {
+      "package": "WP2",
+      "route": "POST /api/auth/today-seen",
+      "auth": "user",
+      "body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+          }
+        },
+        "required": [
+          "date"
+        ]
+      },
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean",
+              "const": true
+            }
+          },
+          "required": [
+            "ok"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "400 invalid_body"
+      ]
+    },
+    "agents.list": {
+      "package": "WP3",
+      "route": "GET /api/agents",
+      "auth": "session",
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "agents": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "icon": {
+                    "type": "string",
+                    "enum": [
+                      "home",
+                      "briefcase",
+                      "building",
+                      "heart",
+                      "heart-pulse",
+                      "dumbbell",
+                      "wrench",
+                      "hammer",
+                      "server",
+                      "cpu",
+                      "bot",
+                      "code",
+                      "laptop",
+                      "wallet",
+                      "piggy-bank",
+                      "bitcoin",
+                      "landmark",
+                      "receipt",
+                      "book-open",
+                      "graduation-cap",
+                      "pen-line",
+                      "palette",
+                      "camera",
+                      "music",
+                      "gamepad",
+                      "plane",
+                      "car",
+                      "bike",
+                      "trees",
+                      "sprout",
+                      "sun",
+                      "dog",
+                      "baby",
+                      "users",
+                      "shopping-cart",
+                      "utensils",
+                      "coffee",
+                      "gift",
+                      "calendar",
+                      "clipboard-list",
+                      "folder",
+                      "archive",
+                      "globe",
+                      "zap",
+                      "shield",
+                      "lightbulb",
+                      "star",
+                      "flag"
+                    ]
+                  },
+                  "color": {
+                    "type": "string",
+                    "enum": [
+                      "gray",
+                      "red",
+                      "orange",
+                      "yellow",
+                      "green",
+                      "mint",
+                      "blue",
+                      "indigo",
+                      "purple",
+                      "pink"
+                    ]
+                  },
+                  "createdAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  "lastUsedAt": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "tokenPrefix": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "grants": {
+                    "type": "array",
+                    "items": {
+                      "oneOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "scope": {
+                              "type": "string",
+                              "const": "all"
+                            },
+                            "level": {
+                              "type": "string",
+                              "enum": [
+                                "read",
+                                "edit",
+                                "manage"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "scope",
+                            "level"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "scope": {
+                              "type": "string",
+                              "const": "inbox"
+                            },
+                            "level": {
+                              "type": "string",
+                              "enum": [
+                                "read",
+                                "edit",
+                                "manage"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "scope",
+                            "level"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "scope": {
+                              "type": "string",
+                              "const": "area"
+                            },
+                            "id": {
+                              "type": "string"
+                            },
+                            "level": {
+                              "type": "string",
+                              "enum": [
+                                "read",
+                                "edit",
+                                "manage"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "scope",
+                            "id",
+                            "level"
+                          ],
+                          "additionalProperties": false
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "scope": {
+                              "type": "string",
+                              "const": "project"
+                            },
+                            "id": {
+                              "type": "string"
+                            },
+                            "level": {
+                              "type": "string",
+                              "enum": [
+                                "read",
+                                "edit",
+                                "manage"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "scope",
+                            "id",
+                            "level"
+                          ],
+                          "additionalProperties": false
+                        }
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "id",
+                  "name",
+                  "icon",
+                  "color",
+                  "createdAt",
+                  "lastUsedAt",
+                  "tokenPrefix",
+                  "grants"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "agents"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": []
+    },
+    "agents.create": {
+      "package": "WP3",
+      "route": "POST /api/agents",
+      "auth": "session",
+      "body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "icon": {
+            "type": "string",
+            "enum": [
+              "home",
+              "briefcase",
+              "building",
+              "heart",
+              "heart-pulse",
+              "dumbbell",
+              "wrench",
+              "hammer",
+              "server",
+              "cpu",
+              "bot",
+              "code",
+              "laptop",
+              "wallet",
+              "piggy-bank",
+              "bitcoin",
+              "landmark",
+              "receipt",
+              "book-open",
+              "graduation-cap",
+              "pen-line",
+              "palette",
+              "camera",
+              "music",
+              "gamepad",
+              "plane",
+              "car",
+              "bike",
+              "trees",
+              "sprout",
+              "sun",
+              "dog",
+              "baby",
+              "users",
+              "shopping-cart",
+              "utensils",
+              "coffee",
+              "gift",
+              "calendar",
+              "clipboard-list",
+              "folder",
+              "archive",
+              "globe",
+              "zap",
+              "shield",
+              "lightbulb",
+              "star",
+              "flag"
+            ]
+          },
+          "color": {
+            "type": "string",
+            "enum": [
+              "gray",
+              "red",
+              "orange",
+              "yellow",
+              "green",
+              "mint",
+              "blue",
+              "indigo",
+              "purple",
+              "pink"
+            ]
+          },
+          "grants": {
+            "maxItems": 200,
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "scope": {
+                      "type": "string",
+                      "const": "all"
+                    },
+                    "level": {
+                      "type": "string",
+                      "enum": [
+                        "read",
+                        "edit",
+                        "manage"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "scope",
+                    "level"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "scope": {
+                      "type": "string",
+                      "const": "inbox"
+                    },
+                    "level": {
+                      "type": "string",
+                      "enum": [
+                        "read",
+                        "edit",
+                        "manage"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "scope",
+                    "level"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "scope": {
+                      "type": "string",
+                      "const": "area"
+                    },
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "level": {
+                      "type": "string",
+                      "enum": [
+                        "read",
+                        "edit",
+                        "manage"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "scope",
+                    "id",
+                    "level"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "scope": {
+                      "type": "string",
+                      "const": "project"
+                    },
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "level": {
+                      "type": "string",
+                      "enum": [
+                        "read",
+                        "edit",
+                        "manage"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "scope",
+                    "id",
+                    "level"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        "required": [
+          "name",
+          "icon",
+          "color",
+          "grants"
+        ]
+      },
+      "answers": {
+        "201": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "agent": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "icon": {
+                  "type": "string",
+                  "enum": [
+                    "home",
+                    "briefcase",
+                    "building",
+                    "heart",
+                    "heart-pulse",
+                    "dumbbell",
+                    "wrench",
+                    "hammer",
+                    "server",
+                    "cpu",
+                    "bot",
+                    "code",
+                    "laptop",
+                    "wallet",
+                    "piggy-bank",
+                    "bitcoin",
+                    "landmark",
+                    "receipt",
+                    "book-open",
+                    "graduation-cap",
+                    "pen-line",
+                    "palette",
+                    "camera",
+                    "music",
+                    "gamepad",
+                    "plane",
+                    "car",
+                    "bike",
+                    "trees",
+                    "sprout",
+                    "sun",
+                    "dog",
+                    "baby",
+                    "users",
+                    "shopping-cart",
+                    "utensils",
+                    "coffee",
+                    "gift",
+                    "calendar",
+                    "clipboard-list",
+                    "folder",
+                    "archive",
+                    "globe",
+                    "zap",
+                    "shield",
+                    "lightbulb",
+                    "star",
+                    "flag"
+                  ]
+                },
+                "color": {
+                  "type": "string",
+                  "enum": [
+                    "gray",
+                    "red",
+                    "orange",
+                    "yellow",
+                    "green",
+                    "mint",
+                    "blue",
+                    "indigo",
+                    "purple",
+                    "pink"
+                  ]
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "lastUsedAt": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "tokenPrefix": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "grants": {
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "scope": {
+                            "type": "string",
+                            "const": "all"
+                          },
+                          "level": {
+                            "type": "string",
+                            "enum": [
+                              "read",
+                              "edit",
+                              "manage"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "scope",
+                          "level"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "scope": {
+                            "type": "string",
+                            "const": "inbox"
+                          },
+                          "level": {
+                            "type": "string",
+                            "enum": [
+                              "read",
+                              "edit",
+                              "manage"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "scope",
+                          "level"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "scope": {
+                            "type": "string",
+                            "const": "area"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "level": {
+                            "type": "string",
+                            "enum": [
+                              "read",
+                              "edit",
+                              "manage"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "scope",
+                          "id",
+                          "level"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "scope": {
+                            "type": "string",
+                            "const": "project"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "level": {
+                            "type": "string",
+                            "enum": [
+                              "read",
+                              "edit",
+                              "manage"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "scope",
+                          "id",
+                          "level"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "icon",
+                "color",
+                "createdAt",
+                "lastUsedAt",
+                "tokenPrefix",
+                "grants"
+              ],
+              "additionalProperties": false
+            },
+            "token": {
+              "type": "string",
+              "format": "starts_with",
+              "pattern": "^dgn_.*"
+            }
+          },
+          "required": [
+            "agent",
+            "token"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "400 invalid_body",
+        "400 invalid_grant"
+      ]
+    },
+    "agents.update": {
+      "package": "WP3",
+      "route": "PATCH /api/agents/:id",
+      "auth": "session",
+      "body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "icon": {
+            "type": "string",
+            "enum": [
+              "home",
+              "briefcase",
+              "building",
+              "heart",
+              "heart-pulse",
+              "dumbbell",
+              "wrench",
+              "hammer",
+              "server",
+              "cpu",
+              "bot",
+              "code",
+              "laptop",
+              "wallet",
+              "piggy-bank",
+              "bitcoin",
+              "landmark",
+              "receipt",
+              "book-open",
+              "graduation-cap",
+              "pen-line",
+              "palette",
+              "camera",
+              "music",
+              "gamepad",
+              "plane",
+              "car",
+              "bike",
+              "trees",
+              "sprout",
+              "sun",
+              "dog",
+              "baby",
+              "users",
+              "shopping-cart",
+              "utensils",
+              "coffee",
+              "gift",
+              "calendar",
+              "clipboard-list",
+              "folder",
+              "archive",
+              "globe",
+              "zap",
+              "shield",
+              "lightbulb",
+              "star",
+              "flag"
+            ]
+          },
+          "color": {
+            "type": "string",
+            "enum": [
+              "gray",
+              "red",
+              "orange",
+              "yellow",
+              "green",
+              "mint",
+              "blue",
+              "indigo",
+              "purple",
+              "pink"
+            ]
+          },
+          "grants": {
+            "maxItems": 200,
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "scope": {
+                      "type": "string",
+                      "const": "all"
+                    },
+                    "level": {
+                      "type": "string",
+                      "enum": [
+                        "read",
+                        "edit",
+                        "manage"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "scope",
+                    "level"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "scope": {
+                      "type": "string",
+                      "const": "inbox"
+                    },
+                    "level": {
+                      "type": "string",
+                      "enum": [
+                        "read",
+                        "edit",
+                        "manage"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "scope",
+                    "level"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "scope": {
+                      "type": "string",
+                      "const": "area"
+                    },
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "level": {
+                      "type": "string",
+                      "enum": [
+                        "read",
+                        "edit",
+                        "manage"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "scope",
+                    "id",
+                    "level"
+                  ]
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "scope": {
+                      "type": "string",
+                      "const": "project"
+                    },
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "level": {
+                      "type": "string",
+                      "enum": [
+                        "read",
+                        "edit",
+                        "manage"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "scope",
+                    "id",
+                    "level"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "agent": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "icon": {
+                  "type": "string",
+                  "enum": [
+                    "home",
+                    "briefcase",
+                    "building",
+                    "heart",
+                    "heart-pulse",
+                    "dumbbell",
+                    "wrench",
+                    "hammer",
+                    "server",
+                    "cpu",
+                    "bot",
+                    "code",
+                    "laptop",
+                    "wallet",
+                    "piggy-bank",
+                    "bitcoin",
+                    "landmark",
+                    "receipt",
+                    "book-open",
+                    "graduation-cap",
+                    "pen-line",
+                    "palette",
+                    "camera",
+                    "music",
+                    "gamepad",
+                    "plane",
+                    "car",
+                    "bike",
+                    "trees",
+                    "sprout",
+                    "sun",
+                    "dog",
+                    "baby",
+                    "users",
+                    "shopping-cart",
+                    "utensils",
+                    "coffee",
+                    "gift",
+                    "calendar",
+                    "clipboard-list",
+                    "folder",
+                    "archive",
+                    "globe",
+                    "zap",
+                    "shield",
+                    "lightbulb",
+                    "star",
+                    "flag"
+                  ]
+                },
+                "color": {
+                  "type": "string",
+                  "enum": [
+                    "gray",
+                    "red",
+                    "orange",
+                    "yellow",
+                    "green",
+                    "mint",
+                    "blue",
+                    "indigo",
+                    "purple",
+                    "pink"
+                  ]
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "lastUsedAt": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "tokenPrefix": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "grants": {
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "scope": {
+                            "type": "string",
+                            "const": "all"
+                          },
+                          "level": {
+                            "type": "string",
+                            "enum": [
+                              "read",
+                              "edit",
+                              "manage"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "scope",
+                          "level"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "scope": {
+                            "type": "string",
+                            "const": "inbox"
+                          },
+                          "level": {
+                            "type": "string",
+                            "enum": [
+                              "read",
+                              "edit",
+                              "manage"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "scope",
+                          "level"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "scope": {
+                            "type": "string",
+                            "const": "area"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "level": {
+                            "type": "string",
+                            "enum": [
+                              "read",
+                              "edit",
+                              "manage"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "scope",
+                          "id",
+                          "level"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "scope": {
+                            "type": "string",
+                            "const": "project"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "level": {
+                            "type": "string",
+                            "enum": [
+                              "read",
+                              "edit",
+                              "manage"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "scope",
+                          "id",
+                          "level"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "icon",
+                "color",
+                "createdAt",
+                "lastUsedAt",
+                "tokenPrefix",
+                "grants"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "agent"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "400 invalid_body",
+        "400 invalid_grant",
+        "404 not_found"
+      ]
+    },
+    "agents.token": {
+      "package": "WP3",
+      "route": "POST /api/agents/:id/token",
+      "auth": "session",
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "agent": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "icon": {
+                  "type": "string",
+                  "enum": [
+                    "home",
+                    "briefcase",
+                    "building",
+                    "heart",
+                    "heart-pulse",
+                    "dumbbell",
+                    "wrench",
+                    "hammer",
+                    "server",
+                    "cpu",
+                    "bot",
+                    "code",
+                    "laptop",
+                    "wallet",
+                    "piggy-bank",
+                    "bitcoin",
+                    "landmark",
+                    "receipt",
+                    "book-open",
+                    "graduation-cap",
+                    "pen-line",
+                    "palette",
+                    "camera",
+                    "music",
+                    "gamepad",
+                    "plane",
+                    "car",
+                    "bike",
+                    "trees",
+                    "sprout",
+                    "sun",
+                    "dog",
+                    "baby",
+                    "users",
+                    "shopping-cart",
+                    "utensils",
+                    "coffee",
+                    "gift",
+                    "calendar",
+                    "clipboard-list",
+                    "folder",
+                    "archive",
+                    "globe",
+                    "zap",
+                    "shield",
+                    "lightbulb",
+                    "star",
+                    "flag"
+                  ]
+                },
+                "color": {
+                  "type": "string",
+                  "enum": [
+                    "gray",
+                    "red",
+                    "orange",
+                    "yellow",
+                    "green",
+                    "mint",
+                    "blue",
+                    "indigo",
+                    "purple",
+                    "pink"
+                  ]
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "lastUsedAt": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "tokenPrefix": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "grants": {
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "scope": {
+                            "type": "string",
+                            "const": "all"
+                          },
+                          "level": {
+                            "type": "string",
+                            "enum": [
+                              "read",
+                              "edit",
+                              "manage"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "scope",
+                          "level"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "scope": {
+                            "type": "string",
+                            "const": "inbox"
+                          },
+                          "level": {
+                            "type": "string",
+                            "enum": [
+                              "read",
+                              "edit",
+                              "manage"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "scope",
+                          "level"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "scope": {
+                            "type": "string",
+                            "const": "area"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "level": {
+                            "type": "string",
+                            "enum": [
+                              "read",
+                              "edit",
+                              "manage"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "scope",
+                          "id",
+                          "level"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "scope": {
+                            "type": "string",
+                            "const": "project"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "level": {
+                            "type": "string",
+                            "enum": [
+                              "read",
+                              "edit",
+                              "manage"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "scope",
+                          "id",
+                          "level"
+                        ],
+                        "additionalProperties": false
+                      }
+                    ]
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "icon",
+                "color",
+                "createdAt",
+                "lastUsedAt",
+                "tokenPrefix",
+                "grants"
+              ],
+              "additionalProperties": false
+            },
+            "token": {
+              "type": "string",
+              "format": "starts_with",
+              "pattern": "^dgn_.*"
+            }
+          },
+          "required": [
+            "agent",
+            "token"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "404 not_found"
+      ]
+    },
+    "agents.revoke": {
+      "package": "WP3",
+      "route": "DELETE /api/agents/:id",
+      "auth": "session",
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean",
+              "const": true
+            }
+          },
+          "required": [
+            "ok"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "404 not_found"
+      ]
+    },
+    "members": {
+      "package": "WP3",
+      "route": "GET /api/members",
+      "auth": "user",
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "members": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "user",
+                      "agent"
+                    ]
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "icon": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "color": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "kind",
+                  "name",
+                  "icon",
+                  "color"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "members"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": []
+    },
+    "access": {
+      "package": "WP3",
+      "route": "GET /api/access",
+      "auth": "user",
+      "query": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "area",
+              "project"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          }
+        },
+        "required": [
+          "type",
+          "id"
+        ]
+      },
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "members": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "member": {
+                    "type": "string"
+                  },
+                  "level": {
+                    "type": "string",
+                    "enum": [
+                      "read",
+                      "edit",
+                      "manage"
+                    ]
+                  }
+                },
+                "required": [
+                  "member",
+                  "level"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "members"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "400 invalid_query",
+        "404 not_found"
+      ]
+    },
+    "activity": {
+      "package": "WP3",
+      "route": "GET /api/activity",
+      "auth": "user",
+      "query": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "kinds": {
+            "type": "string"
+          },
+          "actor": {
+            "type": "string"
+          },
+          "since": {
+            "type": "string"
+          },
+          "until": {
+            "type": "string"
+          },
+          "before": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "limit": {
+            "default": 50,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        }
+      },
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "seq": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  "at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  "actor": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "added",
+                      "completed",
+                      "reopened",
+                      "updated",
+                      "deleted",
+                      "moved"
+                    ]
+                  },
+                  "entityType": {
+                    "type": "string",
+                    "enum": [
+                      "task",
+                      "project",
+                      "area",
+                      "heading"
+                    ]
+                  },
+                  "entityId": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  },
+                  "container": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "project",
+                              "area"
+                            ]
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "id",
+                          "title"
+                        ],
+                        "additionalProperties": false
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "fields": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "field": {
+                          "type": "string"
+                        },
+                        "from": {},
+                        "to": {}
+                      },
+                      "required": [
+                        "field",
+                        "from",
+                        "to"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "seq",
+                  "at",
+                  "actor",
+                  "kind",
+                  "entityType",
+                  "entityId",
+                  "title",
+                  "container",
+                  "fields"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "nextBefore": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "items",
+            "nextBefore"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "400 invalid_query"
+      ]
+    },
+    "auth.status": {
+      "package": "WP4",
+      "route": "GET /api/auth/status",
+      "auth": "none",
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "hasUsers": {
+              "type": "boolean"
+            },
+            "registrationOpen": {
+              "type": "boolean"
+            },
+            "registration": {
+              "type": "string",
+              "enum": [
+                "closed",
+                "open",
+                "invite"
+              ]
+            },
+            "passwordReset": {
+              "type": "boolean",
+              "const": true
+            },
+            "demo": {
+              "type": "boolean",
+              "const": true
+            }
+          },
+          "required": [
+            "hasUsers",
+            "registrationOpen",
+            "registration"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": []
+    },
+    "auth.register": {
+      "package": "WP4",
+      "route": "POST /api/auth/register",
+      "auth": "none",
+      "body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 254,
+            "format": "email",
+            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 1024
+          },
+          "invite": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "answers": {
+        "201": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "user": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "isAdmin": {
+                  "type": "boolean"
+                },
+                "homeAssistant": {
+                  "type": "boolean"
+                },
+                "hasPassword": {
+                  "type": "boolean"
+                },
+                "todaySeenOn": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "twoStep": {
+                  "type": "boolean"
+                },
+                "blocked": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "email",
+                "createdAt",
+                "isAdmin",
+                "homeAssistant",
+                "hasPassword",
+                "todaySeenOn",
+                "twoStep",
+                "blocked"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "user"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "400 invalid_body",
+        "409 email_taken",
+        "401 registration_closed",
+        "403 invite_required",
+        "403 invite_invalid",
+        "403 invite_expired",
+        "403 invite_used",
+        "403 invite_revoked"
+      ]
+    },
+    "auth.invite": {
+      "package": "WP4",
+      "route": "GET /api/auth/invite/:token",
+      "auth": "none",
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean",
+              "const": true
+            },
+            "expiresAt": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+            }
+          },
+          "required": [
+            "ok",
+            "expiresAt"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "404 invite_invalid",
+        "410 invite_expired",
+        "410 invite_used",
+        "410 invite_revoked"
+      ]
+    },
+    "auth.forgot": {
+      "package": "WP4",
+      "route": "POST /api/auth/forgot",
+      "auth": "none",
+      "body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 254
+          },
+          "language": {
+            "type": "string",
+            "maxLength": 35
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean",
+              "const": true
+            }
+          },
+          "required": [
+            "ok"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "400 invalid_body",
+        "404 mail_not_configured",
+        "404 public_url_not_set",
+        "429 too_many_attempts"
+      ]
+    },
+    "auth.reset.check": {
+      "package": "WP4",
+      "route": "GET /api/auth/reset/:token",
+      "auth": "none",
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean",
+              "const": true
+            },
+            "expiresAt": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+            }
+          },
+          "required": [
+            "ok",
+            "expiresAt"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "404 reset_invalid",
+        "410 reset_expired",
+        "410 reset_used",
+        "403 account_blocked"
+      ]
+    },
+    "auth.reset": {
+      "package": "WP4",
+      "route": "POST /api/auth/reset",
+      "auth": "none",
+      "body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "maxLength": 1024
+          }
+        },
+        "required": [
+          "token",
+          "password"
+        ]
+      },
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean",
+              "const": true
+            }
+          },
+          "required": [
+            "ok"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "400 invalid_body",
+        "404 reset_invalid",
+        "410 reset_expired",
+        "410 reset_used",
+        "403 account_blocked"
+      ]
+    },
+    "auth.demo": {
+      "package": "WP4",
+      "route": "GET /api/auth/demo",
+      "auth": "none",
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "accounts": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "email",
+                  "name",
+                  "description"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "accounts"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "404 not_found"
+      ]
+    },
+    "auth.demo.signIn": {
+      "package": "WP4",
+      "route": "POST /api/auth/demo/:email",
+      "auth": "none",
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "user": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "isAdmin": {
+                  "type": "boolean"
+                },
+                "homeAssistant": {
+                  "type": "boolean"
+                },
+                "hasPassword": {
+                  "type": "boolean"
+                },
+                "todaySeenOn": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "twoStep": {
+                  "type": "boolean"
+                },
+                "blocked": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "email",
+                "createdAt",
+                "isAdmin",
+                "homeAssistant",
+                "hasPassword",
+                "todaySeenOn",
+                "twoStep",
+                "blocked"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "user"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "404 not_found",
+        "403 account_blocked"
+      ]
+    },
+    "invitations.list": {
+      "package": "WP4",
+      "route": "GET /api/invitations",
+      "auth": "admin:everything:manage",
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "invitations": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "createdAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  "expiresAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  "createdBy": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "usedAt": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "usedBy": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "revokedAt": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "open",
+                      "used",
+                      "expired",
+                      "revoked"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "createdAt",
+                  "expiresAt",
+                  "createdBy",
+                  "usedAt",
+                  "usedBy",
+                  "revokedAt",
+                  "status"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "invitations"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": []
+    },
+    "invitations.create": {
+      "package": "WP4",
+      "route": "POST /api/invitations",
+      "auth": "admin:everything:manage+session",
+      "answers": {
+        "201": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "token": {
+              "type": "string"
+            },
+            "invitation": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "expiresAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "createdBy": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "usedAt": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "usedBy": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "revokedAt": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "open",
+                    "used",
+                    "expired",
+                    "revoked"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "createdAt",
+                "expiresAt",
+                "createdBy",
+                "usedAt",
+                "usedBy",
+                "revokedAt",
+                "status"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "token",
+            "invitation"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": []
+    },
+    "invitations.withdraw": {
+      "package": "WP4",
+      "route": "DELETE /api/invitations/:id",
+      "auth": "admin:everything:manage+session",
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean",
+              "const": true
+            }
+          },
+          "required": [
+            "ok"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "404 not_found",
+        "409 already_used"
+      ]
+    },
+    "admin.users": {
+      "package": "WP4",
+      "route": "GET /api/admin/users",
+      "auth": "admin",
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "users": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "createdAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  "isAdmin": {
+                    "type": "boolean"
+                  },
+                  "blockedAt": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "lastActiveAt": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "homeAssistant": {
+                    "type": "boolean"
+                  },
+                  "hasPassword": {
+                    "type": "boolean"
+                  },
+                  "totpEnabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "id",
+                  "email",
+                  "createdAt",
+                  "isAdmin",
+                  "blockedAt",
+                  "lastActiveAt",
+                  "homeAssistant",
+                  "hasPassword",
+                  "totpEnabled"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "users"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": []
+    },
+    "admin.users.update": {
+      "package": "WP4",
+      "route": "PATCH /api/admin/users/:id",
+      "auth": "admin",
+      "body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "isAdmin": {
+            "type": "boolean"
+          },
+          "blocked": {
+            "type": "boolean"
+          }
+        }
+      },
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "user": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "email": {
+                  "type": "string"
+                },
+                "createdAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "isAdmin": {
+                  "type": "boolean"
+                },
+                "blockedAt": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "lastActiveAt": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "homeAssistant": {
+                  "type": "boolean"
+                },
+                "hasPassword": {
+                  "type": "boolean"
+                },
+                "totpEnabled": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "email",
+                "createdAt",
+                "isAdmin",
+                "blockedAt",
+                "lastActiveAt",
+                "homeAssistant",
+                "hasPassword",
+                "totpEnabled"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "user"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "400 invalid_body",
+        "404 not_found",
+        "409 self",
+        "409 last_admin"
+      ]
+    },
+    "admin.users.delete": {
+      "package": "WP4",
+      "route": "DELETE /api/admin/users/:id",
+      "auth": "admin",
+      "body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "confirm": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 254
+          }
+        },
+        "required": [
+          "confirm"
+        ]
+      },
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean",
+              "const": true
+            },
+            "backup": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "spaces": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "entities": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "ok",
+            "backup",
+            "spaces",
+            "entities"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "400 invalid_body",
+        "404 not_found",
+        "409 self",
+        "409 not_blocked",
+        "400 confirm_mismatch",
+        "409 shared_space"
+      ]
+    },
+    "admin.users.resetLink": {
+      "package": "WP4",
+      "route": "POST /api/admin/users/:id/reset-link",
+      "auth": "admin",
+      "answers": {
+        "201": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "token": {
+              "type": "string"
+            },
+            "url": {
+              "type": "string"
+            },
+            "expiresAt": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+            }
+          },
+          "required": [
+            "token",
+            "url",
+            "expiresAt"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "404 not_found",
+        "409 account_blocked"
+      ]
+    },
+    "admin.users.totpDisable": {
+      "package": "WP4",
+      "route": "POST /api/admin/users/:id/totp/disable",
+      "auth": "admin",
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean",
+              "const": true
+            }
+          },
+          "required": [
+            "ok"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "404 not_found"
+      ]
+    },
+    "admin.registration": {
+      "package": "WP4",
+      "route": "GET /api/admin/registration",
+      "auth": "admin",
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "closed",
+                "open",
+                "invite"
+              ]
+            }
+          },
+          "required": [
+            "mode"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": []
+    },
+    "admin.registration.set": {
+      "package": "WP4",
+      "route": "PUT /api/admin/registration",
+      "auth": "admin",
+      "body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "closed",
+              "open",
+              "invite"
+            ]
+          }
+        },
+        "required": [
+          "mode"
+        ]
+      },
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "closed",
+                "open",
+                "invite"
+              ]
+            }
+          },
+          "required": [
+            "mode"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "400 invalid_body"
+      ]
+    },
+    "admin.backups": {
+      "package": "WP4",
+      "route": "GET /api/admin/backups",
+      "auth": "admin",
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "backups": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "daily",
+                      "pre-update",
+                      "pre-restore",
+                      "pre-delete",
+                      "manual"
+                    ]
+                  },
+                  "at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                  },
+                  "schema": {
+                    "type": "string"
+                  },
+                  "size": {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "name",
+                  "kind",
+                  "at",
+                  "schema",
+                  "size"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "canRestore": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "backups",
+            "canRestore"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "404 not_found"
+      ]
+    },
+    "admin.backups.create": {
+      "package": "WP4",
+      "route": "POST /api/admin/backups",
+      "auth": "admin",
+      "answers": {
+        "201": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "backup": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "daily",
+                    "pre-update",
+                    "pre-restore",
+                    "pre-delete",
+                    "manual"
+                  ]
+                },
+                "at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+                },
+                "schema": {
+                  "type": "string"
+                },
+                "size": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "name",
+                "kind",
+                "at",
+                "schema",
+                "size"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "backup"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "404 not_found"
+      ]
+    },
+    "admin.backups.download": {
+      "package": "WP4",
+      "route": "GET /api/admin/backups/:name",
+      "auth": "admin",
+      "answers": {
+        "200": "binary: the SQLite file (content-type application/vnd.sqlite3)"
+      },
+      "errors": [
+        "404 not_found"
+      ]
+    },
+    "admin.backups.restore": {
+      "package": "WP4",
+      "route": "POST /api/admin/backups/:name/restore",
+      "auth": "admin",
+      "answers": {
+        "202": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean",
+              "const": true
+            },
+            "saved": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "ok",
+            "saved"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "404 not_found",
+        "422 invalid_backup"
+      ]
+    },
+    "admin.mail": {
+      "package": "WP4",
+      "route": "GET /api/admin/mail",
+      "auth": "admin",
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "configured": {
+              "type": "boolean"
+            },
+            "from": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "configured",
+            "from"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": []
+    },
+    "admin.mail.test": {
+      "package": "WP4",
+      "route": "POST /api/admin/mail/test",
+      "auth": "admin",
+      "body": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "language": {
+            "type": "string",
+            "maxLength": 35
+          }
+        }
+      },
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean",
+              "const": true
+            },
+            "to": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "ok",
+            "to"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "409 mail_not_configured",
+        "502 mail_failed"
+      ]
+    },
+    "export": {
+      "package": "WP4",
+      "route": "GET /api/export",
+      "auth": "everything:read",
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "format": {
+              "type": "string",
+              "const": "dingen-export"
+            },
+            "version": {
+              "type": "number",
+              "const": 3
+            },
+            "appVersion": {
+              "type": "string"
+            },
+            "exportedAt": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$"
+            },
+            "spaces": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "personal",
+                      "shared"
+                    ]
+                  }
+                },
+                "required": [
+                  "id",
+                  "kind"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "entities": {
+              "type": "object",
+              "properties": {
+                "area": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "spaceId": {
+                        "type": "string"
+                      },
+                      "data": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {}
+                      },
+                      "fieldTs": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "spaceId",
+                      "data",
+                      "fieldTs"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "project": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "spaceId": {
+                        "type": "string"
+                      },
+                      "data": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {}
+                      },
+                      "fieldTs": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "spaceId",
+                      "data",
+                      "fieldTs"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "heading": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "spaceId": {
+                        "type": "string"
+                      },
+                      "data": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {}
+                      },
+                      "fieldTs": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "spaceId",
+                      "data",
+                      "fieldTs"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "task": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "spaceId": {
+                        "type": "string"
+                      },
+                      "data": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {}
+                      },
+                      "fieldTs": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "spaceId",
+                      "data",
+                      "fieldTs"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "checklistItem": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "spaceId": {
+                        "type": "string"
+                      },
+                      "data": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {}
+                      },
+                      "fieldTs": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "spaceId",
+                      "data",
+                      "fieldTs"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "tag": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "spaceId": {
+                        "type": "string"
+                      },
+                      "data": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {}
+                      },
+                      "fieldTs": {
+                        "type": "object",
+                        "propertyNames": {
+                          "type": "string"
+                        },
+                        "additionalProperties": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "spaceId",
+                      "data",
+                      "fieldTs"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "area",
+                "project",
+                "heading",
+                "task",
+                "checklistItem",
+                "tag"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "format",
+            "version",
+            "appVersion",
+            "exportedAt",
+            "spaces",
+            "entities"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": []
+    },
+    "import": {
+      "package": "WP4",
+      "route": "POST /api/import",
+      "auth": "everything:manage",
+      "query": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "properties": {
+          "mode": {
+            "default": "merge",
+            "type": "string",
+            "enum": [
+              "merge",
+              "reject"
+            ]
+          }
+        }
+      },
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "mode": {
+              "type": "string",
+              "enum": [
+                "merge",
+                "reject"
+              ]
+            },
+            "counts": {
+              "type": "object",
+              "properties": {
+                "area": {
+                  "type": "object",
+                  "properties": {
+                    "created": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "updated": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "unchanged": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "skipped": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "created",
+                    "updated",
+                    "unchanged",
+                    "skipped"
+                  ],
+                  "additionalProperties": false
+                },
+                "project": {
+                  "type": "object",
+                  "properties": {
+                    "created": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "updated": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "unchanged": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "skipped": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "created",
+                    "updated",
+                    "unchanged",
+                    "skipped"
+                  ],
+                  "additionalProperties": false
+                },
+                "heading": {
+                  "type": "object",
+                  "properties": {
+                    "created": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "updated": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "unchanged": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "skipped": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "created",
+                    "updated",
+                    "unchanged",
+                    "skipped"
+                  ],
+                  "additionalProperties": false
+                },
+                "task": {
+                  "type": "object",
+                  "properties": {
+                    "created": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "updated": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "unchanged": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "skipped": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "created",
+                    "updated",
+                    "unchanged",
+                    "skipped"
+                  ],
+                  "additionalProperties": false
+                },
+                "checklistItem": {
+                  "type": "object",
+                  "properties": {
+                    "created": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "updated": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "unchanged": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "skipped": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "created",
+                    "updated",
+                    "unchanged",
+                    "skipped"
+                  ],
+                  "additionalProperties": false
+                },
+                "tag": {
+                  "type": "object",
+                  "properties": {
+                    "created": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "updated": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "unchanged": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    "skipped": {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "created",
+                    "updated",
+                    "unchanged",
+                    "skipped"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "area",
+                "project",
+                "heading",
+                "task",
+                "checklistItem",
+                "tag"
+              ],
+              "additionalProperties": false
+            },
+            "total": {
+              "type": "object",
+              "properties": {
+                "created": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "updated": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "unchanged": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "skipped": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                }
+              },
+              "required": [
+                "created",
+                "updated",
+                "unchanged",
+                "skipped"
+              ],
+              "additionalProperties": false
+            },
+            "seq": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "mode",
+            "counts",
+            "total",
+            "seq"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "400 invalid_mode",
+        "400 invalid_export",
+        "409 account_not_empty",
+        "413 too_large",
+        "403 space_access"
+      ]
+    },
+    "push.key": {
+      "package": "web",
+      "route": "GET /api/push/key",
+      "auth": "everything:read",
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "publicKey": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "publicKey"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": []
+    },
+    "push.subscribe": {
+      "package": "web",
+      "route": "POST /api/push/subscriptions",
+      "auth": "everything:read",
+      "answers": {
+        "201": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean",
+              "const": true
+            }
+          },
+          "required": [
+            "ok"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "400 invalid_body"
+      ]
+    },
+    "push.unsubscribe": {
+      "package": "web",
+      "route": "DELETE /api/push/subscriptions",
+      "auth": "everything:read",
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "ok": {
+              "type": "boolean",
+              "const": true
+            }
+          },
+          "required": [
+            "ok"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "400 invalid_body"
+      ]
+    },
+    "push.test": {
+      "package": "web",
+      "route": "POST /api/push/test",
+      "auth": "everything:read",
+      "answers": {
+        "200": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "sent": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            }
+          },
+          "required": [
+            "sent"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "errors": [
+        "400 invalid_body"
+      ]
+    }
+  }
+}

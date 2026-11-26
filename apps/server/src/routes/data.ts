@@ -7,7 +7,7 @@ import { SpaceAccessError } from '../spaces/service.js'
 import { SyncValidationError } from '../sync.js'
 import { lowercaseTags } from '../tags/lowercase.js'
 
-const MAX_IMPORT_BYTES = 50 * 1024 * 1024
+export const MAX_IMPORT_BYTES = 50 * 1024 * 1024
 
 /** Export en import van alle gegevens van de ingelogde gebruiker. */
 export function dataRoutes(db: Db, version: string) {

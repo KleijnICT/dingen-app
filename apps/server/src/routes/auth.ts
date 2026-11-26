@@ -11,44 +11,44 @@ import type { AppEnv } from '../env.js'
 import { mailLocale } from '../mail/messages.js'
 import type { MailService } from '../mail/service.js'
 
-const Credentials = z.object({
+export const Credentials = z.object({
   email: z.string().email().max(254),
   password: z.string().min(8).max(1024),
 })
 
-const NewPassword = z.object({
+export const NewPassword = z.object({
   /** Required unless the account has no password yet (a Home Assistant account). */
   currentPassword: z.string().min(1).max(1024).optional(),
   password: z.string().min(8).max(1024),
 })
 
-const TodaySeen = z.object({ date: CalendarDate })
+export const TodaySeen = z.object({ date: CalendarDate })
 
-const Forgot = z.object({
+export const Forgot = z.object({
   email: z.string().max(254),
   /** The app's language, for the mail; else the browser's Accept-Language. */
   language: z.string().max(35).optional(),
 })
 
-const Reset = z.object({
+export const Reset = z.object({
   token: z.string().min(1).max(200),
   password: z.string().min(8).max(1024),
 })
 
-const TwoStepLogin = z.object({
+export const TwoStepLogin = z.object({
   challenge: z.string().min(1).max(200),
   code: z.string().min(1).max(64),
 })
 
-const Code = z.object({ code: z.string().min(1).max(64) })
+export const Code = z.object({ code: z.string().min(1).max(64) })
 
 /** Turning two-step verification off: the password, or a code from the app (or a recovery code). */
-const TwoStepOff = z.object({
+export const TwoStepOff = z.object({
   password: z.string().min(1).max(1024).optional(),
   code: z.string().min(1).max(64).optional(),
 })
 
-const Registration = Credentials.extend({ invite: z.string().min(1).max(200).optional() })
+export const Registration = Credentials.extend({ invite: z.string().min(1).max(200).optional() })
 
 type Ctx = Context<AppEnv>
 

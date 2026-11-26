@@ -1309,16 +1309,16 @@ cookie, if any, and clears the cookie. Always answers 200
 The server also has endpoints for registering, invitations, password reset
 and setting up two-step verification (`/register`, `/invite/:token`,
 `/forgot`, `/reset`, `/two-step/*`, `/password`, `/today-seen`). They are
-outside the scope of this file. Two-step setup and password change accept
-only a session, not a token.
+in [api.md](api.md). Two-step setup and password change accept only a
+session, not a token.
 
 ### 10.6 Bearer tokens
 
 Tokens have the form `dgn_` followed by 43 base64url characters. They
 belong to **agents**, not to people:
 
-- An agent is made by the owner in the web app (`POST /api/agents`, which
-  accepts only a session). The token is shown once.
+- An agent is made by the owner (`POST /api/agents`, which accepts only a
+  session; [api.md](api.md) §4.1). The token is shown once.
 - Requests with a token act as that agent. Changes are recorded with author
   `agent:<agentId>`, not as the user.
 - An agent has **grants**: `{scope, level}` with scope `all`, `inbox`,
